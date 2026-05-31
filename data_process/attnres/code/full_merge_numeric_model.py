@@ -107,10 +107,7 @@ class RecipLUT:
             hi = self.values[idx + 1]
             base = f32_madd(f32_add(hi, -lo), frac, lo)
 
-        recip = f32(math.ldexp(base, 1 - exp))
-        # One Newton-Raphson refinement: r1 = r0 * (2 - x * r0).
-        correction = f32_add(2.0, -f32_mul(x, recip))
-        return f32_mul(recip, correction)
+        return f32(math.ldexp(base, 1 - exp))
 
 
 def make_generic_mixed_case(n: int, d: int) -> MergeInput:
@@ -301,7 +298,7 @@ def main():
     rows = [summarize_case(case, exp_lut, recip_lut) for case in cases]
     out_path.parent.mkdir(parents=True, exist_ok=True)
     with out_path.open("w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=list(rows[0].keys()))
+        writer = csv.DictWriter(f, fieldnames=list(rows[0].keys()), lineterminator="\n")
         writer.writeheader()
         writer.writerows(rows)
 

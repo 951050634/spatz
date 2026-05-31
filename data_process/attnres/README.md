@@ -244,15 +244,15 @@ online softmax merge reference、建立与后续 RTL 计划一致的 `ExpLUT + r
 |---|---|
 | 完整 reference | 以 FP32 buffer 输入为源，按完整方程计算，输出舍入到 FP32。 |
 | `exp` 近似 | `[-8, 0]` 区间 256 段线性 LUT，低于 `-8` 饱和为 0，高于 0 饱和为 1。 |
-| reciprocal 近似 | `[1, 2]` mantissa 256 段线性 LUT，加一次 Newton refinement。 |
+| reciprocal 近似 | `[1, 2]` mantissa 256 段线性 LUT 插值，无 Newton refinement。 |
 | guarded relative error | `abs_err / max(abs(reference), 1.0)`。 |
 
 当前生成的所有 case 都满足 `1e-3` 初始误差目标，并已接近 `1e-4` 目标。最差
 记录为：
 
 ```text
-max_abs_err=4.768371582e-07
-guarded_max_rel_err=3.021831828e-07
+max_abs_err=9.775161743e-06
+guarded_max_rel_err=3.325012490e-06
 ```
 
 `generic-mixed N=4,D=8` 的固定 full-reference probe golden 为：

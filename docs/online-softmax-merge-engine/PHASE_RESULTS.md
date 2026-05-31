@@ -470,8 +470,8 @@
 - 模型配置：
   - `exp` 近似为 `[-8, 0]` 区间 256 段线性 LUT，低于 `-8` 饱和为 0，
     高于 0 饱和为 1。
-  - reciprocal 近似为 `[1, 2]` mantissa 256 段线性 LUT，并执行一次
-    Newton refinement。
+  - reciprocal 近似为 `[1, 2]` mantissa 256 段线性 LUT 插值，无 Newton
+    refinement。
   - guarded relative error 使用 `abs_err / max(abs(reference), 1.0)`。
 - 覆盖 case：
   - `generic-mixed N=4,D=8`
@@ -488,9 +488,9 @@
   输出最差误差：
 
   ```text
-  max_abs_err=4.768371582e-07
-  guarded_max_rel_err=3.021831828e-07
-  mean_abs_err=1.280111194e-07
+  max_abs_err=9.775161743e-06
+  guarded_max_rel_err=3.325012490e-06
+  mean_abs_err=2.174088011e-06
   ```
 
   所有 case 均低于 `1e-3` 初始目标，并已经低于 `1e-4`。
@@ -517,3 +517,103 @@
   舍入为 FP32 的 input buffer 计算，authoritative golden 应为
   `0xbe567a2c`。Benchmark 的固定打印值已同步修正，但该 probe 在当前受限 RTL
   下仍保持 expected-error 行为；切换为 correctness gate 属于后续 Phase B4。
+
+## Phase B2：近似 RTL 模块
+
+状态：已完成
+
+目标：
+
+- 实现 SMU 内部可复用的近似数学模块。
+- 使 RTL 近似行为与 Phase B1 软件模型保持一致。
+
+验收标准：
+
+- 近似模块可以单独编译。
+- 模块级 testbench 或集成 benchmark 能证明近似输出与软件模型一致。
+
+证据：
+
+- 新增 `hw/ip/online_merge/src/online_merge_fp32_helpers.sv`，提供 FP32 bit
+  classification、有限正 normal 检查、`abs(x)` 到 `exp` LUT index 的定点
+  转换，以及 Q1.23 到 FP32 的辅助函数。
+- 新增 `hw/ip/online_merge/src/online_merge_exp_approx.sv`。
+  - 输入为 FP32 bit pattern。
+  - 设计范围为 `[-8, 0]`。
+  - `x > 0` 饱和为 Q1.23 `1.0`。
+  - `x < -8` 饱和为 Q1.23 `0.0`。
+  - NaN/Inf 输出 `unsupported_o=1`。
+  - 输出为 256 段 LUT 线性插值得到的 Q1.23 近似值。
+- 新增 `hw/ip/online_merge/src/online_merge_recip_approx.sv`。
+  - 输入为正 finite normal FP32 bit pattern。
+  - 对 `[1, 2]` mantissa 使用 256 段 LUT 线性插值。
+  - 输出为 `recip_q1_23_o * 2**scale_exp_o`。
+  - 非正数、NaN、Inf、subnormal 输出 `unsupported_o=1`。
+- 新增 `hw/ip/online_merge/test/online_merge_approx_tb.sv`，覆盖：
+  - `exp(0)`
+  - `exp(-0.75)`
+  - `exp(-8)`
+  - 正输入饱和
+  - NaN unsupported
+  - `recip(1.0)`
+  - `recip(0x3f5e3b41)`，即 full-reference probe 的 `l0`
+  - reciprocal zero / Inf unsupported
+- `Bender.yml` 已将三个新 RTL 源文件加入 Spatz cluster build source list，
+  testbench 不进入默认集成构建。
+- 2026-06-01 运行：
+
+  ```text
+  verilator --lint-only --timing -Wall --Wno-DECLFILENAME --Wno-UNUSEDPARAM \
+    --Wno-UNUSEDSIGNAL --Wno-fatal \
+    hw/ip/online_merge/src/online_merge_fp32_helpers.sv \
+    hw/ip/online_merge/src/online_merge_exp_approx.sv \
+    hw/ip/online_merge/src/online_merge_recip_approx.sv \
+    hw/ip/online_merge/test/online_merge_approx_tb.sv \
+    --top-module online_merge_approx_tb
+  ```
+
+  结果：Verilator lint-only 退出码 0。
+- 2026-06-01 运行：
+
+  ```text
+  verilator --binary --timing -Wall --Wno-DECLFILENAME --Wno-UNUSEDPARAM \
+  --Wno-UNUSEDSIGNAL --Wno-fatal \
+    hw/ip/online_merge/src/online_merge_fp32_helpers.sv \
+    hw/ip/online_merge/src/online_merge_exp_approx.sv \
+    hw/ip/online_merge/src/online_merge_recip_approx.sv \
+    hw/ip/online_merge/test/online_merge_approx_tb.sv \
+    --top-module online_merge_approx_tb
+  obj_dir/Vonline_merge_approx_tb
+  ```
+
+  结果：`online_merge_approx_tb PASS`，退出码 0。
+- 2026-06-01 重新运行：
+
+  ```text
+  python3 data_process/attnres/code/full_merge_numeric_model.py
+  ```
+
+  当前 RTL-aligned LUT 插值模型最差误差：
+
+  ```text
+  max_abs_err=9.775161743e-06
+  guarded_max_rel_err=3.325012490e-06
+  mean_abs_err=2.174088011e-06
+  ```
+
+  所有 case 均低于 `1e-3` 初始目标，并已经低于 `1e-4`。
+- 2026-06-01 运行：
+
+  ```text
+  make -C hw/system/spatz_cluster bin/spatz_cluster.vlt
+  ```
+
+  结果：Verilator system binary 构建完成，退出码 0。构建日志仍包含既有
+  `tech_cells_generic` manifest warning、testbench/外部 IP latch warning，未导致
+  构建失败。
+
+备注：
+
+- Phase B2 只新增可复用近似模块，暂不替换
+  `online_merge_update_engine.sv` 的受限语义 datapath；完整 SMU datapath 接入属于
+  Phase B3。

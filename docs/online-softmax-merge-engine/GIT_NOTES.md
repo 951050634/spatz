@@ -134,7 +134,7 @@ M  sw/spatzBenchmarks/online-softmax-merge/main.c
 - 建立论文 B 完整 online softmax merge 方程的软件 reference。
 - 建立后续 RTL 计划使用的 `ExpLUT + reciprocal` 近似模型：
   `exp` 使用 `[-8, 0]` 256 段线性 LUT，reciprocal 使用 `[1, 2]` mantissa
-  256 段线性 LUT并执行一次 Newton refinement。
+  256 段线性 LUT 插值。
 - 覆盖 `m_old > m_tile`、`m_old < m_tile`、`m_old == m_tile`、unequal `l`、
   small `l` 和 mixed signed `O` 输入。
 - 修正 benchmark 中 full-reference probe 的 fixed `ref_o00` golden，使其按
@@ -153,17 +153,99 @@ ctest -R online-softmax-merge -V
 
 ```text
 生成 data_process/attnres/data/online_softmax_full_merge_numeric.csv。
-generic-mixed N=4,D=8: max_abs=2.980232239e-08, max_rel=2.980232239e-08。
-generic-mixed N=8,D=16: max_abs=1.192092896e-07, max_rel=1.192092896e-07。
-generic-mixed N=8,D=32: max_abs=4.768371582e-07, max_rel=2.030207045e-07。
-generic-mixed N=16,D=64: max_abs=4.768371582e-07, max_rel=2.242950071e-07。
-delta-sweep N=16,D=64: max_abs=3.576278687e-07, max_rel=3.021831828e-07。
+generic-mixed N=4,D=8: max_abs=3.576278687e-07, max_rel=3.576278687e-07。
+generic-mixed N=8,D=16: max_abs=2.503395081e-06, max_rel=2.461275348e-06。
+generic-mixed N=8,D=32: max_abs=4.410743713e-06, max_rel=2.534528071e-06。
+generic-mixed N=16,D=64: max_abs=9.775161743e-06, max_rel=2.580572675e-06。
+delta-sweep N=16,D=64: max_abs=6.079673767e-06, max_rel=3.325012490e-06。
 所有 case 均低于 1e-3 初始目标，并低于 1e-4。
 git diff --check 未报告 whitespace error。
 sw.vlt 软件全量构建完成，退出码 0。
 online-softmax-merge verbose CTest 1/1 通过，总耗时 285.30 秒。
 full-ref-probe generic-mixed status=0x4 ref_l0=0x3f5e3b41 ref_o00=0xbe567a2c。
 ```
+
+网络相关 Git 操作：
+
+```text
+暂无。
+```
+
+## 2026-06-01 Paper B Phase B2 记录
+
+本轮计划提交：
+
+```text
+[smu] Add exp and reciprocal approximation units
+```
+
+范围：
+
+```text
+M  Bender.yml
+M  data_process/attnres/README.md
+M  data_process/attnres/code/full_merge_numeric_model.py
+M  data_process/attnres/data/online_softmax_full_merge_numeric.csv
+M  docs/online-softmax-merge-engine/PHASE_RESULTS.md
+M  docs/online-softmax-merge-engine/GIT_NOTES.md
+A  hw/ip/online_merge/src/online_merge_fp32_helpers.sv
+A  hw/ip/online_merge/src/online_merge_exp_approx.sv
+A  hw/ip/online_merge/src/online_merge_recip_approx.sv
+A  hw/ip/online_merge/test/online_merge_approx_tb.sv
+```
+
+目的：
+
+- 新增 SMU 内部可复用的 FP32 helper、`exp` 近似和 reciprocal 近似 RTL 模块。
+- `exp` 支持 `[-8, 0]` 输入范围，使用 256 段 LUT 线性插值输出 Q1.23；
+  `x > 0` 饱和为 1，`x < -8` 饱和为 0，NaN/Inf 走 unsupported。
+- reciprocal 支持正 finite normal FP32 输入，对 `[1, 2]` mantissa 使用 256 段
+  LUT 线性插值，输出 `recip_q1_23_o * 2**scale_exp_o`；非正、NaN、Inf、
+  subnormal 走 unsupported。
+- 将 Phase B1 软件模型同步为 RTL-aligned LUT 插值模型，去掉软件模型中的
+  Newton refinement。
+- 在 `Bender.yml` 中把新 RTL 源文件加入 Spatz cluster build source list。
+
+验证：
+
+```text
+python3 data_process/attnres/code/full_merge_numeric_model.py
+verilator --lint-only --timing -Wall --Wno-DECLFILENAME --Wno-UNUSEDPARAM \
+  --Wno-UNUSEDSIGNAL --Wno-fatal \
+  hw/ip/online_merge/src/online_merge_fp32_helpers.sv \
+  hw/ip/online_merge/src/online_merge_exp_approx.sv \
+  hw/ip/online_merge/src/online_merge_recip_approx.sv \
+  hw/ip/online_merge/test/online_merge_approx_tb.sv \
+  --top-module online_merge_approx_tb
+verilator --binary --timing -Wall --Wno-DECLFILENAME --Wno-UNUSEDPARAM \
+  --Wno-UNUSEDSIGNAL --Wno-fatal \
+  hw/ip/online_merge/src/online_merge_fp32_helpers.sv \
+  hw/ip/online_merge/src/online_merge_exp_approx.sv \
+  hw/ip/online_merge/src/online_merge_recip_approx.sv \
+  hw/ip/online_merge/test/online_merge_approx_tb.sv \
+  --top-module online_merge_approx_tb
+obj_dir/Vonline_merge_approx_tb
+make -C hw/system/spatz_cluster bin/spatz_cluster.vlt
+```
+
+结果：
+
+```text
+数值模型重新生成 online_softmax_full_merge_numeric.csv。
+当前 RTL-aligned LUT 插值模型最差 max_abs_err=9.775161743e-06，
+guarded_max_rel_err=3.325012490e-06，mean_abs_err=2.174088011e-06。
+所有 case 均低于 1e-3 初始目标，并低于 1e-4。
+Verilator lint-only 退出码 0。
+online_merge_approx_tb PASS，退出码 0。
+bin/spatz_cluster.vlt 构建完成，退出码 0。
+```
+
+备注：
+
+- 完整 system build 日志仍包含既有 `tech_cells_generic` manifest warning、
+  testbench/外部 IP latch warning，未导致构建失败。
+- Phase B2 只新增近似模块和测试，不替换现有受限语义 datapath；完整 SMU
+  datapath 接入属于 Phase B3。
 
 网络相关 Git 操作：
 
