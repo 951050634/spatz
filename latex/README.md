@@ -105,4 +105,5 @@ latexmk -C paper_b.tex
 
 ```text
 paper_a.pdf 已成功生成，4 页。
+paper_b.pdf 已成功生成，1 页。
 ```

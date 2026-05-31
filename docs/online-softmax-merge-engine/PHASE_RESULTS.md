@@ -62,7 +62,7 @@
 
 ## Node 2：MMIO 寄存器支持
 
-状态：已完成，待完整构建回归
+状态：已完成
 
 目标：
 
@@ -90,12 +90,12 @@
 
 备注：
 
-- 需要通过 `bin/spatz_cluster.vlt` 或等价仿真构建确认生成寄存器代码与完整
-  peripheral 仍可编译。
+- 2026-05-25 和 2026-05-31 的 `bin/spatz_cluster.vlt` / `sw.vlt` / CTest 记录
+  已覆盖生成寄存器代码、runtime header 和完整 peripheral 集成的构建回归。
 
 ## Node 3：Engine RTL
 
-状态：进行中，已有可集成受限语义版本
+状态：受限语义原型已完成；完整 datapath 待实现
 
 目标：
 
@@ -132,13 +132,13 @@
   与 `compute_vector_merge()` 只覆盖 `l_old=0`、`l_tile=0`、以及构造出的等
   权重/同指数特例；因此不能声称已满足 PLAN 中完整 online softmax merge
   方程。
-- 下一步开发应在两条路径中择一推进：接入 FPnew/专用近似单元实现完整
-  `exp`、加法、乘法、除法流水；或将 v1 明确收敛为“受限 merge 语义验证
-  原型”，并把测试和文档的验收标准同步收窄。
+- v1 已经收敛为“受限 merge-update 语义验证原型”，并配套了 error-path、
+  unsupported-path、break-even 和稳定性记录。后续不应继续扩大论文 A 的语义
+  主张；真正下一步是为论文 B 选择并实现完整 `exp`、加法、乘法、除法流水。
 
 ## Node 4：Spatz Cluster 集成
 
-状态：已完成，待完整构建回归
+状态：已完成
 
 目标：
 
@@ -168,10 +168,12 @@
 
 - 未发现 Spatz pipeline 文件改动；本轮只读检查覆盖 `spatz_cluster.sv`、
   `Bender.yml` 和 peripheral 连接。
+- 2026-05-25 和 2026-05-31 的 Verilator 构建、软件构建和单项 CTest 已验证
+  cluster 集成可构建、可运行。
 
 ## Node 5：Runtime Wrapper 与 Benchmark
 
-状态：进行中，已有受限语义 benchmark
+状态：受限语义 benchmark 已完成；完整方程 benchmark 待扩展
 
 目标：
 
@@ -222,12 +224,13 @@
   仿真中运行昂贵的 libm 或软件浮点除法。当前它仍是 unsupported-path 测试；
   后续 datapath 实现完整 `exp`、乘法和除法后，应把该 probe 切换为硬件输出
   比对。
-- 2026-05-25 已通过 Verilator simulator 单项 CTest 确认 benchmark 可执行并
-  通过；覆盖范围仍限于当前受限语义和非法配置 error path。
+- 2026-05-31 已通过三次 verbose Verilator CTest 确认 benchmark 可执行并
+  稳定通过；覆盖范围仍限于当前受限语义、zero-stride packed layout、非法配置
+  error path 和 unsupported mixed-scalar error path。
 
 ## Node 6：验证与性能评估
 
-状态：部分完成
+状态：受限语义原型已完成；完整 online softmax 评估未开始
 
 目标：
 
@@ -274,9 +277,10 @@
 - 当前测试通过的是受限语义 benchmark，不能证明完整 online softmax merge
   方程已经实现；不支持的 mixed-scalar 合法配置现在应显式报错，而不是返回
   近似输出。
-- CTest 输出未展示 benchmark 内部 cycle/counter 打印；若需要性能评估证据，
-  下一阶段应保留 simulator stdout 或直接运行目标并归档 `cpu`、`engine`、
-  `tcdm_accessed`、`tcdm_congested` 数值。
+- 早期 CTest 输出未展示 benchmark 内部 cycle/counter 打印；2026-05-25 后已
+  改为使用 verbose CTest 保留 stdout，并在
+  [COMPARISON_EXPERIMENT.md](COMPARISON_EXPERIMENT.md) 中归档 `cpu`、
+  `engine`、`tcdm_accessed`、`tcdm_congested` 数值。
 - 2026-05-25 新增非法配置测试已经通过 `sw.vlt` 和单项 CTest 验证。
 - 2026-05-25 新增 zero-stride packed-layout benchmark case 后，重新运行
   `make -C hw/system/spatz_cluster sw.vlt`，软件全量构建完成，命令退出码为
@@ -383,3 +387,29 @@
   当前受限等权 case 的 break-even 位于约 64 到 96 个 vector elements 之间。
   最新数据已同步到 [COMPARISON_EXPERIMENT.md](COMPARISON_EXPERIMENT.md) 和
   `data_process/attnres/data/online_softmax_merge_bypass.csv`。
+
+
+## Paper A 阶段状态
+
+状态：阶段完成
+
+说明：
+
+- 受限语义原型、论文 A 的基础实验、break-even sweep、稳定性记录、图表和
+  LaTeX 初稿已经闭环。
+- 后续不再扩大受限语义 benchmark 的论文主张。
+- 论文 A 的结果可作为论文 B 的 baseline 和背景，但不能作为完整 online softmax
+  merge 方程的性能证据。
+
+## 当前下一步
+
+下一阶段按 [PAPER_B_FULL_SYSTEM_PLAN.md](PAPER_B_FULL_SYSTEM_PLAN.md) 推进。
+核心方向：
+
+- 保持现有 `MERGE_*` MMIO/TCDM 接口不变。
+- 不修改 Spatz ISA、decoder、controller、VFU、VRF、VLSU 或指令 pipeline。
+- 在 cluster-local SMU 内部实现 `ExpLUT + reciprocal` 的完整 mixed-scalar
+  online softmax merge 近似 datapath。
+- 把 `run_full_reference_probe_case()` 从 expected-error 改为 correctness gate。
+- 重新运行完整方程 microbenchmark、attention-like workload、误差统计和 A/B
+  性能评估。

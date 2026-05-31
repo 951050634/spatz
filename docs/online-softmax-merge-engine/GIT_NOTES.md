@@ -110,6 +110,50 @@ M  sw/spatzBenchmarks/online-softmax-merge/main.c
 暂无。
 ```
 
+## 2026-06-01 Paper B Phase B0 记录
+
+本轮计划提交：
+
+```text
+[docs] Mark restricted merge paper phase complete
+```
+
+范围：
+
+```text
+M  docs/online-softmax-merge-engine/README.md
+M  docs/online-softmax-merge-engine/PHASE_RESULTS.md
+M  docs/online-softmax-merge-engine/PAPER_ROADMAP.md
+A  docs/online-softmax-merge-engine/PAPER_B_FULL_SYSTEM_PLAN.md
+M  latex/README.md
+```
+
+目的：
+
+- 将论文 A 明确标记为受限语义原型阶段完成，只作为论文 B 的 baseline 和背景。
+- 固定论文 B 的完整旁路 SMU 路线：保持现有 `MERGE_*` MMIO/TCDM 接口，
+  不修改 Spatz ISA、decoder、controller、VFU、VRF、VLSU 或指令 pipeline。
+- 建立 Phase B0 到 Phase B7 的执行路线和验收标准，使后续实现可以直接从
+  Phase B1 软件数值模型开始推进。
+
+验证：
+
+```text
+git diff --check
+```
+
+结果：
+
+```text
+未报告 whitespace error。
+```
+
+网络相关 Git 操作：
+
+```text
+暂无。
+```
+
 ## 2026-05-31 Paper A and LaTeX workspace 记录
 
 本轮计划提交：

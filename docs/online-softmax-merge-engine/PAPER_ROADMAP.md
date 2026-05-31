@@ -15,6 +15,9 @@ kernel 和端到端收益。
 
 ## 论文 A：受限语义原型论文
 
+状态：阶段完成。论文 A 作为受限语义原型和 baseline 保留；后续实现工作转入
+[PAPER_B_FULL_SYSTEM_PLAN.md](PAPER_B_FULL_SYSTEM_PLAN.md)。
+
 ### 临时题目
 
 Cluster-Local Streaming Merge-Update Offload for Online Softmax State Updates
@@ -54,18 +57,29 @@ softmax 状态更新类 workload 是否适合 cluster-local offload。
 - 当前最大有效点：`N=16,D=64`，`cpu=23033`，`engine=9607`，
   speedup 约 `2.40x`，cycle reduction 约 `58.3%`。
 
-### 必须补的最小工作
+### 已完成的最小工作
 
-- 增加 break-even 附近 sweep：
+- 已增加 break-even 附近 sweep：
   `N=4,D=16`、`N=8,D=8`、`N=8,D=12`、`N=8,D=24`。
-- 重复运行当前实验至少 3 次，记录 cycle 稳定性。如果 simulator 结果完全确定，
-  在文档中说明。
-- 为每个实验点明确 `case_id` 的语义，避免图表读者不知道受限语义覆盖什么。
-- 增加一张 engine 状态机图或数据通路图。
-- 增加一张 Spatz cluster 集成图，标出 MMIO、TCDM interconnect 和 engine port。
-- 写清楚启动开销来源：MMIO 配置、轮询、scalar load/store、TCDM 请求。
-- 明确 error-path 测试覆盖：`N=0`、`D=0`、未对齐地址、未对齐 stride、
+- 已连续运行当前实验 3 次，并记录 cycle 和 TCDM counter 稳定性；三次有效
+  case 输出逐项一致。
+- 已在 [COMPARISON_EXPERIMENT.md](COMPARISON_EXPERIMENT.md) 和
+  `data_process/attnres/README.md` 中明确每个 `case_id` 的受限语义。
+- 已生成 engine 控制流图和 Spatz cluster 集成图：
+  `data_process/attnres/pic/online_softmax_merge_engine_flow.png`、
+  `data_process/attnres/pic/online_softmax_merge_cluster_integration.png`。
+- 已在实验文档中写清楚启动开销来源：MMIO 配置、轮询、scalar load/store、
+  TCDM 请求。
+- 已明确 error-path 测试覆盖：`N=0`、`D=0`、未对齐地址、未对齐 stride、
   unsupported mixed-scalar。
+
+### 论文 A 后续整理
+
+- 如需继续完善文本，可审读 `latex/papers/paper-a/paper_a.tex`，把受限语义
+  边界前置到摘要、Introduction 和 Evaluation caveat。
+- 确认论文 A 图表引用的 CSV、图片和实验日期与
+  [COMPARISON_EXPERIMENT.md](COMPARISON_EXPERIMENT.md) 完全一致。
+- 不要新增完整 attention 或完整 online softmax speedup 主张。
 
 ### 建议实验矩阵
 
@@ -120,6 +134,10 @@ softmax 状态更新类 workload 是否适合 cluster-local offload。
 - 至少有一份完整初稿，哪怕先按技术报告格式写。
 
 ## 论文 B：完整 online softmax/attention 加速论文
+
+论文 B 的完整执行计划见
+[PAPER_B_FULL_SYSTEM_PLAN.md](PAPER_B_FULL_SYSTEM_PLAN.md)。以下内容保留为论文
+路线概览；实现时以完整系统计划为准。
 
 ### 临时题目
 
@@ -239,38 +257,35 @@ Hardware-Assisted Online Softmax Merge for Attention State Reuse on Spatz
 
 推荐顺序：
 
-1. 先完成论文 A 的补充 sweep、图表和初稿。
-2. 同时开一个设计记录，比较完整 datapath 的两个实现方案。
-3. 选定 datapath 后实现最小完整方程。
+1. 按 [PAPER_B_FULL_SYSTEM_PLAN.md](PAPER_B_FULL_SYSTEM_PLAN.md) 冻结论文 B 边界。
+2. 建立完整方程和 `ExpLUT + reciprocal` 软件近似模型。
+3. 实现 SMU 内部完整近似 datapath。
 4. 将 `full-ref-probe` 从 expected-error 改为 correctness gate。
-5. 重新跑完整 datapath 的 microbenchmark。
-6. 再接 AttnRes 或 attention-like 端到端实验。
+5. 重新跑完整 mixed-scalar microbenchmark 和 A/B 实验。
+6. 再接 attention-like 合成 workload，稳定后尝试真实 attention kernel。
 
 ## 时间安排
 
-### 第 1 周：论文 A 收敛
+### 已完成：论文 A 基线收敛
 
-- 补 break-even sweep。
-- 重跑并固化 CSV。
-- 生成论文 A 所需图表。
-- 画 cluster 集成图和 engine 状态机图。
-- 写技术报告式初稿。
+- break-even sweep、三次稳定性运行、CSV、图表、cluster 集成图、engine 控制
+  流图和技术报告式初稿已经完成。
 
-### 第 2 周：论文 A 修改与论文 B 方案选择
+### 下一阶段：论文 B 完整旁路 SMU
 
-- 修改论文 A 的贡献边界和实验解释。
-- 完成完整 datapath 方案比较。
-- 确定使用 FPnew/已有浮点单元还是专用近似单元。
-- 明确论文 B 的最小可交付版本。
+- 保持现有 `MERGE_*` MMIO/TCDM 接口。
+- 不修改 Spatz 内核 pipeline。
+- 使用直接近似 datapath：`ExpLUT + reciprocal`。
+- 先完成完整 mixed-scalar microbenchmark，再接 attention-like workload。
 
-### 第 3-4 周：完整 datapath 原型
+### 后续 2 周：完整 datapath 原型
 
 - 实现 mixed-scalar 完整方程。
 - 将 `full-ref-probe` 改为 PASS gate。
 - 建立误差统计和 approximation sweep。
 - 跑完整 datapath microbenchmark。
 
-### 第 5-6 周：端到端 workload 与资源数据
+### 后续 3-4 周：端到端 workload 与资源数据
 
 - 接入 AttnRes 或 attention-like benchmark。
 - 生成端到端 cycle/runtime proxy。
