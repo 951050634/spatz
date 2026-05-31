@@ -110,6 +110,67 @@ M  sw/spatzBenchmarks/online-softmax-merge/main.c
 暂无。
 ```
 
+## 2026-06-01 Paper B Phase B1 记录
+
+本轮计划提交：
+
+```text
+[smu] Add full merge numeric reference model
+```
+
+范围：
+
+```text
+M  docs/online-softmax-merge-engine/PHASE_RESULTS.md
+M  docs/online-softmax-merge-engine/GIT_NOTES.md
+M  data_process/attnres/README.md
+A  data_process/attnres/code/full_merge_numeric_model.py
+A  data_process/attnres/data/online_softmax_full_merge_numeric.csv
+M  sw/spatzBenchmarks/online-softmax-merge/main.c
+```
+
+目的：
+
+- 建立论文 B 完整 online softmax merge 方程的软件 reference。
+- 建立后续 RTL 计划使用的 `ExpLUT + reciprocal` 近似模型：
+  `exp` 使用 `[-8, 0]` 256 段线性 LUT，reciprocal 使用 `[1, 2]` mantissa
+  256 段线性 LUT并执行一次 Newton refinement。
+- 覆盖 `m_old > m_tile`、`m_old < m_tile`、`m_old == m_tile`、unequal `l`、
+  small `l` 和 mixed signed `O` 输入。
+- 修正 benchmark 中 full-reference probe 的 fixed `ref_o00` golden，使其按
+  C benchmark 的 FP32 input buffer 计算为 `0xbe567a2c`。
+
+验证：
+
+```text
+python3 data_process/attnres/code/full_merge_numeric_model.py
+git diff --check
+make -C hw/system/spatz_cluster sw.vlt
+ctest -R online-softmax-merge -V
+```
+
+结果：
+
+```text
+生成 data_process/attnres/data/online_softmax_full_merge_numeric.csv。
+generic-mixed N=4,D=8: max_abs=2.980232239e-08, max_rel=2.980232239e-08。
+generic-mixed N=8,D=16: max_abs=1.192092896e-07, max_rel=1.192092896e-07。
+generic-mixed N=8,D=32: max_abs=4.768371582e-07, max_rel=2.030207045e-07。
+generic-mixed N=16,D=64: max_abs=4.768371582e-07, max_rel=2.242950071e-07。
+delta-sweep N=16,D=64: max_abs=3.576278687e-07, max_rel=3.021831828e-07。
+所有 case 均低于 1e-3 初始目标，并低于 1e-4。
+git diff --check 未报告 whitespace error。
+sw.vlt 软件全量构建完成，退出码 0。
+online-softmax-merge verbose CTest 1/1 通过，总耗时 285.30 秒。
+full-ref-probe generic-mixed status=0x4 ref_l0=0x3f5e3b41 ref_o00=0xbe567a2c。
+```
+
+网络相关 Git 操作：
+
+```text
+暂无。
+```
+
 ## 2026-06-01 Paper B Phase B0 记录
 
 本轮计划提交：

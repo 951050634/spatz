@@ -413,3 +413,107 @@
 - 把 `run_full_reference_probe_case()` 从 expected-error 改为 correctness gate。
 - 重新运行完整方程 microbenchmark、attention-like workload、误差统计和 A/B
   性能评估。
+
+## Phase B0：文档和状态冻结
+
+状态：已完成
+
+目标：
+
+- 将论文 A 标记为阶段完成。
+- 固定论文 B 的旁路 SMU 路线。
+- 明确不修改 Spatz pipeline。
+
+验收标准：
+
+- 后续实现可以直接从 Phase B1 开始。
+- 文档明确论文 A 数据只能作为 baseline，不能作为完整 online softmax merge
+  方程的性能证据。
+- 论文 B 第一版保持现有 `MERGE_*` MMIO/TCDM layout，不修改 Spatz ISA、
+  decoder、controller、VFU、VRF、VLSU 或指令 pipeline。
+
+证据：
+
+- 新增 [PAPER_B_FULL_SYSTEM_PLAN.md](PAPER_B_FULL_SYSTEM_PLAN.md)，记录
+  Phase B0 到 B7 的目标、实现要点、验收标准、测试命令和风险 fallback。
+- [PAPER_ROADMAP.md](PAPER_ROADMAP.md) 已将论文 A 状态更新为阶段完成，并
+  指向论文 B 完整系统计划。
+- [README.md](README.md) 已更新当前实现边界和下一阶段方向。
+- 2026-06-01 运行 `git diff --check`，未报告 whitespace error。
+
+备注：
+
+- 2026-06-01 已提交：
+  `[docs] Mark restricted merge paper phase complete`。
+
+## Phase B1：软件数值模型
+
+状态：已完成
+
+目标：
+
+- 建立完整 online softmax merge 方程 reference。
+- 建立与后续 RTL 计划一致的 `ExpLUT + reciprocal` 近似模型。
+- 记录固定 full-reference probe golden values 和误差统计。
+
+验收标准：
+
+- 覆盖 `m_old > m_tile`、`m_old < m_tile`、`m_old == m_tile`、
+  `l_old != l_tile`、small `l` 和 mixed signed `O`。
+- 输出 max absolute error、guarded max relative error、mean absolute error。
+- 初始近似目标达到 `<= 1e-3`，并记录是否可逼近 `<= 1e-4`。
+
+证据：
+
+- 新增 `data_process/attnres/code/full_merge_numeric_model.py`。
+- 新增 `data_process/attnres/data/online_softmax_full_merge_numeric.csv`。
+- 模型配置：
+  - `exp` 近似为 `[-8, 0]` 区间 256 段线性 LUT，低于 `-8` 饱和为 0，
+    高于 0 饱和为 1。
+  - reciprocal 近似为 `[1, 2]` mantissa 256 段线性 LUT，并执行一次
+    Newton refinement。
+  - guarded relative error 使用 `abs_err / max(abs(reference), 1.0)`。
+- 覆盖 case：
+  - `generic-mixed N=4,D=8`
+  - `generic-mixed N=8,D=16`
+  - `generic-mixed N=8,D=32`
+  - `generic-mixed N=16,D=64`
+  - `delta-sweep N=16,D=64`
+- 2026-06-01 运行：
+
+  ```text
+  python3 data_process/attnres/code/full_merge_numeric_model.py
+  ```
+
+  输出最差误差：
+
+  ```text
+  max_abs_err=4.768371582e-07
+  guarded_max_rel_err=3.021831828e-07
+  mean_abs_err=1.280111194e-07
+  ```
+
+  所有 case 均低于 `1e-3` 初始目标，并已经低于 `1e-4`。
+- 2026-06-01 运行 `make -C hw/system/spatz_cluster sw.vlt`，软件全量构建
+  完成，退出码 0。
+- 2026-06-01 在 `hw/system/spatz_cluster/sw/build` 运行
+  `ctest -R online-softmax-merge -V`，1/1 测试通过，总耗时 285.30 秒。
+  full-reference probe 仍按当前受限 RTL 返回 expected-error，输出已更新为：
+
+  ```text
+  online-softmax-merge full-ref-probe generic-mixed status=0x4 ref_l0=0x3f5e3b41 ref_o00=0xbe567a2c
+  ```
+- 固定 `generic-mixed N=4,D=8` full-reference probe golden：
+
+  ```text
+  ref_l0_bits=0x3f5e3b41
+  ref_o00_bits=0xbe567a2c
+  ```
+
+备注：
+
+- 早期 `run_full_reference_probe_case()` 打印的 `ref_o00=0xbe567a2b` 是基于
+  理想化十进制输入的一次最终舍入；Phase B1 复核后，按 C benchmark 中已经
+  舍入为 FP32 的 input buffer 计算，authoritative golden 应为
+  `0xbe567a2c`。Benchmark 的固定打印值已同步修正，但该 probe 在当前受限 RTL
+  下仍保持 expected-error 行为；切换为 correctness gate 属于后续 Phase B4。

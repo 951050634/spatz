@@ -372,7 +372,7 @@ static void init_full_reference_probe_case(uint32_t n, uint32_t d) {
 static int run_full_reference_probe_case(const char *name, uint32_t n,
                                          uint32_t d) {
   const uint32_t ref_l0_bits = 0x3f5e3b41u;
-  const uint32_t ref_o00_bits = 0xbe567a2bu;
+  const uint32_t ref_o00_bits = 0xbe567a2cu;
   init_full_reference_probe_case(n, d);
 
   smu_start(buf->m_old, buf->l_old, &buf->o_old[0][0], buf->m_tile, buf->l_tile,

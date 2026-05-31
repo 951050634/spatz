@@ -8,9 +8,11 @@
 ```text
 data_process/attnres/
 ├── code/
+│   ├── full_merge_numeric_model.py
 │   └── plot_attnres_results.py
 ├── data/
 │   ├── attnres_software_baselines.csv
+│   ├── online_softmax_full_merge_numeric.csv
 │   ├── online_softmax_merge_bypass.csv
 │   └── online_softmax_merge_bypass_stability.csv
 └── pic/
@@ -38,6 +40,18 @@ python data_process/attnres/code/plot_attnres_results.py
 
 ```text
 data_process/attnres/pic/
+```
+
+论文 B 的完整 online softmax merge 数值模型可以单独复现：
+
+```bash
+python data_process/attnres/code/full_merge_numeric_model.py
+```
+
+输出 CSV 会生成到：
+
+```text
+data_process/attnres/data/online_softmax_full_merge_numeric.csv
 ```
 
 ## 第一组：AttnRes 软件侧 baseline 对比
@@ -211,6 +225,47 @@ cycle_reduction = (cpu_cycles - engine_cycles) / cpu_cycles
 case 输出。三次运行的 cycle 和 TCDM counter 逐项一致；CTest wall time 分别为
 229.02 秒、232.16 秒和 219.20 秒。论文中应使用 cycle/counter 作为主要指标，
 不要把 wall time 当作架构性能结论。
+
+## 第三组：论文 B 完整方程数值模型
+
+数据文件：
+
+```text
+data/online_softmax_full_merge_numeric.csv
+```
+
+这组数据来自 host Python 模型，不是 RTL cycle 结果。它用于 Phase B1：固定完整
+online softmax merge reference、建立与后续 RTL 计划一致的 `ExpLUT + reciprocal`
+近似模型，并记录误差指标。
+
+### 模型配置
+
+| 项目 | 配置 |
+|---|---|
+| 完整 reference | 以 FP32 buffer 输入为源，按完整方程计算，输出舍入到 FP32。 |
+| `exp` 近似 | `[-8, 0]` 区间 256 段线性 LUT，低于 `-8` 饱和为 0，高于 0 饱和为 1。 |
+| reciprocal 近似 | `[1, 2]` mantissa 256 段线性 LUT，加一次 Newton refinement。 |
+| guarded relative error | `abs_err / max(abs(reference), 1.0)`。 |
+
+当前生成的所有 case 都满足 `1e-3` 初始误差目标，并已接近 `1e-4` 目标。最差
+记录为：
+
+```text
+max_abs_err=4.768371582e-07
+guarded_max_rel_err=3.021831828e-07
+```
+
+`generic-mixed N=4,D=8` 的固定 full-reference probe golden 为：
+
+```text
+ref_l0_bits=0x3f5e3b41
+ref_o00_bits=0xbe567a2c
+```
+
+备注：早期 benchmark 文档记录过 `ref_o00=0xbe567a2b`。Phase B1 复核后确认，
+若以 C benchmark 中已经舍入到 FP32 的 input buffer 为 authoritative 输入，
+golden 应为 `0xbe567a2c`；旧值对应更理想化十进制输入的一次最终舍入。后续
+RTL correctness gate 应使用本节记录的 FP32-buffer golden。
 
 ## 当前可以支撑的结论
 
