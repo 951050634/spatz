@@ -17,12 +17,11 @@
 \maketitle
 
 \begin{abstract}
-This is the planned paper B skeleton. Unlike paper A, this manuscript is
-reserved for a complete online softmax merge datapath and attention-like
-evaluation. It should only claim complete mixed-scalar support after the RTL
-datapath implements exponential scaling, weighted accumulation, and
-normalization, and after the benchmark turns the current full-reference probe
-from an expected-error case into an output comparison.
+This draft reports the current Paper B prototype state: a cluster-local
+online-softmax merge unit with a complete mixed-scalar datapath, fixed
+256-segment exponential and reciprocal lookup approximations, and RTL
+microbenchmark evidence. The current evaluation includes an attention-like
+merge-chain fallback, but does not yet claim end-to-end attention speedup.
 \end{abstract}
 
 \section{Introduction}
@@ -56,28 +55,61 @@ pipeline latency, and TCDM scheduling.
 
 \section{Numeric Design}
 
-Reserve this section for approximation choices, LUT sweeps, reciprocal
-implementation, and error metrics.
+The current prototype uses a fixed approximation configuration. The
+exponential path uses a Q1.23 lookup table with 256 linear segments over
+$[-8,0]$, saturating below the range to zero and above the range to one. The
+reciprocal path normalizes the input mantissa to $[1,2]$ and uses a 256-segment
+Q1.23 lookup table with linear interpolation. No Newton refinement is used.
+
+Against a full FP32 software reference on the synthetic full-merge cases, the
+worst recorded maximum absolute error is $9.78\times10^{-6}$, the worst guarded
+maximum relative error is $3.33\times10^{-6}$, and the worst mean absolute
+error is $2.17\times10^{-6}$. This meets both the initial $10^{-3}$ target and
+the exploratory $10^{-4}$ target for the current input set.
 
 \section{Evaluation}
 
-Required evidence before this paper is ready:
+The current RTL benchmark validates five full mixed-scalar sweep points:
 
-\begin{itemize}
-  \item Full mixed-scalar correctness against CPU reference.
-  \item CPU versus engine microbenchmark with the complete datapath.
-  \item Attention-like or AttnRes workload results.
-  \item Error statistics and resource/cost data.
-\end{itemize}
+\begin{table}[h]
+\centering
+\caption{Full mixed-scalar SMU microbenchmark.}
+\begin{tabular}{rrrrr}
+\toprule
+$N$ & $D$ & CPU cycles & SMU cycles & Speedup \\
+\midrule
+1 & 1 & 2327 & 1207 & 1.93$\times$ \\
+4 & 8 & 17490 & 1478 & 11.83$\times$ \\
+8 & 16 & 56103 & 2343 & 23.94$\times$ \\
+8 & 32 & 97554 & 3371 & 28.94$\times$ \\
+16 & 64 & 365620 & 9650 & 37.89$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The CPU baseline in this table is an RTL-aligned fixed-point software reference
+used for correctness gating and same-semantics comparison; it is not an
+optimized vectorized software baseline. A synthetic attention-like fallback
+with 8 rows, 4 merge blocks, and $D=32$ invokes the SMU path for each merge
+step and records 388826 software-reference cycles versus 13432 SMU cycles
+($28.95\times$), with 6188 TCDM accessed and 32 TCDM congested counter events.
 
 \section{Limitations}
 
-Keep this section honest about unsupported precision modes, workload coverage,
-and resource data quality.
+The current prototype only claims finite normal FP32 input coverage plus zero
+for the online-softmax length fields where supported by the error policy. NaN,
+Inf, subnormal, and both-zero length inputs are not part of the supported
+numeric contract. The attention-like result is a merge-chain fallback rather
+than a complete attention kernel; it excludes QK/PV computation, DRAM behavior,
+runtime scheduling, and model-level accuracy. Resource, area, power, and
+post-synthesis timing data are still missing.
 
 \section{Conclusion}
 
-Summarize the complete datapath result only after the required evidence exists.
+The current data closes the minimal complete-datapath loop for the SMU
+microbenchmark and provides attention-like merge-chain evidence. The next step
+is parameter sweep and resource/timing evaluation, followed by integration into
+a fuller attention runtime proxy.
 
 \bibliographystyle{IEEEtran}
 \bibliography{common/bib/refs}

@@ -2,147 +2,136 @@
 
 ## 实验目的
 
-对比同一 benchmark 输入下两条路径的差异：
+对比同一 benchmark 输入下两条路径：
 
-- 不采用 merge engine：CPU scalar reference path。
-- 采用 merge engine：通过 MMIO 启动 cluster-local online merge engine，由 engine
-  自己发起 TCDM 访问并写回结果。
+- CPU scalar / RTL-aligned software reference path。
+- cluster-local SMU merge engine path，通过现有 `MERGE_*` MMIO 启动，由 engine
+  自己访问 TCDM 并写回 `m/l/O`。
 
-注意：当前实现中的 engine 不是片外模块，而是 cluster-local 旁路硬件模块。
-如果“片外模块”指的是该新增硬件 engine，本实验即为对应 A/B 对比。当前 RTL
-仍是受限语义原型，只覆盖 `l_old=0`、`l_tile=0`、以及构造出的等权特例；合法
-但未支持的完整 online softmax mixed-scalar 输入会返回 `MERGE_STATUS.error`。
+论文 A 的受限语义数据仍可作为 baseline；论文 B 当前结果已切换为完整
+mixed-scalar online softmax merge 方程。本文档不声称端到端 attention speedup。
 
 ## 实验环境
 
-日期：2026-05-31 CST
+日期：2026-06-06 CST
 
 命令：
 
 ```bash
+make -C hw/system/spatz_cluster bin/spatz_cluster.vlt
 make -C hw/system/spatz_cluster sw.vlt
+cd hw/system/spatz_cluster/sw/build
 ctest -R online-softmax-merge -V
-```
-
-目录：
-
-```text
-hw/system/spatz_cluster/sw/build
 ```
 
 结果：
 
 ```text
-1/1 Test #91: spatzBenchmarks-rtl-spatzBenchmarks-rtl-online-softmax-merge ... Passed 229.02 sec
-1/1 Test #91: spatzBenchmarks-rtl-spatzBenchmarks-rtl-online-softmax-merge ... Passed 232.16 sec
-1/1 Test #91: spatzBenchmarks-rtl-spatzBenchmarks-rtl-online-softmax-merge ... Passed 219.20 sec
+1/1 Test #91: spatzBenchmarks-rtl-spatzBenchmarks-rtl-online-softmax-merge ... Passed 1105.98 sec
+online-softmax-merge PASS
 ```
 
-三次 verbose CTest 的有效 case 输出完全一致。下文使用三次一致的 cycle 和
-TCDM counter 数据；CTest wall time 只用于说明实验运行耗时，不作为架构性能指标。
+## Full Mixed-Scalar Sweep
 
-## Case 语义
+`speedup = cpu_cycles / engine_cycles`。CPU path 是 RTL-aligned fixed-point
+software reference，不是优化过的 libm 或向量化 CPU baseline。
 
-| Case | 受限语义 |
-|---:|---|
-| 0 | `l_tile=0`，输出选择 old state。 |
-| 1 | `l_old=0`，输出选择 tile state。 |
-| 2 | `m_old==m_tile && l_old==l_tile`，等权 merge，主要用于规模 sweep。 |
-| 3 | `m_old==m_tile && l_old==l_tile`，小 `l` 等权 case。 |
-| 4 | `m_old==m_tile && l_old==l_tile`，另一组小 `l` 等权 case。 |
+| N | D | CPU cycles | Engine cycles | Speedup | TCDM accessed | TCDM congested |
+|---:|---:|---:|---:|---:|---:|---:|
+| 1 | 1 | 2327 | 1207 | 1.93x | 327 | 0 |
+| 4 | 8 | 17490 | 1478 | 11.83x | 495 | 2 |
+| 8 | 16 | 56103 | 2343 | 23.94x | 985 | 4 |
+| 8 | 32 | 97554 | 3371 | 28.94x | 1583 | 9 |
+| 16 | 64 | 365620 | 9650 | 37.89x | 5229 | 27 |
 
-## 原始数据
+最强数据点：
 
 ```text
-N=1,  D=1,  case=0: cpu=191,   engine=1216, tcdm_accessed=328,  tcdm_congested=1
-N=4,  D=8,  case=1: cpu=915,   engine=1486, tcdm_accessed=495,  tcdm_congested=2
-N=8,  D=8,  case=2: cpu=1704,  engine=1789, tcdm_accessed=682,  tcdm_congested=3
-N=8,  D=12, case=2: cpu=2433,  engine=2011, tcdm_accessed=834,  tcdm_congested=4
-N=4,  D=16, case=2: cpu=1613,  engine=1694, tcdm_accessed=636,  tcdm_congested=3
-N=8,  D=16, case=2: cpu=3114,  engine=2254, tcdm_accessed=977,  tcdm_congested=7
-N=8,  D=24, case=2: cpu=4520,  engine=2798, tcdm_accessed=1285, tcdm_congested=13
-N=8,  D=32, case=2: cpu=5910,  engine=3284, tcdm_accessed=1574, tcdm_congested=11
-N=16, D=32, case=2: cpu=11744, engine=5502, tcdm_accessed=2850, tcdm_congested=20
-N=16, D=64, case=2: cpu=23033, engine=9607, tcdm_accessed=5243, tcdm_congested=41
-N=4,  D=8,  case=3: cpu=904,   engine=1452, tcdm_accessed=498,  tcdm_congested=5
-N=4,  D=8,  case=4: cpu=930,   engine=1417, tcdm_accessed=498,  tcdm_congested=5
+N=16,D=64: cycle reduction = (365620 - 9650) / 365620 = 97.36%
 ```
 
-错误路径和未支持路径：
+## Correctness 与 Error Path
+
+保留的 correctness / error path 输出：
 
 ```text
-invalid n-zero status=0x4
-invalid d-zero status=0x4
-invalid misaligned-address status=0x4
-invalid misaligned-stride status=0x4
-unsupported mixed-m status=0x4
-unsupported unequal-l status=0x4
-full-ref-probe generic-mixed status=0x4 ref_l0=0x3f5e3b41 ref_o00=0xbe567a2b
+online-softmax-merge stride-zero N=4 D=8 case=2 status=0x2
+online-softmax-merge invalid n-zero status=0x4
+online-softmax-merge invalid d-zero status=0x4
+online-softmax-merge invalid misaligned-address status=0x4
+online-softmax-merge invalid misaligned-stride status=0x4
+online-softmax-merge unsupported both-zero-l status=0x4
+online-softmax-merge full-ref-probe generic-mixed N=4 D=8 status=0x2 cpu=17072 engine=1465 tcdm_accessed=495 tcdm_congested=2 ref_l0=0x3f5e3b41 ref_o00=0xbe567a3e
 ```
 
-## 性能对比
+## Numeric Approximation
 
-`speedup = cpu_cycles / engine_cycles`。大于 1 表示采用 engine 更快，小于 1
-表示采用 engine 更慢。
+Host numeric model：
 
-| Case | N | D | CPU cycles | Engine cycles | Speedup | 结论 |
-|---|---:|---:|---:|---:|---:|---|
-| 0 | 1 | 1 | 191 | 1216 | 0.16x | engine 慢约 6.37x |
-| 1 | 4 | 8 | 915 | 1486 | 0.62x | engine 慢约 1.62x |
-| 2 | 8 | 8 | 1704 | 1789 | 0.95x | engine 慢约 1.05x |
-| 2 | 8 | 12 | 2433 | 2011 | 1.21x | engine 快约 1.21x |
-| 2 | 4 | 16 | 1613 | 1694 | 0.95x | engine 慢约 1.05x |
-| 2 | 8 | 16 | 3114 | 2254 | 1.38x | engine 快约 1.38x |
-| 2 | 8 | 24 | 4520 | 2798 | 1.62x | engine 快约 1.62x |
-| 2 | 8 | 32 | 5910 | 3284 | 1.80x | engine 快约 1.80x |
-| 2 | 16 | 32 | 11744 | 5502 | 2.13x | engine 快约 2.13x |
-| 2 | 16 | 64 | 23033 | 9607 | 2.40x | engine 快约 2.40x |
-| 3 | 4 | 8 | 904 | 1452 | 0.62x | engine 慢约 1.61x |
-| 4 | 4 | 8 | 930 | 1417 | 0.66x | engine 慢约 1.52x |
+```bash
+python3 data_process/attnres/code/full_merge_numeric_model.py
+```
 
-在 `N=16, D=64, case=2` 中：
+固定近似配置：
+
+- `exp`：`[-8, 0]` 256 段 Q1.23 LUT 线性插值。
+- reciprocal：`[1, 2]` mantissa 256 段 Q1.23 LUT 线性插值。
+
+最差误差：
 
 ```text
-cycle reduction = (23033 - 9607) / 23033 = 58.3%
+max_abs_err=9.775161743e-06
+guarded_max_rel_err=3.325012490e-06
+mean_abs_err=2.174088011e-06
 ```
 
-## 如何评估结果
+所有记录均满足 `<=1e-3`，并已满足 `<=1e-4`。
 
-1. 功能正确性
+## Attention-Like SMU Chain
 
-   `online-softmax-merge PASS` 表示当前受限语义有效 case 的 `m/l/O` 输出与
-   CPU reference 匹配，非法配置和未支持 mixed-scalar 输入按预期返回
-   `MERGE_STATUS.error`。
+最小 B6 fallback workload：
 
-2. 性能价值
+```text
+online-softmax-merge attention-like rows=8 blocks=4 D=32 cpu=388826 engine=13432 tcdm_accessed=6188 tcdm_congested=32 state_bytes=4352 saw_busy=1
+```
 
-   当前 engine 有固定启动开销，包括 MMIO 配置、状态轮询、scalar state 读取、
-   TCDM 请求和写回。因此小问题规模下 engine 更慢；当 `N*D` 足够大时，engine
-   能摊薄启动开销并超过 CPU scalar path。
+该 workload 真实调用 SMU hardware path，并模拟多 row、多 block、多 hidden
+dimension 的 `m/l/O` merge 链。它不是完整 attention kernel，不包含 QK/PV 或
+runtime/DRAM 调度，因此只能作为 attention-like merge-chain 证据。
 
-3. 当前 break-even
+## 数据与图表
 
-   已测数据中 `N=4,D=16` 与 `N=8,D=8` 都约为 0.95x，仍略慢；
-   `N=8,D=12` 已达到 1.21x。因此当前受限等权语义下，break-even 位于约
-   64 到 96 个 vector elements 之间。
+CSV：
 
-4. TCDM counter
+```text
+data_process/attnres/data/online_softmax_full_mixed_bypass.csv
+data_process/attnres/data/online_softmax_full_merge_numeric.csv
+data_process/attnres/data/online_softmax_attention_like_smu.csv
+```
 
-   `tcdm_accessed` 和 `tcdm_congested` 非零，说明 engine path 确实产生了 TCDM
-   traffic。`N=16,D=64` 的 congestion 为 41，当前不是主要性能瓶颈；更大规模
-   或多 engine/多 core 并发时才需要进一步分析 bank conflict。
+SVG 图：
 
-## 结论
+```text
+data_process/attnres/pic/paper_b_full_mixed_cycles.svg
+data_process/attnres/pic/paper_b_full_mixed_speedup.svg
+data_process/attnres/pic/paper_b_full_mixed_tcdm.svg
+data_process/attnres/pic/paper_b_numeric_error.svg
+data_process/attnres/pic/paper_b_attention_like_smu.svg
+```
 
-当前受限语义原型已经证明：对足够大的 merge workload，采用 cluster-local
-merge engine 能显著降低 cycles，本次 `N=16,D=64` 实测为 2.40x speedup，cycle
-减少 58.3%。但对小规模 workload，engine 固定开销超过收益，`N=1,D=1` 和
-`N=4,D=8` 都不适合 offload；受限等权 case 的 break-even 约在 64 到 96 个
-vector elements 之间。
+## 结论边界
 
-这个结论不能直接外推到完整 online softmax merge 方程，因为完整 datapath
-需要 `exp`、乘法缩放和除法归一化，硬件 latency、面积和吞吐都会变化。下一步
-应做两件事：
+当前结果可以支撑：
 
-- 接入完整 datapath 后，把 `full-ref-probe` 从 expected-error 测试切换为
-  输出比对，再重新做同样的 A/B 实验。
+- 完整 mixed-scalar online softmax merge 方程已在 cluster-local SMU path 中闭环。
+- benchmark 的 full-reference probe 已从 expected-error 变为 correctness gate。
+- 固定 256 段 exp/reciprocal LUT 配置满足 `1e-4` 级误差目标。
+- 至少一个完整 mixed-scalar case 中 engine path 快于 RTL-aligned software path；
+  当前全部 full mixed-scalar sweep 点均快于该 reference path。
+- attention-like merge-chain fallback 真实调用 SMU path。
+
+当前结果不能支撑：
+
+- 端到端 LLM attention 或完整 runtime speedup。
+- 面积、功耗、频率或综合后资源结论。
+- 对 NaN、Inf、subnormal 或超出 finite normal 输入范围的数值承诺。

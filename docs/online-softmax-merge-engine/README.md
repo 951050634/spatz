@@ -24,20 +24,19 @@ v1 的默认方向是在 cluster 内新增一个由 MMIO 寄存器控制、带 T
 
 ## 当前实现边界
 
-截至 2026-06-01，本分支已经加入 MMIO 寄存器、cluster TCDM master 集成、
-独立 engine RTL、受限语义 benchmark、A/B 对比实验、break-even sweep、稳定性
-记录、绘图脚本和论文 A LaTeX 初稿。当前 RTL 是可集成的受限语义原型：它覆盖
-TCDM 搬运、状态机、配置校验、零长度状态、`l_old=0`、`l_tile=0` 和
-`m_old==m_tile && l_old==l_tile` 的等权重特例，但还没有完整实现 PLAN 中的
-`exp()`、乘法缩放和除法归一化 datapath。
+截至 2026-06-06，本分支已经完成论文 A 受限语义 baseline，并在论文 B 最小闭环
+中接入完整 mixed-scalar online softmax merge datapath。当前 RTL 保持现有
+`MERGE_*` MMIO/TCDM 接口，不修改 Spatz ISA、decoder、controller、VFU、VRF、
+VLSU 或指令 pipeline。
 
-因此，当前 benchmark 的 reference 和输入 case 只验证该受限语义。合法但未支持
-的 mixed-scalar 输入会返回 `MERGE_STATUS.error`，`full-ref-probe` 当前也是
-expected-error 测试。
+当前 SMU datapath 支持 finite normal FP32 输入以及受支持的 zero length 状态，
+内部使用 256 段 Q1.23 `exp` LUT、256 段 Q1.23 reciprocal LUT 和 Q16.32 定点
+缩放/加权累加。both-zero-`l`、非法配置、NaN/Inf/subnormal 等仍走 error 或
+unsupported 边界。
 
-论文 A 相关内容现在视为阶段性完成。下一阶段按
-[PAPER_B_FULL_SYSTEM_PLAN.md](PAPER_B_FULL_SYSTEM_PLAN.md) 推进：保持现有
-MMIO/TCDM 旁路接口，不修改 Spatz ISA、decoder、controller、VFU、VRF、VLSU 或
-指令 pipeline，在 SMU 内部实现 `ExpLUT + reciprocal` 的完整 online softmax
-merge 近似 datapath，并重新生成完整 mixed-scalar 的 correctness、误差和性能
-证据。
+`online-softmax-merge` benchmark 现在包含完整 mixed-scalar sweep、stride-zero
+packed layout、invalid config、both-zero-`l` error path、受限语义回归和
+attention-like SMU merge-chain fallback。`full-ref-probe` 已从 expected-error
+切换为 correctness gate。当前证据记录见
+[PHASE_RESULTS.md](PHASE_RESULTS.md) 和
+[COMPARISON_EXPERIMENT.md](COMPARISON_EXPERIMENT.md)。

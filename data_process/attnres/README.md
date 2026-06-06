@@ -9,9 +9,12 @@
 data_process/attnres/
 ├── code/
 │   ├── full_merge_numeric_model.py
-│   └── plot_attnres_results.py
+│   ├── plot_attnres_results.py
+│   └── plot_paper_b_svg.py
 ├── data/
 │   ├── attnres_software_baselines.csv
+│   ├── online_softmax_attention_like_smu.csv
+│   ├── online_softmax_full_mixed_bypass.csv
 │   ├── online_softmax_full_merge_numeric.csv
 │   ├── online_softmax_merge_bypass.csv
 │   └── online_softmax_merge_bypass_stability.csv
@@ -24,7 +27,12 @@ data_process/attnres/
     ├── online_softmax_merge_bypass_runtime_proxy.png
     ├── online_softmax_merge_bypass_tcdm.png
     ├── online_softmax_merge_cluster_integration.png
-    └── online_softmax_merge_engine_flow.png
+    ├── online_softmax_merge_engine_flow.png
+    ├── paper_b_attention_like_smu.svg
+    ├── paper_b_full_mixed_cycles.svg
+    ├── paper_b_full_mixed_speedup.svg
+    ├── paper_b_full_mixed_tcdm.svg
+    └── paper_b_numeric_error.svg
 ```
 
 ## 复现方式
@@ -40,6 +48,12 @@ python data_process/attnres/code/plot_attnres_results.py
 
 ```text
 data_process/attnres/pic/
+```
+
+当前环境如果没有 `matplotlib`，可用 stdlib-only SVG fallback 生成 Paper B 图：
+
+```bash
+python3 data_process/attnres/code/plot_paper_b_svg.py
 ```
 
 论文 B 的完整 online softmax merge 数值模型可以单独复现：
@@ -267,28 +281,65 @@ ref_o00_bits=0xbe567a2c
 golden 应为 `0xbe567a2c`；旧值对应更理想化十进制输入的一次最终舍入。后续
 RTL correctness gate 应使用本节记录的 FP32-buffer golden。
 
+## 第四组：论文 B full mixed-scalar RTL 数据
+
+数据文件：
+
+```text
+data/online_softmax_full_mixed_bypass.csv
+data/online_softmax_attention_like_smu.csv
+```
+
+这些数据来自 `online-softmax-merge` RTL benchmark 的完整 mixed-scalar SMU path。
+CPU cycles 是 RTL-aligned fixed-point software reference，用于 correctness gate 和
+同语义软件路径对比。
+
+### full mixed-scalar sweep
+
+| N | D | CPU cycles | Engine cycles | Speedup | TCDM accessed | TCDM congested |
+|---:|---:|---:|---:|---:|---:|---:|
+| 1 | 1 | 2327 | 1207 | 1.93x | 327 | 0 |
+| 4 | 8 | 17490 | 1478 | 11.83x | 495 | 2 |
+| 8 | 16 | 56103 | 2343 | 23.94x | 985 | 4 |
+| 8 | 32 | 97554 | 3371 | 28.94x | 1583 | 9 |
+| 16 | 64 | 365620 | 9650 | 37.89x | 5229 | 27 |
+
+### attention-like SMU chain
+
+```text
+rows=8, blocks=4, D=32
+cpu_cycles=388826
+engine_cycles=13432
+speedup=28.95x
+tcdm_accessed=6188
+tcdm_congested=32
+state_bytes=4352
+```
+
+该 workload 真实调用 SMU hardware path，并模拟多 row、多 block、多 hidden
+dimension 的 `m/l/O` merge 链。它是完整 SMU microbenchmark + traffic/numeric
+analysis fallback，不是端到端 attention speedup。
+
 ## 当前可以支撑的结论
 
 1. AttnRes 软件侧 baseline 在合成输入上输出一致，误差低于 `1e-3` 阈值。
 2. 软件侧两阶段和软件融合路径能减少估算 traffic，其中 software fusion 对中间
    状态 traffic 的削减更明显。
-3. 对 online softmax merge 类 workload，cluster-local merge engine 旁路在
-   足够大的 `N,D` 下能显著降低 cycle。
-4. 当前最强数据点是 `N=16,D=64`，speedup 约为 `2.40x`，cycle reduction 约为
-   `58.3%`。
-5. 当前受限等权 case 的 break-even 位于约 64 到 96 个 vector elements 之间。
+3. 对完整 mixed-scalar online softmax merge workload，cluster-local SMU path 在
+   当前 RTL-aligned software reference 下能显著降低 cycle。
+4. 当前 full mixed-scalar 最强数据点是 `N=16,D=64`，speedup 约为 `37.89x`。
+5. attention-like fallback 证明多 block `m/l/O` merge 链可以真实调用 SMU path。
 
 ## 当前不能直接外推的结论
 
 1. 这还不能证明完整 LLM attention 或 PPL pipeline 的端到端加速。
 2. AttnRes 软件侧图不能证明硬件旁路性能，它只证明软件 baseline 的正确性和
    traffic 趋势。
-3. 当前 merge engine 仍是受限语义原型，尚未覆盖完整 online-softmax merge
-   方程中的所有 mixed-scalar 情况。
+3. 当前 attention-like 数据仍不是端到端 attention kernel，不包含 QK/PV 或完整
+   runtime/DRAM 调度。
 
 ## 建议的下一步方向
 
-1. 扩展 merge engine datapath，支持完整 online-softmax merge 方程，然后把当前
-   expected-error 的 full-reference probe 改成真正输出比对。
-2. 在完整 datapath 可用后，重新生成同样的 CPU vs engine A/B 图，形成更强的论文
-   证据链。
+1. 做 exp/reciprocal 参数 sweep 和资源/频率评估，决定是否保留当前 256 段 LUT。
+2. 将 SMU merge-chain 接入更完整的 attention kernel 或 runtime proxy，避免扩大
+   当前 fallback 的端到端主张。

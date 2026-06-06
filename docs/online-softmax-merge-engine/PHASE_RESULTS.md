@@ -617,3 +617,150 @@
 - Phase B2 只新增可复用近似模块，暂不替换
   `online_merge_update_engine.sv` 的受限语义 datapath；完整 SMU datapath 接入属于
   Phase B3。
+
+## Phase B3/B4：完整 SMU datapath 与 full mixed-scalar gate
+
+状态：已完成最小闭环
+
+实现摘要：
+
+- `hw/ip/online_merge/src/online_merge_update_engine.sv` 已接入
+  `online_merge_exp_approx.sv`、`online_merge_recip_approx.sv` 和
+  `online_merge_fp32_helpers.sv`。
+- 保持现有 `MERGE_*` MMIO/TCDM layout，不修改 Spatz ISA、decoder、controller、
+  VFU、VRF、VLSU 或 pipeline。
+- `supported_scalar_merge()` 已从论文 A 受限语义放宽到 finite normal/zero 输入，
+  只保留 both-zero-`l` 作为 error path。
+- datapath 计算：
+  `m_new`、两个 exp scale、`l_new`、reciprocal、old/tile weights，再流式计算
+  `O_new[j]`。
+- 显式扩宽了 Q1.23/Q16.32 乘法和 LUT 插值乘法，避免 SystemVerilog 表达式宽度
+  截断导致 benchmark reference 与 RTL 不一致。
+- `sw/spatzBenchmarks/online-softmax-merge/main.c` 的 full-reference probe 已从
+  expected-error 切换为 correctness gate；软件 reference 与 RTL-aligned
+  ExpLUT + reciprocal + Q16.32 fixed-point 路径一致。
+
+验证：
+
+```text
+verilator --binary --timing hw/ip/online_merge/src/online_merge_fp32_helpers.sv \
+  hw/ip/online_merge/src/online_merge_exp_approx.sv \
+  hw/ip/online_merge/src/online_merge_recip_approx.sv \
+  hw/ip/online_merge/test/online_merge_approx_tb.sv \
+  --top-module online_merge_approx_tb
+obj_dir/Vonline_merge_approx_tb
+```
+
+结果：`online_merge_approx_tb PASS`。
+
+```text
+make -C hw/system/spatz_cluster bin/spatz_cluster.vlt
+make -C hw/system/spatz_cluster sw.vlt
+cd hw/system/spatz_cluster/sw/build
+ctest -R online-softmax-merge -V
+```
+
+结果：`online-softmax-merge PASS`，1/1 CTest 通过，总耗时 1105.98 秒。
+
+关键 full mixed-scalar 数据：
+
+| N | D | CPU cycles | Engine cycles | Speedup | TCDM accessed | TCDM congested |
+|---:|---:|---:|---:|---:|---:|---:|
+| 1 | 1 | 2327 | 1207 | 1.93x | 327 | 0 |
+| 4 | 8 | 17490 | 1478 | 11.83x | 495 | 2 |
+| 8 | 16 | 56103 | 2343 | 23.94x | 985 | 4 |
+| 8 | 32 | 97554 | 3371 | 28.94x | 1583 | 9 |
+| 16 | 64 | 365620 | 9650 | 37.89x | 5229 | 27 |
+
+保留回归：
+
+```text
+online-softmax-merge stride-zero N=4 D=8 case=2 status=0x2
+online-softmax-merge invalid n-zero status=0x4
+online-softmax-merge invalid d-zero status=0x4
+online-softmax-merge invalid misaligned-address status=0x4
+online-softmax-merge invalid misaligned-stride status=0x4
+online-softmax-merge unsupported both-zero-l status=0x4
+online-softmax-merge full-ref-probe generic-mixed N=4 D=8 status=0x2 cpu=17072 engine=1465 tcdm_accessed=495 tcdm_congested=2 ref_l0=0x3f5e3b41 ref_o00=0xbe567a3e
+```
+
+备注：此处 CPU cycles 是 RTL-aligned fixed-point software reference，不是优化过的
+libm/向量化 CPU baseline。它用于 correctness gate 和硬件 path 相对同语义软件路径
+的 microbenchmark 对比。
+
+## Phase B5：误差、性能数据和图表
+
+状态：已完成固定近似配置的最小证据
+
+数据和图：
+
+- `data_process/attnres/data/online_softmax_full_mixed_bypass.csv`
+- `data_process/attnres/data/online_softmax_full_merge_numeric.csv`
+- `data_process/attnres/pic/paper_b_full_mixed_cycles.svg`
+- `data_process/attnres/pic/paper_b_full_mixed_speedup.svg`
+- `data_process/attnres/pic/paper_b_full_mixed_tcdm.svg`
+- `data_process/attnres/pic/paper_b_numeric_error.svg`
+
+数值模型命令：
+
+```text
+python3 data_process/attnres/code/full_merge_numeric_model.py
+```
+
+固定配置：
+
+- `exp`：`[-8, 0]` 256 段 Q1.23 LUT 线性插值。
+- reciprocal：`[1, 2]` mantissa 256 段 Q1.23 LUT 线性插值，无 Newton refinement。
+- 当前未做参数 sweep；原因是本阶段优先闭合 RTL datapath、benchmark gate 和
+  evidence trail，且固定 256 段配置已满足 `<=1e-3` 与 `<=1e-4` 误差目标。
+
+误差摘要：
+
+```text
+generic-mixed N=4,D=8:   max_abs=3.576278687e-07, max_rel=3.576278687e-07, mean_abs=8.158718369e-08
+generic-mixed N=8,D=16:  max_abs=2.503395081e-06, max_rel=2.461275348e-06, mean_abs=4.456905160e-07
+generic-mixed N=8,D=32:  max_abs=4.410743713e-06, max_rel=2.534528071e-06, mean_abs=8.407656393e-07
+generic-mixed N=16,D=64: max_abs=9.775161743e-06, max_rel=2.580572675e-06, mean_abs=2.174088011e-06
+delta-sweep N=16,D=64:   max_abs=6.079673767e-06, max_rel=3.325012490e-06, mean_abs=8.102706488e-07
+```
+
+绘图：
+
+- `data_process/attnres/code/plot_attnres_results.py` 已扩展 Paper B PNG 绘图入口。
+- 当前环境缺少 `matplotlib` 且 pip 安装超时，因此新增 stdlib-only
+  `data_process/attnres/code/plot_paper_b_svg.py` 生成 SVG 版本：
+
+  ```text
+  python3 data_process/attnres/code/plot_paper_b_svg.py
+  ```
+
+## Phase B6：attention-like SMU merge chain
+
+状态：已完成最小硬件 path fallback
+
+实现：
+
+- 在 `online-softmax-merge` benchmark 内新增 attention-like synthetic merge chain。
+- 配置：`rows=8`、`blocks=4`、`D=32`。
+- 每个 block 构造 tile `m/l/O`，并真实通过 `MERGE_*` MMIO 调用 SMU；每一步输出
+  作为下一步 old state。
+- 这是完整 SMU microbenchmark + numeric/traffic analysis fallback，不声称端到端
+  attention speedup。
+
+数据：
+
+```text
+online-softmax-merge attention-like rows=8 blocks=4 D=32 cpu=388826 engine=13432 tcdm_accessed=6188 tcdm_congested=32 state_bytes=4352 saw_busy=1
+```
+
+文件：
+
+- `data_process/attnres/data/online_softmax_attention_like_smu.csv`
+- `data_process/attnres/pic/paper_b_attention_like_smu.svg`
+
+结论边界：
+
+- 该 workload 证明多 row、多 block、多 hidden dimension 的 `m/l/O` merge 链可以
+  通过真实 SMU hardware path 执行并通过 RTL-aligned correctness gate。
+- 它不是完整 attention kernel，也不包含 QK、PV、DRAM/runtime 调度，因此只能作为
+  attention-like state merge evidence。
