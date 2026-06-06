@@ -35,6 +35,8 @@ module online_merge_update_engine #(
   input  tcdm_rsp_t            tcdm_rsp_i
 );
 
+  import online_merge_fp32_helpers::*;
+
   localparam int unsigned ByteWidth = DataWidth / 8;
   typedef logic [AddrWidth-1:0] addr_t;
   typedef logic [DataWidth-1:0] data_t;
@@ -44,6 +46,7 @@ module online_merge_update_engine #(
     IDLE,
     LOAD_SCALAR,
     COMPUTE_SCALAR,
+    COMPUTE_WEIGHT,
     STORE_SCALAR,
     UPDATE_VECTOR,
     DONE,
@@ -76,6 +79,50 @@ module online_merge_update_engine #(
   logic [1:0] vector_idx_q;
   logic [31:0] m_old_q, l_old_q, m_tile_q, l_tile_q;
   logic [31:0] m_new_q, l_new_q, o_old_q, o_tile_q, o_new_q;
+  uq16_16_t old_weight_q, tile_weight_q;
+
+  q1_23_t old_exp_q1_23, tile_exp_q1_23, recip_q1_23;
+  logic old_exp_valid, tile_exp_valid, recip_valid;
+  logic old_exp_saturated, tile_exp_saturated;
+  logic old_exp_unsupported, tile_exp_unsupported, recip_unsupported;
+  logic signed [9:0] recip_scale_exp;
+  fp32_bits_t old_exp_arg, tile_exp_arg, recip_input_bits, recip_input_q;
+  uq16_16_t old_scaled_l_q, tile_scaled_l_q;
+  fp32_bits_t m_new_d, l_new_d;
+  uq16_16_t old_scaled_l_d, tile_scaled_l_d;
+  uq16_16_t old_weight_d, tile_weight_d;
+  fp32_bits_t m_new_comb;
+
+  assign m_new_comb = fp32_lt(m_old_q, m_tile_q) ? m_tile_q : m_old_q;
+  assign old_exp_arg = sq16_16_to_fp32(
+      fp32_to_sq16_16(m_old_q) - fp32_to_sq16_16(m_new_comb));
+  assign tile_exp_arg = sq16_16_to_fp32(
+      fp32_to_sq16_16(m_tile_q) - fp32_to_sq16_16(m_new_comb));
+  assign recip_input_bits = recip_input_q;
+
+  online_merge_exp_approx i_old_exp_approx (
+    .x_i             (old_exp_arg),
+    .exp_q1_23_o    (old_exp_q1_23),
+    .valid_o         (old_exp_valid),
+    .saturated_o     (old_exp_saturated),
+    .unsupported_o   (old_exp_unsupported)
+  );
+
+  online_merge_exp_approx i_tile_exp_approx (
+    .x_i             (tile_exp_arg),
+    .exp_q1_23_o    (tile_exp_q1_23),
+    .valid_o         (tile_exp_valid),
+    .saturated_o     (tile_exp_saturated),
+    .unsupported_o   (tile_exp_unsupported)
+  );
+
+  online_merge_recip_approx i_recip_approx (
+    .x_i             (recip_input_bits),
+    .recip_q1_23_o   (recip_q1_23),
+    .scale_exp_o     (recip_scale_exp),
+    .valid_o         (recip_valid),
+    .unsupported_o   (recip_unsupported)
+  );
 
   function automatic logic [31:0] pick_fp32(input data_t data, input addr_t addr);
     pick_fp32 = addr[2] ? data[63:32] : data[31:0];
@@ -143,38 +190,20 @@ module online_merge_update_engine #(
     end
   endfunction
 
-  function automatic logic [31:0] fp32_half(input logic [31:0] value);
-    fp32_half = value;
-    if (value[30:23] != 8'd0) begin
-      fp32_half[30:23] = value[30:23] - 8'd1;
-    end
-  endfunction
-
-  function automatic logic [31:0] fp32_add_pow2_aligned(
-    input logic [31:0] lhs,
-    input logic [31:0] rhs
-  );
-    logic [24:0] sum;
-    begin
-      sum = {1'b1, lhs[22:0]} + {1'b1, rhs[22:0]};
-      fp32_add_pow2_aligned = lhs;
-      if (sum[24]) begin
-        fp32_add_pow2_aligned[30:23] = lhs[30:23] + 8'd1;
-        fp32_add_pow2_aligned[22:0] = sum[23:1];
-      end else begin
-        fp32_add_pow2_aligned[22:0] = sum[22:0];
-      end
-    end
-  endfunction
-
   function automatic logic supported_scalar_merge(
     input logic [31:0] m_old_bits,
     input logic [31:0] l_old_bits,
     input logic [31:0] m_tile_bits,
     input logic [31:0] l_tile_bits
   );
-    supported_scalar_merge = (l_old_bits == 32'd0) || (l_tile_bits == 32'd0) ||
-        ((m_old_bits == m_tile_bits) && (l_old_bits == l_tile_bits));
+    begin
+      supported_scalar_merge =
+          fp32_is_finite_normal_or_zero(m_old_bits) &&
+          fp32_is_finite_normal_or_zero(m_tile_bits) &&
+          fp32_is_nonnegative_finite_normal_or_zero(l_old_bits) &&
+          fp32_is_nonnegative_finite_normal_or_zero(l_tile_bits) &&
+          !((l_old_bits == 32'd0) && (l_tile_bits == 32'd0));
+    end
   endfunction
 
   function automatic void compute_scalar_merge(
@@ -183,42 +212,50 @@ module online_merge_update_engine #(
     input  logic [31:0] m_tile_bits,
     input  logic [31:0] l_tile_bits,
     output logic [31:0] m_new_bits,
-    output logic [31:0] l_new_bits
+    output logic [31:0] l_new_bits,
+    output uq16_16_t    old_scaled_l,
+    output uq16_16_t    tile_scaled_l
+  );
+    uq16_16_t old_l;
+    uq16_16_t tile_l;
+    uq16_16_t l_new_fixed;
+    begin
+      m_new_bits = fp32_lt(m_old_bits, m_tile_bits) ? m_tile_bits : m_old_bits;
+      old_l = fp32_abs_to_uq16_16(l_old_bits);
+      tile_l = fp32_abs_to_uq16_16(l_tile_bits);
+      old_scaled_l = q1_23_mul_uq16_16(old_l, old_exp_q1_23);
+      tile_scaled_l = q1_23_mul_uq16_16(tile_l, tile_exp_q1_23);
+      l_new_fixed = old_scaled_l + tile_scaled_l;
+      l_new_bits = uq16_16_to_fp32(l_new_fixed);
+    end
+  endfunction
+
+  function automatic void compute_weights(
+    input  uq16_16_t old_scaled_l,
+    input  uq16_16_t tile_scaled_l,
+    output uq16_16_t old_weight,
+    output uq16_16_t tile_weight
   );
     begin
-      if (l_tile_bits == 32'd0) begin
-        m_new_bits = m_old_bits;
-        l_new_bits = l_old_bits;
-      end else if (l_old_bits == 32'd0) begin
-        m_new_bits = m_tile_bits;
-        l_new_bits = l_tile_bits;
-      end else begin
-        m_new_bits = fp32_lt(m_old_bits, m_tile_bits) ? m_tile_bits : m_old_bits;
-        l_new_bits = fp32_add_pow2_aligned(l_old_bits, l_tile_bits);
-      end
+      old_weight = q1_23_scaled_mul_uq16_16(old_scaled_l, recip_q1_23, recip_scale_exp);
+      tile_weight = q1_23_scaled_mul_uq16_16(tile_scaled_l, recip_q1_23, recip_scale_exp);
     end
   endfunction
 
   function automatic logic [31:0] compute_vector_merge(
     input logic [31:0] o_old_bits,
     input logic [31:0] o_tile_bits,
-    input logic [31:0] m_old_bits,
-    input logic [31:0] l_old_bits,
-    input logic [31:0] m_tile_bits,
-    input logic [31:0] l_tile_bits,
-    input logic [31:0] m_new_bits,
-    input logic [31:0] l_new_bits
+    input uq16_16_t old_weight,
+    input uq16_16_t tile_weight
   );
-    logic unused;
+    sq16_16_t old_term;
+    sq16_16_t tile_term;
+    sq16_16_t sum;
     begin
-      unused = ^{m_old_bits, m_tile_bits, m_new_bits, l_new_bits};
-      if (l_tile_bits == 32'd0) begin
-        compute_vector_merge = o_old_bits;
-      end else if (l_old_bits == 32'd0) begin
-        compute_vector_merge = o_tile_bits;
-      end else begin
-        compute_vector_merge = fp32_add_pow2_aligned(fp32_half(o_old_bits), fp32_half(o_tile_bits));
-      end
+      old_term = sq16_16_mul_weight(fp32_to_sq16_16(o_old_bits), old_weight);
+      tile_term = sq16_16_mul_weight(fp32_to_sq16_16(o_tile_bits), tile_weight);
+      sum = old_term + tile_term;
+      compute_vector_merge = sq16_16_to_fp32(sum);
     end
   endfunction
 
@@ -239,6 +276,13 @@ module online_merge_update_engine #(
       default: scalar_read_op = RD_L_TILE;
     endcase
   endfunction
+
+  always_comb begin
+    compute_scalar_merge(m_old_q, l_old_q, m_tile_q, l_tile_q, m_new_d,
+                         l_new_d, old_scaled_l_d, tile_scaled_l_d);
+    compute_weights(old_scaled_l_q, tile_scaled_l_q, old_weight_d,
+                    tile_weight_d);
+  end
 
   always_comb begin
     tcdm_req_o = '0;
@@ -278,9 +322,14 @@ module online_merge_update_engine #(
       l_tile_q <= '0;
       m_new_q <= '0;
       l_new_q <= '0;
+      recip_input_q <= '0;
       o_old_q <= '0;
       o_tile_q <= '0;
       o_new_q <= '0;
+      old_weight_q <= '0;
+      tile_weight_q <= '0;
+      old_scaled_l_q <= '0;
+      tile_scaled_l_q <= '0;
     end else begin
       if (clear_done_i) begin
         done_q <= 1'b0;
@@ -348,7 +397,28 @@ module online_merge_update_engine #(
 
         COMPUTE_SCALAR: begin
           if (supported_scalar_merge(m_old_q, l_old_q, m_tile_q, l_tile_q)) begin
-            compute_scalar_merge(m_old_q, l_old_q, m_tile_q, l_tile_q, m_new_q, l_new_q);
+            if (old_exp_valid && tile_exp_valid && !old_exp_unsupported &&
+                !tile_exp_unsupported) begin
+              m_new_q <= m_new_d;
+              l_new_q <= l_new_d;
+              recip_input_q <= l_new_d;
+              old_scaled_l_q <= old_scaled_l_d;
+              tile_scaled_l_q <= tile_scaled_l_d;
+              state_q <= COMPUTE_WEIGHT;
+            end else begin
+              error_q <= 1'b1;
+              state_q <= ERROR;
+            end
+          end else begin
+            error_q <= 1'b1;
+            state_q <= ERROR;
+          end
+        end
+
+        COMPUTE_WEIGHT: begin
+          if (recip_valid && !recip_unsupported) begin
+            old_weight_q <= old_weight_d;
+            tile_weight_q <= tile_weight_d;
             store_idx_q <= '0;
             state_q <= STORE_SCALAR;
           end else begin
@@ -405,13 +475,13 @@ module online_merge_update_engine #(
                 op_q <= RD_O_TILE;
               end
               default: begin
-                o_new_q <= compute_vector_merge(o_old_q, o_tile_q, m_old_q, l_old_q,
-                                                m_tile_q, l_tile_q, m_new_q, l_new_q);
+                o_new_q <= compute_vector_merge(o_old_q, o_tile_q, old_weight_q,
+                                                tile_weight_q);
                 req_valid_q <= 1'b1;
                 req_write_q <= 1'b1;
                 req_addr_q <= vector_addr(dst_o_i, row_q, elem_q, stride_i, d_i);
-                req_wdata_q <= pack_fp32(compute_vector_merge(o_old_q, o_tile_q, m_old_q, l_old_q,
-                                                              m_tile_q, l_tile_q, m_new_q, l_new_q),
+                req_wdata_q <= pack_fp32(compute_vector_merge(o_old_q, o_tile_q, old_weight_q,
+                                                              tile_weight_q),
                                          vector_addr(dst_o_i, row_q, elem_q, stride_i, d_i));
                 req_strb_q <= fp32_strb(vector_addr(dst_o_i, row_q, elem_q, stride_i, d_i));
                 op_q <= WR_O_OUT;

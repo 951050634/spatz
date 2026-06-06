@@ -86,6 +86,7 @@ module online_merge_recip_approx (
   logic [14:0] frac;
   logic [23:0] lut_lo, lut_hi;
   logic [24:0] lut_delta;
+  logic [39:0] interp_product;
   logic [23:0] interp_step;
 
   always_comb begin
@@ -94,7 +95,8 @@ module online_merge_recip_approx (
     lut_lo = RecipLut[idx];
     lut_hi = (idx == 9'd256) ? RecipLut[256] : RecipLut[idx + 9'd1];
     lut_delta = {1'b0, lut_lo} - {1'b0, lut_hi};
-    interp_step = 24'((lut_delta * frac) >> 15);
+    interp_product = {15'd0, lut_delta} * {25'd0, frac};
+    interp_step = 24'(interp_product >> 15);
     recip_q1_23_o = Q1_23_ZERO;
     scale_exp_o = '0;
     valid_o = 1'b0;

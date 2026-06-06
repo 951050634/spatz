@@ -85,7 +85,7 @@ module online_merge_approx_tb;
     expect_exp(32'h7fc0_0000, 24'h00_0000, 1'b0, 1'b0, 1'b1);
 
     expect_recip(32'h3f80_0000, 24'h80_0000, 10'sd0, 1'b1, 1'b0);
-    expect_recip(32'h3f5e_3b41, 24'h49_ba9c, 10'sd1, 1'b1, 1'b0);
+    expect_recip(32'h3f5e_3b41, 24'h49_b99c, 10'sd1, 1'b1, 1'b0);
     expect_recip(32'h0000_0000, 24'h00_0000, 10'sd0, 1'b0, 1'b1);
     expect_recip(32'h7f80_0000, 24'h00_0000, 10'sd0, 1'b0, 1'b1);
 

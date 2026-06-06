@@ -90,6 +90,7 @@ module online_merge_exp_approx (
   logic [7:0]  frac;
   logic [23:0] lut_lo, lut_hi;
   logic [24:0] lut_delta;
+  logic [32:0] interp_product;
   logic [23:0] interp_step;
 
   always_comb begin
@@ -100,7 +101,8 @@ module online_merge_exp_approx (
     lut_lo = ExpLut[idx];
     lut_hi = (idx == 9'd256) ? ExpLut[256] : ExpLut[idx + 9'd1];
     lut_delta = {1'b0, lut_lo} - {1'b0, lut_hi};
-    interp_step = 24'((lut_delta * frac) >> 8);
+    interp_product = {8'd0, lut_delta} * {25'd0, frac};
+    interp_step = 24'(interp_product >> 8);
     exp_q1_23_o = Q1_23_ZERO;
     valid_o = 1'b0;
     saturated_o = 1'b0;
