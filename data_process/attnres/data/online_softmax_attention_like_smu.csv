@@ -1,0 +1,2 @@
+rows,blocks,D,workload_elems,cpu_cycles,engine_cycles,tcdm_accessed,tcdm_congested,state_bytes,speedup
+8,4,32,1024,388826,13432,6188,32,4352,28.954290

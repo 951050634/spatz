@@ -66,12 +66,73 @@ def load_bypass_rows(path: Path):
     return rows
 
 
+def load_full_mixed_rows(path: Path):
+    rows = []
+    with path.open(newline="", encoding="utf-8") as f:
+        for row in csv.DictReader(f):
+            rows.append(
+                {
+                    "N": int(row["N"]),
+                    "D": int(row["D"]),
+                    "workload_elems": int(row["workload_elems"]),
+                    "cpu_cycles": int(row["cpu_cycles"]),
+                    "engine_cycles": int(row["engine_cycles"]),
+                    "tcdm_accessed": int(row["tcdm_accessed"]),
+                    "tcdm_congested": int(row["tcdm_congested"]),
+                    "speedup": float(row["speedup"]),
+                }
+            )
+    return rows
+
+
+def load_attention_like_rows(path: Path):
+    rows = []
+    with path.open(newline="", encoding="utf-8") as f:
+        for row in csv.DictReader(f):
+            rows.append(
+                {
+                    "rows": int(row["rows"]),
+                    "blocks": int(row["blocks"]),
+                    "D": int(row["D"]),
+                    "workload_elems": int(row["workload_elems"]),
+                    "cpu_cycles": int(row["cpu_cycles"]),
+                    "engine_cycles": int(row["engine_cycles"]),
+                    "tcdm_accessed": int(row["tcdm_accessed"]),
+                    "tcdm_congested": int(row["tcdm_congested"]),
+                    "state_bytes": int(row["state_bytes"]),
+                    "speedup": float(row["speedup"]),
+                }
+            )
+    return rows
+
+
+def load_numeric_rows(path: Path):
+    rows = []
+    with path.open(newline="", encoding="utf-8") as f:
+        for row in csv.DictReader(f):
+            rows.append(
+                {
+                    "case_name": row["case_name"],
+                    "N": int(row["N"]),
+                    "D": int(row["D"]),
+                    "max_abs_err": float(row["max_abs_err"]),
+                    "guarded_max_rel_err": float(row["guarded_max_rel_err"]),
+                    "mean_abs_err": float(row["mean_abs_err"]),
+                }
+            )
+    return rows
+
+
 def software_case_label(row):
     return f"L{row['L']} D{row['D']} H{row['hist_blocks']}"
 
 
 def bypass_case_label(row):
     return f"N{row['N']} D{row['D']} c{row['case_id']}"
+
+
+def full_mixed_case_label(row):
+    return f"N{row['N']} D{row['D']}"
 
 
 def plot_software_traffic(rows, out_path: Path):
@@ -358,6 +419,149 @@ def plot_bypass_break_even(rows, out_path: Path):
     plt.close()
 
 
+def plot_full_mixed_cycles(rows, out_path: Path):
+    labels = [full_mixed_case_label(row) for row in rows]
+    x = list(range(len(labels)))
+    width = 0.36
+
+    plt.figure(figsize=(10.8, 5.6))
+    plt.bar(
+        [i - width / 2 for i in x],
+        [row["cpu_cycles"] for row in rows],
+        width=width,
+        label="RTL-aligned software reference",
+        color=COLORS["cpu"],
+    )
+    plt.bar(
+        [i + width / 2 for i in x],
+        [row["engine_cycles"] for row in rows],
+        width=width,
+        label="SMU engine",
+        color=COLORS["engine"],
+    )
+    plt.yscale("log")
+    plt.title("Paper B Full Mixed-Scalar Merge: CPU vs Engine Cycles")
+    plt.xlabel("Workload")
+    plt.ylabel("Cycles (log scale)")
+    plt.xticks(x, labels, rotation=30, ha="right")
+    plt.grid(axis="y", which="both", alpha=0.25)
+    plt.legend(fontsize=9)
+    plt.tight_layout()
+    plt.savefig(out_path, dpi=180)
+    plt.close()
+
+
+def plot_full_mixed_speedup(rows, out_path: Path):
+    x = [row["workload_elems"] for row in rows]
+    speedups = [row["speedup"] for row in rows]
+    labels = [full_mixed_case_label(row) for row in rows]
+
+    plt.figure(figsize=(9.2, 5.4))
+    plt.plot(x, speedups, marker="o", linewidth=2.0, color=COLORS["speedup"])
+    plt.axhline(1.0, color="#444444", linestyle="--", linewidth=1.2, label="break-even")
+    for xpos, speedup, label in zip(x, speedups, labels):
+        plt.text(xpos, speedup + 0.8, f"{label}\n{speedup:.1f}x", ha="center", fontsize=8)
+    plt.title("Paper B Full Mixed-Scalar Merge: Speedup vs Workload Size")
+    plt.xlabel("Vector elements processed (N x D)")
+    plt.ylabel("Speedup = software cycles / engine cycles")
+    plt.grid(alpha=0.25)
+    plt.legend(fontsize=9)
+    plt.tight_layout()
+    plt.savefig(out_path, dpi=180)
+    plt.close()
+
+
+def plot_full_mixed_tcdm(rows, out_path: Path):
+    labels = [full_mixed_case_label(row) for row in rows]
+    x = list(range(len(labels)))
+    width = 0.36
+
+    plt.figure(figsize=(10.8, 5.5))
+    plt.bar(
+        [i - width / 2 for i in x],
+        [row["tcdm_accessed"] for row in rows],
+        width=width,
+        label="TCDM accessed",
+        color=COLORS["accessed"],
+    )
+    plt.bar(
+        [i + width / 2 for i in x],
+        [row["tcdm_congested"] for row in rows],
+        width=width,
+        label="TCDM congested",
+        color=COLORS["congested"],
+    )
+    plt.title("Paper B Full Mixed-Scalar Merge: TCDM Counters")
+    plt.xlabel("Workload")
+    plt.ylabel("Counter value")
+    plt.xticks(x, labels, rotation=30, ha="right")
+    plt.grid(axis="y", alpha=0.25)
+    plt.legend(fontsize=9)
+    plt.tight_layout()
+    plt.savefig(out_path, dpi=180)
+    plt.close()
+
+
+def plot_numeric_error(rows, out_path: Path):
+    labels = [f"{row['case_name']}\nN{row['N']} D{row['D']}" for row in rows]
+    x = list(range(len(labels)))
+    width = 0.25
+
+    plt.figure(figsize=(11.4, 5.7))
+    for offset, key, label, color in (
+        (-width, "max_abs_err", "max absolute", COLORS["engine"]),
+        (0, "guarded_max_rel_err", "guarded max relative", COLORS["speedup"]),
+        (width, "mean_abs_err", "mean absolute", COLORS["accessed"]),
+    ):
+        plt.bar([i + offset for i in x], [row[key] for row in rows], width=width, label=label, color=color)
+    plt.axhline(1.0e-3, color="#444444", linestyle="--", linewidth=1.2, label="1e-3 target")
+    plt.axhline(1.0e-4, color="#777777", linestyle=":", linewidth=1.2, label="1e-4 target")
+    plt.yscale("log")
+    plt.title("Paper B Full Merge: Numeric Approximation Error")
+    plt.xlabel("Numeric model case")
+    plt.ylabel("Error (log scale)")
+    plt.xticks(x, labels, rotation=30, ha="right")
+    plt.grid(axis="y", which="both", alpha=0.25)
+    plt.legend(fontsize=9, ncol=2)
+    plt.tight_layout()
+    plt.savefig(out_path, dpi=180)
+    plt.close()
+
+
+def plot_attention_like_summary(rows, out_path: Path):
+    labels = [f"rows={row['rows']}\nblocks={row['blocks']} D={row['D']}" for row in rows]
+    x = list(range(len(labels)))
+    width = 0.35
+
+    plt.figure(figsize=(8.8, 5.2))
+    plt.bar(
+        [i - width / 2 for i in x],
+        [row["cpu_cycles"] for row in rows],
+        width=width,
+        label="RTL-aligned software reference",
+        color=COLORS["cpu"],
+    )
+    plt.bar(
+        [i + width / 2 for i in x],
+        [row["engine_cycles"] for row in rows],
+        width=width,
+        label="SMU chain",
+        color=COLORS["engine"],
+    )
+    for i, row in enumerate(rows):
+        plt.text(i, row["cpu_cycles"] * 1.04, f"{row['speedup']:.1f}x", ha="center", fontsize=9)
+    plt.yscale("log")
+    plt.title("Paper B Attention-Like SMU Merge Chain")
+    plt.xlabel("Synthetic workload")
+    plt.ylabel("Cycles (log scale)")
+    plt.xticks(x, labels)
+    plt.grid(axis="y", which="both", alpha=0.25)
+    plt.legend(fontsize=9)
+    plt.tight_layout()
+    plt.savefig(out_path, dpi=180)
+    plt.close()
+
+
 def draw_box(ax, xy, width, height, text, facecolor):
     box = Rectangle(
         xy,
@@ -479,6 +683,9 @@ def main():
 
     software_rows = load_software_rows(data_dir / "attnres_software_baselines.csv")
     bypass_rows = load_bypass_rows(data_dir / "online_softmax_merge_bypass.csv")
+    full_mixed_rows = load_full_mixed_rows(data_dir / "online_softmax_full_mixed_bypass.csv")
+    attention_like_rows = load_attention_like_rows(data_dir / "online_softmax_attention_like_smu.csv")
+    numeric_rows = load_numeric_rows(data_dir / "online_softmax_full_merge_numeric.csv")
 
     plot_software_traffic(software_rows, out_dir / "attnres_software_traffic.png")
     plot_software_error(software_rows, out_dir / "attnres_software_error.png")
@@ -495,6 +702,11 @@ def main():
     )
     plot_engine_flow(out_dir / "online_softmax_merge_engine_flow.png")
     plot_cluster_integration(out_dir / "online_softmax_merge_cluster_integration.png")
+    plot_full_mixed_cycles(full_mixed_rows, out_dir / "paper_b_full_mixed_cycles.png")
+    plot_full_mixed_speedup(full_mixed_rows, out_dir / "paper_b_full_mixed_speedup.png")
+    plot_full_mixed_tcdm(full_mixed_rows, out_dir / "paper_b_full_mixed_tcdm.png")
+    plot_numeric_error(numeric_rows, out_dir / "paper_b_numeric_error.png")
+    plot_attention_like_summary(attention_like_rows, out_dir / "paper_b_attention_like_smu.png")
 
     print(f"Generated AttnRes plots in: {out_dir}")
 
