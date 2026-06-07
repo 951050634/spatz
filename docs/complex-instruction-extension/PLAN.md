@@ -133,10 +133,14 @@ docs/complex-instruction-extension/GIT_NOTES.md
 [cfma] Add complex register layout reference checks
 [cfma] Add vfcmacc opcode pattern
 [cfma] Decode vfcmacc in Snitch and Spatz
-[cfma] Add vfcmacc micro-op execution
-[cfma] Cover vfcmacc ISA behavior
+[cfma] Add vfcmacc e32 micro-op execution
+[cfma] Add vfcmacc e64 and e16 behavior
+[cfma] Cover vfcmacc mask and tail behavior
+[cfma] Cover vfcmacc numerical corner cases
+[cfma] Complete vfcmacc ISA behavior
 [cfma] Add vfcmacc benchmark path
 [cfma] Add vfcmacc mnemonic support
+[cfma] Record complex datapath v2 decision
 ```
 
 每次提交前至少运行：
@@ -161,6 +165,43 @@ make -C hw/system/spatz_cluster sw.vlt
 涉及测试新增或行为变化的 node 还必须从 `hw/system/spatz_cluster/sw/build`
 运行目标 CTest。
 
+### 2.4 Goal 一次性执行默认决策
+
+后续如果使用 goal 功能连续执行本计划，以下决策为默认实现要求。执行 agent
+不得在这些点重新二选一，除非遇到无法继续的硬 blocker，并把 blocker 记录到
+`PHASE_RESULTS.md` 与 `GIT_NOTES.md`。
+
+- Opcode 生成唯一默认入口是：
+
+  ```sh
+  make update_opcodes
+  ```
+
+  该命令负责按 pinned version 拉取 `sw/toolchain/riscv-opcodes` 并重新生成
+  `hw/ip/snitch/src/riscv_instr.sv`。不得用 `make all` 作为 Node 2 默认路径，
+  因为它会触发完整 toolchain 构建。若 `make update_opcodes` 因网络或上游
+  源缺失失败，Node 2 标为 `阻塞`，不得切换到手工 patch binary 或提交仅手改
+  generated file 的结果。
+
+- v1 scoreboard 采用 conservative serialization fence，不扩展
+  `spatz_req_t` 去显式携带六个 real/imag register groups。默认实现方式是：
+  `vfcmacc.vv` 只在所有既有非 `CON` offload 指令完成后发射；一旦
+  `VFCMADD` 发射，在该指令完成响应前阻止新的 VFU/VLSU/VSLDU 指令发射。该
+  fence 是 v1 对隐式 imag group RAW/WAR/WAW hazard 的架构保护。
+
+- v1 VFU 复用现有 VRF/FPU 多拍通路，不新增 VRF 物理端口，不新增专用
+  complex-FMA datapath。若 kill/flush/debug 能在 partial writeback 后暴露
+  中间架构状态，Node 4 必须阻塞；不得用“当前测试没暴露”替代精准状态说明。
+
+- 软件 bring-up 默认使用固定寄存器 inline assembly wrapper 与 `.insn` 或固定
+  编码宏。正式 `vfcmacc.vv` mnemonic 支持只在 Node 7 处理，不阻塞 Node 4-6
+  的 RTL/benchmark 验收。
+
+- Benchmark 默认在 `dp-cdotp` 上新增 old/new 两套 CTest 目标，使用
+  `SPATZ_USE_VFCMACC=0/1` 选择路径。默认验收数据集为当前已注册或本 node
+  显式新增注册的 `M128` 与 `M4096`；`M1024/M2048` 只有在 CMake 中显式注册后
+  才作为 Node 6 验收项。
+
 ## 3. ISA 与数值语义
 
 ### 3.1 编码策略
@@ -171,16 +212,18 @@ make -C hw/system/spatz_cluster sw.vlt
 `vm`、`vtype`、`vd/vs1/vs2` 字段和 VFU 调度逻辑。
 
 当前分支只追踪了 toolchain 版本文件，未展开 `sw/toolchain/riscv-opcodes`
-源码目录。正式选定 encoding 前必须先确认实际 opcode 源路径：
+源码目录。Node 2 必须通过 `make update_opcodes` 展开 pinned opcode source 并
+重新生成 `hw/ip/snitch/src/riscv_instr.sv`。正式选定 encoding 前必须先确认实际
+opcode 源路径：
 
 ```sh
 find sw \( -path '*riscv-opcodes*' -o -name 'opcodes-rvv' \) -print
 rg -n "VFWDOTP|vfwdotp|VFMACC_VV" hw/ip/snitch/src/riscv_instr.sv hw/ip/spatz/src
 ```
 
-如果 `riscv-opcodes` 源码尚未展开，先按仓库流程执行 `make init` 或
-`make all`。长期方案必须更新 opcode 源并重新生成 `hw/ip/snitch/src/riscv_instr.sv`；
-不得只手改生成文件作为最终交付。
+如果 `riscv-opcodes` 源码尚未展开，执行 `make update_opcodes`。长期方案必须
+更新 opcode 源并重新生成 `hw/ip/snitch/src/riscv_instr.sv`；不得只手改生成文件
+作为最终交付。
 
 encoding 决策必须记录：
 
@@ -397,23 +440,22 @@ hw/ip/spatz/src/spatz_vrf.sv
 hw/ip/spatz/src/spatz.sv
 ```
 
-### 4.5 Scoreboard 与相关冒险
+### 4.5 Serialization Fence 与相关冒险
 
-v1 scoreboard 必须覆盖六个隐式 register groups：
+`vfcmacc.vv` 在架构上读写六个隐式 register groups：
 
 ```text
 read:  vs1.real, vs1.imag, vs2.real, vs2.imag, vd.real, vd.imag
 write: vd.real, vd.imag
 ```
 
-如果现有 request 结构只能描述 `vs1`、`vs2` 和 `vd` 三个 group，则 v1 有两种
-可接受方案：
+现有 scoreboard request 结构只描述 `vs1`、`vs2` 和 `vd` 三个 group。v1 不扩展
+scoreboard/request，而是使用 2.4 中定义的 conservative serialization fence：
+发射 `vfcmacc.vv` 前等待旧非 `CON` offload 完成，`VFCMADD` 完成前阻止新的
+VFU/VLSU/VSLDU 指令发射。
 
-1. 扩展 scoreboard/request，显式描述 imag groups。
-2. 在 `vfcmacc.vv` 发射前通过 conservative stall/illegal policy 保证没有
-   未追踪的 imag group hazard。
-
-不得只追踪 real group 而忽略 imag group。该问题必须在 Node 3 的测试中覆盖：
+不得只依赖 real group scoreboard 而移除 serialization fence。该问题必须在
+Node 3/5d 的测试中覆盖：
 
 - back-to-back `vfcmacc.vv` 写同一 accumulator pair。
 - `vfcmacc.vv` 后紧跟读取 `vd.imag` 的普通 vector 指令。
@@ -687,8 +729,9 @@ git commit -m "[cfma] Add complex register layout reference checks"
 - 让 `riscv_instr::VFCMACC_VV` 成为可引用的指令 pattern。
 - Snitch 能在 RVV/RVF 可用时 offload 该指令。
 
-建议修改文件。Node 2 开始前必须先确认 pinned `riscv-opcodes` 源码采用哪种
-布局，并只修改实际存在的那个源文件：
+建议修改文件。Node 2 的第一步固定运行 `make update_opcodes`。该命令会按
+`sw/toolchain/riscv-opcodes.version` 展开 pinned opcode source；运行成功后确认
+实际采用哪种源码布局，并只修改实际存在的那个源文件：
 
 ```text
 sw/toolchain/riscv-opcodes/opcodes-rvv
@@ -700,15 +743,18 @@ hw/ip/spatz/src/spatz_fpu_sequencer.sv
 
 流程：
 
-- 若 opcode source 不存在，先按仓库初始化流程展开 pinned toolchain source。
+- 若 opcode source 不存在，运行 `make update_opcodes` 展开 pinned source。
+- 若 `make update_opcodes` 因网络、权限或上游仓库失败而无法展开 source，停止
+  Node 2，记录为 `阻塞`。
 - 修改 opcode source。
-- 运行仓库标准 opcode 生成命令。
+- 再次运行 `make update_opcodes` 重新生成 `hw/ip/snitch/src/riscv_instr.sv`。
 - 在 Snitch decode 中加入 `VFCMACC_VV`。
 - 加入 compile-only inline assembly smoke test，先不要求执行。
 
 验收标准：
 
 - `riscv_instr.sv` 包含 `VFCMACC_VV`。
+- `VFCMACC_VV` 来自 opcode source 重新生成，不是只手改 generated file。
 - Snitch decode 不请求 integer/scalar FP operands。
 - 禁用 RVV/RVF 时该指令 illegal。
 - 现有 `VFWDOTP` decode 不变。
@@ -736,6 +782,8 @@ git commit -m "[cfma] Add vfcmacc opcode pattern"
 - 新增内部 op `VFCMADD`。
 - `vfcmacc.vv` 解码为合法 Spatz VFU request。
 - 非法 layout 不进入执行。
+- 为 `VFCMADD` 建立 conservative serialization fence，不扩展多 imag group
+  scoreboard request。
 
 建议修改文件：
 
@@ -754,6 +802,8 @@ sw/riscvTests/isa/rv64uv/vfcmacc_illegal.c
 - `base + 2*LMUL - 1 >= 32` illegal。
 - v1 policy 下 `LMUL=m8` illegal。
 - `vd` pair overlap source pair illegal。
+- `VFCMADD` 发射前等待旧 VFU/VLSU/VSLDU 指令完成；`VFCMADD` 完成前阻止新的
+  VFU/VLSU/VSLDU 指令发射。
 - 现有 vector floating-point decode 无回归。
 
 验证：
@@ -814,30 +864,148 @@ git add hw/ip/spatz/src sw/riscvTests docs/complex-instruction-extension
 git commit -m "[cfma] Add vfcmacc e32 micro-op execution"
 ```
 
-### Node 5：完整 v1 功能闭环
+### Node 5a：e64/e16 Format 支持
 
 目标：
 
-- 补齐 e64、e16、mask、tail、zero sign、NaN/Inf、scoreboard hazard。
-- 完成 v1 ISA 行为验收。
+- 在 v1a e32 基础上补齐 e64 和 e16。
+- 保持每种 SEW 都 bit-identical 于四指令 reference sequence。
 
 建议修改文件：
 
 ```text
 hw/ip/spatz/src/spatz_vfu.sv
-hw/ip/spatz/src/spatz_controller.sv
 sw/riscvTests/isa/rv64uv/vfcmacc.c
+docs/complex-instruction-extension/PHASE_RESULTS.md
 ```
 
 验收标准：
 
-- e32/e64/e16 均 bit-identical。
-- masked case 只更新 active complex elements。
-- tail 行为与当前 RVV policy 一致。
-- `+0.0/-0.0` bit-identical。
-- NaN/Inf result 和 `fflags` 与 reference sequence 一致。
-- real/imag hazard tests 通过。
-- 现有 VFU FPU tests 无回归。
+- e32/e64/e16 unmasked case 均 bit-identical。
+- e8、integer vtype 和 unsupported alternative FP formats illegal。
+- e64 只在 RVD/FPU 可用时合法；e16 只在 half-precision FPU support 可用时合法。
+- e32 v1a 测试无回归。
+
+验证：
+
+```sh
+make -C hw/system/spatz_cluster bin/spatz_cluster.vlt
+make -C hw/system/spatz_cluster sw.vlt
+cd hw/system/spatz_cluster/sw/build && ctest -R vfcmacc --output-on-failure
+git diff --check
+```
+
+提交：
+
+```sh
+git add hw/ip/spatz/src sw/riscvTests docs/complex-instruction-extension
+git commit -m "[cfma] Add vfcmacc e64 and e16 behavior"
+```
+
+### Node 5b：Mask、Tail 与 vstart 行为
+
+目标：
+
+- 补齐 `vm=0` mask 行为。
+- 确认 tail policy 与当前 Spatz/RVV 浮点算术一致。
+- 冻结 `vstart != 0` 行为。
+
+建议修改文件：
+
+```text
+hw/ip/spatz/src/spatz_vfu.sv
+hw/ip/spatz/src/spatz_decoder.sv
+sw/riscvTests/isa/rv64uv/vfcmacc.c
+docs/complex-instruction-extension/PHASE_RESULTS.md
+```
+
+验收标准：
+
+- masked case 只更新 mask-active complex elements。
+- masked-off elements 与现有 Spatz/RVV 浮点写回策略一致。
+- tail elements 与当前 `vtype` tail policy 一致。
+- 若现有 VFU 无法保证 `vstart != 0` 的四拍复数语义，decoder 必须把
+  `VFCMADD` with `vstart != 0` 定义为 illegal，并在 `PHASE_RESULTS.md` 记录。
+
+验证：
+
+```sh
+make -C hw/system/spatz_cluster bin/spatz_cluster.vlt
+make -C hw/system/spatz_cluster sw.vlt
+cd hw/system/spatz_cluster/sw/build && ctest -R vfcmacc --output-on-failure
+git diff --check
+```
+
+提交：
+
+```sh
+git add hw/ip/spatz/src sw/riscvTests docs/complex-instruction-extension
+git commit -m "[cfma] Cover vfcmacc mask and tail behavior"
+```
+
+### Node 5c：特殊数值、Rounding 与 FFLAGS
+
+目标：
+
+- 覆盖 `+0.0/-0.0`、NaN、Inf、rounding mode 和 `fflags`。
+- 证明 `fflags_final = fflags_rr | fflags_ii | fflags_ri | fflags_ir` 只提交一次。
+
+建议修改文件：
+
+```text
+hw/ip/spatz/src/spatz_vfu.sv
+sw/riscvTests/isa/rv64uv/vfcmacc.c
+docs/complex-instruction-extension/PHASE_RESULTS.md
+```
+
+验收标准：
+
+- `+0.0/-0.0` result bits 与 reference sequence bit-identical。
+- NaN payload、Inf 和 invalid/overflow/underflow/inexact/div-by-zero flags 与 reference
+  sequence 一致。
+- 不因四个内部 FPU operation 产生四次 architectural `fflags` 提交。
+- 现有 `vfmacc`、`vfnmsac`、`vfwdotp` 测试无回归。
+
+验证：
+
+```sh
+make -C hw/system/spatz_cluster bin/spatz_cluster.vlt
+make -C hw/system/spatz_cluster sw.vlt
+cd hw/system/spatz_cluster/sw/build && ctest -R vfcmacc --output-on-failure
+cd hw/system/spatz_cluster/sw/build && ctest -R "vfmacc|vfnmsac|vfwdotp" --output-on-failure
+git diff --check
+```
+
+提交：
+
+```sh
+git add hw/ip/spatz/src sw/riscvTests docs/complex-instruction-extension
+git commit -m "[cfma] Cover vfcmacc numerical corner cases"
+```
+
+### Node 5d：Serialization Fence 与 Hazard Regression
+
+目标：
+
+- 验证 v1 conservative serialization fence 覆盖隐式 imag group hazards。
+- 完成 v1 ISA 行为验收。
+
+建议修改文件：
+
+```text
+hw/ip/spatz/src/spatz_controller.sv
+hw/ip/spatz/src/spatz_vfu.sv
+sw/riscvTests/isa/rv64uv/vfcmacc.c
+docs/complex-instruction-extension/PHASE_RESULTS.md
+```
+
+验收标准：
+
+- `vfcmacc.vv` 后紧跟读取 `vd.real/vd.imag` 的普通 vector 指令无 stale read。
+- 普通 vector 指令写 `vs1.imag` 或 `vs2.imag` 后紧跟 `vfcmacc.vv` 无 stale read。
+- back-to-back `vfcmacc.vv` 写同一 accumulator pair 无 deadlock、无错序完成。
+- 非法 overlap case 不进入执行状态。
+- `PHASE_RESULTS.md` 标记完整 v1 ISA 行为完成，不能再标为 v1a。
 
 验证：
 
@@ -876,7 +1044,12 @@ docs/complex-instruction-extension/PHASE_RESULTS.md
 验收标准：
 
 - old path 与 new path 均可构建。
-- `dp-cdotp` M128、M1024、M2048 old/new 均通过。
+- `sw/spatzBenchmarks/CMakeLists.txt` 明确注册 old/new 两套目标，使用
+  `SPATZ_USE_VFCMACC=0/1` 区分，例如 `dp-cdotp_old_M128` 与
+  `dp-cdotp_vfcmacc_M128`。
+- 默认验收 `M128` 与 `M4096` old/new 均通过。若本 node 显式新增
+  `M1024/M2048` CTest 目标，则也必须把它们纳入验收；否则不得在验收命令中
+  引用未注册目标。
 - 输出 old/new cycles。
 - 输出 instruction count proxy；若无法直接读硬件 counter，记录静态 inner-loop
   指令数和运行周期。
@@ -886,7 +1059,7 @@ docs/complex-instruction-extension/PHASE_RESULTS.md
 
 ```sh
 make -C hw/system/spatz_cluster sw.vlt
-cd hw/system/spatz_cluster/sw/build && ctest -R "dp-cdotp.*M128|dp-cdotp.*M1024|dp-cdotp.*M2048" --output-on-failure
+cd hw/system/spatz_cluster/sw/build && ctest -R "dp-cdotp.*(old|vfcmacc).*M(128|4096)" --output-on-failure
 git diff --check
 ```
 
@@ -979,12 +1152,12 @@ git commit -m "[cfma] Record complex datapath v2 decision"
 | --- | --- |
 | 隐式 imag group 越界 | Node 1 表格冻结规则，Node 3 illegal tests 覆盖 |
 | LLVM 难以分配 paired registers | v1 使用 inline asm wrapper；LLVM pseudo 单独 node |
-| micro-op partial write 破坏精准状态 | Node 4 明确 drain/shadow policy，不满足则阻塞 |
+| micro-op partial write 破坏精准状态 | Node 4 使用 serialization fence 保护；若 kill/flush/debug 会暴露中间状态则阻塞 |
 | `fflags` 多次提交 | 局部 OR 累积，只在 DONE 提交 |
 | v1 无 FPU 吞吐收益 | 性能目标改为 frontend/offload pressure，cycle speedup 只报告 |
-| mask/tail 被 v1a 遗漏 | v1a 只可标部分完成，Node 5 才是完整 v1 |
-| scoreboard 只追踪 real group | Node 3/5 必测 imag hazards，不允许静默遗漏 |
-| opcode 源路径缺失 | Node 2 先初始化 pinned toolchain source，长期不手改生成文件 |
+| mask/tail 被 v1a 遗漏 | v1a 只可标部分完成，Node 5b 后才可声称 mask/tail 完成 |
+| 隐式 imag group hazard | Node 3 建立 serialization fence，Node 5d 必测 imag hazards |
+| opcode 源路径缺失 | Node 2 使用 `make update_opcodes` 展开 pinned source，长期不手改生成文件 |
 | v2 fused result 不同 | v2 单独 reference model，不复用 v1 bitwise 标准 |
 
 ## 9. 当前推荐首版范围

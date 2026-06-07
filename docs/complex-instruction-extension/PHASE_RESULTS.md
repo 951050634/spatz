@@ -97,13 +97,50 @@
 
 - 尚无。
 
-## Node 5：完整 v1 功能闭环
+## Node 5a：e64/e16 Format 支持
 
 状态：未开始
 
 目标：
 
-- 补齐 e64、e16、mask、tail、zero sign、NaN/Inf、scoreboard hazard。
+- 补齐 e64 和 e16。
+
+证据：
+
+- 尚无。
+
+## Node 5b：Mask、Tail 与 vstart 行为
+
+状态：未开始
+
+目标：
+
+- 补齐 mask、tail 和 vstart 行为。
+
+证据：
+
+- 尚无。
+
+## Node 5c：特殊数值、Rounding 与 FFLAGS
+
+状态：未开始
+
+目标：
+
+- 覆盖 zero sign、NaN/Inf、rounding mode 和 `fflags`。
+
+证据：
+
+- 尚无。
+
+## Node 5d：Serialization Fence 与 Hazard Regression
+
+状态：未开始
+
+目标：
+
+- 验证 conservative serialization fence 覆盖隐式 imag group hazards。
+- 完成 v1 ISA 行为验收。
 
 证据：
 
@@ -146,3 +183,35 @@
 证据：
 
 - 尚无。
+
+## 2026-06-08 Plan hardening：Goal 一次性执行补强
+
+状态：已完成
+
+目标：
+
+- 将 `PLAN.md` 从方向性计划补强为 goal 可连续执行规格。
+- 冻结 opcode 生成、scoreboard hazard、VFU 原子性和 benchmark 默认决策。
+- 拆分原 Node 5，降低长跑执行时的中途决策风险。
+
+修改范围：
+
+- `docs/complex-instruction-extension/PLAN.md`
+- `docs/complex-instruction-extension/PHASE_RESULTS.md`
+- `docs/complex-instruction-extension/GIT_NOTES.md`
+
+验收标准：
+
+- `PLAN.md` 明确 `make update_opcodes` 是 Node 2 唯一默认 opcode 入口。
+- `PLAN.md` 明确 v1 使用 conservative serialization fence，不扩展 multi-imag
+  scoreboard request。
+- `PLAN.md` 明确 Node 6 benchmark 默认验收 `dp-cdotp` old/new `M128/M4096`。
+- 原 Node 5 拆分为 Node 5a、5b、5c、5d。
+
+证据：
+
+- 2026-06-08 运行 `git diff --check`，退出码为 0，未发现 whitespace error。
+
+风险：
+
+- 本次只修改文档，不执行 RTL、opcode 或 benchmark 实现。

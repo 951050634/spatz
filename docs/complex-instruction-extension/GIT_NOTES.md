@@ -56,6 +56,9 @@ feature/cfma-instruction-extension
 [cfma] Add vfcmacc opcode pattern
 [cfma] Decode vfcmacc in Snitch and Spatz
 [cfma] Add vfcmacc e32 micro-op execution
+[cfma] Add vfcmacc e64 and e16 behavior
+[cfma] Cover vfcmacc mask and tail behavior
+[cfma] Cover vfcmacc numerical corner cases
 [cfma] Complete vfcmacc ISA behavior
 [cfma] Add vfcmacc dp-cdotp benchmark path
 [cfma] Add vfcmacc mnemonic support
@@ -114,6 +117,41 @@ make -C hw/system/spatz_cluster help: PASS，退出码 0；成功打印 Makefile
 make help 过程中提示 /home/wxt/spatz-cfma/install/bender/bender 不存在。
 该提示属于当前工作树未 bootstrap pinned toolchain 的基线事实，不影响 help
 目标退出码和目标列表打印。
+```
+
+远端 Git 操作：
+
+```text
+暂无。
+```
+
+## 2026-06-08 Plan hardening 记录
+
+计划提交：
+
+```text
+[cfma] Harden complex instruction plan for goal execution
+```
+
+范围：
+
+```text
+M  docs/complex-instruction-extension/GIT_NOTES.md
+M  docs/complex-instruction-extension/PHASE_RESULTS.md
+M  docs/complex-instruction-extension/PLAN.md
+```
+
+目的：
+
+- 冻结 goal 一次性执行的默认决策。
+- 明确 `make update_opcodes` 是 Node 2 默认 opcode 生成入口。
+- 将隐式 imag group hazard 策略固定为 conservative serialization fence。
+- 拆分原 Node 5，并收紧 `dp-cdotp` benchmark 验收目标。
+
+验证：
+
+```text
+git diff --check: PASS，退出码 0。
 ```
 
 远端 Git 操作：
