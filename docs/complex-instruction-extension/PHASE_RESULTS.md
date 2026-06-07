@@ -44,7 +44,7 @@
 
 ## Node 1：Register Layout Reference 与 Encoding 决策
 
-状态：未开始
+状态：已完成
 
 目标：
 
@@ -52,9 +52,61 @@
 - 冻结 v1 legal/illegal policy。
 - 决定 `vfcmacc.vv` encoding。
 
+修改范围：
+
+- `docs/complex-instruction-extension/register_layout.md`
+- `docs/complex-instruction-extension/scripts/cfma_register_layout.py`
+- `docs/complex-instruction-extension/PHASE_RESULTS.md`
+- `docs/complex-instruction-extension/GIT_NOTES.md`
+- `docs/complex-instruction-extension/README.md`
+
+验收标准：
+
+- [x] `LMUL=1/2/4/8` 的所有 base `v0..v31` 都有记录。
+- [x] `m8` 默认策略已明确为 illegal。原因：单个 complex operand 已消耗
+  32 个 vector registers，无法满足 v1 的 non-overlap destination/source
+  policy。
+- [x] encoding 与现有 `VFWDOTP`、`VFMACC`、`VFNMSAC` 无冲突。脚本检查
+  `VFMACC_VV`、`VFNMSAC_VV`、`VFWDOTP_VV`、`VFWDOTP_VF` 均不 overlap。
+- [x] 最终 bit pattern 和合法性策略已记录。
+
+最终 encoding：
+
+```text
+VFCMACC_VV = 32'b111010???????????001?????1010111
+funct6     = 111010
+vm         = instr[25]
+vs2        = instr[24:20]
+vs1        = instr[19:15]
+funct3     = 001 (OPFVV)
+vd         = instr[11:7]
+opcode     = 1010111 (OP-V)
+```
+
+bring-up `.insn` 格式：
+
+```asm
+.insn r 0x57, 0x1, 0x75, vd, vs1, vs2  # vm=1
+```
+
 证据：
 
-- 尚无。
+- 2026-06-08 01:55:09 CST 运行
+  `python3 docs/complex-instruction-extension/scripts/cfma_register_layout.py`，
+  退出码为 0；输出覆盖 `m1/m2/m4/m8` 的 `v0..v31` 共 128 行，并报告
+  `Encoding VFCMACC_VV=32'b111010???????????001?????1010111 has no checked
+  overlap.`。
+- 2026-06-08 运行
+  `python3 docs/complex-instruction-extension/scripts/cfma_register_layout.py
+  --write-md docs/complex-instruction-extension/register_layout.md`，退出码为 0，
+  用脚本重新生成 `register_layout.md`。
+- 2026-06-08 运行 `python3 --version`，输出 `Python 3.12.3`。
+
+风险：
+
+- Node 1 只冻结 plan 指定的 layout 和 encoding 决策，不修改 opcode source 或
+  generated `riscv_instr.sv`。Node 2 必须通过 `make update_opcodes` 展开并更新
+  pinned `riscv-opcodes` source 后重新生成正式 pattern。
 
 ## Node 2：Opcode 生成与 Snitch 识别
 

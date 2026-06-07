@@ -160,6 +160,86 @@ git diff --check: PASS，退出码 0。
 暂无。
 ```
 
+## 2026-06-08 Node 1 记录
+
+日期：
+
+```text
+2026-06-08
+```
+
+Node：
+
+```text
+Node 1：Register Layout Reference 与 Encoding 决策
+```
+
+分支和状态：
+
+```text
+## feature/cfma-instruction-extension
+?? docs/complex-instruction-extension/register_layout.md
+?? docs/complex-instruction-extension/scripts/
+```
+
+计划提交：
+
+```text
+[cfma] Add complex register layout reference checks
+```
+
+修改范围：
+
+```text
+A  docs/complex-instruction-extension/register_layout.md
+A  docs/complex-instruction-extension/scripts/cfma_register_layout.py
+M  docs/complex-instruction-extension/PHASE_RESULTS.md
+M  docs/complex-instruction-extension/GIT_NOTES.md
+M  docs/complex-instruction-extension/README.md
+```
+
+目的：
+
+- 生成 `LMUL=m1/m2/m4/m8`、`v0..v31` 的 paired register layout 全表。
+- 冻结 v1 legal/illegal policy：`m1/m2/m4` 可在 alignment/range 合法时使用，
+  `m8` 默认 illegal，`vd` pair 与任一 source pair overlap illegal。
+- 冻结 `vfcmacc.vv` 的 OPFVV encoding：
+  `32'b111010???????????001?????1010111`。
+
+验证命令：
+
+```text
+python3 docs/complex-instruction-extension/scripts/cfma_register_layout.py: PASS，退出码 0。
+python3 docs/complex-instruction-extension/scripts/cfma_register_layout.py --write-md docs/complex-instruction-extension/register_layout.md: PASS，退出码 0。
+git diff --check: PASS，退出码 0。
+```
+
+结果摘要：
+
+```text
+脚本输出 128 行 layout 记录；`VFCMACC_VV` 与 `VFMACC_VV`、`VFNMSAC_VV`、
+`VFWDOTP_VV`、`VFWDOTP_VF` 无 checked overlap。
+```
+
+实际提交：
+
+```text
+本 node commit 创建后以 `git log --oneline -1` 和最终摘要记录实际 hash。
+```
+
+遗留风险：
+
+```text
+尚未更新 opcode source 或 generated `riscv_instr.sv`；Node 2 必须通过
+`make update_opcodes` 完成，不允许只手改 generated file。
+```
+
+远端 Git 操作：
+
+```text
+暂无。
+```
+
 ## 网络相关 Git 操作记录
 
 如果后续执行依赖网络的 Git 操作失败，在这里记录即可。该工程不要求把修复网络

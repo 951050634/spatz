@@ -13,3 +13,5 @@ benchmark 的完整闭环；后续版本再评估是否加入专用复数 FMA �
 - [PHASE_RESULTS.md](PHASE_RESULTS.md)：每个实施节点的状态、证据、
   验收结果和风险记录。
 - [GIT_NOTES.md](GIT_NOTES.md)：分支、提交、验证命令和远端 Git 操作记录。
+- [register_layout.md](register_layout.md)：`vfcmacc.vv` v1 register layout
+  合法表、非法策略和 encoding 决策。
