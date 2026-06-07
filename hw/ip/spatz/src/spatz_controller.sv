@@ -69,6 +69,99 @@ module spatz_controller
   logic       spatz_req_valid;
   logic       spatz_req_illegal;
 
+  function automatic logic cfma_lmul_size(vlmul_e vlmul, output logic [3:0] lmul_size);
+    unique case (vlmul)
+      LMUL_1: begin
+        lmul_size = 4'd1;
+        return 1'b1;
+      end
+      LMUL_2: begin
+        lmul_size = 4'd2;
+        return 1'b1;
+      end
+      LMUL_4: begin
+        lmul_size = 4'd4;
+        return 1'b1;
+      end
+      default: begin
+        lmul_size = 4'd0;
+        return 1'b0;
+      end
+    endcase
+  endfunction
+
+  function automatic logic cfma_aligned(vreg_t base, logic [3:0] lmul_size);
+    unique case (lmul_size)
+      4'd1: return 1'b1;
+      4'd2: return base[0] == 1'b0;
+      4'd4: return base[1:0] == 2'b00;
+      default: return 1'b0;
+    endcase
+  endfunction
+
+  function automatic logic cfma_pair_overlap(
+    vreg_t      lhs_base,
+    vreg_t      rhs_base,
+    logic [3:0] group_size
+  );
+    automatic logic [5:0] lhs_first = {1'b0, lhs_base};
+    automatic logic [5:0] rhs_first = {1'b0, rhs_base};
+    automatic logic [5:0] lhs_last  = lhs_first + {2'b00, group_size} - 6'd1;
+    automatic logic [5:0] rhs_last  = rhs_first + {2'b00, group_size} - 6'd1;
+    return (lhs_first <= rhs_last) && (rhs_first <= lhs_last);
+  endfunction
+
+  function automatic logic cfma_legal_layout(
+    vtype_t vtype,
+    vlen_t  vstart,
+    vreg_t  vd,
+    vreg_t  vs1,
+    vreg_t  vs2
+  );
+    automatic logic [3:0] lmul_size;
+    automatic logic [3:0] pair_size;
+    automatic logic [5:0] vd_last;
+    automatic logic [5:0] vs1_last;
+    automatic logic [5:0] vs2_last;
+
+    if (!spatz_pkg::RVV_EXT_XVFCOMPLEX || !spatz_pkg::FPU)
+      return 1'b0;
+
+    if (!cfma_lmul_size(vtype.vlmul, lmul_size))
+      return 1'b0;
+
+    if (!(vtype.vsew inside {EW_16, EW_32, EW_64}))
+      return 1'b0;
+
+    if (vtype.vsew == EW_64 && (!spatz_pkg::RVD || MAXEW != EW_64))
+      return 1'b0;
+
+    // Node 5b will re-evaluate resumable four-phase complex execution.
+    if (vstart != '0)
+      return 1'b0;
+
+    pair_size = lmul_size << 1;
+    vd_last   = {1'b0, vd}  + {2'b00, pair_size} - 6'd1;
+    vs1_last  = {1'b0, vs1} + {2'b00, pair_size} - 6'd1;
+    vs2_last  = {1'b0, vs2} + {2'b00, pair_size} - 6'd1;
+
+    if (!cfma_aligned(vd, lmul_size) || !cfma_aligned(vs1, lmul_size) ||
+        !cfma_aligned(vs2, lmul_size))
+      return 1'b0;
+
+    if (vd_last >= 6'd32 || vs1_last >= 6'd32 || vs2_last >= 6'd32)
+      return 1'b0;
+
+    if (cfma_pair_overlap(vd, vs1, pair_size) || cfma_pair_overlap(vd, vs2, pair_size))
+      return 1'b0;
+
+    return 1'b1;
+  endfunction
+
+  function automatic logic cfma_req_legal(spatz_req_t req, vtype_t vtype, vlen_t vstart);
+    return cfma_legal_layout(vtype, vstart, req.vd, req.vs1, req.vs2);
+  endfunction
+
   //////////
   // CSRs //
   //////////
@@ -461,7 +554,7 @@ module spatz_controller
       end
 
       // Is this a risky instruction which should not chain?
-      if (spatz_req.op inside {VSLIDEUP, VLSE, VLXE, VSSE, VSXE})
+      if (spatz_req.op inside {VSLIDEUP, VLSE, VLXE, VSSE, VSXE, VFCMADD})
         scoreboard_d[spatz_req.id].prevent_chaining = 1'b1;
 
       // Is this a narrowing or widening instruction?
@@ -495,16 +588,22 @@ module spatz_controller
   // units finish first before scheduling a new operation (to avoid running into
   // issues with the socreboard).
   logic stall, vfu_stall, vlsu_stall, vsldu_stall;
-  assign stall       = (vfu_stall | vlsu_stall | vsldu_stall) & req_buffer_valid;
+  logic cfma_fence_stall;
+  assign stall       = (vfu_stall | vlsu_stall | vsldu_stall | cfma_fence_stall) & req_buffer_valid;
   assign vfu_stall   = ~vfu_req_ready_i & (spatz_req.ex_unit == VFU);
   assign vlsu_stall  = ~vlsu_req_ready_i & (spatz_req.ex_unit == LSU);
   assign vsldu_stall = ~vsldu_req_ready_i & (spatz_req.ex_unit == SLD);
 
   // Running instructions
   logic      [NrParallelInstructions-1:0] running_insn_d, running_insn_q;
+  logic      [NrParallelInstructions-1:0] cfma_running_d, cfma_running_q;
   spatz_id_t                              next_insn_id;
   logic                                   running_insn_full;
   `FF(running_insn_q, running_insn_d, '0)
+  `FF(cfma_running_q, cfma_running_d, '0)
+
+  assign cfma_fence_stall = (buffer_spatz_req.op == VFCMADD && |running_insn_q) ||
+                            (|cfma_running_q && buffer_spatz_req.ex_unit != CON);
 
   find_first_one #(
     .WIDTH(NrParallelInstructions)
@@ -524,7 +623,9 @@ module spatz_controller
     // Define new spatz request
     spatz_req         = buffer_spatz_req;
     spatz_req.id      = next_insn_id;
-    spatz_req_illegal = decoder_rsp_valid ? decoder_rsp.instr_illegal : 1'b0;
+    spatz_req_illegal = (decoder_rsp_valid ? decoder_rsp.instr_illegal : 1'b0) ||
+                        (req_buffer_valid && buffer_spatz_req.op == VFCMADD &&
+                         !cfma_req_legal(buffer_spatz_req, vtype_q, vstart_q));
     spatz_req_valid   = req_buffer_pop && !spatz_req_illegal && !running_insn_full;
 
     // We have a new instruction and there is no stall.
@@ -574,18 +675,28 @@ module spatz_controller
   always_comb begin: proc_next_insn_id
     // Maintain state
     running_insn_d = running_insn_q;
+    cfma_running_d = cfma_running_q;
 
     // New instruction!
-    if (spatz_req_valid && spatz_req.ex_unit != CON)
+    if (spatz_req_valid && spatz_req.ex_unit != CON) begin
       running_insn_d[next_insn_id] = 1'b1;
+      if (spatz_req.op == VFCMADD)
+        cfma_running_d[next_insn_id] = 1'b1;
+    end
 
     // Finished a instruction
-    if (vfu_rsp_valid_i)
+    if (vfu_rsp_valid_i) begin
       running_insn_d[vfu_rsp_i.id] = 1'b0;
-    if (vlsu_rsp_valid_i)
+      cfma_running_d[vfu_rsp_i.id] = 1'b0;
+    end
+    if (vlsu_rsp_valid_i) begin
       running_insn_d[vlsu_rsp_i.id] = 1'b0;
-    if (vsldu_rsp_valid_i)
+      cfma_running_d[vlsu_rsp_i.id] = 1'b0;
+    end
+    if (vsldu_rsp_valid_i) begin
       running_insn_d[vsldu_rsp_i.id] = 1'b0;
+      cfma_running_d[vsldu_rsp_i.id] = 1'b0;
+    end
   end: proc_next_insn_id
 
   // Respond to core about the decoded instruction.
@@ -609,6 +720,11 @@ module spatz_controller
           if (vtype_q.vill) begin
             issue_rsp_o.accept = 1'b0;
           end
+          if (decoder_rsp.spatz_req.op == VFCMADD &&
+              !cfma_req_legal(decoder_rsp.spatz_req, vtype_q, vstart_q)) begin
+            issue_rsp_o.accept = 1'b0;
+            issue_rsp_o.exception = 1'b1;
+          end
         end // VFU
         LSU: begin
           issue_rsp_o.loadstore = 1'b1;
@@ -629,6 +745,7 @@ module spatz_controller
     end else if (decoder_rsp_valid && decoder_rsp.instr_illegal) begin
       // Do not accept it
       issue_rsp_o.accept = 1'b0;
+      issue_rsp_o.exception = 1'b1;
     end
   end // acc_issue_resp
 

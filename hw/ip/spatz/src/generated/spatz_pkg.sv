@@ -29,6 +29,8 @@ package spatz_pkg;
   localparam bit RVD            = 1;
   // Vector support
   localparam bit RVV            = 1;
+  // Non-standard complex floating-point vector extension support
+  localparam bit RVV_EXT_XVFCOMPLEX = `ifdef RVV_EXT_XVFCOMPLEX `RVV_EXT_XVFCOMPLEX `else 1 `endif;
 
   // Maximum size of a single vector element in bits
   localparam int unsigned ELEN   = RVD ? 64 : 32;
@@ -135,7 +137,7 @@ package spatz_pkg;
     VFADD, VFSUB, VFMUL,
     VFMINMAX, VFSGNJ, VFCMP, VFCLASS,
     VF2I, VF2U, VI2F, VU2F, VF2F,
-    VFMADD, VFMSUB, VFNMSUB, VFNMADD, VSDOTP
+    VFMADD, VFMSUB, VFNMSUB, VFNMADD, VSDOTP, VFCMADD
   } op_e;
 
   // Execution units

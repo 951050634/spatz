@@ -190,7 +190,7 @@ VFCMACC_VV = 32'b111010???????????001?????1010111
 
 ## Node 3：Spatz Decode、配置开关与非法路径
 
-状态：未开始
+状态：已完成
 
 目标：
 
@@ -198,10 +198,70 @@ VFCMACC_VV = 32'b111010???????????001?????1010111
 - 新增内部 op `VFCMADD`。
 - `vfcmacc.vv` 解码为合法 Spatz VFU request。
 - 非法 layout 不进入执行。
+- 为 `VFCMADD` 建立 conservative serialization fence，不扩展 multi-imag group
+  scoreboard request。
+
+修改范围：
+
+- `hw/ip/snitch/src/snitch.sv`
+- `hw/ip/spatz/src/spatz_pkg.sv.tpl`
+- `hw/ip/spatz/src/generated/spatz_pkg.sv`
+- `hw/ip/spatz/src/spatz_decoder.sv`
+- `hw/ip/spatz/src/spatz_controller.sv`
+- `sw/riscvTests/CMakeLists.txt`
+- `sw/riscvTests/isa/rv64uv/vfcmacc_illegal.c`
+- `docs/complex-instruction-extension/PHASE_RESULTS.md`
+- `docs/complex-instruction-extension/GIT_NOTES.md`
+
+验收标准：
+
+- [x] 扩展开关关闭时 `vfcmacc.vv` illegal：decoder 与 controller 均检查
+  `RVV_EXT_XVFCOMPLEX`。本 node 未新增独立 disabled-config 仿真目标，风险见下。
+- [x] `base % LMUL != 0` illegal。
+- [x] `base + 2*LMUL - 1 >= 32` illegal。
+- [x] v1 policy 下 `LMUL=m8` illegal。
+- [x] `vd` pair overlap source pair illegal。
+- [x] `VFCMADD` 发射前等待旧 VFU/VLSU/VSLDU 指令完成；`VFCMADD` 完成前阻止新的
+  VFU/VLSU/VSLDU 指令发射。实现为 controller 中的 conservative
+  `cfma_fence_stall` 和 `cfma_running_q`。
+- [x] 现有 vector floating-point decode 无回归：RTL/software build 均通过，
+  Node 3 只新增 `VFCMACC_VV` 到既有 FP vector decode 列表。
 
 证据：
 
-- 尚无。
+- 2026-06-08 运行
+  `PATH="$PWD/.venv/bin:$PATH" make -C hw/system/spatz_cluster
+  bin/spatz_cluster.vlt`，退出码为 0；最终重跑输出
+  `make: 'bin/spatz_cluster.vlt' is up to date.`，此前同一 Node 3 RTL 改动已完成
+  Verilator C++ rebuild 并链接生成 `bin/spatz_cluster.vlt`。
+- 2026-06-08 运行
+  `PATH="$PWD/.venv/bin:$PATH" make -C hw/system/spatz_cluster sw.vlt`，
+  退出码为 0；CMake/Make 完成软件构建并注册 `vfcmacc_illegal`。输出包含既有
+  runtime/benchmark warnings 和 DWARF address range table diagnostic，但目标完成。
+- 2026-06-08 从 `hw/system/spatz_cluster/sw/build` 运行
+  `ctest -R vfcmacc_illegal --output-on-failure`，退出码为 0；结果为
+  `1/1 Test #68 ... Passed`，`100% tests passed, 0 tests failed out of 1`。
+- 2026-06-08 运行 `git diff --check`，退出码为 0，未发现 whitespace error。
+- 中间失败与修正记录：
+  - 初版非法 layout CTest 中 `.vv` 动态非法没有触发 trap；根因是 Snitch 未把
+    Spatz issue response 的 `exception` 纳入异常路径，只打印 illegal 且没有设置
+    `mcause`/redirect。修复为 `acc_issue_exception`，保留 q-channel valid 让 Spatz
+    consume/discard，同时在 Snitch 中设置 illegal cause 并跳转异常入口。
+  - 随后测试读到 cause 0/4；根因是测试 trap entry 调用 C handler 时只保存 `ra`，
+    破坏了被中断点仍活跃的 caller-saved register。修复为 pure assembly trap entry，
+    只使用并恢复 `t0..t3`。
+  - `out-of-range m4` 起初使用 `vd=v24`，实际覆盖 `v24..v31`，是合法边界；测试改为
+    `vd=v28`，覆盖越界 imag group。
+
+风险：
+
+- `vstart != 0` 当前按计划在 Node 3 定义为 illegal；Node 5b 必须重新评估并冻结最终
+  v1 行为。
+- 本 node 完成 decode、动态合法性、异常路径和 fence；`VFCMADD` VFU 执行仍未实现，
+  由 Node 4 处理。
+- `RVV_EXT_XVFCOMPLEX=0` 的 disabled-config 路径已有 RTL hook，但本 node 只通过默认
+  配置仿真覆盖非法 layout，未新增单独 disabled-config build。
+- Conservative fence 已实现，专门的 real/imag hazard regression 留到 Node 5d。
 
 ## Node 4：v1a Unmasked e32 多拍执行
 

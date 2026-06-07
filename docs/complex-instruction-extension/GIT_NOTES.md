@@ -316,7 +316,7 @@ RVV/RVF vector FP offload case 中加入该指令，未加入 scalar FP source c
 实际提交：
 
 ```text
-869a366（amend 前记录；最终提交以 `git log --oneline` 为准）
+386e380a95ea9c102ded228e862d1e6958d5bc5e
 ```
 
 遗留风险：
@@ -326,6 +326,113 @@ Spatz decode、配置开关、非法 layout、serialization fence 和 VFU 执行
 由 Node 3/4 继续处理。`sw/toolchain/riscv-opcodes` 是 ignored nested checkout，
 父仓库不能直接提交其中单个源文件；本 node 用 tracked patch 保留 source 变更。
 工作树中存在未 stage 的本地生成差异
+`hw/system/spatz_cluster/src/generated/testharness.sv` 与
+`hw/system/spatz_cluster/test/bootrom.elf`，本 node 不提交这些产物。
+```
+
+远端 Git 操作：
+
+```text
+暂无。
+```
+
+## 2026-06-08 Node 3 记录
+
+日期：
+
+```text
+2026-06-08
+```
+
+Node：
+
+```text
+Node 3：Spatz Decode、配置开关与非法路径
+```
+
+分支和状态：
+
+```text
+## feature/cfma-instruction-extension
+ M hw/ip/snitch/src/snitch.sv
+ M hw/ip/spatz/src/generated/spatz_pkg.sv
+ M hw/ip/spatz/src/spatz_controller.sv
+ M hw/ip/spatz/src/spatz_decoder.sv
+ M hw/ip/spatz/src/spatz_pkg.sv.tpl
+ M hw/system/spatz_cluster/src/generated/testharness.sv
+ M hw/system/spatz_cluster/test/bootrom.elf
+ M sw/riscvTests/CMakeLists.txt
+?? .venv
+?? sw/riscvTests/isa/rv64uv/vfcmacc_illegal.c
+```
+
+计划提交：
+
+```text
+[cfma] Decode vfcmacc in Snitch and Spatz
+```
+
+修改范围：
+
+```text
+M  hw/ip/snitch/src/snitch.sv
+M  hw/ip/spatz/src/generated/spatz_pkg.sv
+M  hw/ip/spatz/src/spatz_controller.sv
+M  hw/ip/spatz/src/spatz_decoder.sv
+M  hw/ip/spatz/src/spatz_pkg.sv.tpl
+M  sw/riscvTests/CMakeLists.txt
+A  sw/riscvTests/isa/rv64uv/vfcmacc_illegal.c
+M  docs/complex-instruction-extension/PHASE_RESULTS.md
+M  docs/complex-instruction-extension/GIT_NOTES.md
+```
+
+目的：
+
+- 增加 `RVV_EXT_XVFCOMPLEX` 配置开关和内部 op `VFCMADD`。
+- 让 Spatz decoder 将 `VFCMACC_VV` 映射到 VFU request，保留 `vd_is_src`。
+- 在 controller 中按当前 `vtype/vstart` 检查 paired register layout，并拒绝
+  `m8`、misaligned base、越界 pair、`vd` 与 source pair overlap、unsupported SEW
+  和 `vstart != 0`。
+- 实现 v1 conservative serialization fence：`VFCMADD` 发射前等待旧非 `CON`
+  指令完成，`VFCMADD` 完成前阻止新的 VFU/VLSU/VSLDU 指令发射。
+- 让 Spatz issue response 的 exception 进入 Snitch illegal trap 路径。
+- 增加 `vfcmacc_illegal` RTL regression。
+
+验证命令：
+
+```text
+PATH="$PWD/.venv/bin:$PATH" make -C hw/system/spatz_cluster bin/spatz_cluster.vlt: PASS，退出码 0。
+PATH="$PWD/.venv/bin:$PATH" make -C hw/system/spatz_cluster sw.vlt: PASS，退出码 0。
+cd hw/system/spatz_cluster/sw/build && ctest -R vfcmacc_illegal --output-on-failure: PASS，退出码 0。
+git diff --check: PASS，退出码 0。
+```
+
+结果摘要：
+
+```text
+`riscv_instr::VFCMACC_VV` 现在在 Spatz 解码为 `VFCMADD`；非法动态 layout 经
+Spatz issue response exception 反馈给 Snitch 并以 illegal instruction trap
+完成。`vfcmacc_illegal` 覆盖 m8、misaligned m2 vd、out-of-range m4 vd、vd/vs1
+overlap、vd/vs2 overlap、e8 unsupported 和 reserved `.vf` encoding。
+
+中间失败记录：初版 CTest 只看到 RTL `$display` illegal，测试未收到 trap；
+修复 Snitch `acc_issue_exception` 后测试 trap handler 又因 caller-saved register
+破坏而误读 cause 0/4；改为 pure assembly trap entry 后，发现 `vd=v24,m4` 不是
+越界，最终改为 `vd=v28,m4`。
+```
+
+实际提交：
+
+```text
+提交后填写。
+```
+
+遗留风险：
+
+```text
+`vstart != 0` 当前按 Node 3 policy 定义为 illegal，Node 5b 重新评估最终 v1
+行为。VFU 执行尚未实现，Node 4 继续处理。`RVV_EXT_XVFCOMPLEX=0` 有 RTL hook，
+但本 node 未单独做 disabled-config build。工作树中仍存在未 stage 的本地生成差异
 `hw/system/spatz_cluster/src/generated/testharness.sv` 与
 `hw/system/spatz_cluster/test/bootrom.elf`，本 node 不提交这些产物。
 ```
