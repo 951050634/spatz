@@ -110,16 +110,83 @@ bring-up `.insn` 格式：
 
 ## Node 2：Opcode 生成与 Snitch 识别
 
-状态：未开始
+状态：已完成
 
 目标：
 
 - 让 `riscv_instr::VFCMACC_VV` 成为可引用的指令 pattern。
 - Snitch 能在 RVV/RVF 可用时 offload 该指令。
 
+修改范围：
+
+- `Makefile`
+- `sw/toolchain-patches/riscv-opcodes/vfcmacc-vv.patch`
+- `hw/ip/snitch/src/riscv_instr.sv`
+- `hw/ip/snitch/src/snitch.sv`
+- `sw/riscvTests/CMakeLists.txt`
+- `sw/riscvTests/isa/rv64uv/vfcmacc_smoke.c`
+- `docs/complex-instruction-extension/PHASE_RESULTS.md`
+- `docs/complex-instruction-extension/GIT_NOTES.md`
+
+验收标准：
+
+- [x] `riscv_instr.sv` 包含 `VFCMACC_VV`。
+- [x] `VFCMACC_VV` 来自 tracked opcode patch，并通过 `make update_opcodes`
+  应用到 pinned `sw/toolchain/riscv-opcodes/opcodes-rvv` 后重新生成，不是只手改
+  generated file。
+- [x] Snitch decode 将 `VFCMACC_VV` 放入 RVV/RVF vector FP offload 分支，
+  未加入 integer source 或 scalar FP source 读取路径。
+- [x] 禁用 RVV/RVF 时沿用现有 offload gating，保持 illegal instruction 行为。
+- [x] 现有 `VFWDOTP` decode 未修改。
+
+最终 opcode source：
+
+```text
+vfcmacc.vv     31..26=0x3a vm vs2 vs1 14..12=0x1 vd 6..0=0x57
+```
+
+生成结果：
+
+```text
+VFCMACC_VV = 32'b111010???????????001?????1010111
+```
+
 证据：
 
-- 尚无。
+- 2026-06-08 02:14 CST 运行 `make update_opcodes`，退出码为 0；命令使用
+  tracked `sw/toolchain-patches/riscv-opcodes/vfcmacc-vv.patch` 更新 pinned
+  `sw/toolchain/riscv-opcodes` source，并重新生成
+  `hw/ip/snitch/src/riscv_instr.sv`。
+- 2026-06-08 02:22 CST 再次运行 `make update_opcodes`，退出码为 0；输出
+  `Opcode patch already applied`，并只执行 `inst.sverilog` 生成路径。
+- 2026-06-08 运行 `rg -n "VFCMACC_VV|vfcmacc.vv|vfcmacc_smoke"
+  hw/ip/snitch/src/riscv_instr.sv hw/ip/snitch/src/snitch.sv
+  sw/toolchain/riscv-opcodes/opcodes-rvv sw/riscvTests/CMakeLists.txt
+  sw/riscvTests/isa/rv64uv/vfcmacc_smoke.c`，确认 opcode source、generated
+  pattern、Snitch offload case 和 compile-only smoke test 均存在。
+- 2026-06-08 运行
+  `PATH="$PWD/.venv/bin:$PATH" make -C hw/system/spatz_cluster
+  bin/spatz_cluster.vlt`，退出码为 0；Verilator 报告成功生成
+  `bin/spatz_cluster.vlt`。输出包含既有 testbench/external IP latch warnings，
+  无 fatal error。
+- 2026-06-08 运行
+  `PATH="$PWD/.venv/bin:$PATH" make -C hw/system/spatz_cluster sw.vlt`，
+  退出码为 0；CMake/Make 完成软件构建，新增 `vfcmacc_smoke` 作为
+  compile-only executable 被覆盖。输出包含既有 runtime/benchmark warnings 和
+  DWARF address range table diagnostic，但目标完成。
+
+风险：
+
+- Node 2 只完成 opcode pattern、Snitch 识别和 compile-only smoke。Spatz decode、
+  illegal layout 和 VFU 执行从 Node 3/4 开始实现。
+- 本地使用 ignored `install` 与 `.venv` 环境入口满足 pinned toolchain 和 Python
+  dependencies；这些环境支撑不进入提交。
+- `sw/toolchain/riscv-opcodes` 是 ignored nested git checkout，父仓库不能直接
+  提交其中单个源文件；本 node 通过 tracked patch 保留 opcode source 变更，并由
+  `make update_opcodes` 自动应用。
+- `hw/system/spatz_cluster/src/generated/testharness.sv` 与
+  `hw/system/spatz_cluster/test/bootrom.elf` 在工作树中已有生成差异，本 node 不
+  stage、不提交这些与 opcode/Snitch 无关的 tracked 产物。
 
 ## Node 3：Spatz Decode、配置开关与非法路径
 

@@ -2421,6 +2421,7 @@ module snitch import snitch_pkg::*; import riscv_instr::*; #(
       riscv_instr::VFWSUB_VV,
       riscv_instr::VFWSUB_WV,
       riscv_instr::VFWMUL_VV,
+      riscv_instr::VFCMACC_VV,
       riscv_instr::VFWDOTP_VV,
       riscv_instr::VFWMACC_VV,
       riscv_instr::VFWNMACC_VV,
