@@ -206,7 +206,7 @@ module snitch import snitch_pkg::*; import riscv_instr::*; #(
 
   logic acc_stall;
   logic valid_instr;
-  logic exception;
+  logic exception, exception_no_acc, acc_issue_exception;
 
   // ALU Operations
   typedef enum logic [3:0]  {
@@ -2630,29 +2630,43 @@ module snitch import snitch_pkg::*; import riscv_instr::*; #(
       end
     endcase
 
-    // Sanitize illegal instructions so that they don't exert any side-effects.
-    if (exception) begin
+    // Sanitize local exceptions so that they don't exert any side-effects.
+    if (exception_no_acc) begin
      write_rd = 1'b0;
      acc_qvalid_o = 1'b0;
      next_pc = Exception;
     end
+
+    // Accelerator issue exceptions are reported through the issue response in
+    // the same cycle as the offload handshake. Keep the q-channel valid so the
+    // accelerator can consume and discard the rejected operation, but redirect
+    // the core to the exception handler.
+    if (acc_issue_exception) begin
+     write_rd = 1'b0;
+     next_pc = Exception;
+    end
   end
 
-  assign exception = illegal_inst
-                   | ecall
-                   | ebreak
-                   | interrupt
-                   | inst_addr_misaligned
-                   | ld_addr_misaligned
-                   | st_addr_misaligned
-                   | illegal_csr
-                   | (dtlb_page_fault & dtlb_trans_valid)
-                   | (itlb_page_fault & itlb_trans_valid);
+  assign exception_no_acc = illegal_inst
+                          | ecall
+                          | ebreak
+                          | interrupt
+                          | inst_addr_misaligned
+                          | ld_addr_misaligned
+                          | st_addr_misaligned
+                          | illegal_csr
+                          | (dtlb_page_fault & dtlb_trans_valid)
+                          | (itlb_page_fault & itlb_trans_valid);
+  assign acc_issue_exception = valid_instr
+                             & acc_qvalid_o
+                             & acc_qready_i
+                             & acc_qrsp_i.exception;
+  assign exception = exception_no_acc | acc_issue_exception;
 
   `ifndef VCS
   // pragma translate_off
   always_ff @(posedge clk_i) begin
-    if (!rst_i && illegal_inst && valid_instr) begin
+    if (!rst_i && (illegal_inst || acc_issue_exception) && valid_instr) begin
       $display("[Illegal Instruction Core %0d] PC: %h Data: %h",
                                 hart_id_i, inst_addr_o, inst_data_i);
     end
@@ -2922,7 +2936,7 @@ module snitch import snitch_pkg::*; import riscv_instr::*; #(
     if (valid_instr) begin
       // Exceptions
       // Illegal Instructions.
-      if (illegal_inst || illegal_csr) cause_d[M] = ILLEGAL_INSTR;
+      if (illegal_inst || illegal_csr || acc_issue_exception) cause_d[M] = ILLEGAL_INSTR;
       // Environment Calls.
       if (ecall) begin
         unique case (priv_lvl_q)
