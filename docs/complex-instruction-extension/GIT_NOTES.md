@@ -224,7 +224,7 @@ git diff --check: PASS，退出码 0。
 实际提交：
 
 ```text
-本 node commit 创建后以 `git log --oneline -1` 和最终摘要记录实际 hash。
+4d629877ceacdd47500640e6ff5f134cbd374a56
 ```
 
 遗留风险：
@@ -232,6 +232,102 @@ git diff --check: PASS，退出码 0。
 ```text
 尚未更新 opcode source 或 generated `riscv_instr.sv`；Node 2 必须通过
 `make update_opcodes` 完成，不允许只手改 generated file。
+```
+
+远端 Git 操作：
+
+```text
+暂无。
+```
+
+## 2026-06-08 Node 2 记录
+
+日期：
+
+```text
+2026-06-08
+```
+
+Node：
+
+```text
+Node 2：Opcode 生成与 Snitch 识别
+```
+
+分支和状态：
+
+```text
+## feature/cfma-instruction-extension
+ M hw/ip/snitch/src/riscv_instr.sv
+ M hw/ip/snitch/src/snitch.sv
+ M hw/system/spatz_cluster/src/generated/testharness.sv
+ M hw/system/spatz_cluster/test/bootrom.elf
+ M sw/riscvTests/CMakeLists.txt
+?? .venv
+?? sw/riscvTests/isa/rv64uv/vfcmacc_smoke.c
+```
+
+计划提交：
+
+```text
+[cfma] Add vfcmacc opcode pattern
+```
+
+修改范围：
+
+```text
+M  Makefile
+M  hw/ip/snitch/src/riscv_instr.sv
+M  hw/ip/snitch/src/snitch.sv
+M  sw/riscvTests/CMakeLists.txt
+A  sw/riscvTests/isa/rv64uv/vfcmacc_smoke.c
+A  sw/toolchain-patches/riscv-opcodes/vfcmacc-vv.patch
+M  docs/complex-instruction-extension/PHASE_RESULTS.md
+M  docs/complex-instruction-extension/GIT_NOTES.md
+```
+
+目的：
+
+- 增加 tracked opcode patch，在 pinned opcode source 中加入 `vfcmacc.vv`。
+- 通过 `make update_opcodes` 生成 `riscv_instr::VFCMACC_VV`。
+- 让 Snitch 在 RVV/RVF vector FP offload 分支识别该 pattern。
+- 增加 compile-only inline assembly smoke test，先不执行。
+
+验证命令：
+
+```text
+make update_opcodes: PASS，退出码 0。
+make update_opcodes: PASS，退出码 0；幂等重跑显示 opcode patch already applied。
+PATH="$PWD/.venv/bin:$PATH" make -C hw/system/spatz_cluster bin/spatz_cluster.vlt: PASS，退出码 0。
+PATH="$PWD/.venv/bin:$PATH" make -C hw/system/spatz_cluster sw.vlt: PASS，退出码 0。
+git diff --check: 提交前运行并记录。
+```
+
+结果摘要：
+
+```text
+tracked patch 将 `opcodes-rvv` 更新为包含
+`vfcmacc.vv 31..26=0x3a ... 14..12=0x1 ... 6..0=0x57`；generated
+`riscv_instr.sv` 包含
+`VFCMACC_VV = 32'b111010???????????001?????1010111`；Snitch decode 只在
+RVV/RVF vector FP offload case 中加入该指令，未加入 scalar FP source case。
+```
+
+实际提交：
+
+```text
+本 node commit 创建后以 `git log --oneline -1` 和最终摘要记录实际 hash。
+```
+
+遗留风险：
+
+```text
+Spatz decode、配置开关、非法 layout、serialization fence 和 VFU 执行尚未实现；
+由 Node 3/4 继续处理。`sw/toolchain/riscv-opcodes` 是 ignored nested checkout，
+父仓库不能直接提交其中单个源文件；本 node 用 tracked patch 保留 source 变更。
+工作树中存在未 stage 的本地生成差异
+`hw/system/spatz_cluster/src/generated/testharness.sv` 与
+`hw/system/spatz_cluster/test/bootrom.elf`，本 node 不提交这些产物。
 ```
 
 远端 Git 操作：
