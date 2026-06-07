@@ -1,9 +1,8 @@
 # LaTeX 工作区
 
-linux环境下没有latex环境，所以当前文件夹下的内容只用构建到内容，不用执行编译过程。
-
-本目录保存论文 A 和后续论文 B 的 LaTeX 工作区。上面的原始要求保留为历史约束；
-当前系统已经在用户目录中配置了 TeX Live，可以直接编译本文档。
+本目录保存 online softmax merge engine 相关论文草稿、共享引用和本地
+TeX Live 配置。正文源文件统一放在 `papers/` 下；根目录不再保留论文 wrapper
+文件或编译产物。
 
 ## 目录结构
 
@@ -18,25 +17,29 @@ latex/
 │   ├── paper-a/
 │   │   ├── README.md
 │   │   └── paper_a.tex
-│   └── paper-b/
+│   ├── paper-b/
+│   │   ├── README.md
+│   │   └── paper_b.tex
+│   └── paper-ab/
 │       ├── README.md
-│       └── paper_b.tex
-├── paper_a.tex
-├── paper_b.tex
+│       └── paper_ab.tex
 └── texlive.profile
 ```
 
-根目录的 `paper_a.tex` 和 `paper_b.tex` 是兼容入口；实际正文分别在
-`papers/paper-a/` 和 `papers/paper-b/` 下。
+`paper-a` 是受限语义集成 baseline，`paper-b` 是完整 mixed-scalar datapath
+阶段草稿，`paper-ab` 是将 A+B 合成一篇系统原型文章的当前主稿。
 
 ## 数据来源
 
-论文 A 的性能数据来自：
+论文数据来自：
 
 ```text
 ../docs/online-softmax-merge-engine/COMPARISON_EXPERIMENT.md
 ../data_process/attnres/data/online_softmax_merge_bypass.csv
 ../data_process/attnres/data/online_softmax_merge_bypass_stability.csv
+../data_process/attnres/data/online_softmax_full_mixed_bypass.csv
+../data_process/attnres/data/online_softmax_full_merge_numeric.csv
+../data_process/attnres/data/online_softmax_attention_like_smu.csv
 ```
 
 图表由以下脚本生成：
@@ -83,27 +86,35 @@ courier
 编译论文 A：
 
 ```bash
-cd ~/spatz/latex
+cd ~/spatz/latex/papers/paper-a
 latexmk -pdf -interaction=nonstopmode -halt-on-error paper_a.tex
 ```
 
-编译论文 B 骨架：
+编译论文 B：
 
 ```bash
-cd ~/spatz/latex
+cd ~/spatz/latex/papers/paper-b
 latexmk -pdf -interaction=nonstopmode -halt-on-error paper_b.tex
+```
+
+编译 A+B 综合稿：
+
+```bash
+cd ~/spatz/latex/papers/paper-ab
+latexmk -pdf -interaction=nonstopmode -halt-on-error paper_ab.tex
 ```
 
 清理生成文件：
 
 ```bash
+cd ~/spatz/latex/papers/paper-a
 latexmk -C paper_a.tex
+
+cd ~/spatz/latex/papers/paper-b
 latexmk -C paper_b.tex
+
+cd ~/spatz/latex/papers/paper-ab
+latexmk -C paper_ab.tex
 ```
 
-当前验证结果：
-
-```text
-paper_a.pdf 已成功生成，4 页。
-paper_b.pdf 已成功生成，1 页。
-```
+PDF、aux、log、bbl 等编译产物由 `latex/.gitignore` 忽略，不应提交。
