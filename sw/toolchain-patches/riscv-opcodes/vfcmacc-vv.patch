@@ -1,0 +1,12 @@
+diff --git a/opcodes-rvv b/opcodes-rvv
+index bde3bfe..0e9ea08 100644
+--- a/opcodes-rvv
++++ b/opcodes-rvv
+@@ -241,6 +241,7 @@ vfwredosum.vs  31..26=0x33 vm vs2 vs1 14..12=0x1 vd 6..0=0x57
+ vfwadd.wv      31..26=0x34 vm vs2 vs1 14..12=0x1 vd 6..0=0x57
+ vfwsub.wv      31..26=0x36 vm vs2 vs1 14..12=0x1 vd 6..0=0x57
+ vfwmul.vv      31..26=0x38 vm vs2 vs1 14..12=0x1 vd 6..0=0x57
++vfcmacc.vv     31..26=0x3a vm vs2 vs1 14..12=0x1 vd 6..0=0x57
+ vfwdotp.vv     31..26=0x3b vm vs2 vs1 14..12=0x1 vd 6..0=0x57
+ vfwmacc.vv     31..26=0x3c vm vs2 vs1 14..12=0x1 vd 6..0=0x57
+ vfwnmacc.vv    31..26=0x3d vm vs2 vs1 14..12=0x1 vd 6..0=0x57

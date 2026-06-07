@@ -141,10 +141,33 @@ $(VERILATOR_INSTALL_DIR)/bin/verilator: sw/toolchain/verilator sw/toolchain/help
 #  Opcodes  #
 #############
 
-update_opcodes: sw/toolchain/riscv-opcodes sw/toolchain/riscv-opcodes/encoding.h hw/ip/snitch/src/riscv_instr.sv
-hw/ip/snitch/src/riscv_instr.sv: sw/toolchain/riscv-opcodes
+RISCV_OPCODE_PATCHES := $(sort $(wildcard sw/toolchain-patches/riscv-opcodes/*.patch))
+RISCV_OPCODE_PATCH_STAMP := sw/toolchain/riscv-opcodes/.spatz-opcode-patches.stamp
+
+.PHONY: update_opcodes apply_opcode_patches
+update_opcodes: sw/toolchain/riscv-opcodes $(RISCV_OPCODE_PATCH_STAMP)
+	MY_OPCODES=$(OPCODES) make -C sw/toolchain/riscv-opcodes inst.sverilog
+	mv sw/toolchain/riscv-opcodes/inst.sverilog hw/ip/snitch/src/riscv_instr.sv
+
+hw/ip/snitch/src/riscv_instr.sv: sw/toolchain/riscv-opcodes $(RISCV_OPCODE_PATCH_STAMP)
 	MY_OPCODES=$(OPCODES) make -C sw/toolchain/riscv-opcodes inst.sverilog
 	mv sw/toolchain/riscv-opcodes/inst.sverilog $@
+
+apply_opcode_patches: $(RISCV_OPCODE_PATCH_STAMP)
+
+$(RISCV_OPCODE_PATCH_STAMP): sw/toolchain/riscv-opcodes $(RISCV_OPCODE_PATCHES)
+	@if [ -n "$(RISCV_OPCODE_PATCHES)" ]; then \
+		set -e; \
+		for patch in $(RISCV_OPCODE_PATCHES); do \
+			if git -C sw/toolchain/riscv-opcodes apply --reverse --check "$$(pwd)/$$patch" >/dev/null 2>&1; then \
+				echo "Opcode patch already applied: $$patch"; \
+			else \
+				echo "Applying opcode patch: $$patch"; \
+				git -C sw/toolchain/riscv-opcodes apply "$$(pwd)/$$patch"; \
+			fi; \
+		done; \
+	fi
+	@touch $@
 
 sw/toolchain/riscv-opcodes/encoding.h:
 	MY_OPCODES=$(OPCODES) make -C sw/toolchain/riscv-opcodes all
