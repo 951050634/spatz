@@ -19,6 +19,8 @@ feature/online-softmax-merge-engine
   online softmax/attention 加速论文的双路线规划。
 - [PAPER_B_FULL_SYSTEM_PLAN.md](PAPER_B_FULL_SYSTEM_PLAN.md)：论文 B 完整
   旁路 SMU 系统实现计划和分阶段验收标准。
+- [PAPER_AB_ARTICLE_POSITIONING.md](PAPER_AB_ARTICLE_POSITIONING.md)：将论文 A
+  和论文 B 合成一篇文章时的故事线、贡献点、可扩展性口径和限制边界。
 
 v1 的默认方向是在 cluster 内新增一个由 MMIO 寄存器控制、带 TCDM master 端口的 Streaming Merge-Update Engine。软件负责配置地址和维度并启动引擎，硬件直接在 TCDM 中流式读取和更新 online softmax merge 状态。
 
