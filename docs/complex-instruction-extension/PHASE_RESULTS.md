@@ -715,15 +715,45 @@ bin/spatz_cluster.vlt`，退出码为 0；Verilator 重新生成并链接
 
 ## Node 8：v2 Datapath 评审门
 
-状态：未开始
+状态：已完成
 
 目标：
 
 - 基于 v1 真实数据决定是否启动专用 complex-FMA datapath。
 
+修改范围：
+
+- `docs/complex-instruction-extension/v2_datapath_review.md`
+- `docs/complex-instruction-extension/PHASE_RESULTS.md`
+- `docs/complex-instruction-extension/GIT_NOTES.md`
+
+验收标准：
+
+- [x] v2 评审记录已完成。
+- [x] 未在评审前启动 v2 RTL。
+- [x] 基于当前证据给出明确决策：不启动专用 complex-FMA datapath。
+- [x] 记录 v2 reopen entry criteria：Node 6 benchmark data、Node 7 mnemonic
+      policy/support、性能瓶颈证据和独立 v2 numerical reference。
+
 证据：
 
-- 尚无。
+- 2026-06-08 新增
+  `docs/complex-instruction-extension/v2_datapath_review.md`。
+- 评审输入状态：
+  - v1 ISA 行为已有 RTL regression 覆盖：e32/e64/e16、mask/tail、
+    vstart illegal、fflags、NaN/Inf、zero sign、rounding 和 serialization
+    fence hazards。
+  - Node 6 未取得 `dp-cdotp` old/new correctness、cycles 或 M4096 数据；
+    benchmark RTL 目标在 600 秒上限内不收敛。
+  - Node 7 未取得正式 mnemonic/objdump support；当前 installed LLVM 仍需
+    `.insn` bring-up。
+- v2 决策：当前分支停止在 v1 多拍 VFU 复用实现；不新增 fpnew operation、不新增
+  VRF port、不新增专用 complex-FMA datapath。
+
+风险：
+
+- v2 no-go 决策依赖当前未完成的 benchmark/toolchain 证据；若 Node 6/7 后续解锁，
+  必须重新打开评审，而不是直接开始 RTL。
 
 ## 2026-06-08 Plan hardening：Goal 一次性执行补强
 

@@ -1131,6 +1131,88 @@ benchmark 部分。
 暂无。
 ```
 
+## 2026-06-08 Node 8 记录
+
+日期：
+
+```text
+2026-06-08
+```
+
+Node：
+
+```text
+Node 8：v2 Datapath 评审门
+```
+
+分支和状态：
+
+```text
+## feature/cfma-instruction-extension
+ M docs/complex-instruction-extension/GIT_NOTES.md
+ M docs/complex-instruction-extension/PHASE_RESULTS.md
+ M hw/system/spatz_cluster/src/generated/testharness.sv
+ M hw/system/spatz_cluster/test/bootrom.elf
+?? .venv
+?? docs/complex-instruction-extension/v2_datapath_review.md
+?? logs/
+```
+
+计划提交：
+
+```text
+[cfma] Record complex datapath v2 decision
+```
+
+修改范围：
+
+```text
+A  docs/complex-instruction-extension/v2_datapath_review.md
+M  docs/complex-instruction-extension/PHASE_RESULTS.md
+M  docs/complex-instruction-extension/GIT_NOTES.md
+```
+
+目的：
+
+- 基于当前 v1 ISA、benchmark 和 toolchain 证据评审是否启动专用 complex-FMA
+  datapath。
+- 明确 v2 no-go：当前分支不新增 fpnew operation、不新增 VRF port、不新增专用
+  complex-FMA datapath。
+- 记录重新打开 v2 的 entry criteria。
+
+验证命令：
+
+```text
+git diff --check: 提交前运行并记录。
+```
+
+结果摘要：
+
+```text
+v1 ISA 行为已有 RTL regression 覆盖，但 Node 6 未取得 `dp-cdotp` old/new
+benchmark 数据，Node 7 未取得正式 mnemonic/objdump support。当前没有足够数据证明
+专用 datapath 优于继续优化 v1 sequencer/fence/scoreboard，因此 v2 决策为 no-go。
+```
+
+实际提交：
+
+```text
+待补记。
+```
+
+遗留风险：
+
+```text
+如果后续 Node 6 benchmark blocker 和 Node 7 toolchain blocker 被解锁，需要重新打开
+v2 评审并先冻结独立 numerical reference，不能直接开始 RTL。
+```
+
+远端 Git 操作：
+
+```text
+暂无。
+```
+
 ## 网络相关 Git 操作记录
 
 如果后续执行依赖网络的 Git 操作失败，在这里记录即可。该工程不要求把修复网络
