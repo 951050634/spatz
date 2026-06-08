@@ -658,16 +658,60 @@ bin/spatz_cluster.vlt`，退出码为 0；Verilator 重新生成并链接
 
 ## Node 7：Mnemonic 与工具链整理
 
-状态：未开始
+状态：阻塞（工具链 source 未展开，installed LLVM 不支持 mnemonic）
 
 目标：
 
 - 把临时 `.insn` 或固定编码 wrapper 替换为正式 mnemonic。
 - 明确 assembler、objdump 和 LLVM 支持边界。
 
+修改范围：
+
+- `docs/complex-instruction-extension/toolchain_mnemonic_status.md`
+- `docs/complex-instruction-extension/PHASE_RESULTS.md`
+- `docs/complex-instruction-extension/GIT_NOTES.md`
+
+验收标准：
+
+- [ ] inline asm 可写 `vfcmacc.vv` mnemonic：阻塞。当前 installed LLVM 14.0.6
+      assembler 报 `unrecognized instruction mnemonic`。
+- [x] benchmark 不需要 binary patch：当前 benchmark 使用固定 `.insn` wrapper，
+      不手工 patch binary。
+- [ ] objdump 能显示 `vfcmacc.vv`：阻塞。`.insn` 可汇编成
+      `57 18 80 ea`，但 `llvm-objdump` 显示 `<unknown>`。
+- [x] LLVM 自动 SelectionDAG lowering 仍不纳入本 node；已记录为 v1 之外的
+      follow-up。
+
 证据：
 
-- 尚无。
+- 2026-06-08 运行 `find sw/toolchain -maxdepth 2 -type d`，确认当前只展开
+  `sw/toolchain/riscv-opcodes`；`sw/toolchain/llvm-project` 与
+  `sw/toolchain/riscv-gnu-toolchain` source tree 不存在。
+- 2026-06-08 运行 `rg -n "vfcmacc|VFCMACC|vfwdotp|VFWDOTP"
+  sw/toolchain sw/toolchain-patches install/llvm install/riscv-gcc -S`，只在
+  `sw/toolchain-patches/riscv-opcodes/vfcmacc-vv.patch` 与
+  `sw/toolchain/riscv-opcodes/opcodes-rvv` 中找到 `vfcmacc`；installed toolchain
+  中未找到 mnemonic 支持痕迹。
+- 2026-06-08 运行 installed clang mnemonic assembly smoke：
+  `printf "... vfcmacc.vv v16, v0, v8" | install/llvm/bin/clang -x assembler ...`，
+  退出码为 1；关键错误为 `unrecognized instruction mnemonic`。
+- 2026-06-08 运行 fixed `.insn` assembly smoke：
+  `printf "... .insn r 0x57, 0x1, 0x75, v16, v0, v8" |
+  install/llvm/bin/clang -x assembler ...`，退出码为 0；随后
+  `llvm-objdump -d` 显示 `57 18 80 ea   <unknown>`。
+- 2026-06-08 运行 `install/llvm/bin/clang --version`，输出 LLVM 14.0.6，
+  revision 为 `pulp-platform/llvm-project b494f2d8...`。
+- 2026-06-08 新增
+  `docs/complex-instruction-extension/toolchain_mnemonic_status.md`，记录当前
+  assembler/objdump 状态和后续解锁路径。
+
+风险：
+
+- Node 7 未能把 `.insn` 替换为正式 mnemonic；v1 软件路径仍依赖固定编码
+  wrapper。
+- 正式 mnemonic support 需要展开并 patch pinned LLVM/binutils source，或安装
+  已包含 `vfcmacc.vv` 的预构建工具链；不得把完整 `make all/toolchain` 构建混入
+  本 node 默认修复路径。
 
 ## Node 8：v2 Datapath 评审门
 

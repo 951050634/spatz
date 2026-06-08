@@ -1040,6 +1040,97 @@ runtime pass 证据。工作树中仍存在未 stage 的本地生成差异
 暂无。
 ```
 
+## 2026-06-08 Node 7 记录
+
+日期：
+
+```text
+2026-06-08
+```
+
+Node：
+
+```text
+Node 7：Mnemonic 与工具链整理
+```
+
+分支和状态：
+
+```text
+## feature/cfma-instruction-extension
+ M docs/complex-instruction-extension/GIT_NOTES.md
+ M docs/complex-instruction-extension/PHASE_RESULTS.md
+ M hw/system/spatz_cluster/src/generated/testharness.sv
+ M hw/system/spatz_cluster/test/bootrom.elf
+?? .venv
+?? docs/complex-instruction-extension/toolchain_mnemonic_status.md
+?? logs/
+```
+
+计划提交：
+
+```text
+[cfma] Add vfcmacc mnemonic support
+```
+
+修改范围：
+
+```text
+A  docs/complex-instruction-extension/toolchain_mnemonic_status.md
+M  docs/complex-instruction-extension/PHASE_RESULTS.md
+M  docs/complex-instruction-extension/GIT_NOTES.md
+```
+
+目的：
+
+- 明确 `vfcmacc.vv` mnemonic 在当前 installed LLVM/binutils 下不可用。
+- 记录 `riscv-opcodes` source patch 已存在，但 LLVM/GNU source tree 未展开。
+- 记录 `.insn` bring-up 仍可汇编，objdump 仍显示 `<unknown>`。
+- 保留 LLVM 自动 SelectionDAG lowering 为 v1 之外工作。
+
+验证命令：
+
+```text
+find sw/toolchain -maxdepth 2 -type d: PASS；当前只展开 `sw/toolchain/riscv-opcodes`。
+rg -n "vfcmacc|VFCMACC|vfwdotp|VFWDOTP" sw/toolchain sw/toolchain-patches install/llvm install/riscv-gcc -S:
+PASS；`vfcmacc` 只出现在 riscv-opcodes source/patch 中，installed toolchain 无支持痕迹。
+printf "... vfcmacc.vv v16, v0, v8" | install/llvm/bin/clang -x assembler ...:
+FAIL，退出码 1；assembler 报 `unrecognized instruction mnemonic`。
+printf "... .insn r 0x57, 0x1, 0x75, v16, v0, v8" | install/llvm/bin/clang -x assembler ...:
+PASS，退出码 0；`llvm-objdump -d` 显示 `57 18 80 ea   <unknown>`。
+install/llvm/bin/clang --version: PASS；LLVM 14.0.6，pulp-platform revision b494f2d8...
+git diff --check: 提交前运行并记录。
+```
+
+结果摘要：
+
+```text
+Node 7 的正式 mnemonic replacement 未完成，原因是当前工作树没有
+`sw/toolchain/llvm-project` 或 `sw/toolchain/riscv-gnu-toolchain` source tree，
+installed LLVM 14.0.6 也不识别 `vfcmacc.vv`。v1 bring-up 继续使用 `.insn`
+固定编码；正式 assembler/objdump support 需单独展开、patch 并重建 toolchain。
+```
+
+实际提交：
+
+```text
+待补记。
+```
+
+遗留风险：
+
+```text
+benchmark/ISA tests 仍不能使用正式 `vfcmacc.vv` mnemonic。Node 6 benchmark
+runtime blocker 仍未解除，因此本 node 未运行 `ctest -R "vfcmacc|dp-cdotp"` 的完整
+benchmark 部分。
+```
+
+远端 Git 操作：
+
+```text
+暂无。
+```
+
 ## 网络相关 Git 操作记录
 
 如果后续执行依赖网络的 Git 操作失败，在这里记录即可。该工程不要求把修复网络
