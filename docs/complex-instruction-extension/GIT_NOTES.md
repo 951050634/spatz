@@ -935,6 +935,111 @@ NaN/zero sign 和 serialization fence regression 均已覆盖。
 暂无。
 ```
 
+## 2026-06-08 Node 6 记录
+
+日期：
+
+```text
+2026-06-08
+```
+
+Node：
+
+```text
+Node 6：Benchmark A/B 与性能报告
+```
+
+分支和状态：
+
+```text
+## feature/cfma-instruction-extension
+ M docs/complex-instruction-extension/PHASE_RESULTS.md
+ M hw/system/spatz_cluster/src/generated/testharness.sv
+ M hw/system/spatz_cluster/test/bootrom.elf
+ M sw/spatzBenchmarks/CMakeLists.txt
+ M sw/spatzBenchmarks/dp-cdotp/kernel/cdotp.c
+ M sw/spatzBenchmarks/dp-cdotp/main.c
+?? .venv
+?? logs/
+```
+
+计划提交：
+
+```text
+[cfma] Add vfcmacc dp-cdotp benchmark path
+```
+
+修改范围：
+
+```text
+M  sw/spatzBenchmarks/CMakeLists.txt
+M  sw/spatzBenchmarks/dp-cdotp/kernel/cdotp.c
+M  sw/spatzBenchmarks/dp-cdotp/main.c
+M  docs/complex-instruction-extension/PHASE_RESULTS.md
+M  docs/complex-instruction-extension/GIT_NOTES.md
+```
+
+目的：
+
+- 在 `dp-cdotp` 中注册 old/new A/B CTest 目标：
+  `dp-cdotp_old_M128`、`dp-cdotp_vfcmacc_M128`、`dp-cdotp_old_M4096` 和
+  `dp-cdotp_vfcmacc_M4096`。
+- 使用 `SPATZ_USE_VFCMACC=0/1` 选择四指令 reference sequence 或
+  `vfcmacc.vv` 固定编码路径。
+- 输出静态 instruction count proxy：old path inner loop `7`、complex MAC `4`；
+  new path inner loop `4`、complex MAC `1`。
+- 将 `dp-cdotp/main.c` 改成 `CDOTP_TILE_ELEMS=1024` 的分块 DMA/分块累加主流程，
+  避免 M4096 full-resident input 触发既有 TCDM 风险。
+
+验证命令：
+
+```text
+TDD red/blocker: cd hw/system/spatz_cluster/sw/build && ctest -V -R "dp-cdotp_old_M128$":
+STALLED，约 13 分钟未返回；trace_hart_00000/00001 停在 745/530 行且 mtime 不再更新，随后手动停止。
+cd hw/system/spatz_cluster/sw/build && timeout 600s ctest -V -R "dp-cdotp_ver2_M128$":
+FAIL，退出码 124；trace 停在 767/559 行且 mtime 不再更新。
+PATH="$PWD/.venv/bin:$PATH" make -C hw/system/spatz_cluster sw.vlt:
+PASS，退出码 0。
+cd hw/system/spatz_cluster/sw/build && ctest -N -R "dp-cdotp_(old|vfcmacc)_M(128|4096)$":
+PASS，退出码 0；列出 4 个 Node 6 目标。
+cd hw/system/spatz_cluster/sw/build && timeout 600s ctest -V -R "dp-cdotp_old_M128$":
+FAIL，退出码 124；分块后仍停在 766/559 行且 mtime 不再更新。
+cd hw/system/spatz_cluster/sw/build && timeout 180s ctest -R "vfcmacc$" --output-on-failure:
+PASS，退出码 0；`vfcmacc` ISA regression 用时 117.31 秒。
+git diff --check: 提交前运行并记录。
+```
+
+结果摘要：
+
+```text
+Node 6 的代码侧 A/B 入口、CTest 注册、software build 和静态 instruction proxy 已完成。
+但 RTL benchmark 运行收敛阻塞：`dp-cdotp_old_M128` 和既有 `dp-cdotp_ver2_M128`
+均在 600 秒内无法结束，trace 早早停止更新。尚未取得 old/new cycles、correctness
+或 M4096 数据，因此本 node 标记为阻塞，不声称 benchmark speedup。
+```
+
+实际提交：
+
+```text
+待补记。
+```
+
+遗留风险：
+
+```text
+需要后续用波形或 RTL trace 定位 benchmark 在 vector reduction/result
+writeback/barrier 附近等待的根因。`dp-cdotp_vfcmacc` new path 已构建，但没有
+runtime pass 证据。工作树中仍存在未 stage 的本地生成差异
+`hw/system/spatz_cluster/src/generated/testharness.sv` 与
+`hw/system/spatz_cluster/test/bootrom.elf`，本 node 不提交这些产物。
+```
+
+远端 Git 操作：
+
+```text
+暂无。
+```
+
 ## 网络相关 Git 操作记录
 
 如果后续执行依赖网络的 Git 操作失败，在这里记录即可。该工程不要求把修复网络

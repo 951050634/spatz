@@ -10,6 +10,20 @@
 #include DATAHEADER
 #include "kernel/cdotp.c"
 
+#define CDOTP_TILE_ELEMS 1024
+
+#ifndef SPATZ_CDOTP_KERNEL_NAME
+#define SPATZ_CDOTP_KERNEL_NAME "old"
+#endif
+
+#ifndef SPATZ_CDOTP_INNER_LOOP_INSN_PROXY
+#define SPATZ_CDOTP_INNER_LOOP_INSN_PROXY 7
+#endif
+
+#ifndef SPATZ_CDOTP_ACCUM_INSN_PROXY
+#define SPATZ_CDOTP_ACCUM_INSN_PROXY 4
+#endif
+
 cdouble *x;
 cdouble *y;
 cdouble *result;
@@ -29,24 +43,12 @@ int main() {
   unsigned int timer = (unsigned int)-1;
 
   const unsigned int dim = cdotp_n;
-  const unsigned int dim_core = dim / num_cores;
 
   if (cid == 0) {
-    x = (cdouble *)snrt_l1alloc(dim * sizeof(cdouble));
-    y = (cdouble *)snrt_l1alloc(dim * sizeof(cdouble));
+    x = (cdouble *)snrt_l1alloc(CDOTP_TILE_ELEMS * sizeof(cdouble));
+    y = (cdouble *)snrt_l1alloc(CDOTP_TILE_ELEMS * sizeof(cdouble));
     result = (cdouble *)snrt_l1alloc(num_cores * sizeof(cdouble));
   }
-
-  if (cid == 0) {
-    snrt_dma_start_1d(x, cdotp_x, dim * sizeof(cdouble));
-    snrt_dma_start_1d(y, cdotp_y, dim * sizeof(cdouble));
-    snrt_dma_wait_all();
-  }
-
-  snrt_cluster_hw_barrier();
-
-  cdouble *x_int = x + dim_core * cid;
-  cdouble *y_int = y + dim_core * cid;
 
   snrt_cluster_hw_barrier();
 
@@ -56,7 +58,34 @@ int main() {
   if (cid == 0)
     timer = benchmark_get_cycle();
 
-  cdouble acc = cdotp_v64b(x_int, y_int, dim_core);
+  cdouble acc = {0.0, 0.0};
+
+  for (unsigned int offset = 0; offset < dim; offset += CDOTP_TILE_ELEMS) {
+    unsigned int tile_elems = dim - offset;
+    if (tile_elems > CDOTP_TILE_ELEMS)
+      tile_elems = CDOTP_TILE_ELEMS;
+
+    if (cid == 0) {
+      snrt_dma_start_1d(x, cdotp_x + offset,
+                        tile_elems * sizeof(cdouble));
+      snrt_dma_start_1d(y, cdotp_y + offset,
+                        tile_elems * sizeof(cdouble));
+      snrt_dma_wait_all();
+    }
+
+    snrt_cluster_hw_barrier();
+
+    unsigned int start = (tile_elems * cid) / num_cores;
+    unsigned int end = (tile_elems * (cid + 1)) / num_cores;
+    if (end > start) {
+      cdouble tile_acc = cdotp_v64b(x + start, y + start, end - start);
+      acc.real += tile_acc.real;
+      acc.imag += tile_acc.imag;
+    }
+
+    snrt_cluster_hw_barrier();
+  }
+
   result[cid] = acc;
 
   snrt_cluster_hw_barrier();
@@ -80,9 +109,11 @@ int main() {
 
   if (cid == 0) {
     long unsigned int performance = 1000 * 2 * 2 * dim / timer;
-    PRINTF("\n----- (%d) dp cdotp -----\n", dim);
-    PRINTF("The execution took %u cycles.\n", timer);
-    PRINTF("The performance is %ld OP/1000cycle.\n", performance);
+    PRINTF("dp-cdotp %s M%d: cycles=%u, inner_loop_insn_proxy=%u, "
+           "complex_mac_insn_proxy=%u, performance=%ld OP/1000cycle.\n",
+           SPATZ_CDOTP_KERNEL_NAME, dim, timer,
+           SPATZ_CDOTP_INNER_LOOP_INSN_PROXY, SPATZ_CDOTP_ACCUM_INSN_PROXY,
+           performance);
   }
 
   if (cid == 0) {

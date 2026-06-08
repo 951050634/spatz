@@ -1,5 +1,21 @@
 #include "cdotp.h"
 
+#ifndef SPATZ_USE_VFCMACC
+#define SPATZ_USE_VFCMACC 0
+#endif
+
+#if SPATZ_USE_VFCMACC
+#define SPATZ_CDOTP_KERNEL_NAME "vfcmacc"
+#define SPATZ_CDOTP_INNER_LOOP_INSN_PROXY 4
+#define SPATZ_CDOTP_ACCUM_INSN_PROXY 1
+#define VFCMACC_VV_VM1(vd, vs1, vs2)                                           \
+    asm volatile(".insn r 0x57, 0x1, 0x75, " vd ", " vs1 ", " vs2)
+#else
+#define SPATZ_CDOTP_KERNEL_NAME "old"
+#define SPATZ_CDOTP_INNER_LOOP_INSN_PROXY 7
+#define SPATZ_CDOTP_ACCUM_INSN_PROXY 4
+#endif
+
 // sum += x[i] * y[i]
 cdouble cdotp_v64b(const cdouble *x, const cdouble *y, unsigned int avl)
 {
@@ -23,10 +39,14 @@ cdouble cdotp_v64b(const cdouble *x, const cdouble *y, unsigned int avl)
         // v8=Yr, v12=Yi
         asm volatile("vlseg2e64.v v8, (%0)" ::"r"(y));
 
+#if SPATZ_USE_VFCMACC
+        VFCMACC_VV_VM1("v16", "v0", "v8");
+#else
         asm volatile("vfmacc.vv v16, v0, v8");   // v16 += Xr * Yr
         asm volatile("vfnmsac.vv v16, v4, v12"); // v16 -= Xi * Yi
         asm volatile("vfmacc.vv v20, v0, v12");  // v20 += Xr * Yi
         asm volatile("vfmacc.vv v20, v4, v8");   // v20 += Xi * Yr
+#endif
 
         x += vl;
         y += vl;

@@ -30,7 +30,7 @@
 - 2026-06-08 已将 `/home/wxt/spatz/.codexignore` 复制为
   `/home/wxt/spatz-cfma/.codexignore`。
 - 2026-06-08 运行 `cmp -s /home/wxt/spatz/.codexignore
-  /home/wxt/spatz-cfma/.codexignore`，退出码为 0，确认两份文件一致。
+/home/wxt/spatz-cfma/.codexignore`，退出码为 0，确认两份文件一致。
 - 2026-06-08 运行 `git diff --check`，退出码为 0，未发现 whitespace
   error。
 - 2026-06-08 运行 `make -C hw/system/spatz_cluster help`，退出码为 0，并成功
@@ -64,10 +64,10 @@
 
 - [x] `LMUL=1/2/4/8` 的所有 base `v0..v31` 都有记录。
 - [x] `m8` 默认策略已明确为 illegal。原因：单个 complex operand 已消耗
-  32 个 vector registers，无法满足 v1 的 non-overlap destination/source
-  policy。
+      32 个 vector registers，无法满足 v1 的 non-overlap destination/source
+      policy。
 - [x] encoding 与现有 `VFWDOTP`、`VFMACC`、`VFNMSAC` 无冲突。脚本检查
-  `VFMACC_VV`、`VFNMSAC_VV`、`VFWDOTP_VV`、`VFWDOTP_VF` 均不 overlap。
+      `VFMACC_VV`、`VFNMSAC_VV`、`VFWDOTP_VV`、`VFWDOTP_VF` 均不 overlap。
 - [x] 最终 bit pattern 和合法性策略已记录。
 
 最终 encoding：
@@ -95,10 +95,10 @@ bring-up `.insn` 格式：
   `python3 docs/complex-instruction-extension/scripts/cfma_register_layout.py`，
   退出码为 0；输出覆盖 `m1/m2/m4/m8` 的 `v0..v31` 共 128 行，并报告
   `Encoding VFCMACC_VV=32'b111010???????????001?????1010111 has no checked
-  overlap.`。
+overlap.`。
 - 2026-06-08 运行
   `python3 docs/complex-instruction-extension/scripts/cfma_register_layout.py
-  --write-md docs/complex-instruction-extension/register_layout.md`，退出码为 0，
+--write-md docs/complex-instruction-extension/register_layout.md`，退出码为 0，
   用脚本重新生成 `register_layout.md`。
 - 2026-06-08 运行 `python3 --version`，输出 `Python 3.12.3`。
 
@@ -132,10 +132,10 @@ bring-up `.insn` 格式：
 
 - [x] `riscv_instr.sv` 包含 `VFCMACC_VV`。
 - [x] `VFCMACC_VV` 来自 tracked opcode patch，并通过 `make update_opcodes`
-  应用到 pinned `sw/toolchain/riscv-opcodes/opcodes-rvv` 后重新生成，不是只手改
-  generated file。
+      应用到 pinned `sw/toolchain/riscv-opcodes/opcodes-rvv` 后重新生成，不是只手改
+      generated file。
 - [x] Snitch decode 将 `VFCMACC_VV` 放入 RVV/RVF vector FP offload 分支，
-  未加入 integer source 或 scalar FP source 读取路径。
+      未加入 integer source 或 scalar FP source 读取路径。
 - [x] 禁用 RVV/RVF 时沿用现有 offload gating，保持 illegal instruction 行为。
 - [x] 现有 `VFWDOTP` decode 未修改。
 
@@ -160,13 +160,13 @@ VFCMACC_VV = 32'b111010???????????001?????1010111
 - 2026-06-08 02:22 CST 再次运行 `make update_opcodes`，退出码为 0；输出
   `Opcode patch already applied`，并只执行 `inst.sverilog` 生成路径。
 - 2026-06-08 运行 `rg -n "VFCMACC_VV|vfcmacc.vv|vfcmacc_smoke"
-  hw/ip/snitch/src/riscv_instr.sv hw/ip/snitch/src/snitch.sv
-  sw/toolchain/riscv-opcodes/opcodes-rvv sw/riscvTests/CMakeLists.txt
-  sw/riscvTests/isa/rv64uv/vfcmacc_smoke.c`，确认 opcode source、generated
+hw/ip/snitch/src/riscv_instr.sv hw/ip/snitch/src/snitch.sv
+sw/toolchain/riscv-opcodes/opcodes-rvv sw/riscvTests/CMakeLists.txt
+sw/riscvTests/isa/rv64uv/vfcmacc_smoke.c`，确认 opcode source、generated
   pattern、Snitch offload case 和 compile-only smoke test 均存在。
 - 2026-06-08 运行
   `PATH="$PWD/.venv/bin:$PATH" make -C hw/system/spatz_cluster
-  bin/spatz_cluster.vlt`，退出码为 0；Verilator 报告成功生成
+bin/spatz_cluster.vlt`，退出码为 0；Verilator 报告成功生成
   `bin/spatz_cluster.vlt`。输出包含既有 testbench/external IP latch warnings，
   无 fatal error。
 - 2026-06-08 运行
@@ -216,22 +216,22 @@ VFCMACC_VV = 32'b111010???????????001?????1010111
 验收标准：
 
 - [x] 扩展开关关闭时 `vfcmacc.vv` illegal：decoder 与 controller 均检查
-  `RVV_EXT_XVFCOMPLEX`。本 node 未新增独立 disabled-config 仿真目标，风险见下。
+      `RVV_EXT_XVFCOMPLEX`。本 node 未新增独立 disabled-config 仿真目标，风险见下。
 - [x] `base % LMUL != 0` illegal。
 - [x] `base + 2*LMUL - 1 >= 32` illegal。
 - [x] v1 policy 下 `LMUL=m8` illegal。
 - [x] `vd` pair overlap source pair illegal。
 - [x] `VFCMADD` 发射前等待旧 VFU/VLSU/VSLDU 指令完成；`VFCMADD` 完成前阻止新的
-  VFU/VLSU/VSLDU 指令发射。实现为 controller 中的 conservative
-  `cfma_fence_stall` 和 `cfma_running_q`。
+      VFU/VLSU/VSLDU 指令发射。实现为 controller 中的 conservative
+      `cfma_fence_stall` 和 `cfma_running_q`。
 - [x] 现有 vector floating-point decode 无回归：RTL/software build 均通过，
-  Node 3 只新增 `VFCMACC_VV` 到既有 FP vector decode 列表。
+      Node 3 只新增 `VFCMACC_VV` 到既有 FP vector decode 列表。
 
 证据：
 
 - 2026-06-08 运行
   `PATH="$PWD/.venv/bin:$PATH" make -C hw/system/spatz_cluster
-  bin/spatz_cluster.vlt`，退出码为 0；最终重跑输出
+bin/spatz_cluster.vlt`，退出码为 0；最终重跑输出
   `make: 'bin/spatz_cluster.vlt' is up to date.`，此前同一 Node 3 RTL 改动已完成
   Verilator C++ rebuild 并链接生成 `bin/spatz_cluster.vlt`。
 - 2026-06-08 运行
@@ -581,16 +581,80 @@ bin/spatz_cluster.vlt`，退出码为 0；Verilator 重新生成并链接
 
 ## Node 6：Benchmark A/B 与性能报告
 
-状态：未开始
+状态：阻塞（代码和构建已完成，RTL benchmark 未收敛）
 
 目标：
 
 - 在 `dp-cdotp` 中加入 old/new 路径。
 - 量化 instruction count、cycle 和 frontend/offload pressure。
 
+修改范围：
+
+- `sw/spatzBenchmarks/CMakeLists.txt`
+- `sw/spatzBenchmarks/dp-cdotp/kernel/cdotp.c`
+- `sw/spatzBenchmarks/dp-cdotp/main.c`
+- `docs/complex-instruction-extension/PHASE_RESULTS.md`
+- `docs/complex-instruction-extension/GIT_NOTES.md`
+
+验收标准：
+
+- [x] old path 与 new path 均可构建。
+- [x] `sw/spatzBenchmarks/CMakeLists.txt` 注册
+      `dp-cdotp_old_M128`、`dp-cdotp_vfcmacc_M128`、
+      `dp-cdotp_old_M4096` 和 `dp-cdotp_vfcmacc_M4096`，使用
+      `SPATZ_USE_VFCMACC=0/1` 区分路径。
+- [ ] 默认验收 `M128` 与 `M4096` old/new 均通过：阻塞在 RTL benchmark
+      运行收敛，`dp-cdotp_old_M128` 在 600 秒上限内超时；未继续宣称 M4096
+      通过。
+- [ ] 输出 old/new cycles：未取得，原因同上。
+- [x] 输出 instruction count proxy：程序输出格式已加入
+      `inner_loop_insn_proxy` 和 `complex_mac_insn_proxy`；old path 为
+      `7/4`，new path 为 `4/1`，表示 inner loop 静态指令数与 complex MAC
+      指令数 proxy。
+- [ ] frontend/offload stall counters：当前 runtime 未提供可直接读取 counter；
+      本 node 仅保留静态 proxy，真实 cycle/offload 数据被 RTL benchmark
+      收敛 blocker 阻塞。
+
 证据：
 
-- 尚无。
+- TDD red / blocker reproduction：2026-06-08 从
+  `hw/system/spatz_cluster/sw/build` 运行
+  `ctest -V -R "dp-cdotp_old_M128$"`，`dp-cdotp` 第一版全量驻留路径在
+  13 分钟后仍未返回；`spatzBenchmarks/logs/trace_hart_00000.dasm` 与
+  `trace_hart_00001.dasm` 停在 745/530 行且 mtime 不再更新。手动停止该次
+  CTest，作为 Node 6 benchmark blocker 证据。
+- 2026-06-08 运行 `timeout 600s ctest -V -R "dp-cdotp_ver2_M128$"`，
+  退出码为 124；分块版参考也未在 600 秒内收敛，trace 停在 767/559 行且
+  mtime 不再更新，说明当前问题不是新增 `SPATZ_USE_VFCMACC` 路径独有。
+- 根据既有 `dp_cdotp_dp_cmatmul_v1_排查与验证记录.md` 中关于第一版
+  `dp-cdotp` 全量驻留风险的记录，2026-06-08 将 `dp-cdotp/main.c` 改成
+  `CDOTP_TILE_ELEMS=1024` 的分块 DMA/分块累加主流程，old/new A/B 共享同一
+  数据搬运框架。
+- 2026-06-08 运行
+  `PATH="$PWD/.venv/bin:$PATH" make -C hw/system/spatz_cluster sw.vlt`，
+  退出码为 0；CMake/Make 完成软件构建并注册/链接
+  `dp-cdotp_old_M128`、`dp-cdotp_vfcmacc_M128`、`dp-cdotp_old_M4096` 和
+  `dp-cdotp_vfcmacc_M4096`。输出仍包含既有 runtime/benchmark warnings 和
+  DWARF address range table diagnostic。
+- 2026-06-08 运行 `ctest -N -R
+  "dp-cdotp_(old|vfcmacc)_M(128|4096)$"`，退出码为 0；列出 4 个 Node 6
+  old/new 目标。
+- 修复后再次运行 `timeout 600s ctest -V -R "dp-cdotp_old_M128$"`，
+  退出码为 124；trace 停在 766/559 行且 mtime 不再更新。M128 old path
+  仍无法给出 correctness/cycle 结果，Node 6 因 benchmark RTL 运行收敛问题
+  标为阻塞。
+- 对照运行 `timeout 180s ctest -R "vfcmacc$" --output-on-failure`，退出码为
+  0；`vfcmacc` ISA regression 用时 117.31 秒并通过，说明当前 simulator
+  基础路径仍可执行并退出，blocker 限定在 benchmark 类目标。
+
+风险：
+
+- Node 6 尚未取得 old/new cycles、correctness 或 M4096 结果；不得使用本 node
+  声称 `vfcmacc.vv` benchmark speedup。
+- `dp-cdotp_vfcmacc` new path 已编译链接，但没有 RTL runtime pass 证据。
+- 分块 DMA 主流程解决 M4096 全量驻留的已知 TCDM 风险，但未解决当前 RTL
+  benchmark 停滞；后续需要用波形或 RTL trace 定位 benchmark 在
+  vector reduction/result writeback/barrier 附近等待的根因。
 
 ## Node 7：Mnemonic 与工具链整理
 
