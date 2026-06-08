@@ -448,15 +448,70 @@ bin/spatz_cluster.vlt`，退出码为 0；Verilator 5.034 重新生成并链接
 
 ## Node 5c：特殊数值、Rounding 与 FFLAGS
 
-状态：未开始
+状态：已完成
 
 目标：
 
 - 覆盖 zero sign、NaN/Inf、rounding mode 和 `fflags`。
 
+修改范围：
+
+- `sw/riscvTests/isa/rv64uv/vfcmacc.c`
+- `docs/complex-instruction-extension/PHASE_RESULTS.md`
+- `docs/complex-instruction-extension/GIT_NOTES.md`
+
+验收标准：
+
+- [x] `+0.0/-0.0` result bits 与四指令 reference sequence bit-identical。
+- [x] NaN、Inf、overflow 和 invalid-result bits 与四指令 reference sequence
+      bit-identical。
+- [x] RNE 与 RTZ rounding-mode cases 均与四指令 reference sequence bit-identical。
+- [x] `fflags_final` 与四个 reference FMA/FNMSAC operations 的 architectural
+      flags 一致，并在 `vfcmacc.vv` 后一次性可读。
+- [x] masked `vfcmacc.vv` 的 `fflags` 与当前四条 masked FMA reference sequence
+      一致。
+- [x] 现有 `vfmacc`、`vfnmsac` 和 `vfwdotp` proxy regression 无回归。
+
 证据：
 
-- 尚无。
+- TDD red：2026-06-08 从 `hw/system/spatz_cluster/sw/build` 运行
+  `ctest -R "vfcmacc$" --output-on-failure`，退出码为 8；新增 TC13 初版错误地
+  假设 masked-off signaling-NaN lanes 不应产生 flags，输出为
+  `[TC 13] fflags FAILED. Got 0x10, expected 0x0.`。根据 v1 reference 必须等同
+  当前四条 masked FMA sequence，测试修正为比较 `vfcmacc.vv` 与 reference flags。
+- 修正测试 oracle 后，2026-06-08 从 `hw/system/spatz_cluster/sw/build` 运行
+  `ctest -R "vfcmacc$" --output-on-failure`，退出码为 0；结果为
+  `100% tests passed, 0 tests failed out of 1`。
+- 2026-06-08 运行
+  `PATH="$PWD/.venv/bin:$PATH" make -C hw/system/spatz_cluster bin/spatz_cluster.vlt`，
+  退出码为 0；fresh rerun 输出 `make: 'bin/spatz_cluster.vlt' is up to date.`。
+- 2026-06-08 运行
+  `PATH="$PWD/.venv/bin:$PATH" make -C hw/system/spatz_cluster sw.vlt`，
+  退出码为 0；CMake/Make 成功重建软件测试树。输出仍包含既有 runtime/benchmark
+  warnings 和 DWARF address range table diagnostic。
+- 2026-06-08 从 `hw/system/spatz_cluster/sw/build` 运行
+  `ctest -R "vfcmacc$" --output-on-failure`，退出码为 0；结果为
+  `100% tests passed, 0 tests failed out of 1`。
+- 2026-06-08 从 `hw/system/spatz_cluster/sw/build` 运行
+  `ctest -R "vfmacc|vfnmsac|vfwdotp" --output-on-failure`，退出码为 0；当前 build
+  只注册 `vfmacc` 与 `vfnmsac` 两个匹配目标，结果为
+  `100% tests passed, 0 tests failed out of 2`。
+- 2026-06-08 从 `hw/system/spatz_cluster/sw/build` 运行
+  `ctest -R "sdotp-(hp|bp)-fmatmul_M64_N64_K64" --output-on-failure`，退出码为 0；
+  这两个 benchmark kernels 使用 `vfwdotp.vf`，作为当前 build 的 `vfwdotp`
+  proxy regression，结果为 `100% tests passed, 0 tests failed out of 2`。
+- 2026-06-08 运行 `ctest -N -R "vfwdotp|dotp"`，退出码为 0；列出的目标包含
+  sdotp/dotp benchmarks，但没有独立名为 `vfwdotp` 的 ISA CTest。
+- 2026-06-08 运行 `git diff --check`，退出码为 0，未发现 whitespace error。
+
+风险：
+
+- Node 5c 只新增数值和 `fflags` coverage；未修改 RTL。现有 `VFCMADD`
+  `fflags` OR/final-only 机制满足这些 cases。
+- sNaN masked-off lane flags 按计划的 bit-identical reference 处理：与当前四条
+  masked FMA sequence 一致，而不是按“inactive lane 不产生 flags”的替代语义。
+- `vfwdotp` 当前没有独立 CTest 名称；本 node 使用包含 `vfwdotp.vf` 的 sdotp
+  benchmark 作为 proxy regression。
 
 ## Node 5d：Serialization Fence 与 Hazard Regression
 

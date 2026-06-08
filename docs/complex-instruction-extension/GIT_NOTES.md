@@ -736,6 +736,102 @@ inactive lane 是否产生内部 FPU status 仍需 Node 5c 以精确 fflags/NaN 
 暂无。
 ```
 
+## 2026-06-08 Node 5c 记录
+
+日期：
+
+```text
+2026-06-08
+```
+
+Node：
+
+```text
+Node 5c：特殊数值、Rounding 与 FFLAGS
+```
+
+分支和状态：
+
+```text
+## feature/cfma-instruction-extension
+ M docs/complex-instruction-extension/PHASE_RESULTS.md
+ M hw/system/spatz_cluster/src/generated/testharness.sv
+ M hw/system/spatz_cluster/test/bootrom.elf
+ M sw/riscvTests/isa/rv64uv/vfcmacc.c
+?? .venv
+```
+
+计划提交：
+
+```text
+[cfma] Cover vfcmacc numerical corner cases
+```
+
+修改范围：
+
+```text
+M  sw/riscvTests/isa/rv64uv/vfcmacc.c
+M  docs/complex-instruction-extension/PHASE_RESULTS.md
+M  docs/complex-instruction-extension/GIT_NOTES.md
+```
+
+目的：
+
+- 在 `vfcmacc` regression 中增加 e32 special fixture，覆盖 signed zero、NaN、Inf、
+  overflow、invalid 和 fractional rounding inputs。
+- 对 RNE 与 RTZ rounding-mode 分别比较 `vfcmacc.vv` 和四指令 reference sequence
+  的 result bits 与 `fflags`。
+- 增加 masked signaling-NaN case，明确 `fflags` 必须 bit-identical 于当前四条
+  masked FMA reference sequence。
+- 运行现有 `vfmacc`、`vfnmsac` 和包含 `vfwdotp.vf` 的 sdotp proxy regression。
+
+验证命令：
+
+```text
+TDD red: cd hw/system/spatz_cluster/sw/build && ctest -R "vfcmacc$" --output-on-failure:
+FAIL，退出码 8；初版 TC13 错误地期望 masked-off sNaN lanes 不产生 flags，输出
+`[TC 13] fflags FAILED. Got 0x10, expected 0x0.`。按 v1 reference 要求修正为比较
+`vfcmacc.vv` 与四条 masked FMA sequence 的 flags。
+cd hw/system/spatz_cluster/sw/build && ctest -R "vfcmacc$" --output-on-failure: PASS，退出码 0。
+PATH="$PWD/.venv/bin:$PATH" make -C hw/system/spatz_cluster bin/spatz_cluster.vlt: PASS，退出码 0。
+PATH="$PWD/.venv/bin:$PATH" make -C hw/system/spatz_cluster sw.vlt: PASS，退出码 0。
+cd hw/system/spatz_cluster/sw/build && ctest -R "vfcmacc$" --output-on-failure: PASS，退出码 0。
+cd hw/system/spatz_cluster/sw/build && ctest -R "vfmacc|vfnmsac|vfwdotp" --output-on-failure: PASS，退出码 0；当前只注册 vfmacc/vfnmsac 两个匹配目标。
+cd hw/system/spatz_cluster/sw/build && ctest -R "sdotp-(hp|bp)-fmatmul_M64_N64_K64" --output-on-failure: PASS，退出码 0。
+cd hw/system/spatz_cluster/sw/build && ctest -N -R "vfwdotp|dotp": PASS，退出码 0；无独立 vfwdotp ISA CTest。
+git diff --check: PASS，退出码 0。
+```
+
+结果摘要：
+
+```text
+`vfcmacc` 新增 TC11/TC12/TC13，分别覆盖 special result bits + fflags、RTZ
+rounding-mode result bits + fflags、masked signaling-NaN fflags reference
+equivalence。当前 RTL 无需修改：`VFCMADD` 的 four-phase status OR/final-only
+机制与四指令 reference sequence 对齐。
+```
+
+实际提交：
+
+```text
+待提交。
+```
+
+遗留风险：
+
+```text
+serialization fence 的 explicit real/imag hazard regression 仍留给 Node 5d。
+工作树中仍存在未 stage 的本地生成差异
+`hw/system/spatz_cluster/src/generated/testharness.sv` 与
+`hw/system/spatz_cluster/test/bootrom.elf`，本 node 不提交这些产物。
+```
+
+远端 Git 操作：
+
+```text
+暂无。
+```
+
 ## 网络相关 Git 操作记录
 
 如果后续执行依赖网络的 Git 操作失败，在这里记录即可。该工程不要求把修复网络

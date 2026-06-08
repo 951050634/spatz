@@ -2,6 +2,7 @@
 // Solderpad Hardware License, Version 0.51, see LICENSE for details.
 // SPDX-License-Identifier: SHL-0.51
 
+#include "float_macros.h"
 #include "vector_macros.h"
 #include <stdint.h>
 
@@ -38,6 +39,26 @@ static void save_accumulator_to_v24_v25(void) {
   asm volatile("vmv.v.v v24, v8\n"
                "vmv.v.v v25, v9\n"
                ::: "memory");
+}
+
+static unsigned int read_fflags(void) {
+  unsigned int flags;
+  asm volatile("frflags %0" : "=r"(flags));
+  return flags;
+}
+
+static void clear_fflags(void) { asm volatile("fsflags %0" ::"r"(0)); }
+
+static void check_fflags(uint32_t casenum, unsigned int expected) {
+  unsigned int got = read_fflags();
+  if (got != expected) {
+    printf("[TC %u] fflags FAILED. Got 0x%x, expected 0x%x.\n", casenum, got,
+           expected);
+    num_failed++;
+    return;
+  }
+
+  printf("[TC %u] fflags PASSED.\n", casenum);
 }
 
 static void compare_v8_v9_active_else_orig(uint32_t casenum,
@@ -355,6 +376,47 @@ static void load_e32_fixture(void) {
            0xbe99999a);
 }
 
+static void load_e32_special_fixture(void) {
+  VSET(16, e32, m1);
+
+  VLOAD_32(v0, 0x00000000, 0x80000000, pInff, pInff, pMaxf, 0x3f800000,
+           0x3f800000, sNaNf, 0x3f800000, 0xbf800000, 0x3f800000, 0x3f800000,
+           0x3eaaaaab, 0x3eaaaaab, 0x00000000, 0x80000000);
+  VLOAD_32(v1, 0x00000000, 0x80000000, pInff, pInff, pMaxf, 0x3f800000,
+           0x3f800000, 0x3f800000, sNaNf, 0xbf800000, 0x3f800000, 0x3f800000,
+           0x3eaaaaab, 0x3eaaaaab, 0x80000000, 0x00000000);
+  VLOAD_32(v2, 0x3f800000, 0x3f800000, 0x3f800000, mInff, pMaxf, sNaNf,
+           0x3f800000, 0x3f800000, 0x3f800000, 0x3f800000, 0x3eaaaaab,
+           0x3eaaaaab, 0x3eaaaaab, 0x3eaaaaab, 0x3f800000, 0x3f800000);
+  VLOAD_32(v3, 0x3f800000, 0x3f800000, 0x3f800000, pInff, pMaxf, 0x3f800000,
+           sNaNf, 0x3f800000, 0x3f800000, 0x3f800000, 0x3eaaaaab, 0x3eaaaaab,
+           0x3eaaaaab, 0x3eaaaaab, 0x3f800000, 0x3f800000);
+  VLOAD_32(v8, 0x00000000, 0x00000000, 0x00000000, 0x00000000, pMaxf,
+           0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
+           0x3eaaaaab, 0x3eaaaaab, 0x00000000, 0x00000000, 0x80000000,
+           0x80000000);
+  VLOAD_32(v9, 0x00000000, 0x00000000, 0x00000000, 0x00000000, pMaxf,
+           0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
+           0x3eaaaaab, 0x3eaaaaab, 0x00000000, 0x00000000, 0x80000000,
+           0x80000000);
+  VLOAD_32(v16, 0x00000000, 0x00000000, 0x00000000, 0x00000000, pMaxf,
+           0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
+           0x3eaaaaab, 0x3eaaaaab, 0x00000000, 0x00000000, 0x80000000,
+           0x80000000);
+  VLOAD_32(v17, 0x00000000, 0x00000000, 0x00000000, 0x00000000, pMaxf,
+           0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
+           0x3eaaaaab, 0x3eaaaaab, 0x00000000, 0x00000000, 0x80000000,
+           0x80000000);
+}
+
+static void run_e32_reference_v16_v17(void) {
+  asm volatile("vfmacc.vv v16, v0, v2\n"
+               "vfnmsac.vv v16, v1, v3\n"
+               "vfmacc.vv v17, v0, v3\n"
+               "vfmacc.vv v17, v1, v2\n"
+               ::: "memory");
+}
+
 static void load_e16_fixture(void) {
   VSET(16, e16, m1);
 
@@ -612,6 +674,101 @@ void TEST_CASE10(void) {
   compare_e16_v8_v9_active_else_orig(10, 0xffff, 11);
 }
 
+void TEST_CASE11(void) {
+  load_e32_special_fixture();
+
+  clear_fflags();
+  VFCMACC_VV_VM1("v8", "v0", "v2");
+  unsigned int got_fflags = read_fflags();
+
+  clear_fflags();
+  run_e32_reference_v16_v17();
+  unsigned int ref_fflags = read_fflags();
+
+  compare_v8_v9_against_v16_v17(11);
+  check_fflags(11, ref_fflags);
+  if (got_fflags != ref_fflags) {
+    printf("[TC 11] vfcmacc fflags snapshot FAILED. Got 0x%x, expected 0x%x.\n",
+           got_fflags, ref_fflags);
+    num_failed++;
+    return;
+  }
+}
+
+void TEST_CASE12(void) {
+  load_e32_special_fixture();
+  CHANGE_RM(RM_RTZ);
+
+  clear_fflags();
+  VFCMACC_VV_VM1("v8", "v0", "v2");
+  unsigned int got_fflags = read_fflags();
+
+  clear_fflags();
+  run_e32_reference_v16_v17();
+  unsigned int ref_fflags = read_fflags();
+  CHANGE_RM(RM_RNE);
+
+  compare_v8_v9_against_v16_v17(12);
+  check_fflags(12, ref_fflags);
+  if (got_fflags != ref_fflags) {
+    printf("[TC 12] vfcmacc RTZ fflags snapshot FAILED. Got 0x%x, expected 0x%x.\n",
+           got_fflags, ref_fflags);
+    num_failed++;
+    return;
+  }
+}
+
+void TEST_CASE13(void) {
+  VSET(16, e32, m1);
+  VLOAD_32(v0, sNaNf, 0x3f800000, sNaNf, 0x3f800000, sNaNf, 0x3f800000,
+           sNaNf, 0x3f800000, sNaNf, 0x3f800000, sNaNf, 0x3f800000, sNaNf,
+           0x3f800000, sNaNf, 0x3f800000);
+  VLOAD_32(v1, sNaNf, 0x3f800000, sNaNf, 0x3f800000, sNaNf, 0x3f800000,
+           sNaNf, 0x3f800000, sNaNf, 0x3f800000, sNaNf, 0x3f800000, sNaNf,
+           0x3f800000, sNaNf, 0x3f800000);
+  VLOAD_32(v2, sNaNf, 0x3f800000, sNaNf, 0x3f800000, sNaNf, 0x3f800000,
+           sNaNf, 0x3f800000, sNaNf, 0x3f800000, sNaNf, 0x3f800000, sNaNf,
+           0x3f800000, sNaNf, 0x3f800000);
+  VLOAD_32(v3, sNaNf, 0x3f800000, sNaNf, 0x3f800000, sNaNf, 0x3f800000,
+           sNaNf, 0x3f800000, sNaNf, 0x3f800000, sNaNf, 0x3f800000, sNaNf,
+           0x3f800000, sNaNf, 0x3f800000);
+  copy_sources_to_v4_v7();
+  VLOAD_32(v8, 0x00000000, 0x3f800000, 0x00000000, 0x3f800000, 0x00000000,
+           0x3f800000, 0x00000000, 0x3f800000, 0x00000000, 0x3f800000,
+           0x00000000, 0x3f800000, 0x00000000, 0x3f800000, 0x00000000,
+           0x3f800000);
+  VLOAD_32(v9, 0x00000000, 0x3f800000, 0x00000000, 0x3f800000, 0x00000000,
+           0x3f800000, 0x00000000, 0x3f800000, 0x00000000, 0x3f800000,
+           0x00000000, 0x3f800000, 0x00000000, 0x3f800000, 0x00000000,
+           0x3f800000);
+  asm volatile("vmv.v.v v16, v8\n"
+               "vmv.v.v v17, v9\n"
+               ::: "memory");
+  save_accumulator_to_v24_v25();
+  load_odd_lane_mask();
+  VSET_POLICY(16, e32, m1, tu, mu);
+
+  clear_fflags();
+  VFCMACC_VV_VM0("v8", "v4", "v6");
+  unsigned int got_fflags = read_fflags();
+
+  clear_fflags();
+  asm volatile("vfmacc.vv v16, v4, v6, v0.t\n"
+               "vfnmsac.vv v16, v5, v7, v0.t\n"
+               "vfmacc.vv v17, v4, v7, v0.t\n"
+               "vfmacc.vv v17, v5, v6, v0.t\n"
+               ::: "memory");
+  unsigned int ref_fflags = read_fflags();
+  compare_v8_v9_active_else_orig(13, 0xaaaa, 16);
+  check_fflags(13, ref_fflags);
+  if (got_fflags != ref_fflags) {
+    printf("[TC 13] masked fflags snapshot FAILED. Got 0x%x, expected 0x%x.\n",
+           got_fflags, ref_fflags);
+    num_failed++;
+    return;
+  }
+}
+
 int main(void) {
   INIT_CHECK();
 
@@ -625,6 +782,9 @@ int main(void) {
   TEST_CASE8();
   TEST_CASE9();
   TEST_CASE10();
+  TEST_CASE11();
+  TEST_CASE12();
+  TEST_CASE13();
 
   EXIT_CHECK();
 }
