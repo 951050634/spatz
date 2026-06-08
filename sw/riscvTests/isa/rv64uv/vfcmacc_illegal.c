@@ -28,6 +28,16 @@ static inline void write_mtvec(uintptr_t value) {
   asm volatile("csrw mtvec, %0" ::"r"(value));
 }
 
+static inline uintptr_t read_fmode(void) {
+  uintptr_t value;
+  asm volatile("csrr %0, 0x800" : "=r"(value));
+  return value;
+}
+
+static inline void write_fmode(uintptr_t value) {
+  asm volatile("csrw 0x800, %0" ::"r"(value));
+}
+
 __attribute__((naked)) static void trap_entry(void) {
   asm volatile("addi sp, sp, -16\n"
                "sw t0, 0(sp)\n"
@@ -101,6 +111,14 @@ static void illegal_unsupported_e8(void) {
   VFCMACC_VV_VM1("v8", "v0", "v2");
 }
 
+static void illegal_alt_fmode_e16(void) {
+  uintptr_t old_fmode = read_fmode();
+  write_fmode(3);
+  VSET(1, e16, m1);
+  VFCMACC_VV_VM1("v8", "v0", "v2");
+  write_fmode(old_fmode);
+}
+
 static void illegal_reserved_vf(void) {
   VSET(1, e32, m1);
   VFCMACC_VF_RESERVED("v8", "x0", "v2");
@@ -120,6 +138,7 @@ int main(void) {
   expect_illegal("vd/vs1 overlap", illegal_overlap_vd_vs1);
   expect_illegal("vd/vs2 overlap", illegal_overlap_vd_vs2);
   expect_illegal("unsupported e8", illegal_unsupported_e8);
+  expect_illegal("unsupported alternative fmode", illegal_alt_fmode_e16);
   expect_illegal("reserved vf", illegal_reserved_vf);
 
   write_mtvec(old_mtvec);

@@ -159,6 +159,9 @@ module spatz_controller
   endfunction
 
   function automatic logic cfma_req_legal(spatz_req_t req, vtype_t vtype, vlen_t vstart);
+    if (req.fm.src || req.fm.dst)
+      return 1'b0;
+
     return cfma_legal_layout(vtype, vstart, req.vd, req.vs1, req.vs2);
   endfunction
 

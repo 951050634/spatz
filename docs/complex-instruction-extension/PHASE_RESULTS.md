@@ -330,15 +330,62 @@ VFCMACC_VV = 32'b111010???????????001?????1010111
 
 ## Node 5a：e64/e16 Format 支持
 
-状态：未开始
+状态：已完成
 
 目标：
 
-- 补齐 e64 和 e16。
+- 在 v1a e32 基础上补齐 e64 和 e16。
+- 保持每种 SEW 都 bit-identical 于四指令 reference sequence。
+
+修改范围：
+
+- `hw/ip/spatz/src/spatz_controller.sv`
+- `sw/riscvTests/CMakeLists.txt`
+- `sw/riscvTests/isa/rv64uv/vfcmacc.c`
+- `sw/riscvTests/isa/rv64uv/vfcmacc_illegal.c`
+- `docs/complex-instruction-extension/PHASE_RESULTS.md`
+- `docs/complex-instruction-extension/GIT_NOTES.md`
+
+验收标准：
+
+- [x] e32/e64/e16 unmasked case 均 bit-identical：`vfcmacc` regression 覆盖
+      e32 single、e32 back-to-back、e64 和 e16，均与四指令 reference sequence
+      逐 bit 对比。
+- [x] e8、integer vtype 和 unsupported alternative FP formats illegal：e8 沿用
+      `vfcmacc_illegal` 覆盖；integer vtype 不能匹配 OPFVV 浮点 decode；新增
+      `fmode.src/dst != 0` 的 e16 alternative format trap 覆盖。
+- [x] e64 只在 RVD/FPU 可用时合法：controller 仍保留
+      `vtype.vsew == EW_64 && (!spatz_pkg::RVD || MAXEW != EW_64)` illegal gate。
+- [x] e16 只在 half-precision FPU support 可用时合法：默认 RVD FPU features
+      支持 FP16；v1 `VFCMADD` 现在拒绝 `FP16ALT`/alternative fmode。
+- [x] e32 v1a 测试无回归：原 `vfcmacc_e32` 内容迁移为 `vfcmacc` 的
+      `TEST_CASE1/2`，最终 `vfcmacc` CTest 通过。
 
 证据：
 
-- 尚无。
+- TDD red：2026-06-08 从 `hw/system/spatz_cluster/sw/build` 运行
+  `ctest -R "vfcmacc$|vfcmacc_illegal" --output-on-failure`，退出码为 8；
+  `vfcmacc` behavior test 通过，但新增 alternative fmode illegal case 失败，
+  关键输出为 `unsupported alternative fmode did not raise illegal instruction
+trap.`。
+- 2026-06-08 运行
+  `PATH="$PWD/.venv/bin:$PATH" make -C hw/system/spatz_cluster
+bin/spatz_cluster.vlt`，退出码为 0；Verilator 5.034 重新生成并链接
+  `bin/spatz_cluster.vlt`。输出包含既有 latch warnings，无 fatal error。
+- 2026-06-08 运行
+  `PATH="$PWD/.venv/bin:$PATH" make -C hw/system/spatz_cluster sw.vlt`，
+  退出码为 0；CMake/Make 成功注册并构建统一 `vfcmacc` regression。输出仍包含
+  既有 runtime/benchmark warnings 和 DWARF address range table diagnostic。
+- 2026-06-08 从 `hw/system/spatz_cluster/sw/build` 运行
+  `ctest -R "vfcmacc$|vfcmacc_illegal" --output-on-failure`，退出码为 0；结果为
+  `100% tests passed, 0 tests failed out of 2`。
+
+风险：
+
+- 本 node 覆盖 unmasked e32/e64/e16 和 alternative fmode legality；mask、tail 和
+  `vstart` 行为仍留给 Node 5b。
+- e64 的 disabled RVD 配置未新增独立 build；本 node 依赖 controller 中已有
+  RVD/MAXEW legality gate，并在默认 RVD build 中覆盖 e64 正常路径。
 
 ## Node 5b：Mask、Tail 与 vstart 行为
 

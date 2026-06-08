@@ -543,6 +543,102 @@ Node 5a，mask/tail/vstart 留给 Node 5b，NaN/Inf/zero sign/rounding/精确 ff
 暂无。
 ```
 
+## 2026-06-08 Node 5a 记录
+
+日期：
+
+```text
+2026-06-08
+```
+
+Node：
+
+```text
+Node 5a：e64/e16 Format 支持
+```
+
+分支和状态：
+
+```text
+## feature/cfma-instruction-extension
+ M docs/complex-instruction-extension/PHASE_RESULTS.md
+ M hw/ip/spatz/src/spatz_controller.sv
+ M hw/system/spatz_cluster/src/generated/testharness.sv
+ M hw/system/spatz_cluster/test/bootrom.elf
+ M sw/riscvTests/CMakeLists.txt
+ D sw/riscvTests/isa/rv64uv/vfcmacc_e32.c
+ M sw/riscvTests/isa/rv64uv/vfcmacc_illegal.c
+?? .venv
+?? sw/riscvTests/isa/rv64uv/vfcmacc.c
+```
+
+计划提交：
+
+```text
+[cfma] Add vfcmacc e64 and e16 behavior
+```
+
+修改范围：
+
+```text
+M  hw/ip/spatz/src/spatz_controller.sv
+M  sw/riscvTests/CMakeLists.txt
+R  sw/riscvTests/isa/rv64uv/vfcmacc_e32.c -> sw/riscvTests/isa/rv64uv/vfcmacc.c
+M  sw/riscvTests/isa/rv64uv/vfcmacc_illegal.c
+M  docs/complex-instruction-extension/PHASE_RESULTS.md
+M  docs/complex-instruction-extension/GIT_NOTES.md
+```
+
+目的：
+
+- 将 Node 4 的 `vfcmacc_e32` regression 整理为统一 `vfcmacc` 目标。
+- 保留 e32 single 和 back-to-back same accumulator cases。
+- 新增 e64/e16 unmasked cases，均用
+  `vfmacc/vfnmsac/vfmacc/vfmacc` 四指令 reference sequence 做逐 bit 对比。
+- 拒绝 `fmode.src/dst != 0` 的 alternative FP format，使 `VFCMADD` 只使用 v1
+  支持的 IEEE FP16/FP32/FP64 formats。
+- 扩展 `vfcmacc_illegal`，覆盖 e16 alternative fmode trap。
+
+验证命令：
+
+```text
+TDD red: cd hw/system/spatz_cluster/sw/build && ctest -R "vfcmacc$|vfcmacc_illegal" --output-on-failure:
+FAIL，退出码 8，关键输出 `unsupported alternative fmode did not raise illegal instruction trap.`。
+PATH="$PWD/.venv/bin:$PATH" make -C hw/system/spatz_cluster bin/spatz_cluster.vlt: PASS，退出码 0。
+PATH="$PWD/.venv/bin:$PATH" make -C hw/system/spatz_cluster sw.vlt: PASS，退出码 0。
+cd hw/system/spatz_cluster/sw/build && ctest -R "vfcmacc$|vfcmacc_illegal" --output-on-failure: PASS，退出码 0。
+```
+
+结果摘要：
+
+```text
+`vfcmacc` 覆盖 e32、e64、e16 unmasked behavior，并与四条现有 RVV FMA reference
+sequence 逐 bit 匹配。e64 在默认 RVD/ELEN=64 build 中覆盖；e16 使用 IEEE FP16
+format。新增 controller legality gate 拒绝 nonzero `fmode.src/dst`，`vfcmacc_illegal`
+确认 alternative fmode 会触发 illegal instruction trap。
+```
+
+实际提交：
+
+```text
+待提交。
+```
+
+遗留风险：
+
+```text
+mask、tail 和 vstart 行为留给 Node 5b；NaN/Inf/zero sign/rounding/精确 fflags
+对比留给 Node 5c；serialization fence hazard regression 留给 Node 5d。工作树中仍
+存在未 stage 的本地生成差异 `hw/system/spatz_cluster/src/generated/testharness.sv`
+与 `hw/system/spatz_cluster/test/bootrom.elf`，本 node 不提交这些产物。
+```
+
+远端 Git 操作：
+
+```text
+暂无。
+```
+
 ## 网络相关 Git 操作记录
 
 如果后续执行依赖网络的 Git 操作失败，在这里记录即可。该工程不要求把修复网络
