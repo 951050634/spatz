@@ -1021,7 +1021,7 @@ Node 6 的代码侧 A/B 入口、CTest 注册、software build 和静态 instruc
 实际提交：
 
 ```text
-待补记。
+926ef7dd9dd8f2816db14cdc8588e5801faf24f2
 ```
 
 遗留风险：
