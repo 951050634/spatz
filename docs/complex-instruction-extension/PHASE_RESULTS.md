@@ -389,15 +389,62 @@ bin/spatz_cluster.vlt`，退出码为 0；Verilator 5.034 重新生成并链接
 
 ## Node 5b：Mask、Tail 与 vstart 行为
 
-状态：未开始
+状态：已完成
 
 目标：
 
 - 补齐 mask、tail 和 vstart 行为。
 
+修改范围：
+
+- `hw/ip/spatz/src/spatz_vfu.sv`
+- `sw/riscvTests/isa/rv64uv/vfcmacc.c`
+- `sw/riscvTests/isa/rv64uv/vfcmacc_illegal.c`
+- `docs/complex-instruction-extension/PHASE_RESULTS.md`
+- `docs/complex-instruction-extension/GIT_NOTES.md`
+
+验收标准：
+
+- [x] `vm=0` masked `vfcmacc.vv` 覆盖 e32/e64/e16，active lanes 与四指令
+      reference sequence bit-identical，masked-off accumulator lanes 保持原值。
+- [x] tail-undisturbed short-`vl` 覆盖 e32/e64/e16，tail accumulator lanes 保持原值。
+- [x] `vstart != 0` 最终 v1 policy 冻结为 illegal；`vfcmacc_illegal` 覆盖
+      nonzero `vstart` trap。
+- [x] VFU 写回只对 active bytes 置位 `vrf_wbe_o`；masked/tail inactive bytes 不
+      写 VRF。
+- [x] e32/e64/e16 unmasked regression 无回归，统一 `vfcmacc` CTest 通过。
+
 证据：
 
-- 尚无。
+- TDD red：2026-06-08 从 `hw/system/spatz_cluster/sw/build` 运行
+  `ctest -R "vfcmacc$|vfcmacc_illegal" --output-on-failure`，退出码为 8；
+  `vfcmacc_illegal` 通过，`vfcmacc` 失败，关键输出为 masked/tail cases：
+  `TC 5 real[0] FAILED`、`TC 6 real[12] FAILED`、`TC 7 real[0] FAILED`、
+  `TC 8 real[5] FAILED`、`TC 9 real[0] FAILED`、`TC 10 real[11] FAILED`。
+- 2026-06-08 运行
+  `PATH="$PWD/.venv/bin:$PATH" make -C hw/system/spatz_cluster bin/spatz_cluster.vlt`，
+  退出码为 0；最终 fresh rerun 输出 `make: 'bin/spatz_cluster.vlt' is up to
+  date.`，此前同一 Node 5b RTL 改动已完成 Verilator rebuild 并链接生成
+  `bin/spatz_cluster.vlt`。
+- 2026-06-08 运行
+  `PATH="$PWD/.venv/bin:$PATH" make -C hw/system/spatz_cluster sw.vlt`，
+  退出码为 0；CMake/Make 成功重建软件测试树。输出仍包含既有 runtime/benchmark
+  warnings 和 DWARF address range table diagnostic。
+- 2026-06-08 从 `hw/system/spatz_cluster/sw/build` 运行
+  `ctest -R "vfcmacc$|vfcmacc_illegal" --output-on-failure`，退出码为 0；结果为
+  `100% tests passed, 0 tests failed out of 2`。
+- 2026-06-08 运行 `git diff --check`，退出码为 0，未发现 whitespace error。
+- 2026-06-08 运行 `git diff --cached --check`，退出码为 0，staged diff 未发现
+  whitespace error。
+
+风险：
+
+- 本 node 将 `vstart != 0` 固定为 v1 illegal policy。支持 resumable
+  `vfcmacc.vv` 需要额外 phase/vstart 状态，不纳入 v1。
+- `VFCMADD` 通过 VRF byte-enable 保持 masked-off/tail lanes；inactive lane 的精确
+  `fflags` 行为仍由 Node 5c 继续验证。
+- 既有普通 VFU arithmetic mask 测试在仓库中仍有部分注释关闭；本 node 只为
+  `VFCMADD` 补齐 v1 mask/tail 行为。
 
 ## Node 5c：特殊数值、Rounding 与 FFLAGS
 

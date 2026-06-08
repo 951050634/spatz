@@ -9,6 +9,207 @@
   asm volatile(".insn r 0x57, 0x1, 0x75, " vd ", " vs1 ", " vs2               \
                ::: "memory")
 
+#define VFCMACC_VV_VM0(vd, vs1, vs2)                                           \
+  asm volatile(".insn r 0x57, 0x1, 0x74, " vd ", " vs1 ", " vs2               \
+               ::: "memory")
+
+#define VSET_POLICY(VLEN, VTYPE, LMUL, TAIL, MASK)                             \
+  do {                                                                         \
+    unsigned int vl;                                                           \
+    asm volatile("vsetvli %[vl], %[A]," #VTYPE "," #LMUL "," #TAIL ","       \
+                 #MASK "\n"                                                    \
+                 : [vl] "+r"(vl)                                               \
+                 : [A] "r"(VLEN));                                             \
+  } while (0)
+
+static void copy_sources_to_v4_v7(void) {
+  asm volatile("vmv.v.v v4, v0\n"
+               "vmv.v.v v5, v1\n"
+               "vmv.v.v v6, v2\n"
+               "vmv.v.v v7, v3\n"
+               ::: "memory");
+}
+
+static void load_odd_lane_mask(void) {
+  VLOAD_8(v0, 0xaa, 0xaa, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+}
+
+static void save_accumulator_to_v24_v25(void) {
+  asm volatile("vmv.v.v v24, v8\n"
+               "vmv.v.v v25, v9\n"
+               ::: "memory");
+}
+
+static void compare_v8_v9_active_else_orig(uint32_t casenum,
+                                           uint32_t active_mask,
+                                           uint32_t active_limit) {
+  VSTORE_U32(v8);
+  uint32_t got_real[16];
+  for (unsigned int i = 0; i < 16; i++) {
+    got_real[i] = Ru32[i];
+  }
+
+  VSTORE_U32(v16);
+  uint32_t ref_real[16];
+  for (unsigned int i = 0; i < 16; i++) {
+    ref_real[i] = Ru32[i];
+  }
+
+  VSTORE_U32(v24);
+  for (unsigned int i = 0; i < 16; i++) {
+    uint32_t expected = (i < active_limit && ((active_mask >> i) & 1u))
+                            ? ref_real[i]
+                            : Ru32[i];
+    if (got_real[i] != expected) {
+      printf("[TC %u] real[%u] FAILED. Got %u, expected %u.\n", casenum, i,
+             got_real[i], expected);
+      num_failed++;
+      return;
+    }
+  }
+
+  VSTORE_U32(v9);
+  uint32_t got_imag[16];
+  for (unsigned int i = 0; i < 16; i++) {
+    got_imag[i] = Ru32[i];
+  }
+
+  VSTORE_U32(v17);
+  uint32_t ref_imag[16];
+  for (unsigned int i = 0; i < 16; i++) {
+    ref_imag[i] = Ru32[i];
+  }
+
+  VSTORE_U32(v25);
+  for (unsigned int i = 0; i < 16; i++) {
+    uint32_t expected = (i < active_limit && ((active_mask >> i) & 1u))
+                            ? ref_imag[i]
+                            : Ru32[i];
+    if (got_imag[i] != expected) {
+      printf("[TC %u] imag[%u] FAILED. Got %u, expected %u.\n", casenum, i,
+             got_imag[i], expected);
+      num_failed++;
+      return;
+    }
+  }
+
+  printf("[TC %u] PASSED.\n", casenum);
+}
+
+static void compare_e16_v8_v9_active_else_orig(uint32_t casenum,
+                                               uint32_t active_mask,
+                                               uint32_t active_limit) {
+  VSTORE_U16(v8);
+  uint16_t got_real[16];
+  for (unsigned int i = 0; i < 16; i++) {
+    got_real[i] = Ru16[i];
+  }
+
+  VSTORE_U16(v16);
+  uint16_t ref_real[16];
+  for (unsigned int i = 0; i < 16; i++) {
+    ref_real[i] = Ru16[i];
+  }
+
+  VSTORE_U16(v24);
+  for (unsigned int i = 0; i < 16; i++) {
+    uint16_t expected = (i < active_limit && ((active_mask >> i) & 1u))
+                            ? ref_real[i]
+                            : Ru16[i];
+    if (got_real[i] != expected) {
+      printf("[TC %u] real[%u] FAILED. Got %u, expected %u.\n", casenum, i,
+             got_real[i], expected);
+      num_failed++;
+      return;
+    }
+  }
+
+  VSTORE_U16(v9);
+  uint16_t got_imag[16];
+  for (unsigned int i = 0; i < 16; i++) {
+    got_imag[i] = Ru16[i];
+  }
+
+  VSTORE_U16(v17);
+  uint16_t ref_imag[16];
+  for (unsigned int i = 0; i < 16; i++) {
+    ref_imag[i] = Ru16[i];
+  }
+
+  VSTORE_U16(v25);
+  for (unsigned int i = 0; i < 16; i++) {
+    uint16_t expected = (i < active_limit && ((active_mask >> i) & 1u))
+                            ? ref_imag[i]
+                            : Ru16[i];
+    if (got_imag[i] != expected) {
+      printf("[TC %u] imag[%u] FAILED. Got %u, expected %u.\n", casenum, i,
+             got_imag[i], expected);
+      num_failed++;
+      return;
+    }
+  }
+
+  printf("[TC %u] PASSED.\n", casenum);
+}
+
+#if ELEN == 64
+static void compare_e64_v8_v9_active_else_orig(uint32_t casenum,
+                                               uint32_t active_mask,
+                                               uint32_t active_limit) {
+  VSTORE_U64(v8);
+  uint64_t got_real[8];
+  for (unsigned int i = 0; i < 8; i++) {
+    got_real[i] = Ru64[i];
+  }
+
+  VSTORE_U64(v16);
+  uint64_t ref_real[8];
+  for (unsigned int i = 0; i < 8; i++) {
+    ref_real[i] = Ru64[i];
+  }
+
+  VSTORE_U64(v24);
+  for (unsigned int i = 0; i < 8; i++) {
+    uint64_t expected = (i < active_limit && ((active_mask >> i) & 1u))
+                            ? ref_real[i]
+                            : Ru64[i];
+    if (got_real[i] != expected) {
+      printf("[TC %u] real[%u] FAILED. Got %lu, expected %lu.\n", casenum, i,
+             got_real[i], expected);
+      num_failed++;
+      return;
+    }
+  }
+
+  VSTORE_U64(v9);
+  uint64_t got_imag[8];
+  for (unsigned int i = 0; i < 8; i++) {
+    got_imag[i] = Ru64[i];
+  }
+
+  VSTORE_U64(v17);
+  uint64_t ref_imag[8];
+  for (unsigned int i = 0; i < 8; i++) {
+    ref_imag[i] = Ru64[i];
+  }
+
+  VSTORE_U64(v25);
+  for (unsigned int i = 0; i < 8; i++) {
+    uint64_t expected = (i < active_limit && ((active_mask >> i) & 1u))
+                            ? ref_imag[i]
+                            : Ru64[i];
+    if (got_imag[i] != expected) {
+      printf("[TC %u] imag[%u] FAILED. Got %lu, expected %lu.\n", casenum, i,
+             got_imag[i], expected);
+      num_failed++;
+      return;
+    }
+  }
+
+  printf("[TC %u] PASSED.\n", casenum);
+}
+#endif
+
 static void compare_v8_v9_against_v16_v17(uint32_t casenum) {
   VSTORE_U32(v8);
   uint32_t got_real[16];
@@ -295,6 +496,122 @@ void TEST_CASE4(void) {
   compare_e16_v8_v9_against_v16_v17(4);
 }
 
+void TEST_CASE5(void) {
+  load_e32_fixture();
+  copy_sources_to_v4_v7();
+  save_accumulator_to_v24_v25();
+  load_odd_lane_mask();
+  VSET_POLICY(16, e32, m1, tu, mu);
+
+  VFCMACC_VV_VM0("v8", "v4", "v6");
+
+  VSET(16, e32, m1);
+  asm volatile("vfmacc.vv v16, v4, v6\n"
+               "vfnmsac.vv v16, v5, v7\n"
+               "vfmacc.vv v17, v4, v7\n"
+               "vfmacc.vv v17, v5, v6\n"
+               ::: "memory");
+
+  compare_v8_v9_active_else_orig(5, 0xaaaa, 16);
+}
+
+void TEST_CASE6(void) {
+  load_e32_fixture();
+  save_accumulator_to_v24_v25();
+  VSET_POLICY(12, e32, m1, tu, ma);
+
+  VFCMACC_VV_VM1("v8", "v0", "v2");
+
+  VSET(16, e32, m1);
+  asm volatile("vfmacc.vv v16, v0, v2\n"
+               "vfnmsac.vv v16, v1, v3\n"
+               "vfmacc.vv v17, v0, v3\n"
+               "vfmacc.vv v17, v1, v2\n"
+               ::: "memory");
+
+  compare_v8_v9_active_else_orig(6, 0xffff, 12);
+}
+
+void TEST_CASE7(void) {
+#if ELEN == 64
+  load_e64_fixture();
+  copy_sources_to_v4_v7();
+  save_accumulator_to_v24_v25();
+  load_odd_lane_mask();
+  VSET_POLICY(16, e64, m1, tu, mu);
+
+  VFCMACC_VV_VM0("v8", "v4", "v6");
+
+  VSET(16, e64, m1);
+  asm volatile("vfmacc.vv v16, v4, v6\n"
+               "vfnmsac.vv v16, v5, v7\n"
+               "vfmacc.vv v17, v4, v7\n"
+               "vfmacc.vv v17, v5, v6\n"
+               ::: "memory");
+
+  compare_e64_v8_v9_active_else_orig(7, 0xaa, 8);
+#else
+  printf("[TC 7] SKIPPED: e64 requires ELEN=64.\n");
+#endif
+}
+
+void TEST_CASE8(void) {
+#if ELEN == 64
+  load_e64_fixture();
+  save_accumulator_to_v24_v25();
+  VSET_POLICY(5, e64, m1, tu, ma);
+
+  VFCMACC_VV_VM1("v8", "v0", "v2");
+
+  VSET(16, e64, m1);
+  asm volatile("vfmacc.vv v16, v0, v2\n"
+               "vfnmsac.vv v16, v1, v3\n"
+               "vfmacc.vv v17, v0, v3\n"
+               "vfmacc.vv v17, v1, v2\n"
+               ::: "memory");
+
+  compare_e64_v8_v9_active_else_orig(8, 0xff, 5);
+#else
+  printf("[TC 8] SKIPPED: e64 requires ELEN=64.\n");
+#endif
+}
+
+void TEST_CASE9(void) {
+  load_e16_fixture();
+  copy_sources_to_v4_v7();
+  save_accumulator_to_v24_v25();
+  load_odd_lane_mask();
+  VSET_POLICY(16, e16, m1, tu, mu);
+
+  VFCMACC_VV_VM0("v8", "v4", "v6");
+
+  VSET(16, e16, m1);
+  asm volatile("vfmacc.vv v16, v4, v6\n"
+               "vfnmsac.vv v16, v5, v7\n"
+               "vfmacc.vv v17, v4, v7\n"
+               "vfmacc.vv v17, v5, v6\n"
+               ::: "memory");
+
+  compare_e16_v8_v9_active_else_orig(9, 0xaaaa, 16);
+}
+
+void TEST_CASE10(void) {
+  load_e16_fixture();
+  save_accumulator_to_v24_v25();
+  VSET_POLICY(11, e16, m1, tu, ma);
+
+  VFCMACC_VV_VM1("v8", "v0", "v2");
+
+  VSET(16, e16, m1);
+  asm volatile("vfmacc.vv v16, v0, v2\n"
+               "vfnmsac.vv v16, v1, v3\n"
+               "vfmacc.vv v17, v0, v3\n"
+               "vfmacc.vv v17, v1, v2\n"
+               ::: "memory");
+
+  compare_e16_v8_v9_active_else_orig(10, 0xffff, 11);
+}
+
 int main(void) {
   INIT_CHECK();
 
@@ -302,6 +619,12 @@ int main(void) {
   TEST_CASE2();
   TEST_CASE3();
   TEST_CASE4();
+  TEST_CASE5();
+  TEST_CASE6();
+  TEST_CASE7();
+  TEST_CASE8();
+  TEST_CASE9();
+  TEST_CASE10();
 
   EXIT_CHECK();
 }

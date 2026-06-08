@@ -66,6 +66,10 @@ module spatz_vfu
 
     // Is this the last writeback of an internal vfcmacc.vv phase?
     logic cfma_step_last;
+    logic cfma;
+
+    // Element index of this VRF word within the architectural vector.
+    vlen_t elem_idx;
   } vfu_tag_t;
 
   ///////////////////////
@@ -122,9 +126,13 @@ module spatz_vfu
   cfma_phase_e cfma_phase_d, cfma_phase_q;
   logic        cfma_wait_result_d, cfma_wait_result_q;
   status_t     cfma_status_d, cfma_status_q;
+  logic        cfma_mask_valid_d, cfma_mask_valid_q;
+  vrf_data_t   cfma_mask_d, cfma_mask_q;
   `FF(cfma_phase_q, cfma_phase_d, Cfma_RR)
   `FF(cfma_wait_result_q, cfma_wait_result_d, 1'b0)
   `FF(cfma_status_q, cfma_status_d, '0)
+  `FF(cfma_mask_valid_q, cfma_mask_valid_d, 1'b0)
+  `FF(cfma_mask_q, cfma_mask_d, '0)
 
   function automatic vreg_t cfma_lmul_offset(vlmul_e vlmul);
     unique case (vlmul)
@@ -132,6 +140,26 @@ module spatz_vfu
       LMUL_4 : return vreg_t'(4);
       default: return vreg_t'(1);
     endcase
+  endfunction
+
+  function automatic vrf_be_t cfma_active_wbe(
+    vfu_tag_t tag,
+    vlen_t    vl,
+    logic     vm,
+    vrf_data_t mask_bits
+  );
+    automatic vrf_be_t wbe = '0;
+    automatic int unsigned elem_bytes = 1 << tag.vsew;
+
+    for (int unsigned byte_idx = 0; byte_idx < VRFWordBWidth; byte_idx++) begin
+      automatic vlen_t elem_idx = tag.elem_idx + vlen_t'(byte_idx / elem_bytes);
+      if (elem_idx < vl) begin
+        if (vm || (elem_idx < VRFWordWidth && mask_bits[elem_idx]))
+          wbe[byte_idx] = 1'b1;
+      end
+    end
+
+    return wbe;
   endfunction
 
   // Propagate the tags through the functional units
@@ -153,10 +181,17 @@ module spatz_vfu
 
   // Are the VFU operands ready?
   logic op1_is_ready, op2_is_ready, op3_is_ready, operands_ready;
+  logic cfma_insn;
+  logic cfma_mask_request;
+  logic cfma_mask_ready;
+  assign cfma_insn         = spatz_req.op == VFCMADD;
+  assign cfma_mask_request = spatz_req_valid && cfma_insn && !spatz_req.op_arith.vm &&
+                             !cfma_mask_valid_q;
+  assign cfma_mask_ready   = !cfma_insn || spatz_req.op_arith.vm || cfma_mask_valid_q;
   assign op1_is_ready   = spatz_req_valid && ((!spatz_req.op_arith.is_reduction && (!spatz_req.use_vs1 || vrf_rvalid_i[1])) || (spatz_req.op_arith.is_reduction && reduction_operand_ready_q));
   assign op2_is_ready   = spatz_req_valid && ((!spatz_req.use_vs2 || vrf_rvalid_i[0]) || spatz_req.op_arith.is_reduction);
   assign op3_is_ready   = spatz_req_valid && (!spatz_req.vd_is_src || vrf_rvalid_i[2]);
-  assign operands_ready = op1_is_ready && op2_is_ready && op3_is_ready && (!spatz_req.op_arith.is_scalar || vfu_rsp_ready_i) && !stall;
+  assign operands_ready = op1_is_ready && op2_is_ready && op3_is_ready && cfma_mask_ready && (!spatz_req.op_arith.is_scalar || vfu_rsp_ready_i) && !stall;
 
   // Valid operations
   logic [N_FU*ELENB-1:0] valid_operations;
@@ -189,14 +224,12 @@ module spatz_vfu
   // Is this the last request?
   logic last_request;
 
-  logic cfma_insn;
   logic cfma_final_phase;
   logic cfma_step_last_request;
   logic cfma_step_result_done;
   logic cfma_phase_result_done;
   logic cfma_final_result_done;
 
-  assign cfma_insn              = spatz_req.op == VFCMADD;
   assign cfma_final_phase       = cfma_phase_q == Cfma_IR;
   assign cfma_step_result_done  = result_tag.cfma_step_last &&
                                   &(result_valid | ~pending_results) && result_ready;
@@ -256,6 +289,8 @@ module spatz_vfu
     cfma_phase_d      = cfma_phase_q;
     cfma_wait_result_d = cfma_wait_result_q;
     cfma_status_d     = cfma_status_q;
+    cfma_mask_valid_d = cfma_mask_valid_q;
+    cfma_mask_d       = cfma_mask_q;
 
     // We are not stalling
     stall = 1'b0;
@@ -331,10 +366,17 @@ module spatz_vfu
       cfma_phase_d            = Cfma_RR;
       cfma_wait_result_d      = 1'b0;
       cfma_status_d           = '0;
+      cfma_mask_valid_d       = !cfma_insn || spatz_req.op_arith.vm;
+      cfma_mask_d             = '0;
 
       // Change number of remaining elements
       if (word_issued)
         vl_d = vl_q + nr_elem_word;
+    end
+
+    if (cfma_mask_request && vrf_rvalid_i[0]) begin
+      cfma_mask_d       = vrf_rdata_i[0];
+      cfma_mask_valid_d = 1'b1;
     end
 
     if (spatz_req_valid && cfma_insn && !cfma_final_phase && !cfma_wait_result_q &&
@@ -366,8 +408,11 @@ module spatz_vfu
       vfu_rsp_o.wb      = result_tag.wb;
       vfu_rsp_o.result  = result_tag.wb ? scalar_result : '0;
       vfu_rsp_valid_o   = 1'b1;
-      if (cfma_final_result_done)
+      if (cfma_final_result_done) begin
         cfma_status_d = '0;
+        cfma_mask_valid_d = 1'b0;
+        cfma_mask_d = '0;
+      end
     end
   end: control_proc
 
@@ -834,10 +879,15 @@ module spatz_vfu
       narrowing      : spatz_req.op_arith.is_narrowing,
       narrowing_upper: narrowing_upper_q,
       reduction      : spatz_req.op_arith.is_reduction,
-      cfma_step_last : cfma_step_last_request
+      cfma_step_last : cfma_step_last_request,
+      cfma           : cfma_insn,
+      elem_idx       : vl_q
     };
 
-    if (spatz_req_valid && vl_q == '0) begin
+    if (cfma_mask_request) begin
+      vreg_addr_d[0] = '0;
+      vrf_raddr_o    = vreg_addr_d;
+    end else if (spatz_req_valid && vl_q == '0) begin
       vreg_addr_d[0] = (spatz_req.vs2 + cfma_vs2_offset + vstart) << $clog2(NrWordsPerVector);
       vreg_addr_d[1] = (spatz_req.vs1 + cfma_vs1_offset + vstart) << $clog2(NrWordsPerVector);
       vreg_addr_d[2] = (spatz_req.vd + cfma_vd_offset + vstart) << $clog2(NrWordsPerVector);
@@ -865,14 +915,17 @@ module spatz_vfu
     vreg_we    = '0;
     vreg_wbe   = '0;
 
-    if (spatz_req_valid && vl_q < spatz_req.vl)
+    if (cfma_mask_request)
+      vreg_r_req[0] = 1'b1;
+    else if (spatz_req_valid && vl_q < spatz_req.vl)
       // Request operands
       vreg_r_req = {spatz_req.vd_is_src, spatz_req.use_vs1 && reduction_operand_request[1], spatz_req.use_vs2 && reduction_operand_request[0]};
 
     // Got a new result
     if (&(result_valid | ~pending_results) && !result_tag.reduction) begin
       vreg_we  = !result_tag.wb;
-      vreg_wbe = '1;
+      vreg_wbe = result_tag.cfma ? cfma_active_wbe(result_tag, spatz_req.vl,
+                                                   spatz_req.op_arith.vm, cfma_mask_q) : '1;
 
       if (result_tag.narrowing) begin
         // Only write half of the elements

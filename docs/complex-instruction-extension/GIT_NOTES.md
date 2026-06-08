@@ -639,6 +639,103 @@ mask、tail 和 vstart 行为留给 Node 5b；NaN/Inf/zero sign/rounding/精确 
 暂无。
 ```
 
+## 2026-06-08 Node 5b 记录
+
+日期：
+
+```text
+2026-06-08
+```
+
+Node：
+
+```text
+Node 5b：Mask、Tail 与 vstart 行为
+```
+
+分支和状态：
+
+```text
+## feature/cfma-instruction-extension
+ M docs/complex-instruction-extension/PHASE_RESULTS.md
+ M hw/ip/spatz/src/spatz_vfu.sv
+ M hw/system/spatz_cluster/src/generated/testharness.sv
+ M hw/system/spatz_cluster/test/bootrom.elf
+ M sw/riscvTests/isa/rv64uv/vfcmacc.c
+ M sw/riscvTests/isa/rv64uv/vfcmacc_illegal.c
+?? .venv
+```
+
+计划提交：
+
+```text
+[cfma] Cover vfcmacc mask and tail behavior
+```
+
+修改范围：
+
+```text
+M  hw/ip/spatz/src/spatz_vfu.sv
+M  sw/riscvTests/isa/rv64uv/vfcmacc.c
+M  sw/riscvTests/isa/rv64uv/vfcmacc_illegal.c
+M  docs/complex-instruction-extension/PHASE_RESULTS.md
+M  docs/complex-instruction-extension/GIT_NOTES.md
+```
+
+目的：
+
+- 为 `vfcmacc` regression 增加 e32/e64/e16 masked cases，masked-off lanes 必须
+  保持原 accumulator。
+- 为 e32/e64/e16 增加 short-`vl` tail-undisturbed cases，tail lanes 必须保持原
+  accumulator。
+- 将 `vstart != 0` 冻结为 v1 illegal policy，并在 `vfcmacc_illegal` 覆盖 trap。
+- 在 VFU 内为 `VFCMADD` 预读 `v0` mask，并按 active element 生成 VRF byte-enable，
+  让 masked-off/tail bytes 不写回。
+
+验证命令：
+
+```text
+TDD red: cd hw/system/spatz_cluster/sw/build && ctest -R "vfcmacc$|vfcmacc_illegal" --output-on-failure:
+FAIL，退出码 8；`vfcmacc_illegal` 通过，`vfcmacc` 在 TC5/6/7/8/9/10 masked/tail
+cases 失败，证明 inactive lanes 被覆盖。
+PATH="$PWD/.venv/bin:$PATH" make -C hw/system/spatz_cluster bin/spatz_cluster.vlt: PASS，退出码 0。
+PATH="$PWD/.venv/bin:$PATH" make -C hw/system/spatz_cluster sw.vlt: PASS，退出码 0。
+cd hw/system/spatz_cluster/sw/build && ctest -R "vfcmacc$|vfcmacc_illegal" --output-on-failure: PASS，退出码 0。
+git diff --check: PASS，退出码 0。
+git diff --cached --check: PASS，退出码 0。
+```
+
+结果摘要：
+
+```text
+`VFCMADD` 在 vm=0 时先通过现有 VFU vs2 read port 预读 v0 mask，后续四个
+Cfma_RR/Cfma_II/Cfma_RI/Cfma_IR phases 仍复用原 FPU/VRF 通路；每个 result tag 携带
+element base index，writeback 时只对 active element bytes 置位 `vrf_wbe_o`。
+e32/e64/e16 masked 和 tail-undisturbed cases 全部通过。`vstart != 0` 仍按 v1 policy
+illegal，由 `vfcmacc_illegal` 覆盖。
+```
+
+实际提交：
+
+```text
+待提交。
+```
+
+遗留风险：
+
+```text
+inactive lane 是否产生内部 FPU status 仍需 Node 5c 以精确 fflags/NaN coverage 验证。
+工作树中仍存在未 stage 的本地生成差异
+`hw/system/spatz_cluster/src/generated/testharness.sv` 与
+`hw/system/spatz_cluster/test/bootrom.elf`，本 node 不提交这些产物。
+```
+
+远端 Git 操作：
+
+```text
+暂无。
+```
+
 ## 网络相关 Git 操作记录
 
 如果后续执行依赖网络的 Git 操作失败，在这里记录即可。该工程不要求把修复网络
