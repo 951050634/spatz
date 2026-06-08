@@ -621,7 +621,7 @@ format。新增 controller legality gate 拒绝 nonzero `fmode.src/dst`，`vfcma
 实际提交：
 
 ```text
-待提交。
+0c9bf22a7a9f80f01956e0855db7b7707490a49f
 ```
 
 遗留风险：
