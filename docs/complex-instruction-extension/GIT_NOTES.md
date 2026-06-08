@@ -1197,7 +1197,7 @@ benchmark 数据，Node 7 未取得正式 mnemonic/objdump support。当前没�
 实际提交：
 
 ```text
-待补记。
+5edfa4333f5d5399159c1e3621241a17b57a437f
 ```
 
 遗留风险：
