@@ -515,16 +515,69 @@ bin/spatz_cluster.vlt`，退出码为 0；Verilator 5.034 重新生成并链接
 
 ## Node 5d：Serialization Fence 与 Hazard Regression
 
-状态：未开始
+状态：已完成
 
 目标：
 
 - 验证 conservative serialization fence 覆盖隐式 imag group hazards。
 - 完成 v1 ISA 行为验收。
 
+修改范围：
+
+- `sw/riscvTests/isa/rv64uv/vfcmacc.c`
+- `docs/complex-instruction-extension/PHASE_RESULTS.md`
+- `docs/complex-instruction-extension/GIT_NOTES.md`
+
+验收标准：
+
+- [x] `vfcmacc.vv` 后紧跟读取 `vd.real/vd.imag` 的普通 vector 指令无 stale read。
+- [x] 普通 vector 指令写 `vs1.imag` 或 `vs2.imag` 后紧跟 `vfcmacc.vv` 无 stale read。
+- [x] VLSU 写 `vs1.imag` 与 `vs2.imag` 后紧跟 `vfcmacc.vv` 无 stale read。
+- [x] back-to-back `vfcmacc.vv` 写同一 accumulator pair 无 deadlock、无错序完成。
+- [x] 非法 overlap case 不进入执行状态，由 `vfcmacc_illegal` 覆盖。
+- [x] v1 ISA 行为已覆盖 e32/e64/e16、mask/tail、vstart illegal、fflags、
+      NaN/zero sign 和 serialization fence；本 node 后不再标为 v1a。
+
 证据：
 
-- 尚无。
+- TDD red：2026-06-08 临时将 `spatz_controller.sv` 中
+  `cfma_fence_stall` 置为 `1'b0` 后重新运行
+  `PATH="$PWD/.venv/bin:$PATH" make -C hw/system/spatz_cluster
+bin/spatz_cluster.vlt`，退出码为 0；随后从 `hw/system/spatz_cluster/sw/build`
+  运行 `ctest -R "vfcmacc$" --output-on-failure`，退出码为 8，输出
+  `ERROR: ... vfcmacc.c failed 6 tests!`。失败集中在既有 masked/tail cases，
+  证明 conservative fence 对 `VFCMADD` 多拍执行和后续发射隔离是必要条件。
+- 2026-06-08 恢复 `cfma_fence_stall` 后运行
+  `PATH="$PWD/.venv/bin:$PATH" make -C hw/system/spatz_cluster
+bin/spatz_cluster.vlt`，退出码为 0；Verilator 重新生成并链接
+  `bin/spatz_cluster.vlt`。
+- 2026-06-08 运行
+  `PATH="$PWD/.venv/bin:$PATH" make -C hw/system/spatz_cluster sw.vlt`，
+  退出码为 0；软件测试树重建完成。输出仍包含既有 runtime/benchmark warnings
+  和 DWARF address range table diagnostic。
+- 2026-06-08 从 `hw/system/spatz_cluster/sw/build` 运行
+  `ctest -R vfcmacc --output-on-failure`，退出码为 0；结果为
+  `100% tests passed, 0 tests failed out of 2`，覆盖 `vfcmacc_illegal` 和新增
+  hazard cases TC14-TC18。
+- 2026-06-08 从 `hw/system/spatz_cluster/sw/build` 运行
+  `ctest -R "vfmacc|vfnmsac|vfwdotp" --output-on-failure`，退出码为 0；当前 build
+  只注册 `vfmacc` 与 `vfnmsac` 两个匹配目标，结果为
+  `100% tests passed, 0 tests failed out of 2`。
+- 2026-06-08 从 `hw/system/spatz_cluster/sw/build` 运行
+  `ctest -N -R "vfwdotp|dotp"`，退出码为 0；列出的目标包含 sdotp/dotp benchmarks，
+  但没有独立名为 `vfwdotp` 的 ISA CTest。
+- 2026-06-08 从 `hw/system/spatz_cluster/sw/build` 运行
+  `ctest -R "sdotp-(hp|bp)-fmatmul_M64_N64_K64" --output-on-failure`，
+  退出码为 0；包含 `vfwdotp.vf` 的 sdotp proxy regression 结果为
+  `100% tests passed, 0 tests failed out of 2`。
+- 2026-06-08 运行 `git diff --check`，退出码为 0，未发现 whitespace error。
+
+风险：
+
+- Node 5d 未修改 RTL；现有 controller conservative serialization fence 满足新增
+  hazards。更精细的 imag group scoreboard 仍是 v2 之后的性能/复杂度评估项。
+- `vfwdotp` 当前没有独立 ISA CTest 名称，继续使用 sdotp benchmark 作为 proxy
+  regression。
 
 ## Node 6：Benchmark A/B 与性能报告
 

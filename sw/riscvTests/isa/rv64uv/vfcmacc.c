@@ -267,6 +267,42 @@ static void compare_v8_v9_against_v16_v17(uint32_t casenum) {
   printf("[TC %u] PASSED.\n", casenum);
 }
 
+static void compare_v10_v11_against_v20_v21(uint32_t casenum) {
+  VSTORE_U32(v10);
+  uint32_t got_real[16];
+  for (unsigned int i = 0; i < 16; i++) {
+    got_real[i] = Ru32[i];
+  }
+
+  VSTORE_U32(v20);
+  for (unsigned int i = 0; i < 16; i++) {
+    if (got_real[i] != Ru32[i]) {
+      printf("[TC %u] real-read[%u] FAILED. Got %u, expected %u.\n", casenum,
+             i, got_real[i], Ru32[i]);
+      num_failed++;
+      return;
+    }
+  }
+
+  VSTORE_U32(v11);
+  uint32_t got_imag[16];
+  for (unsigned int i = 0; i < 16; i++) {
+    got_imag[i] = Ru32[i];
+  }
+
+  VSTORE_U32(v21);
+  for (unsigned int i = 0; i < 16; i++) {
+    if (got_imag[i] != Ru32[i]) {
+      printf("[TC %u] imag-read[%u] FAILED. Got %u, expected %u.\n", casenum,
+             i, got_imag[i], Ru32[i]);
+      num_failed++;
+      return;
+    }
+  }
+
+  printf("[TC %u] PASSED.\n", casenum);
+}
+
 static void compare_e16_v8_v9_against_v16_v17(uint32_t casenum) {
   VSTORE_U16(v8);
   uint16_t got_real[16];
@@ -769,6 +805,88 @@ void TEST_CASE13(void) {
   }
 }
 
+void TEST_CASE14(void) {
+  load_e32_fixture();
+
+  asm volatile(".insn r 0x57, 0x1, 0x75, v8, v0, v2\n"
+               "vfadd.vv v10, v8, v0\n"
+               "vfadd.vv v11, v9, v1\n"
+               ::: "memory");
+
+  run_e32_reference_v16_v17();
+  asm volatile("vfadd.vv v20, v16, v0\n"
+               "vfadd.vv v21, v17, v1\n"
+               ::: "memory");
+
+  compare_v10_v11_against_v20_v21(14);
+}
+
+void TEST_CASE15(void) {
+  load_e32_fixture();
+
+  asm volatile("vfadd.vv v1, v1, v0\n"
+               ".insn r 0x57, 0x1, 0x75, v8, v0, v2\n"
+               ::: "memory");
+
+  run_e32_reference_v16_v17();
+  compare_v8_v9_against_v16_v17(15);
+}
+
+void TEST_CASE16(void) {
+  load_e32_fixture();
+
+  asm volatile("vfadd.vv v3, v3, v2\n"
+               ".insn r 0x57, 0x1, 0x75, v8, v0, v2\n"
+               ::: "memory");
+
+  run_e32_reference_v16_v17();
+  compare_v8_v9_against_v16_v17(16);
+}
+
+void TEST_CASE17(void) {
+  load_e32_fixture();
+
+  asm volatile(".insn r 0x57, 0x1, 0x75, v8, v0, v2\n"
+               ".insn r 0x57, 0x1, 0x75, v8, v0, v2\n"
+               ".insn r 0x57, 0x1, 0x75, v8, v0, v2\n"
+               ::: "memory");
+
+  run_e32_reference_v16_v17();
+  run_e32_reference_v16_v17();
+  run_e32_reference_v16_v17();
+
+  compare_v8_v9_against_v16_v17(17);
+}
+
+void TEST_CASE18(void) {
+  static const uint32_t vs1_imag_data[16] = {
+      0x3f000000, 0xbf400000, 0x3fc00000, 0xbfc00000,
+      0x3e800000, 0xbe800000, 0x40000000, 0xc0000000,
+      0x3f800000, 0xbf800000, 0x3dcccccd, 0xbdcccccd,
+      0x40400000, 0xc0400000, 0x3e4ccccd, 0xbe4ccccd};
+  static const uint32_t vs2_imag_data[16] = {
+      0xbf000000, 0x3f400000, 0xbfc00000, 0x3fc00000,
+      0xbe800000, 0x3e800000, 0xc0000000, 0x40000000,
+      0xbf800000, 0x3f800000, 0xbdcccccd, 0x3dcccccd,
+      0xc0400000, 0x40400000, 0xbe4ccccd, 0x3e4ccccd};
+  uint32_t *vs1_imag = (uint32_t *)snrt_l1alloc(sizeof(vs1_imag_data));
+  uint32_t *vs2_imag = (uint32_t *)snrt_l1alloc(sizeof(vs2_imag_data));
+  memcpy(vs1_imag, vs1_imag_data, sizeof(vs1_imag_data));
+  memcpy(vs2_imag, vs2_imag_data, sizeof(vs2_imag_data));
+
+  load_e32_fixture();
+
+  asm volatile("vle32.v v1, (%[vs1_imag])\n"
+               "vle32.v v3, (%[vs2_imag])\n"
+               ".insn r 0x57, 0x1, 0x75, v8, v0, v2\n"
+               :
+               : [vs1_imag] "r"(vs1_imag), [vs2_imag] "r"(vs2_imag)
+               : "memory");
+
+  run_e32_reference_v16_v17();
+  compare_v8_v9_against_v16_v17(18);
+}
+
 int main(void) {
   INIT_CHECK();
 
@@ -785,6 +903,11 @@ int main(void) {
   TEST_CASE11();
   TEST_CASE12();
   TEST_CASE13();
+  TEST_CASE14();
+  TEST_CASE15();
+  TEST_CASE16();
+  TEST_CASE17();
+  TEST_CASE18();
 
   EXIT_CHECK();
 }

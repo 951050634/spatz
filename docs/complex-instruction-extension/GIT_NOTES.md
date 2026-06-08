@@ -832,6 +832,109 @@ serialization fence 的 explicit real/imag hazard regression 仍留给 Node 5d�
 暂无。
 ```
 
+## 2026-06-08 Node 5d 记录
+
+日期：
+
+```text
+2026-06-08
+```
+
+Node：
+
+```text
+Node 5d：Serialization Fence 与 Hazard Regression
+```
+
+分支和状态：
+
+```text
+## feature/cfma-instruction-extension
+ M docs/complex-instruction-extension/PHASE_RESULTS.md
+ M hw/system/spatz_cluster/src/generated/testharness.sv
+ M hw/system/spatz_cluster/test/bootrom.elf
+ M sw/riscvTests/isa/rv64uv/vfcmacc.c
+?? .venv
+```
+
+计划提交：
+
+```text
+[cfma] Complete vfcmacc ISA behavior
+```
+
+修改范围：
+
+```text
+M  sw/riscvTests/isa/rv64uv/vfcmacc.c
+M  docs/complex-instruction-extension/PHASE_RESULTS.md
+M  docs/complex-instruction-extension/GIT_NOTES.md
+```
+
+目的：
+
+- 增加 `vfcmacc.vv` 后立即读取 `vd.real/vd.imag` 的普通 vector 指令 regression。
+- 增加普通 VFU 写 `vs1.imag`、`vs2.imag` 后立即执行 `vfcmacc.vv` 的 regression。
+- 增加 VLSU 写 `vs1.imag` 与 `vs2.imag` 后立即执行 `vfcmacc.vv` 的 hidden-imag
+  dependency regression。
+- 增加三连 `vfcmacc.vv` 写同一 accumulator pair 的 ordering/deadlock regression。
+- 通过 `vfcmacc_illegal` 继续覆盖 overlap illegal 不进入执行状态。
+
+验证命令：
+
+```text
+TDD red/mutation: 临时设置 spatz_controller.sv 中 cfma_fence_stall = 1'b0，
+PATH="$PWD/.venv/bin:$PATH" make -C hw/system/spatz_cluster bin/spatz_cluster.vlt:
+PASS，退出码 0。
+cd hw/system/spatz_cluster/sw/build && ctest -R "vfcmacc$" --output-on-failure:
+FAIL，退出码 8；输出 `ERROR: ... vfcmacc.c failed 6 tests!`，masked/tail cases
+出现 stale/ordering failure，证明 conservative fence 必要。随后恢复 RTL。
+PATH="$PWD/.venv/bin:$PATH" make -C hw/system/spatz_cluster bin/spatz_cluster.vlt:
+PASS，退出码 0。
+PATH="$PWD/.venv/bin:$PATH" make -C hw/system/spatz_cluster sw.vlt:
+PASS，退出码 0。
+cd hw/system/spatz_cluster/sw/build && ctest -R vfcmacc --output-on-failure:
+PASS，退出码 0；`100% tests passed, 0 tests failed out of 2`。
+cd hw/system/spatz_cluster/sw/build && ctest -R "vfmacc|vfnmsac|vfwdotp" --output-on-failure:
+PASS，退出码 0；当前只注册 vfmacc/vfnmsac 两个匹配目标。
+cd hw/system/spatz_cluster/sw/build && ctest -N -R "vfwdotp|dotp":
+PASS，退出码 0；无独立 vfwdotp ISA CTest。
+cd hw/system/spatz_cluster/sw/build && ctest -R "sdotp-(hp|bp)-fmatmul_M64_N64_K64" --output-on-failure:
+PASS，退出码 0。
+git diff --check: PASS，退出码 0。
+```
+
+结果摘要：
+
+```text
+`vfcmacc` 新增 TC14-TC18，覆盖 accumulator pair 后继读取、普通 VFU 写 hidden
+imag source、VLSU 写 hidden imag source、以及 back-to-back accumulator ordering。
+现有 RTL 无需修改；Node 3 的 conservative serialization fence 覆盖这些 hazards。
+至此 v1 ISA 行为不再停留在 v1a：e32/e64/e16、mask/tail、vstart illegal、fflags、
+NaN/zero sign 和 serialization fence regression 均已覆盖。
+```
+
+实际提交：
+
+```text
+TBD
+```
+
+遗留风险：
+
+```text
+更精细的 imag group scoreboard 未在 v1 实现，仍按计划保留 conservative fence。
+工作树中仍存在未 stage 的本地生成差异
+`hw/system/spatz_cluster/src/generated/testharness.sv` 与
+`hw/system/spatz_cluster/test/bootrom.elf`，本 node 不提交这些产物。
+```
+
+远端 Git 操作：
+
+```text
+暂无。
+```
+
 ## 网络相关 Git 操作记录
 
 如果后续执行依赖网络的 Git 操作失败，在这里记录即可。该工程不要求把修复网络
