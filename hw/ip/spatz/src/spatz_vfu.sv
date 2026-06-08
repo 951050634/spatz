@@ -63,6 +63,9 @@ module spatz_vfu
 
     // Is this a reduction?
     logic reduction;
+
+    // Is this the last writeback of an internal vfcmacc.vv phase?
+    logic cfma_step_last;
   } vfu_tag_t;
 
   ///////////////////////
@@ -109,6 +112,28 @@ module spatz_vfu
    state_t state_d, state_q;
   `FF(state_q, state_d, VFU_RunningFPU)
 
+  typedef enum logic [1:0] {
+    Cfma_RR,
+    Cfma_II,
+    Cfma_RI,
+    Cfma_IR
+  } cfma_phase_e;
+
+  cfma_phase_e cfma_phase_d, cfma_phase_q;
+  logic        cfma_wait_result_d, cfma_wait_result_q;
+  status_t     cfma_status_d, cfma_status_q;
+  `FF(cfma_phase_q, cfma_phase_d, Cfma_RR)
+  `FF(cfma_wait_result_q, cfma_wait_result_d, 1'b0)
+  `FF(cfma_status_q, cfma_status_d, '0)
+
+  function automatic vreg_t cfma_lmul_offset(vlmul_e vlmul);
+    unique case (vlmul)
+      LMUL_2 : return vreg_t'(2);
+      LMUL_4 : return vreg_t'(4);
+      default: return vreg_t'(1);
+    endcase
+  endfunction
+
   // Propagate the tags through the functional units
   vfu_tag_t ipu_result_tag, fpu_result_tag, result_tag, result_buf_tag_d, result_buf_tag_q;
   vfu_tag_t input_tag;
@@ -150,7 +175,7 @@ module spatz_vfu
 
   // Is this a FPU instruction
   logic is_fpu_insn;
-  assign is_fpu_insn = FPU && spatz_req.op inside {[VFADD:VSDOTP]};
+  assign is_fpu_insn = FPU && spatz_req.op inside {[VFADD:VFCMADD]};
 
   // Is the FPU busy?
   logic is_fpu_busy;
@@ -163,6 +188,20 @@ module spatz_vfu
 
   // Is this the last request?
   logic last_request;
+
+  logic cfma_insn;
+  logic cfma_final_phase;
+  logic cfma_step_last_request;
+  logic cfma_step_result_done;
+  logic cfma_phase_result_done;
+  logic cfma_final_result_done;
+
+  assign cfma_insn              = spatz_req.op == VFCMADD;
+  assign cfma_final_phase       = cfma_phase_q == Cfma_IR;
+  assign cfma_step_result_done  = result_tag.cfma_step_last &&
+                                  &(result_valid | ~pending_results) && result_ready;
+  assign cfma_phase_result_done = cfma_step_result_done && !result_tag.last;
+  assign cfma_final_result_done = cfma_step_result_done && result_tag.last;
 
   // Reduction state
   typedef enum logic [3:0] {
@@ -204,6 +243,7 @@ module spatz_vfu
   logic [N_FU*ELEN-1:0]  result;
   logic [N_FU*ELENB-1:0] result_valid;
   logic                  result_ready;
+  status_t               fpu_status_raw;
 
   always_comb begin: control_proc
     // Maintain state
@@ -213,12 +253,16 @@ module spatz_vfu
     state_d           = state_q;
     narrowing_upper_d = narrowing_upper_q;
     widening_upper_d  = widening_upper_q;
+    cfma_phase_d      = cfma_phase_q;
+    cfma_wait_result_d = cfma_wait_result_q;
+    cfma_status_d     = cfma_status_q;
 
     // We are not stalling
     stall = 1'b0;
 
     // This is not the last request
-    last_request = 1'b0;
+    last_request           = 1'b0;
+    cfma_step_last_request = 1'b0;
 
     // We are handling an instruction
     spatz_req_ready = 1'b0;
@@ -262,8 +306,12 @@ module spatz_vfu
         default:;
       endcase
 
+    if (cfma_wait_result_q)
+      stall = 1'b1;
+
     // Finished the execution!
-    if (spatz_req_valid && ((vl_d >= spatz_req.vl && !spatz_req.op_arith.is_reduction) || reduction_done)) begin
+    if (spatz_req_valid && (((vl_d >= spatz_req.vl && !spatz_req.op_arith.is_reduction) &&
+                             (!cfma_insn || cfma_final_phase)) || reduction_done)) begin
       spatz_req_ready         = spatz_req_valid;
       busy_d                  = 1'b0;
       vl_d                    = '0;
@@ -271,6 +319,8 @@ module spatz_vfu
       running_d[spatz_req.id] = 1'b0;
       widening_upper_d        = 1'b0;
       narrowing_upper_d       = 1'b0;
+      cfma_phase_d            = Cfma_RR;
+      cfma_wait_result_d      = 1'b0;
     end
     // Do we have a new instruction?
     else if (spatz_req_valid && !running_d[spatz_req.id]) begin
@@ -278,11 +328,36 @@ module spatz_vfu
       vl_d                    = vstart;
       busy_d                  = 1'b1;
       running_d[spatz_req.id] = 1'b1;
+      cfma_phase_d            = Cfma_RR;
+      cfma_wait_result_d      = 1'b0;
+      cfma_status_d           = '0;
 
       // Change number of remaining elements
       if (word_issued)
         vl_d = vl_q + nr_elem_word;
     end
+
+    if (spatz_req_valid && cfma_insn && !cfma_final_phase && !cfma_wait_result_q &&
+        vl_d >= spatz_req.vl && !spatz_req.op_arith.is_reduction) begin
+      cfma_wait_result_d      = 1'b1;
+      cfma_step_last_request = 1'b1;
+    end
+
+    if (cfma_phase_result_done) begin
+      cfma_wait_result_d = 1'b0;
+      vl_d               = '0;
+      cfma_status_d      = cfma_status_q | fpu_status_raw;
+      unique case (cfma_phase_q)
+        Cfma_RR : cfma_phase_d = Cfma_II;
+        Cfma_II : cfma_phase_d = Cfma_RI;
+        Cfma_RI : cfma_phase_d = Cfma_IR;
+        default : cfma_phase_d = Cfma_RR;
+      endcase
+    end
+
+    if (spatz_req_valid && cfma_insn && cfma_final_phase && vl_d >= spatz_req.vl &&
+        !spatz_req.op_arith.is_reduction)
+      cfma_step_last_request = 1'b1;
 
     // An instruction finished execution
     if ((result_tag.last && &(result_valid | ~pending_results) && reduction_state_q inside {Reduction_NormalExecution, Reduction_Wait}) || reduction_done) begin
@@ -291,8 +366,14 @@ module spatz_vfu
       vfu_rsp_o.wb      = result_tag.wb;
       vfu_rsp_o.result  = result_tag.wb ? scalar_result : '0;
       vfu_rsp_valid_o   = 1'b1;
+      if (cfma_final_result_done)
+        cfma_status_d = '0;
     end
   end: control_proc
+
+  assign fpu_status_o = cfma_final_result_done ? (cfma_status_q | fpu_status_raw) :
+                        (cfma_insn || result_tag.cfma_step_last) ? '0 :
+                        fpu_status_raw;
 
   //////////////
   // Operands //
@@ -726,6 +807,17 @@ module spatz_vfu
 
   // Calculate new vector register address
   always_comb begin : vreg_addr_proc
+    automatic vreg_t cfma_lmul = cfma_lmul_offset(spatz_req.vtype.vlmul);
+    automatic vreg_t cfma_vs2_offset = vreg_t'(0);
+    automatic vreg_t cfma_vs1_offset = vreg_t'(0);
+    automatic vreg_t cfma_vd_offset = vreg_t'(0);
+
+    if (cfma_insn) begin
+      cfma_vs2_offset = cfma_phase_q inside {Cfma_II, Cfma_IR} ? cfma_lmul : vreg_t'(0);
+      cfma_vs1_offset = cfma_phase_q inside {Cfma_II, Cfma_RI} ? cfma_lmul : vreg_t'(0);
+      cfma_vd_offset  = cfma_phase_q inside {Cfma_RI, Cfma_IR} ? cfma_lmul : vreg_t'(0);
+    end
+
     vreg_addr_d = vreg_addr_q;
 
     vrf_raddr_o = vreg_addr_d;
@@ -741,13 +833,14 @@ module spatz_vfu
       last           : last_request,
       narrowing      : spatz_req.op_arith.is_narrowing,
       narrowing_upper: narrowing_upper_q,
-      reduction      : spatz_req.op_arith.is_reduction
+      reduction      : spatz_req.op_arith.is_reduction,
+      cfma_step_last : cfma_step_last_request
     };
 
     if (spatz_req_valid && vl_q == '0) begin
-      vreg_addr_d[0] = (spatz_req.vs2 + vstart) << $clog2(NrWordsPerVector);
-      vreg_addr_d[1] = (spatz_req.vs1 + vstart) << $clog2(NrWordsPerVector);
-      vreg_addr_d[2] = (spatz_req.vd + vstart) << $clog2(NrWordsPerVector);
+      vreg_addr_d[0] = (spatz_req.vs2 + cfma_vs2_offset + vstart) << $clog2(NrWordsPerVector);
+      vreg_addr_d[1] = (spatz_req.vs1 + cfma_vs1_offset + vstart) << $clog2(NrWordsPerVector);
+      vreg_addr_d[2] = (spatz_req.vd + cfma_vd_offset + vstart) << $clog2(NrWordsPerVector);
 
       // Direct feedthrough
       vrf_raddr_o = vreg_addr_d;
@@ -1020,9 +1113,9 @@ module spatz_vfu
       fpu_dst_fmt      = fpnew_pkg::FP32;
       fpu_int_fmt      = fpnew_pkg::INT32;
 
-      fpu_status_o = '0;
+      fpu_status_raw = '0;
       for (int fpu = 0; fpu < N_FPU; fpu++)
-        fpu_status_o |= fpu_status_q[fpu];
+        fpu_status_raw |= fpu_status_q[fpu];
 
       if (FPU) begin
         unique case (spatz_req.vtype.vsew)
@@ -1104,6 +1197,12 @@ module spatz_vfu
           end
 
           VSDOTP: fpu_op = fpnew_pkg::SDOTP;
+          VFCMADD: begin
+            if (cfma_phase_q == Cfma_II)
+              fpu_op = fpnew_pkg::FNMSUB;
+            else
+              fpu_op = fpnew_pkg::FMADD;
+          end
 
           default:;
         endcase
@@ -1234,7 +1333,7 @@ module spatz_vfu
     assign fpu_result       = '0;
     assign fpu_result_valid = '0;
     assign fpu_result_tag   = '0;
-    assign fpu_status_o     = '0;
+    assign fpu_status_raw   = '0;
   end: gen_no_fpu
 
 endmodule : spatz_vfu

@@ -265,16 +265,68 @@ VFCMACC_VV = 32'b111010???????????001?????1010111
 
 ## Node 4：v1a Unmasked e32 多拍执行
 
-状态：未开始
+状态：已完成（v1a，非完整 v1）
 
 目标：
 
 - 实现 `vfcmacc.vv` 的最小可执行路径。
 - 只要求 `e32`、`vm=1`、合法 non-overlap layout。
+- 建立四阶段 micro-op 执行、单次 architectural completion 和 `fflags` OR
+  final-only 暴露机制。
+
+修改范围：
+
+- `hw/ip/spatz/src/spatz_vfu.sv`
+- `sw/riscvTests/CMakeLists.txt`
+- `sw/riscvTests/isa/rv64uv/vfcmacc_e32.c`
+- `docs/complex-instruction-extension/PHASE_RESULTS.md`
+- `docs/complex-instruction-extension/GIT_NOTES.md`
+
+验收标准：
+
+- [x] `Cfma_RR -> Cfma_II -> Cfma_RI -> Cfma_IR` 四阶段状态推进存在，对应
+  `MAC_RR/MAC_II/MAC_RI/MAC_IR`。
+- [x] `e32`、`vm=1`、合法 non-overlap layout 的结果逐 bit 等同四指令 reference
+  sequence。
+- [x] 每条 `vfcmacc.vv` 只在 final phase 返回一次 VFU response。
+- [x] back-to-back same accumulator pair 无 deadlock：`vfcmacc_e32` 覆盖连续两条
+  `vfcmacc.vv v8, v0, v2` 写同一 `v8/v9` accumulator pair。
+- [x] 四个内部 FPU operation 的 status 在 VFU 内局部 OR，并只在 final result
+  response 那一拍对 Snitch 暴露。
+- [x] 本阶段明确为 `v1a`，只覆盖 unmasked e32，不声称完整 v1。
 
 证据：
 
-- 尚无。
+- TDD red：2026-06-08 从 `hw/system/spatz_cluster/sw/build` 运行
+  `ctest -R vfcmacc_e32 --output-on-failure`，退出码为 8；在 VFU 执行尚未实现时
+  按预期失败，关键输出为 `real[0] Got 0, expected 1070386381`。
+- 2026-06-08 运行
+  `PATH="$PWD/.venv/bin:$PATH" make -C hw/system/spatz_cluster sw.vlt`，退出码为 0；
+  CMake/Make 成功注册并构建 `vfcmacc_e32`。输出仍包含既有 runtime/benchmark
+  warnings 和 DWARF address range table diagnostic。
+- 2026-06-08 运行
+  `PATH="$PWD/.venv/bin:$PATH" make -C hw/system/spatz_cluster bin/spatz_cluster.vlt`，
+  退出码为 0；Verilator 5.034 重新生成并链接 `bin/spatz_cluster.vlt`。输出包含既有
+  latch warnings，无 fatal error。
+- 2026-06-08 从 `hw/system/spatz_cluster/sw/build` 运行
+  `ctest -R vfcmacc_e32 --output-on-failure`，退出码为 0；结果为
+  `1/1 Test #69 ... Passed`，覆盖单条 `vfcmacc.vv` 和 back-to-back same accumulator
+  case。
+- 2026-06-08 从 `hw/system/spatz_cluster/sw/build` 运行
+  `ctest -R "vfcmacc_e32|vfcmacc_illegal|vfmacc|vfnmsac" --output-on-failure`，
+  退出码为 0；结果为 `100% tests passed, 0 tests failed out of 4`。
+- 2026-06-08 运行 `git diff --check`，退出码为 0，未发现 whitespace error。
+
+风险：
+
+- Node 4 只覆盖 `e32`、`vm=1`、合法 non-overlap paired layout；`e64/e16` 留给
+  Node 5a。
+- mask、tail 和最终 `vstart` 行为留给 Node 5b；当前 `vstart != 0` 仍沿用 Node 3
+  illegal policy。
+- `fflags` 的 VFU OR/final-only 暴露机制已实现，但 NaN/Inf、zero sign、rounding mode
+  和 exact architectural `fflags` bit 对比仍由 Node 5c 验证。
+- Conservative fence 的专门 real/imag hazard regression 留给 Node 5d；本 node 仅用
+  back-to-back same accumulator e32 case覆盖最小 deadlock/错序风险。
 
 ## Node 5a：e64/e16 Format 支持
 
