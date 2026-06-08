@@ -1114,7 +1114,7 @@ installed LLVM 14.0.6 也不识别 `vfcmacc.vv`。v1 bring-up 继续使用 `.ins
 实际提交：
 
 ```text
-待补记。
+e1a31554f63ed7931f68d83bab7fe63c8e6774dc
 ```
 
 遗留风险：
