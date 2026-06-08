@@ -917,7 +917,7 @@ NaN/zero sign 和 serialization fence regression 均已覆盖。
 实际提交：
 
 ```text
-TBD
+4f6904a5a7b0ab81d33d342f5bb68a23eb61b6cc
 ```
 
 遗留风险：
