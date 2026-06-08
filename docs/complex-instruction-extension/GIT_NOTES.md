@@ -814,7 +814,7 @@ equivalence。当前 RTL 无需修改：`VFCMADD` 的 four-phase status OR/final
 实际提交：
 
 ```text
-待提交。
+47219ff873e0bc8f72f21a25e395a9aa576926f6
 ```
 
 遗留风险：
