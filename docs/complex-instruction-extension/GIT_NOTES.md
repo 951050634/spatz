@@ -443,6 +443,106 @@ overlap、vd/vs2 overlap、e8 unsupported 和 reserved `.vf` encoding。
 暂无。
 ```
 
+## 2026-06-08 Node 4 记录
+
+日期：
+
+```text
+2026-06-08
+```
+
+Node：
+
+```text
+Node 4：v1a Unmasked e32 多拍执行
+```
+
+分支和状态：
+
+```text
+## feature/cfma-instruction-extension
+ M docs/complex-instruction-extension/PHASE_RESULTS.md
+ M hw/ip/spatz/src/spatz_vfu.sv
+ M hw/system/spatz_cluster/src/generated/testharness.sv
+ M hw/system/spatz_cluster/test/bootrom.elf
+ M sw/riscvTests/CMakeLists.txt
+?? .venv
+?? sw/riscvTests/isa/rv64uv/vfcmacc_e32.c
+```
+
+计划提交：
+
+```text
+[cfma] Add vfcmacc e32 micro-op execution
+```
+
+修改范围：
+
+```text
+M  hw/ip/spatz/src/spatz_vfu.sv
+M  sw/riscvTests/CMakeLists.txt
+A  sw/riscvTests/isa/rv64uv/vfcmacc_e32.c
+M  docs/complex-instruction-extension/PHASE_RESULTS.md
+M  docs/complex-instruction-extension/GIT_NOTES.md
+```
+
+目的：
+
+- 在 VFU 中为 `VFCMADD` 增加 `Cfma_RR/Cfma_II/Cfma_RI/Cfma_IR` 四阶段执行。
+- 按 paired layout 和 LMUL offset 选择 real/imag source 与 destination group。
+- 将 `Cfma_II` 映射到 `FNMSUB`，其余阶段映射到 `FMADD`，复用现有 FPU/VRF 通路。
+- 在内部 phase 最后写回后推进下一阶段，只在 final phase 产生 architectural
+  completion。
+- 累积四个内部 FPU status 并只在 final result response 那一拍暴露给 Snitch。
+- 新增 `vfcmacc_e32` RTL regression，覆盖单条和 back-to-back same accumulator
+  pair。
+
+验证命令：
+
+```text
+TDD red: cd hw/system/spatz_cluster/sw/build && ctest -R vfcmacc_e32 --output-on-failure:
+FAIL，退出码 8，关键输出 `real[0] Got 0, expected 1070386381`。
+PATH="$PWD/.venv/bin:$PATH" make -C hw/system/spatz_cluster sw.vlt: PASS，退出码 0。
+PATH="$PWD/.venv/bin:$PATH" make -C hw/system/spatz_cluster bin/spatz_cluster.vlt: PASS，退出码 0。
+cd hw/system/spatz_cluster/sw/build && ctest -R vfcmacc_e32 --output-on-failure: PASS，退出码 0。
+cd hw/system/spatz_cluster/sw/build && ctest -R "vfcmacc_e32|vfcmacc_illegal|vfmacc|vfnmsac" --output-on-failure: PASS，退出码 0。
+git diff --check: PASS，退出码 0。
+```
+
+结果摘要：
+
+```text
+`vfcmacc.vv v8, v0, v2` 在 e32/m1/vm=1 下逐 bit 匹配四指令 reference sequence：
+`vfmacc v16,v0,v2; vfnmsac v16,v1,v3; vfmacc v17,v0,v3; vfmacc v17,v1,v2`。
+同一测试还覆盖连续两条 `vfcmacc.vv` 写同一 accumulator pair，未 deadlock 且结果
+匹配两轮 reference sequence。VFU 对非 final internal phases 不发 architectural
+response，final phase 才返回一次 completion；内部 FPU status 经 `cfma_status_q`
+累积后在 final result response 送出。
+```
+
+实际提交：
+
+```text
+待提交
+```
+
+遗留风险：
+
+```text
+本 node 是 v1a，只覆盖 e32、vm=1、合法 non-overlap paired layout。e64/e16 留给
+Node 5a，mask/tail/vstart 留给 Node 5b，NaN/Inf/zero sign/rounding/精确 fflags 对比
+留给 Node 5c，完整 real/imag serialization fence hazard regression 留给 Node 5d。
+工作树中仍存在未 stage 的本地生成差异
+`hw/system/spatz_cluster/src/generated/testharness.sv` 与
+`hw/system/spatz_cluster/test/bootrom.elf`，本 node 不提交这些产物。
+```
+
+远端 Git 操作：
+
+```text
+暂无。
+```
+
 ## 网络相关 Git 操作记录
 
 如果后续执行依赖网络的 Git 操作失败，在这里记录即可。该工程不要求把修复网络
