@@ -44,6 +44,14 @@
 #define SPATZ_CDOTP_KERNEL_NAME "vec_extract_drop"
 #define SPATZ_CDOTP_INNER_LOOP_INSN_PROXY 7
 #define SPATZ_CDOTP_ACCUM_INSN_PROXY 4
+#elif SPATZ_CDOTP_VECTOR_DIAG_STAGE == 8
+#define SPATZ_CDOTP_KERNEL_NAME "vec_store_scalar"
+#define SPATZ_CDOTP_INNER_LOOP_INSN_PROXY 7
+#define SPATZ_CDOTP_ACCUM_INSN_PROXY 4
+#elif SPATZ_CDOTP_VECTOR_DIAG_STAGE == 9
+#define SPATZ_CDOTP_KERNEL_NAME "vec_store_scalar_m1"
+#define SPATZ_CDOTP_INNER_LOOP_INSN_PROXY 7
+#define SPATZ_CDOTP_ACCUM_INSN_PROXY 4
 #elif SPATZ_USE_VFCMACC
 #define SPATZ_CDOTP_KERNEL_NAME "vfcmacc"
 #define SPATZ_CDOTP_INNER_LOOP_INSN_PROXY 4
@@ -145,6 +153,21 @@ cdouble cdotp_v64b(const cdouble *x, const cdouble *y, unsigned int avl)
     asm volatile("vfmv.f.s %0, v20" : "=f"(red_imag));
     asm volatile("" : : "f"(red_real), "f"(red_imag));
     cdouble res = {0.0, 0.0};
+    return res;
+#elif SPATZ_CDOTP_VECTOR_DIAG_STAGE == 8 || SPATZ_CDOTP_VECTOR_DIAG_STAGE == 9
+    const unsigned int one = 1;
+    volatile double red_buf[2] = {0.0, 0.0};
+    asm volatile("vmv.s.x v24, zero");
+    asm volatile("vfredusum.vs v16, v16, v24");
+    asm volatile("vfredusum.vs v20, v20, v24");
+#if SPATZ_CDOTP_VECTOR_DIAG_STAGE == 9
+    asm volatile("vsetvli zero, %0, e64, m1, ta, ma" ::"r"(one));
+#else
+    asm volatile("vsetvli zero, %0, e64, m4, ta, ma" ::"r"(one));
+#endif
+    asm volatile("vse64.v v16, (%0)" ::"r"(&red_buf[0]) : "memory");
+    asm volatile("vse64.v v20, (%0)" ::"r"(&red_buf[1]) : "memory");
+    cdouble res = {red_buf[0], red_buf[1]};
     return res;
 #else
     asm volatile("vmv.s.x v24, zero");

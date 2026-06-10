@@ -1421,6 +1421,68 @@ scalar FPU `fld/fadd/fsd` 状态交互。
 暂无。
 ```
 
+补充记录二：
+
+```text
+日期：2026-06-10
+计划提交：[cfma] Tighten dp-cdotp M128 failure diagnostics
+修改范围：
+M  sw/cmake/SnitchUtilities.cmake
+M  sw/spatzBenchmarks/CMakeLists.txt
+M  sw/spatzBenchmarks/dp-cdotp/kernel/cdotp.c
+M  docs/complex-instruction-extension/PHASE_RESULTS.md
+M  docs/complex-instruction-extension/GIT_NOTES.md
+```
+
+目的：
+
+- 记录并执行用户新增约束：可行性验证禁止使用 `M4096` 等大数据，允许上限为
+  `M1024`；本轮实际只运行 `M128`。
+- 保留 `vec_store_scalar_M128` 证据，并新增 `vec_store_scalar_m1_M128` 诊断，
+  验证 `vse64.v` 从 reduction result 取 scalar 时切换 `LMUL=m1` 是否改变结果。
+- 将普通路径恢复为原始 `vfmv.f.s` 收尾，避免提交会导致新 timeout 的
+  “store all lanes + scalar sum” 临时实验。
+- 修复 CTest 对 RTL 串口失败的误判，新增 `FAILED` 和 `Error:` 失败匹配。
+
+验证记录：
+
+```text
+cmake -S hw/system/spatz_cluster/sw -B hw/system/spatz_cluster/sw/build:
+PASS，退出码 0；新目标 `dp-cdotp_vec_store_scalar_m1_M128` 已加入。
+
+cmake --build hw/system/spatz_cluster/sw/build --target
+test-spatzBenchmarks-dp-cdotp_vec_store_scalar_m1_M128 &&
+cd hw/system/spatz_cluster/sw/build &&
+timeout 60s ctest -V -R "dp-cdotp_vec_store_scalar_m1_M128$":
+旧验证配置下退出码 0，但串口明确输出 `Error:` 和 `*** FAILED ***`。
+结果为 `(13.568879, 0.000000)`，Golden 为 `(30.655098, 14.343171)`。
+本条作为 CTest 误判证据；随后已把该诊断目标改回 `SPATZ_CDOTP_SKIP_VERIFY=1`。
+
+git diff --check:
+PASS，退出码 0。
+
+cmake --build hw/system/spatz_cluster/sw/build --target
+test-spatzBenchmarks-dp-cdotp_scalar_M128
+test-spatzBenchmarks-dp-cdotp_vec_store_scalar_M128
+test-spatzBenchmarks-dp-cdotp_vec_store_scalar_m1_M128:
+PASS，退出码 0。
+
+cd hw/system/spatz_cluster/sw/build &&
+timeout 90s ctest -V -R
+"dp-cdotp_(scalar|vec_store_scalar|vec_store_scalar_m1)_M128$":
+PASS，退出码 0；3/3 通过。`dp-cdotp_scalar_M128` 串口输出
+`Verification: SUCCESS`；两个 store 诊断目标跳过 verify，仅用于证明
+runtime 边界可退出。
+```
+
+遗留风险：
+
+```text
+尚未解决 `dp-cdotp_old_M128` / `dp-cdotp_vfcmacc_M128` runtime/correctness。
+`vec_store_scalar` 解除 timeout 但不证明数值正确；`vec_store_scalar_m1` 排除了
+简单 LMUL 切换修复。后续验证仍必须限制在 `M128` 或至多 `M1024`。
+```
+
 ## 网络相关 Git 操作记录
 
 如果后续执行依赖网络的 Git 操作失败，在这里记录即可。该工程不要求把修复网络

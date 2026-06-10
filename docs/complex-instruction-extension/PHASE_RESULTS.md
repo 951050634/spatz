@@ -867,3 +867,41 @@ install/llvm/bin/clang -x assembler ...`，退出码为 0；随后
 风险：
 
 - 本次只修改文档，不执行 RTL、opcode 或 benchmark 实现。
+
+## 2026-06-10 dp-cdotp M128 诊断续记
+
+状态：进行中
+
+目标：
+
+- 继续执行小规模验证约束：可行性验证禁止使用 `M4096` 等大数据；本轮只运行
+  `M128` 目标。
+- 清理会导致 `dp-cdotp_old_M128` 新增 timeout 的临时普通路径实验，恢复普通
+  `old/vfcmacc` 路径为原始 `vfredusum.vs` + `vfmv.f.s` 收尾。
+- 保留 `vec_store_scalar` 诊断路径，新增 `vec_store_scalar_m1`，用于验证
+  reduction 后用 `vse64.v` 取 scalar 时 `LMUL=m4` 与 `LMUL=m1` 是否影响
+  lane0 位置。
+- 修复 RTL CTest 误判：串口出现 `Error:` 或 `*** FAILED ***` 时不应因同时出现
+  `[SUCCESS] Program finished successfully` 而被计为通过。
+
+证据：
+
+- `dp-cdotp_vec_store_scalar_M128` 可退出，支持“避开 `vfmv.f.s` 后 scalar FPU
+  收尾可解除 runtime timeout”的判断。
+- `dp-cdotp_vec_store_scalar_m1_M128` 在启用 verify 的临时实验中同样可退出，
+  但串口输出
+  `Error: Result = (13.568879, 0.000000), Golden = (30.655098, 14.343171)`。
+  说明把 store 前 `vsetvli` 从 `e64,m4` 改为 `e64,m1` 不能修正 reduction
+  scalar 取值。
+- `CTest` 旧规则只匹配 `FAILURE`，上述串口 `Error:` 和 `*** FAILED ***`
+  仍被计为 passed。本轮将 `FAIL_REGULAR_EXPRESSION` 扩展为
+  `FAILURE;FAILED;Error:`，避免后续误报 correctness。
+
+当前结论：
+
+```text
+`vse64.v` lane0 workaround 可以解除 timeout，但 correctness 仍失败；
+`LMUL=m1` 取 lane0 不是修复。`dp-cdotp_old_M128` 和
+`dp-cdotp_vfcmacc_M128` 尚未修复，不得声称 benchmark correctness 或 speedup。
+后续应继续定位 reduction 写回位置/内容与 `vfmv.f.s` 后 FPR/FP LSU 交互。
+```
