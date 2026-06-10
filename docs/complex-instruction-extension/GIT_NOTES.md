@@ -1354,6 +1354,67 @@ speedup。后续调试必须继续使用 `M128` 或最多 `M1024`，禁止用 `M
 `hw/system/spatz_cluster/test/bootrom.elf`，本记录不提交这些产物。
 ```
 
+补充记录：
+
+```text
+日期：2026-06-10
+计划提交：[cfma] Extend dp-cdotp M128 runtime diagnostics
+修改范围：
+M  docs/complex-instruction-extension/GIT_NOTES.md
+M  docs/complex-instruction-extension/PHASE_RESULTS.md
+M  sw/spatzBenchmarks/CMakeLists.txt
+M  sw/spatzBenchmarks/dp-cdotp/kernel/cdotp.c
+M  sw/spatzBenchmarks/dp-cdotp/main.c
+```
+
+目的：
+
+- 继续遵守小规模验证约束：可行性验证只用 `M128`，上限不超过 `M1024`，不使用
+  `M4096`。
+- 新增 `dp-cdotp_vec_*_M128` 分阶段诊断目标，把 `cdotp_v64b` 的 load、MAC、
+  reduction、vector-to-FPR extract、collect、summary 和 print 边界拆开。
+- 新增 `singlecore` 与 `direct_singlecore` 诊断目标，验证单核执行和直接赋值能否
+  避开当前 timeout。
+
+验证结果：
+
+```text
+通过：
+- dp-cdotp_vec_load_M128
+- dp-cdotp_vec_mac_M128
+- dp-cdotp_vec_reduce_real_M128
+- dp-cdotp_vec_reduce_imag_M128
+- dp-cdotp_vec_reduce_noextract_M128
+- dp-cdotp_vec_extract_nocollect_M128，约 1.90 秒
+- dp-cdotp_vec_extract_nosummary_M128，约 1.87 秒
+
+失败或超时：
+- timeout 120s ctest -V -R "dp-cdotp_vec_extract_drop_M128$"：退出码 124
+- timeout 120s ctest -V -R "dp-cdotp_vec_extract_noprint_M128$"：退出码 124
+- timeout 120s ctest -V -R "dp-cdotp_old_singlecore_M128$"：退出码 124
+- timeout 120s ctest -V -R "dp-cdotp_old_direct_singlecore_M128$"：退出码 124
+```
+
+当前结论：
+
+```text
+`M128` 数据、DMA、barrier、`result` 写回和 scalar-only correctness 主流程可收敛。
+两次 `vfredusum.vs` 本身可以 retire；两次 `vfredusum.vs` 加两次 `vfmv.f.s`
+也可以在跳过 collect/summary 时退出。最新 blocker 收敛到两次 vector-to-FPR
+抽取之后进入 hart0 `result[]` 标量 `fld/fadd/fsd` 汇总或等价标量 FPU 收尾路径。
+
+`SPATZ_CDOTP_SINGLE_CORE` 和 `SPATZ_CDOTP_DIRECT_ACC_ASSIGN` 均未解除 timeout，
+不得把单核或 direct assign 作为修复结论，也不得声称 old/new benchmark 已修复。
+```
+
+遗留风险：
+
+```text
+本补充记录仍只是诊断节点。尚未取得 old/new `M128` correctness 或 cycles；
+后续应继续在 `M128` 或更小目标上构造最小复现，优先隔离 `vfmv.f.s` 之后的
+scalar FPU `fld/fadd/fsd` 状态交互。
+```
+
 远端 Git 操作：
 
 ```text

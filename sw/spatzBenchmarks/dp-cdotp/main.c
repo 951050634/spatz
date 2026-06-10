@@ -24,6 +24,30 @@
 #define SPATZ_CDOTP_ACCUM_INSN_PROXY 4
 #endif
 
+#ifndef SPATZ_CDOTP_SKIP_VERIFY
+#define SPATZ_CDOTP_SKIP_VERIFY 0
+#endif
+
+#ifndef SPATZ_CDOTP_SKIP_COLLECT
+#define SPATZ_CDOTP_SKIP_COLLECT 0
+#endif
+
+#ifndef SPATZ_CDOTP_SKIP_SUMMARY
+#define SPATZ_CDOTP_SKIP_SUMMARY 0
+#endif
+
+#ifndef SPATZ_CDOTP_SKIP_PRINT
+#define SPATZ_CDOTP_SKIP_PRINT 0
+#endif
+
+#ifndef SPATZ_CDOTP_SINGLE_CORE
+#define SPATZ_CDOTP_SINGLE_CORE 0
+#endif
+
+#ifndef SPATZ_CDOTP_DIRECT_ACC_ASSIGN
+#define SPATZ_CDOTP_DIRECT_ACC_ASSIGN 0
+#endif
+
 cdouble *x;
 cdouble *y;
 cdouble *result;
@@ -77,24 +101,43 @@ int main() {
 
     unsigned int start = (tile_elems * cid) / num_cores;
     unsigned int end = (tile_elems * (cid + 1)) / num_cores;
-#if SPATZ_CDOTP_SCALAR_DIAG
+#if SPATZ_CDOTP_SCALAR_DIAG || SPATZ_CDOTP_SINGLE_CORE
     start = 0;
     end = (cid == 0) ? tile_elems : 0;
 #endif
     if (end > start) {
       cdouble tile_acc = cdotp_v64b(x + start, y + start, end - start);
+#if SPATZ_CDOTP_DIRECT_ACC_ASSIGN
+      acc = tile_acc;
+#else
       acc.real += tile_acc.real;
       acc.imag += tile_acc.imag;
+#endif
     }
 
     snrt_cluster_hw_barrier();
   }
 
+#if SPATZ_CDOTP_SKIP_COLLECT
+  snrt_cluster_hw_barrier();
+  if (cid == 0)
+    stop_kernel();
+  snrt_cluster_hw_barrier();
+  return 0;
+#endif
+
   result[cid] = acc;
 
   snrt_cluster_hw_barrier();
 
-  if (cid == 0) {
+#if SPATZ_CDOTP_SKIP_SUMMARY
+  if (cid == 0)
+    stop_kernel();
+  snrt_cluster_hw_barrier();
+  return 0;
+#endif
+
+  if (cid == 0 && !SPATZ_CDOTP_SINGLE_CORE) {
     cdouble sum = result[0];
     for (unsigned int i = 1; i < num_cores; ++i) {
       sum.real += result[i].real;
@@ -111,7 +154,7 @@ int main() {
   if (cid == 0)
     timer = benchmark_get_cycle() - timer;
 
-  if (cid == 0) {
+  if (cid == 0 && !SPATZ_CDOTP_SKIP_PRINT) {
     long unsigned int performance = 1000 * 2 * 2 * dim / timer;
     PRINTF("dp-cdotp %s M%d: cycles=%u, inner_loop_insn_proxy=%u, "
            "complex_mac_insn_proxy=%u, performance=%ld OP/1000cycle.\n",
@@ -120,7 +163,7 @@ int main() {
            performance);
   }
 
-  if (cid == 0) {
+  if (cid == 0 && !SPATZ_CDOTP_SKIP_VERIFY) {
     if (cp_check(result[0], cdotp_result)) {
       PRINTF("Error: Result = (%f, %f), Golden = (%f, %f)\n",
              (float)result[0].real, (float)result[0].imag,

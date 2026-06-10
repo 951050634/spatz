@@ -693,6 +693,27 @@ bin/spatz_cluster.vlt`，退出码为 0；Verilator 重新生成并链接
   写回和最终 correctness check 可收敛；剩余 blocker 更集中在
   `cdotp_v64b` 的向量/fused 计算序列、其 result 写回前后的交互，或 timeout trace
   截断边界。
+- 2026-06-10 继续只用 `M128` 做最小向量诊断。已通过的诊断目标：
+  `dp-cdotp_vec_load_M128`、`dp-cdotp_vec_mac_M128`、
+  `dp-cdotp_vec_reduce_real_M128`、`dp-cdotp_vec_reduce_imag_M128`、
+  `dp-cdotp_vec_reduce_noextract_M128`、`dp-cdotp_vec_extract_nocollect_M128`
+  和 `dp-cdotp_vec_extract_nosummary_M128`。其中 `extract_nocollect`
+  用时约 1.90 秒，`extract_nosummary` 用时约 1.87 秒。
+- 2026-06-10 失败的最小诊断目标：
+  `timeout 120s ctest -V -R "dp-cdotp_vec_extract_drop_M128$"` 退出码为
+  124；`timeout 120s ctest -V -R "dp-cdotp_vec_extract_noprint_M128$"`
+  退出码为 124；`timeout 120s ctest -V -R
+  "dp-cdotp_old_singlecore_M128$"` 退出码为 124；`timeout 120s ctest -V -R
+  "dp-cdotp_old_direct_singlecore_M128$"` 退出码为 124。
+- 2026-06-10 trace/反汇编边界：两次 `vfredusum.vs` 加两次 `vfmv.f.s`
+  本身可以 retire；`extract_nocollect` 和 `extract_nosummary` 证明抽取后
+  只要跳过 `result[]` 汇总/后续标量 FPU 收尾即可退出。`extract_noprint`
+  仍 timeout，说明问题不是 `printf` 本身，而是两次抽取后进入 hart0
+  `result[]` 标量 `fld/fadd/fsd` 汇总或等价标量收尾路径。
+- 2026-06-10 候选规避失败：`SPATZ_CDOTP_SINGLE_CORE` 避开跨核汇总后，
+  `old_singlecore_M128` 仍 timeout；`SPATZ_CDOTP_DIRECT_ACC_ASSIGN` 直接
+  将 `cdotp_v64b()` 返回值赋给 `acc` 后，`old_direct_singlecore_M128` 仍
+  timeout。因此不能把单核或 direct assign 作为当前修复结论。
 - 对照运行 `timeout 180s ctest -R "vfcmacc$" --output-on-failure`，退出码为
   0；`vfcmacc` ISA regression 用时 117.31 秒并通过，说明当前 simulator
   基础路径仍可执行并退出，blocker 限定在 benchmark 类目标。
@@ -709,6 +730,11 @@ bin/spatz_cluster.vlt`，退出码为 0；Verilator 重新生成并链接
 - `dp-cdotp_scalar_M128` 是诊断入口，不是性能目标；它通过后不能推导 old/new
   vector benchmark 已修复。后续应优先比较 old `cdotp_v64b`、new `vfcmacc`
   和非 fused scalar 路径在 result 写回前后的 trace 差异。
+- 当前最新边界是“两次 vector-to-FPR 抽取后的标量 FPU 收尾”。已排除：
+  `M128` 数据/DMA/barrier 主流程、单次 reduction+extract、连续两次
+  reduction 不抽取、两次 reduction+extract 但不进入 collect/summary。
+  未解决：抽取后的标量 `fld/fadd/fsd` 汇总、本地标量累加、最终校验/收尾为何
+  会导致 RTL benchmark 无法退出。
 
 ## Node 7：Mnemonic 与工具链整理
 

@@ -8,10 +8,42 @@
 #define SPATZ_CDOTP_SCALAR_DIAG 0
 #endif
 
+#ifndef SPATZ_CDOTP_VECTOR_DIAG_STAGE
+#define SPATZ_CDOTP_VECTOR_DIAG_STAGE 0
+#endif
+
 #if SPATZ_CDOTP_SCALAR_DIAG
 #define SPATZ_CDOTP_KERNEL_NAME "scalar"
 #define SPATZ_CDOTP_INNER_LOOP_INSN_PROXY 0
 #define SPATZ_CDOTP_ACCUM_INSN_PROXY 0
+#elif SPATZ_CDOTP_VECTOR_DIAG_STAGE == 1
+#define SPATZ_CDOTP_KERNEL_NAME "vec_load"
+#define SPATZ_CDOTP_INNER_LOOP_INSN_PROXY 3
+#define SPATZ_CDOTP_ACCUM_INSN_PROXY 0
+#elif SPATZ_CDOTP_VECTOR_DIAG_STAGE == 2
+#define SPATZ_CDOTP_KERNEL_NAME "vec_mac"
+#define SPATZ_CDOTP_INNER_LOOP_INSN_PROXY 7
+#define SPATZ_CDOTP_ACCUM_INSN_PROXY 4
+#elif SPATZ_CDOTP_VECTOR_DIAG_STAGE == 3
+#define SPATZ_CDOTP_KERNEL_NAME "vec_reduce_real"
+#define SPATZ_CDOTP_INNER_LOOP_INSN_PROXY 7
+#define SPATZ_CDOTP_ACCUM_INSN_PROXY 4
+#elif SPATZ_CDOTP_VECTOR_DIAG_STAGE == 4
+#define SPATZ_CDOTP_KERNEL_NAME "vec_reduce_imag"
+#define SPATZ_CDOTP_INNER_LOOP_INSN_PROXY 7
+#define SPATZ_CDOTP_ACCUM_INSN_PROXY 4
+#elif SPATZ_CDOTP_VECTOR_DIAG_STAGE == 5
+#define SPATZ_CDOTP_KERNEL_NAME "vec_reduce_both"
+#define SPATZ_CDOTP_INNER_LOOP_INSN_PROXY 7
+#define SPATZ_CDOTP_ACCUM_INSN_PROXY 4
+#elif SPATZ_CDOTP_VECTOR_DIAG_STAGE == 6
+#define SPATZ_CDOTP_KERNEL_NAME "vec_reduce_noextract"
+#define SPATZ_CDOTP_INNER_LOOP_INSN_PROXY 7
+#define SPATZ_CDOTP_ACCUM_INSN_PROXY 4
+#elif SPATZ_CDOTP_VECTOR_DIAG_STAGE == 7
+#define SPATZ_CDOTP_KERNEL_NAME "vec_extract_drop"
+#define SPATZ_CDOTP_INNER_LOOP_INSN_PROXY 7
+#define SPATZ_CDOTP_ACCUM_INSN_PROXY 4
 #elif SPATZ_USE_VFCMACC
 #define SPATZ_CDOTP_KERNEL_NAME "vfcmacc"
 #define SPATZ_CDOTP_INNER_LOOP_INSN_PROXY 4
@@ -68,7 +100,9 @@ cdouble cdotp_v64b(const cdouble *x, const cdouble *y, unsigned int avl)
         // v8=Yr, v12=Yi
         asm volatile("vlseg2e64.v v8, (%0)" ::"r"(y));
 
-#if SPATZ_USE_VFCMACC
+#if SPATZ_CDOTP_VECTOR_DIAG_STAGE == 1
+        asm volatile("" ::: "memory");
+#elif SPATZ_USE_VFCMACC
         VFCMACC_VV_VM1("v16", "v0", "v8");
 #else
         asm volatile("vfmacc.vv v16, v0, v8");   // v16 += Xr * Yr
@@ -82,6 +116,37 @@ cdouble cdotp_v64b(const cdouble *x, const cdouble *y, unsigned int avl)
         avl -= vl;
     } while (avl > 0);
 
+#if SPATZ_CDOTP_VECTOR_DIAG_STAGE == 1 || SPATZ_CDOTP_VECTOR_DIAG_STAGE == 2
+    cdouble res = {0.0, 0.0};
+    return res;
+#elif SPATZ_CDOTP_VECTOR_DIAG_STAGE == 3
+    asm volatile("vmv.s.x v24, zero");
+    asm volatile("vfredusum.vs v16, v16, v24");
+    asm volatile("vfmv.f.s %0, v16" : "=f"(red_real));
+    cdouble res = {red_real, 0.0};
+    return res;
+#elif SPATZ_CDOTP_VECTOR_DIAG_STAGE == 4
+    asm volatile("vmv.s.x v24, zero");
+    asm volatile("vfredusum.vs v20, v20, v24");
+    asm volatile("vfmv.f.s %0, v20" : "=f"(red_imag));
+    cdouble res = {0.0, red_imag};
+    return res;
+#elif SPATZ_CDOTP_VECTOR_DIAG_STAGE == 6
+    asm volatile("vmv.s.x v24, zero");
+    asm volatile("vfredusum.vs v16, v16, v24");
+    asm volatile("vfredusum.vs v20, v20, v24");
+    cdouble res = {0.0, 0.0};
+    return res;
+#elif SPATZ_CDOTP_VECTOR_DIAG_STAGE == 7
+    asm volatile("vmv.s.x v24, zero");
+    asm volatile("vfredusum.vs v16, v16, v24");
+    asm volatile("vfmv.f.s %0, v16" : "=f"(red_real));
+    asm volatile("vfredusum.vs v20, v20, v24");
+    asm volatile("vfmv.f.s %0, v20" : "=f"(red_imag));
+    asm volatile("" : : "f"(red_real), "f"(red_imag));
+    cdouble res = {0.0, 0.0};
+    return res;
+#else
     asm volatile("vmv.s.x v24, zero");
     asm volatile("vfredusum.vs v16, v16, v24");
     asm volatile("vfmv.f.s %0, v16" : "=f"(red_real));
@@ -89,6 +154,7 @@ cdouble cdotp_v64b(const cdouble *x, const cdouble *y, unsigned int avl)
     asm volatile("vfmv.f.s %0, v20" : "=f"(red_imag));
     cdouble res = {red_real, red_imag};
     return res;
+#endif
 #endif
 }
 
