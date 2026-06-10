@@ -77,6 +77,10 @@ int main() {
 
     unsigned int start = (tile_elems * cid) / num_cores;
     unsigned int end = (tile_elems * (cid + 1)) / num_cores;
+#if SPATZ_CDOTP_SCALAR_DIAG
+    start = 0;
+    end = (cid == 0) ? tile_elems : 0;
+#endif
     if (end > start) {
       cdouble tile_acc = cdotp_v64b(x + start, y + start, end - start);
       acc.real += tile_acc.real;

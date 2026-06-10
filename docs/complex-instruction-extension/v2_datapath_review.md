@@ -1,86 +1,82 @@
-# vfcmacc.vv v2 Datapath Review
+# vfcmacc.vv v2 数据通路评审
 
-## Decision
+## 决策
 
-Do not start a dedicated complex-FMA datapath yet.
+暂不启动专用 complex-FMA datapath。
 
-The v1 ISA behavior is covered through RTL ISA regressions, but the v1
-engineering loop is not ready to justify a v2 datapath because benchmark and
-toolchain evidence are incomplete:
+v1 ISA 行为已经通过 RTL ISA regressions 覆盖，但当前 v1 工程闭环还不足以支撑
+v2 datapath 决策，原因是 benchmark 与工具链证据仍不完整：
 
-- Node 6 did not produce `dp-cdotp` old/new correctness, cycles, or M4096 data.
-- Node 7 did not replace `.insn` with a formal mnemonic because the installed
-  LLVM toolchain does not support `vfcmacc.vv`.
-- v1 currently relies on a conservative serialization fence for implicit imag
-  register hazards, so cycle data is required before deciding whether a new
-  datapath or a more precise scoreboard is the right optimization.
+- Node 6 尚未产出 `dp-cdotp` old/new `M <= 1024` correctness 或 cycles 数据。
+- Node 7 尚未把 `.insn` 替换为正式 mnemonic，因为已安装 LLVM 工具链不支持
+  `vfcmacc.vv`。
+- v1 目前依赖 conservative serialization fence 来处理隐式 imag register
+  hazards；在决定新增 datapath 或更精细 scoreboard 之前，必须先取得 cycle
+  数据。
 
-## v1 Evidence Available
+## v1 已有证据
 
-- Encoding and register layout are frozen:
-  `32'b111010???????????001?????1010111`.
-- Snitch and Spatz decode recognize `VFCMACC_VV` / `VFCMADD`.
-- VFU executes `vfcmacc.vv` as a four-phase sequence:
-  `Cfma_RR`, `Cfma_II`, `Cfma_RI`, `Cfma_IR`.
-- ISA regressions cover e32/e64/e16, mask, tail, vstart illegal, fflags,
-  NaN/Inf, signed zero, rounding mode, and serialization fence hazards.
-- v1 uses fixed `.insn` bring-up and does not require binary patching.
+- 编码和寄存器布局已冻结：
+  `32'b111010???????????001?????1010111`。
+- Snitch 和 Spatz decode 已识别 `VFCMACC_VV` / `VFCMADD`。
+- VFU 将 `vfcmacc.vv` 按四阶段序列执行：
+  `Cfma_RR`、`Cfma_II`、`Cfma_RI`、`Cfma_IR`。
+- ISA regressions 覆盖 e32/e64/e16、mask、tail、vstart illegal、fflags、
+  NaN/Inf、signed zero、rounding mode 和 serialization fence hazards。
+- v1 使用固定 `.insn` bring-up，不需要 binary patching。
 
-## v1 Evidence Missing
+## v1 缺失证据
 
-- `dp-cdotp` old/new runtime correctness.
-- `dp-cdotp` old/new cycle counts for M128 and M4096.
-- Runtime frontend/offload stall counters.
-- Direct evidence that instruction-count reduction translates into the expected
-  frontend/offload pressure reduction for the benchmark.
-- Assembler and objdump mnemonic support.
+- `dp-cdotp` old/new runtime correctness。
+- `dp-cdotp` old/new 在 M128 和 M1024 下的 cycle counts。
+- runtime frontend/offload stall counters。
+- instruction-count reduction 是否能转化为预期 benchmark frontend/offload
+  pressure reduction 的直接证据。
+- assembler 与 objdump mnemonic support。
 
-## v2 Questions
+## v2 待回答问题
 
 ### Bit Identity
 
-v2 must not silently reuse the v1 bitwise reference if it introduces a fused
-complex-FMA datapath. A fused datapath may produce different rounding, NaN
-payload, signed-zero, and `fflags` behavior.
+如果 v2 引入 fused complex-FMA datapath，不能静默复用 v1 bitwise reference。
+fused datapath 可能改变 rounding、NaN payload、signed-zero 和 `fflags` 行为。
 
-Before v2 RTL starts, the project must choose one policy:
+v2 RTL 启动前，项目必须先选择一个数值策略：
 
-- preserve v1 bit-identical behavior by internally sequencing the same
-  operations, or
-- define a new fused numerical contract with explicit ULP/NaN/fflags rules.
+- 通过内部顺序执行相同 operations，保留与 v1 bit-identical 的行为；或
+- 定义新的 fused numerical contract，明确 ULP、NaN 和 fflags 规则。
 
 ### Datapath Location
 
-No decision yet between extending fpnew and adding a local Spatz VFU block.
+目前尚未决定是在 fpnew 内扩展，还是新增本地 Spatz VFU block。
 
-The current preference is no new datapath until benchmark evidence shows that
-the v1 bottleneck is not only sequencing/fence overhead.
+当前倾向是在 benchmark 证据证明 v1 瓶颈不只是 sequencing/fence overhead
+之前，不新增 datapath。
 
 ### Formats
 
-Any v2 datapath must continue to account for e16/e32/e64 or explicitly split
-format support into separate nodes. Dropping e16 or e64 would require new ISA
-documentation and tests.
+任何 v2 datapath 都必须继续覆盖 e16/e32/e64；如果要拆分 format 支持，必须
+作为独立 node 记录。放弃 e16 或 e64 需要新增 ISA 文档和测试。
 
 ### Extensions
 
-`vfcjmacc.vv` remains the first named follow-up extension, but it should not be
-combined with the initial v2 datapath decision. It needs its own encoding,
-reference model, and tests.
+`vfcjmacc.vv` 仍是第一个命名 follow-up extension，但不应与初始 v2 datapath
+决策混在一起。它需要独立 encoding、reference model 和 tests。
 
-## Entry Criteria for Reopening v2
+## 重新打开 v2 的准入条件
 
-1. Node 6 benchmark blocker is resolved and old/new M128/M4096 data is recorded.
-2. Node 7 mnemonic support is either implemented or explicitly deferred with a
-   stable user-facing `.insn` policy.
-3. v1 performance data shows one of:
-   - frontend/offload pressure is the primary bottleneck and v1 instruction
-     count reduction is insufficient, or
-   - VFU sequencing/fence overhead dominates and a datapath/scoreboard change
-     has a concrete expected benefit.
-4. A v2 reference model and numerical policy are written before RTL changes.
+1. Node 6 benchmark blocker 已解决，并记录 old/new M128/M1024 数据；可行性
+   验证不得依赖 M4096 这类大数据。
+2. Node 7 mnemonic support 已实现，或以稳定 user-facing `.insn` policy 明确
+   延后。
+3. v1 性能数据证明以下至少一种情况：
+   - frontend/offload pressure 是主要瓶颈，且 v1 instruction count reduction
+     仍不足；或
+   - VFU sequencing/fence overhead 占主导，datapath/scoreboard 变更有明确的
+     预期收益。
+4. RTL 变更前已经写好 v2 reference model 与 numerical policy。
 
-## Current Outcome
+## 当前结论
 
-Stop at v1 multi-phase execution. Do not add fpnew operations, VRF ports, or a
-dedicated complex-FMA datapath in this branch.
+本分支停止在 v1 multi-phase execution。不要新增 fpnew operations、VRF ports
+或专用 complex-FMA datapath。

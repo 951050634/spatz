@@ -198,9 +198,10 @@ make -C hw/system/spatz_cluster sw.vlt
   的 RTL/benchmark 验收。
 
 - Benchmark 默认在 `dp-cdotp` 上新增 old/new 两套 CTest 目标，使用
-  `SPATZ_USE_VFCMACC=0/1` 选择路径。默认验收数据集为当前已注册或本 node
-  显式新增注册的 `M128` 与 `M4096`；`M1024/M2048` 只有在 CMake 中显式注册后
-  才作为 Node 6 验收项。
+  `SPATZ_USE_VFCMACC=0/1` 选择路径。可行性验证禁止使用过大数据集；默认
+  验收只允许 `M <= 1024` 的目标，优先使用 `M128` 与 `M1024`。`M4096`
+  这类大数据不得作为可行性验证、RTL bring-up 或默认验收规模，只能在小规模
+  correctness/cycle 数据稳定后作为单独扩展性能实验。
 
 ## 3. ISA 与数值语义
 
@@ -1047,9 +1048,9 @@ docs/complex-instruction-extension/PHASE_RESULTS.md
 - `sw/spatzBenchmarks/CMakeLists.txt` 明确注册 old/new 两套目标，使用
   `SPATZ_USE_VFCMACC=0/1` 区分，例如 `dp-cdotp_old_M128` 与
   `dp-cdotp_vfcmacc_M128`。
-- 默认验收 `M128` 与 `M4096` old/new 均通过。若本 node 显式新增
-  `M1024/M2048` CTest 目标，则也必须把它们纳入验收；否则不得在验收命令中
-  引用未注册目标。
+- 默认验收 `M128` 与 `M1024` old/new 均通过。可行性验证禁止使用 `M4096`
+  这类大数据；任何 `M > 1024` 的目标都不得作为 Node 6 默认验收，只能在
+  小规模数据闭环后单独记录为扩展性能实验。
 - 输出 old/new cycles。
 - 输出 instruction count proxy；若无法直接读硬件 counter，记录静态 inner-loop
   指令数和运行周期。
@@ -1059,7 +1060,7 @@ docs/complex-instruction-extension/PHASE_RESULTS.md
 
 ```sh
 make -C hw/system/spatz_cluster sw.vlt
-cd hw/system/spatz_cluster/sw/build && ctest -R "dp-cdotp.*(old|vfcmacc).*M(128|4096)" --output-on-failure
+cd hw/system/spatz_cluster/sw/build && ctest -R "dp-cdotp.*(old|vfcmacc).*M(128|1024)" --output-on-failure
 git diff --check
 ```
 

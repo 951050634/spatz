@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate and check the vfcmacc.vv v1 layout/encoding reference."""
+"""生成并检查 vfcmacc.vv v1 寄存器布局和编码参考。"""
 
 from __future__ import annotations
 
@@ -110,11 +110,11 @@ def check_encoding(instr_file: Path) -> list[str]:
     errors: list[str] = []
     for name in sorted(CHECK_PATTERNS):
         if name not in patterns:
-            errors.append(f"missing existing opcode pattern: {name}")
+            errors.append(f"缺少既有 opcode pattern: {name}")
             continue
         if patterns_overlap(VFCMACC_PATTERN, patterns[name]):
             errors.append(
-                f"VFCMACC_VV overlaps {name}: "
+                f"VFCMACC_VV 与 {name} 冲突: "
                 f"{VFCMACC_PATTERN} vs {patterns[name]}"
             )
     return errors
@@ -132,14 +132,14 @@ def render_markdown(rows: list[LayoutRow], instr_file: Path) -> str:
     }
 
     lines = [
-        "# vfcmacc.vv Register Layout and Encoding Reference",
+        "# vfcmacc.vv 寄存器布局与编码参考",
         "",
-        "This file is generated from `scripts/cfma_register_layout.py`. Keep the",
-        "script as the single source for decoder and ISA-test layout policy.",
+        "本文件由 `scripts/cfma_register_layout.py` 生成。寄存器布局策略以该脚本为",
+        "decoder 和 ISA test 的单一来源，避免 RTL 与测试各自解释。",
         "",
-        "## v1 Encoding Decision",
+        "## v1 编码决策",
         "",
-        "`vfcmacc.vv` uses the 32-bit RVV OPFVV shape:",
+        "`vfcmacc.vv` 使用 32-bit RVV OPFVV 形式：",
         "",
         "```text",
         f"VFCMACC_VV = 32'b{VFCMACC_PATTERN}",
@@ -152,43 +152,41 @@ def render_markdown(rows: list[LayoutRow], instr_file: Path) -> str:
         "opcode     = 1010111 (OP-V)",
         "```",
         "",
-        "Bring-up before mnemonic support should use this `.insn` shape:",
+        "正式 mnemonic 支持完成前，bring-up 应使用以下 `.insn` 形式：",
         "",
         "```asm",
         ".insn r 0x57, 0x1, 0x75, vd, vs1, vs2  # vm=1",
         "```",
         "",
-        "The immediate conflict check compares the proposed pattern against the",
-        "current generated Snitch patterns named by the plan:",
+        "即时冲突检查会把该 pattern 与计划中列出的当前 Snitch 生成 pattern 对比：",
         "",
-        "| Existing pattern | Pattern | Overlap |",
+        "| 既有 pattern | Pattern | 是否冲突 |",
         "| --- | --- | --- |",
     ]
     for name in sorted(CHECK_PATTERNS):
         pattern = patterns.get(name, "missing")
         overlap = (
-            "n/a" if pattern == "missing" else str(patterns_overlap(VFCMACC_PATTERN, pattern)).lower()
+            "缺失" if pattern == "missing" else ("是" if patterns_overlap(VFCMACC_PATTERN, pattern) else "否")
         )
         lines.append(f"| `{name}` | `32'b{pattern}` | {overlap} |")
 
     lines.extend(
         [
             "",
-            "## v1 Layout Policy",
+            "## v1 布局策略",
             "",
-            "- `LMUL=m1/m2/m4` are legal when every base register is aligned and the",
-            "  paired real+imag group fits in `v0..v31`.",
-            "- `LMUL=m8` is illegal in v1. A single complex operand consumes all 32",
-            "  vector registers, leaving no non-overlapping destination/source pairs",
-            "  for `vfcmacc.vv` under the v1 policy.",
-            "- `base % LMUL != 0` is illegal.",
-            "- `base + 2 * LMUL - 1 >= 32` is illegal.",
-            "- `vd` pair overlap with either source pair is illegal in v1.",
-            "- `vs1` pair may overlap `vs2` pair.",
+            "- `LMUL=m1/m2/m4` 在所有 base register 对齐，且成对 real+imag group",
+            "  均落在 `v0..v31` 内时合法。",
+            "- `LMUL=m8` 在 v1 中非法。单个复数操作数会消耗全部 32 个 vector",
+            "  registers，按 v1 策略无法再留下互不重叠的 destination/source pairs。",
+            "- `base % LMUL != 0` 时非法。",
+            "- `base + 2 * LMUL - 1 >= 32` 时非法。",
+            "- `vd` pair 与任一 source pair 重叠时，在 v1 中非法。",
+            "- `vs1` pair 可以与 `vs2` pair 重叠。",
             "",
-            "## Summary",
+            "## 汇总",
             "",
-            "| LMUL | Legal bases | Illegal bases |",
+            "| LMUL | 合法 base 数 | 非法 base 数 |",
             "| --- | ---: | ---: |",
         ]
     )
@@ -198,16 +196,19 @@ def render_markdown(rows: list[LayoutRow], instr_file: Path) -> str:
     lines.extend(
         [
             "",
-            "## Full Base Table",
+            "## 完整 Base 表",
             "",
-            "| LMUL | base | real group range | imag group range | alignment result | range result | v1 legality | illegal reason |",
+            "| LMUL | base | real group 范围 | imag group 范围 | 对齐结果 | 范围结果 | v1 合法性 | 非法原因 |",
             "| --- | ---: | --- | --- | --- | --- | --- | --- |",
         ]
     )
     for row in rows:
+        alignment = "通过" if row.alignment == "pass" else "失败"
+        in_range = "通过" if row.in_range == "pass" else "失败"
+        legal = "合法" if row.legal == "legal" else "非法"
         lines.append(
             f"| m{row.lmul} | v{row.base} | {row.real_range} | {row.imag_range} | "
-            f"{row.alignment} | {row.in_range} | {row.legal} | {row.reason} |"
+            f"{alignment} | {in_range} | {legal} | {row.reason} |"
         )
     lines.append("")
     return "\n".join(lines)
@@ -215,8 +216,8 @@ def render_markdown(rows: list[LayoutRow], instr_file: Path) -> str:
 
 def render_text(rows: list[LayoutRow]) -> str:
     header = (
-        "LMUL base real group range imag group range alignment result "
-        "range result v1 legality illegal reason"
+        "LMUL base real-group-range imag-group-range alignment-result "
+        "range-result v1-legality illegal-reason"
     )
     lines = [header]
     for row in rows:
@@ -250,7 +251,7 @@ def main(argv: list[str]) -> int:
     if args.write_md:
         args.write_md.write_text(render_markdown(rows, RISC_V_INSTR), encoding="utf-8")
     print(render_text(rows))
-    print(f"Encoding VFCMACC_VV=32'b{VFCMACC_PATTERN} has no checked overlap.")
+    print(f"Encoding VFCMACC_VV=32'b{VFCMACC_PATTERN} 未发现已检查的 pattern 冲突。")
     return 0
 
 

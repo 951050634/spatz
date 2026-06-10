@@ -285,14 +285,14 @@ bin/spatz_cluster.vlt`，退出码为 0；最终重跑输出
 验收标准：
 
 - [x] `Cfma_RR -> Cfma_II -> Cfma_RI -> Cfma_IR` 四阶段状态推进存在，对应
-  `MAC_RR/MAC_II/MAC_RI/MAC_IR`。
+      `MAC_RR/MAC_II/MAC_RI/MAC_IR`。
 - [x] `e32`、`vm=1`、合法 non-overlap layout 的结果逐 bit 等同四指令 reference
-  sequence。
+      sequence。
 - [x] 每条 `vfcmacc.vv` 只在 final phase 返回一次 VFU response。
 - [x] back-to-back same accumulator pair 无 deadlock：`vfcmacc_e32` 覆盖连续两条
-  `vfcmacc.vv v8, v0, v2` 写同一 `v8/v9` accumulator pair。
+      `vfcmacc.vv v8, v0, v2` 写同一 `v8/v9` accumulator pair。
 - [x] 四个内部 FPU operation 的 status 在 VFU 内局部 OR，并只在 final result
-  response 那一拍对 Snitch 暴露。
+      response 那一拍对 Snitch 暴露。
 - [x] 本阶段明确为 `v1a`，只覆盖 unmasked e32，不声称完整 v1。
 
 证据：
@@ -587,6 +587,8 @@ bin/spatz_cluster.vlt`，退出码为 0；Verilator 重新生成并链接
 
 - 在 `dp-cdotp` 中加入 old/new 路径。
 - 量化 instruction count、cycle 和 frontend/offload pressure。
+- 可行性验证禁止使用过大数据集；默认验证规模限制为 `M <= 1024`，优先
+  `M128/M1024`，不得用 `M4096` 这类大数据作为 bring-up 或默认验收依据。
 
 修改范围：
 
@@ -601,11 +603,13 @@ bin/spatz_cluster.vlt`，退出码为 0；Verilator 重新生成并链接
 - [x] old path 与 new path 均可构建。
 - [x] `sw/spatzBenchmarks/CMakeLists.txt` 注册
       `dp-cdotp_old_M128`、`dp-cdotp_vfcmacc_M128`、
-      `dp-cdotp_old_M4096` 和 `dp-cdotp_vfcmacc_M4096`，使用
+      `dp-cdotp_old_M1024` 和 `dp-cdotp_vfcmacc_M1024`，使用
       `SPATZ_USE_VFCMACC=0/1` 区分路径。
-- [ ] 默认验收 `M128` 与 `M4096` old/new 均通过：阻塞在 RTL benchmark
-      运行收敛，`dp-cdotp_old_M128` 在 600 秒上限内超时；未继续宣称 M4096
-      通过。
+- [x] 诊断目标 `dp-cdotp_scalar_M128` 已注册并通过，用于在 `M128`
+      规模下隔离 DMA、barrier、result 写回和最终 correctness check。
+- [ ] 默认验收 `M128` 与 `M1024` old/new 均通过：阻塞在 RTL benchmark
+      运行收敛，`dp-cdotp_old_M128` 在 600 秒上限内超时；按新约束不再使用
+      `M4096` 作为可行性验证或默认验收规模。
 - [ ] 输出 old/new cycles：未取得，原因同上。
 - [x] 输出 instruction count proxy：程序输出格式已加入
       `inner_loop_insn_proxy` 和 `complex_mac_insn_proxy`；old path 为
@@ -633,28 +637,78 @@ bin/spatz_cluster.vlt`，退出码为 0；Verilator 重新生成并链接
 - 2026-06-08 运行
   `PATH="$PWD/.venv/bin:$PATH" make -C hw/system/spatz_cluster sw.vlt`，
   退出码为 0；CMake/Make 完成软件构建并注册/链接
-  `dp-cdotp_old_M128`、`dp-cdotp_vfcmacc_M128`、`dp-cdotp_old_M4096` 和
-  `dp-cdotp_vfcmacc_M4096`。输出仍包含既有 runtime/benchmark warnings 和
+  `dp-cdotp_old_M128`、`dp-cdotp_vfcmacc_M128`、`dp-cdotp_old_M1024` 和
+  `dp-cdotp_vfcmacc_M1024`。输出仍包含既有 runtime/benchmark warnings 和
   DWARF address range table diagnostic。
-- 2026-06-08 运行 `ctest -N -R
-  "dp-cdotp_(old|vfcmacc)_M(128|4096)$"`，退出码为 0；列出 4 个 Node 6
-  old/new 目标。
+- 2026-06-10 从 `hw/system/spatz_cluster/sw/build` 运行 `ctest -N -R
+  "dp-cdotp_(old|vfcmacc)_M(128|1024)$"`，退出码为 0；列出
+  `dp-cdotp_old_M128`、`dp-cdotp_vfcmacc_M128`、`dp-cdotp_old_M1024`
+  和 `dp-cdotp_vfcmacc_M1024` 四个 Node 6 old/new 目标。`M4096`
+  不再作为 Node 6 可行性验证、RTL bring-up 或默认验收目标。
 - 修复后再次运行 `timeout 600s ctest -V -R "dp-cdotp_old_M128$"`，
   退出码为 124；trace 停在 766/559 行且 mtime 不再更新。M128 old path
   仍无法给出 correctness/cycle 结果，Node 6 因 benchmark RTL 运行收敛问题
   标为阻塞。
+- 2026-06-10 从 `hw/system/spatz_cluster/sw/build` 运行
+  `timeout 90s ctest -V -R "dp-cdotp_old_M128$"`，退出码为 124；未产生
+  benchmark 串口输出。新生成的
+  `spatzBenchmarks/logs/trace_hart_00000.dasm` 与
+  `trace_hart_00001.dasm` 分别约 766/559 行，PC 仍在第一次 `cdotp_v64b`
+  之后的 `snrt_cluster_hw_barrier()` 返回、`result[cid]` 写入附近；当前证据
+  不支持把根因稳定归为 `snrt_dma_wait_all()`。`lw result` 后的 load-use
+  stall 不能直接解读为空指针；后续应继续定位 `cdotp_v64b` 之后的
+  result 写回、后续 barrier 或 timeout trace 截断边界。
+- 2026-06-10 运行小规模对照测试，均未使用 `M4096`：
+  `timeout 180s ctest -V -R "vfnmsac$"` 退出码为 0，用时 29.41 秒；
+  `timeout 180s ctest -V -R "vfredusum$"` 退出码为 0，用时 56.84 秒；
+  `timeout 120s ctest -V -R "dp-fdotp_aligned_M128$"` 退出码为 0，用时
+  2.05 秒；`timeout 120s ctest -V -R "dp-caxpy_M1024$"` 退出码为 0，用时
+  2.66 秒。这削弱了单条 `vfnmsac`、单条 `vfredusum`、分块 DMA、共享
+  `result` 写回、barrier 和复数内存布局全局损坏的假设。
+- 2026-06-10 运行
+  `timeout 90s ctest -V -R "dp-cdotp_vfcmacc_M128$"`，退出码为 124；未产生
+  benchmark 串口输出。old/new 两条 `dp-cdotp` 小规模路径都未收敛，说明
+  blocker 不是 old path 四条普通 FMA 序列独有，也不是 new path
+  `vfcmacc.vv` 独有；当前最小共同区域仍是 `dp-cdotp` 的复杂向量 dot-product
+  kernel 与其后写回/barrier 区域。
+- 2026-06-10 先运行 `ctest -N -R "dp-cdotp_scalar_M128$"`，退出码为 0，
+  `Total Tests: 0`，确认诊断目标此前不存在。随后新增
+  `SPATZ_CDOTP_SCALAR_DIAG=1` 的 `dp-cdotp_scalar_M128`，复用 `M128`
+  数据、DMA、barrier、result 写回和最终 reduction/check，但让 core 0
+  使用非 fused 标量复数累加覆盖全部 128 个元素。
+- 2026-06-10 运行
+  `PATH="$PWD/.venv/bin:$PATH" make -C hw/system/spatz_cluster sw.vlt`，
+  退出码为 0；软件测试树重建后 `ctest -N -R "dp-cdotp_scalar_M128$"`
+  列出 1 个诊断目标。构建日志仍包含既有 runtime/benchmark warnings 和
+  DWARF address range table diagnostic。
+- 2026-06-10 诊断过程中，初版 scalar 循环被编译为 `fmadd.d/fmsub.d`
+  fused 标量序列，`timeout 120s ctest -V -R "dp-cdotp_scalar_M128$"`
+  能退出但 correctness 失败。该结果不能作为主流程错误结论，只能说明 fused
+  标量诊断本身会干扰定位。最终将诊断路径改为 `volatile` 中间乘积，反汇编确认
+  热循环只含 `fmul.d/fsub.d/fadd.d`，无 RVV、`fmadd.d` 或 `fmsub.d`。
+- 2026-06-10 运行
+  `timeout 120s ctest -V -R "dp-cdotp_scalar_M128$"`，退出码为 0；串口输出
+  `dp-cdotp scalar M128: cycles=9359 ...` 和 `Verification: SUCCESS`，
+  CTest 用时约 17.27 秒。该证据表明 `M128` 数据、DMA、barrier、`result`
+  写回和最终 correctness check 可收敛；剩余 blocker 更集中在
+  `cdotp_v64b` 的向量/fused 计算序列、其 result 写回前后的交互，或 timeout trace
+  截断边界。
 - 对照运行 `timeout 180s ctest -R "vfcmacc$" --output-on-failure`，退出码为
   0；`vfcmacc` ISA regression 用时 117.31 秒并通过，说明当前 simulator
   基础路径仍可执行并退出，blocker 限定在 benchmark 类目标。
 
 风险：
 
-- Node 6 尚未取得 old/new cycles、correctness 或 M4096 结果；不得使用本 node
-  声称 `vfcmacc.vv` benchmark speedup。
-- `dp-cdotp_vfcmacc` new path 已编译链接，但没有 RTL runtime pass 证据。
-- 分块 DMA 主流程解决 M4096 全量驻留的已知 TCDM 风险，但未解决当前 RTL
-  benchmark 停滞；后续需要用波形或 RTL trace 定位 benchmark 在
+- Node 6 尚未取得 `M <= 1024` old/new cycles 或 correctness 结果；不得使用本
+  node 声称 `vfcmacc.vv` benchmark speedup。
+- `dp-cdotp_vfcmacc` new path 已编译链接，但 `M128` RTL runtime 仍无 pass
+  证据。
+- 分块 DMA 主流程降低了全量驻留的已知 TCDM 风险，但未解决当前 RTL
+  benchmark 停滞；后续必须先用 `M <= 1024` 的目标和 RTL trace 定位 benchmark 在
   vector reduction/result writeback/barrier 附近等待的根因。
+- `dp-cdotp_scalar_M128` 是诊断入口，不是性能目标；它通过后不能推导 old/new
+  vector benchmark 已修复。后续应优先比较 old `cdotp_v64b`、new `vfcmacc`
+  和非 fused scalar 路径在 result 写回前后的 trace 差异。
 
 ## Node 7：Mnemonic 与工具链整理
 
@@ -688,7 +742,7 @@ bin/spatz_cluster.vlt`，退出码为 0；Verilator 重新生成并链接
   `sw/toolchain/riscv-opcodes`；`sw/toolchain/llvm-project` 与
   `sw/toolchain/riscv-gnu-toolchain` source tree 不存在。
 - 2026-06-08 运行 `rg -n "vfcmacc|VFCMACC|vfwdotp|VFWDOTP"
-  sw/toolchain sw/toolchain-patches install/llvm install/riscv-gcc -S`，只在
+sw/toolchain sw/toolchain-patches install/llvm install/riscv-gcc -S`，只在
   `sw/toolchain-patches/riscv-opcodes/vfcmacc-vv.patch` 与
   `sw/toolchain/riscv-opcodes/opcodes-rvv` 中找到 `vfcmacc`；installed toolchain
   中未找到 mnemonic 支持痕迹。
@@ -697,7 +751,7 @@ bin/spatz_cluster.vlt`，退出码为 0；Verilator 重新生成并链接
   退出码为 1；关键错误为 `unrecognized instruction mnemonic`。
 - 2026-06-08 运行 fixed `.insn` assembly smoke：
   `printf "... .insn r 0x57, 0x1, 0x75, v16, v0, v8" |
-  install/llvm/bin/clang -x assembler ...`，退出码为 0；随后
+install/llvm/bin/clang -x assembler ...`，退出码为 0；随后
   `llvm-objdump -d` 显示 `57 18 80 ea   <unknown>`。
 - 2026-06-08 运行 `install/llvm/bin/clang --version`，输出 LLVM 14.0.6，
   revision 为 `pulp-platform/llvm-project b494f2d8...`。
@@ -743,7 +797,7 @@ bin/spatz_cluster.vlt`，退出码为 0；Verilator 重新生成并链接
   - v1 ISA 行为已有 RTL regression 覆盖：e32/e64/e16、mask/tail、
     vstart illegal、fflags、NaN/Inf、zero sign、rounding 和 serialization
     fence hazards。
-  - Node 6 未取得 `dp-cdotp` old/new correctness、cycles 或 M4096 数据；
+  - Node 6 未取得 `dp-cdotp` old/new `M <= 1024` correctness 或 cycles 数据；
     benchmark RTL 目标在 600 秒上限内不收敛。
   - Node 7 未取得正式 mnemonic/objdump support；当前 installed LLVM 仍需
     `.insn` bring-up。
@@ -776,7 +830,8 @@ bin/spatz_cluster.vlt`，退出码为 0；Verilator 重新生成并链接
 - `PLAN.md` 明确 `make update_opcodes` 是 Node 2 唯一默认 opcode 入口。
 - `PLAN.md` 明确 v1 使用 conservative serialization fence，不扩展 multi-imag
   scoreboard request。
-- `PLAN.md` 明确 Node 6 benchmark 默认验收 `dp-cdotp` old/new `M128/M4096`。
+- `PLAN.md` 明确 Node 6 benchmark 默认验收 `dp-cdotp` old/new `M128/M1024`，
+  并禁止把 `M4096` 这类大数据用于可行性验证。
 - 原 Node 5 拆分为 Node 5a、5b、5c、5d。
 
 证据：

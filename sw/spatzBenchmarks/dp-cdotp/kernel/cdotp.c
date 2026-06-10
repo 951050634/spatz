@@ -4,7 +4,15 @@
 #define SPATZ_USE_VFCMACC 0
 #endif
 
-#if SPATZ_USE_VFCMACC
+#ifndef SPATZ_CDOTP_SCALAR_DIAG
+#define SPATZ_CDOTP_SCALAR_DIAG 0
+#endif
+
+#if SPATZ_CDOTP_SCALAR_DIAG
+#define SPATZ_CDOTP_KERNEL_NAME "scalar"
+#define SPATZ_CDOTP_INNER_LOOP_INSN_PROXY 0
+#define SPATZ_CDOTP_ACCUM_INSN_PROXY 0
+#elif SPATZ_USE_VFCMACC
 #define SPATZ_CDOTP_KERNEL_NAME "vfcmacc"
 #define SPATZ_CDOTP_INNER_LOOP_INSN_PROXY 4
 #define SPATZ_CDOTP_ACCUM_INSN_PROXY 1
@@ -19,6 +27,27 @@
 // sum += x[i] * y[i]
 cdouble cdotp_v64b(const cdouble *x, const cdouble *y, unsigned int avl)
 {
+#if SPATZ_CDOTP_SCALAR_DIAG
+    cdouble acc = {0.0, 0.0};
+
+    for (unsigned int i = 0; i < avl; ++i)
+    {
+        const double xr = x[i].real;
+        const double xi = x[i].imag;
+        const double yr = y[i].real;
+        const double yi = y[i].imag;
+        volatile double real_prod0 = xr * yr;
+        volatile double real_prod1 = xi * yi;
+        volatile double imag_prod0 = xr * yi;
+        volatile double imag_prod1 = xi * yr;
+        volatile double real_delta = real_prod0 - real_prod1;
+        volatile double imag_delta = imag_prod0 + imag_prod1;
+        acc.real += real_delta;
+        acc.imag += imag_delta;
+    }
+
+    return acc;
+#else
     unsigned int vl;
     double red_real, red_imag;
 
@@ -60,6 +89,7 @@ cdouble cdotp_v64b(const cdouble *x, const cdouble *y, unsigned int avl)
     asm volatile("vfmv.f.s %0, v20" : "=f"(red_imag));
     cdouble res = {red_real, red_imag};
     return res;
+#endif
 }
 
 cfloat cdotp_v32b(const cfloat *x, const cfloat *y, unsigned int avl)
