@@ -31,3 +31,4 @@ logs/
 *.elf
 **/generated/*.sv
 .venv
+.venv
