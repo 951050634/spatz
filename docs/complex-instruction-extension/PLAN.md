@@ -1022,53 +1022,7 @@ git add hw/ip/spatz/src sw/riscvTests docs/complex-instruction-extension
 git commit -m "[cfma] Complete vfcmacc ISA behavior"
 ```
 
-### Node 6：Benchmark A/B 与性能报告
-
-目标：
-
-- 在 `dp-cdotp` 中加入 old/new 路径。
-- 量化 instruction count、cycle 和 frontend/offload pressure。
-
-建议修改文件：
-
-```text
-sw/spatzBenchmarks/dp-cdotp/kernel/cdotp.c
-sw/spatzBenchmarks/dp-cdotp/kernel/cdotp.h
-sw/spatzBenchmarks/dp-cdotp/main.c
-sw/spatzBenchmarks/CMakeLists.txt
-docs/complex-instruction-extension/PHASE_RESULTS.md
-```
-
-验收标准：
-
-- old path 与 new path 均可构建。
-- `sw/spatzBenchmarks/CMakeLists.txt` 明确注册 old/new 两套目标，使用
-  `SPATZ_USE_VFCMACC=0/1` 区分，例如 `dp-cdotp_old_M128` 与
-  `dp-cdotp_vfcmacc_M128`。
-- 默认验收 `M128` 与 `M1024` old/new 均通过。可行性验证禁止使用 `M4096`
-  这类大数据；任何 `M > 1024` 的目标都不得作为 Node 6 默认验收，只能在
-  小规模数据闭环后单独记录为扩展性能实验。
-- 输出 old/new cycles。
-- 输出 instruction count proxy；若无法直接读硬件 counter，记录静态 inner-loop
-  指令数和运行周期。
-- 如 new path 慢超过 10%，记录原因和后续决策，不隐瞒为 speedup。
-
-验证：
-
-```sh
-make -C hw/system/spatz_cluster sw.vlt
-cd hw/system/spatz_cluster/sw/build && ctest -R "dp-cdotp.*(old|vfcmacc).*M(128|1024)" --output-on-failure
-git diff --check
-```
-
-提交：
-
-```sh
-git add sw/spatzBenchmarks docs/complex-instruction-extension
-git commit -m "[cfma] Add vfcmacc dp-cdotp benchmark path"
-```
-
-### Node 7：Mnemonic 与工具链整理
+### Node 6：Mnemonic 与工具链整理
 
 目标：
 
@@ -1111,7 +1065,7 @@ git add sw/toolchain sw/spatzBenchmarks docs/complex-instruction-extension
 git commit -m "[cfma] Add vfcmacc mnemonic support"
 ```
 
-### Node 8：v2 Datapath 评审门
+### Node 7：v2 Datapath 评审门
 
 目标：
 

@@ -579,164 +579,7 @@ bin/spatz_cluster.vlt`，退出码为 0；Verilator 重新生成并链接
 - `vfwdotp` 当前没有独立 ISA CTest 名称，继续使用 sdotp benchmark 作为 proxy
   regression。
 
-## Node 6：Benchmark A/B 与性能报告
-
-状态：阻塞（代码和构建已完成，RTL benchmark 未收敛）
-
-目标：
-
-- 在 `dp-cdotp` 中加入 old/new 路径。
-- 量化 instruction count、cycle 和 frontend/offload pressure。
-- 可行性验证禁止使用过大数据集；默认验证规模限制为 `M <= 1024`，优先
-  `M128/M1024`，不得用 `M4096` 这类大数据作为 bring-up 或默认验收依据。
-
-修改范围：
-
-- `sw/spatzBenchmarks/CMakeLists.txt`
-- `sw/spatzBenchmarks/dp-cdotp/kernel/cdotp.c`
-- `sw/spatzBenchmarks/dp-cdotp/main.c`
-- `docs/complex-instruction-extension/PHASE_RESULTS.md`
-- `docs/complex-instruction-extension/GIT_NOTES.md`
-
-验收标准：
-
-- [x] old path 与 new path 均可构建。
-- [x] `sw/spatzBenchmarks/CMakeLists.txt` 注册
-      `dp-cdotp_old_M128`、`dp-cdotp_vfcmacc_M128`、
-      `dp-cdotp_old_M1024` 和 `dp-cdotp_vfcmacc_M1024`，使用
-      `SPATZ_USE_VFCMACC=0/1` 区分路径。
-- [x] 诊断目标 `dp-cdotp_scalar_M128` 已注册并通过，用于在 `M128`
-      规模下隔离 DMA、barrier、result 写回和最终 correctness check。
-- [ ] 默认验收 `M128` 与 `M1024` old/new 均通过：阻塞在 RTL benchmark
-      运行收敛，`dp-cdotp_old_M128` 在 600 秒上限内超时；按新约束不再使用
-      `M4096` 作为可行性验证或默认验收规模。
-- [ ] 输出 old/new cycles：未取得，原因同上。
-- [x] 输出 instruction count proxy：程序输出格式已加入
-      `inner_loop_insn_proxy` 和 `complex_mac_insn_proxy`；old path 为
-      `7/4`，new path 为 `4/1`，表示 inner loop 静态指令数与 complex MAC
-      指令数 proxy。
-- [ ] frontend/offload stall counters：当前 runtime 未提供可直接读取 counter；
-      本 node 仅保留静态 proxy，真实 cycle/offload 数据被 RTL benchmark
-      收敛 blocker 阻塞。
-
-证据：
-
-- TDD red / blocker reproduction：2026-06-08 从
-  `hw/system/spatz_cluster/sw/build` 运行
-  `ctest -V -R "dp-cdotp_old_M128$"`，`dp-cdotp` 第一版全量驻留路径在
-  13 分钟后仍未返回；`spatzBenchmarks/logs/trace_hart_00000.dasm` 与
-  `trace_hart_00001.dasm` 停在 745/530 行且 mtime 不再更新。手动停止该次
-  CTest，作为 Node 6 benchmark blocker 证据。
-- 2026-06-08 运行 `timeout 600s ctest -V -R "dp-cdotp_ver2_M128$"`，
-  退出码为 124；分块版参考也未在 600 秒内收敛，trace 停在 767/559 行且
-  mtime 不再更新，说明当前问题不是新增 `SPATZ_USE_VFCMACC` 路径独有。
-- 根据既有 `dp_cdotp_dp_cmatmul_v1_排查与验证记录.md` 中关于第一版
-  `dp-cdotp` 全量驻留风险的记录，2026-06-08 将 `dp-cdotp/main.c` 改成
-  `CDOTP_TILE_ELEMS=1024` 的分块 DMA/分块累加主流程，old/new A/B 共享同一
-  数据搬运框架。
-- 2026-06-08 运行
-  `PATH="$PWD/.venv/bin:$PATH" make -C hw/system/spatz_cluster sw.vlt`，
-  退出码为 0；CMake/Make 完成软件构建并注册/链接
-  `dp-cdotp_old_M128`、`dp-cdotp_vfcmacc_M128`、`dp-cdotp_old_M1024` 和
-  `dp-cdotp_vfcmacc_M1024`。输出仍包含既有 runtime/benchmark warnings 和
-  DWARF address range table diagnostic。
-- 2026-06-10 从 `hw/system/spatz_cluster/sw/build` 运行 `ctest -N -R
-  "dp-cdotp_(old|vfcmacc)_M(128|1024)$"`，退出码为 0；列出
-  `dp-cdotp_old_M128`、`dp-cdotp_vfcmacc_M128`、`dp-cdotp_old_M1024`
-  和 `dp-cdotp_vfcmacc_M1024` 四个 Node 6 old/new 目标。`M4096`
-  不再作为 Node 6 可行性验证、RTL bring-up 或默认验收目标。
-- 修复后再次运行 `timeout 600s ctest -V -R "dp-cdotp_old_M128$"`，
-  退出码为 124；trace 停在 766/559 行且 mtime 不再更新。M128 old path
-  仍无法给出 correctness/cycle 结果，Node 6 因 benchmark RTL 运行收敛问题
-  标为阻塞。
-- 2026-06-10 从 `hw/system/spatz_cluster/sw/build` 运行
-  `timeout 90s ctest -V -R "dp-cdotp_old_M128$"`，退出码为 124；未产生
-  benchmark 串口输出。新生成的
-  `spatzBenchmarks/logs/trace_hart_00000.dasm` 与
-  `trace_hart_00001.dasm` 分别约 766/559 行，PC 仍在第一次 `cdotp_v64b`
-  之后的 `snrt_cluster_hw_barrier()` 返回、`result[cid]` 写入附近；当前证据
-  不支持把根因稳定归为 `snrt_dma_wait_all()`。`lw result` 后的 load-use
-  stall 不能直接解读为空指针；后续应继续定位 `cdotp_v64b` 之后的
-  result 写回、后续 barrier 或 timeout trace 截断边界。
-- 2026-06-10 运行小规模对照测试，均未使用 `M4096`：
-  `timeout 180s ctest -V -R "vfnmsac$"` 退出码为 0，用时 29.41 秒；
-  `timeout 180s ctest -V -R "vfredusum$"` 退出码为 0，用时 56.84 秒；
-  `timeout 120s ctest -V -R "dp-fdotp_aligned_M128$"` 退出码为 0，用时
-  2.05 秒；`timeout 120s ctest -V -R "dp-caxpy_M1024$"` 退出码为 0，用时
-  2.66 秒。这削弱了单条 `vfnmsac`、单条 `vfredusum`、分块 DMA、共享
-  `result` 写回、barrier 和复数内存布局全局损坏的假设。
-- 2026-06-10 运行
-  `timeout 90s ctest -V -R "dp-cdotp_vfcmacc_M128$"`，退出码为 124；未产生
-  benchmark 串口输出。old/new 两条 `dp-cdotp` 小规模路径都未收敛，说明
-  blocker 不是 old path 四条普通 FMA 序列独有，也不是 new path
-  `vfcmacc.vv` 独有；当前最小共同区域仍是 `dp-cdotp` 的复杂向量 dot-product
-  kernel 与其后写回/barrier 区域。
-- 2026-06-10 先运行 `ctest -N -R "dp-cdotp_scalar_M128$"`，退出码为 0，
-  `Total Tests: 0`，确认诊断目标此前不存在。随后新增
-  `SPATZ_CDOTP_SCALAR_DIAG=1` 的 `dp-cdotp_scalar_M128`，复用 `M128`
-  数据、DMA、barrier、result 写回和最终 reduction/check，但让 core 0
-  使用非 fused 标量复数累加覆盖全部 128 个元素。
-- 2026-06-10 运行
-  `PATH="$PWD/.venv/bin:$PATH" make -C hw/system/spatz_cluster sw.vlt`，
-  退出码为 0；软件测试树重建后 `ctest -N -R "dp-cdotp_scalar_M128$"`
-  列出 1 个诊断目标。构建日志仍包含既有 runtime/benchmark warnings 和
-  DWARF address range table diagnostic。
-- 2026-06-10 诊断过程中，初版 scalar 循环被编译为 `fmadd.d/fmsub.d`
-  fused 标量序列，`timeout 120s ctest -V -R "dp-cdotp_scalar_M128$"`
-  能退出但 correctness 失败。该结果不能作为主流程错误结论，只能说明 fused
-  标量诊断本身会干扰定位。最终将诊断路径改为 `volatile` 中间乘积，反汇编确认
-  热循环只含 `fmul.d/fsub.d/fadd.d`，无 RVV、`fmadd.d` 或 `fmsub.d`。
-- 2026-06-10 运行
-  `timeout 120s ctest -V -R "dp-cdotp_scalar_M128$"`，退出码为 0；串口输出
-  `dp-cdotp scalar M128: cycles=9359 ...` 和 `Verification: SUCCESS`，
-  CTest 用时约 17.27 秒。该证据表明 `M128` 数据、DMA、barrier、`result`
-  写回和最终 correctness check 可收敛；剩余 blocker 更集中在
-  `cdotp_v64b` 的向量/fused 计算序列、其 result 写回前后的交互，或 timeout trace
-  截断边界。
-- 2026-06-10 继续只用 `M128` 做最小向量诊断。已通过的诊断目标：
-  `dp-cdotp_vec_load_M128`、`dp-cdotp_vec_mac_M128`、
-  `dp-cdotp_vec_reduce_real_M128`、`dp-cdotp_vec_reduce_imag_M128`、
-  `dp-cdotp_vec_reduce_noextract_M128`、`dp-cdotp_vec_extract_nocollect_M128`
-  和 `dp-cdotp_vec_extract_nosummary_M128`。其中 `extract_nocollect`
-  用时约 1.90 秒，`extract_nosummary` 用时约 1.87 秒。
-- 2026-06-10 失败的最小诊断目标：
-  `timeout 120s ctest -V -R "dp-cdotp_vec_extract_drop_M128$"` 退出码为
-  124；`timeout 120s ctest -V -R "dp-cdotp_vec_extract_noprint_M128$"`
-  退出码为 124；`timeout 120s ctest -V -R
-  "dp-cdotp_old_singlecore_M128$"` 退出码为 124；`timeout 120s ctest -V -R
-  "dp-cdotp_old_direct_singlecore_M128$"` 退出码为 124。
-- 2026-06-10 trace/反汇编边界：两次 `vfredusum.vs` 加两次 `vfmv.f.s`
-  本身可以 retire；`extract_nocollect` 和 `extract_nosummary` 证明抽取后
-  只要跳过 `result[]` 汇总/后续标量 FPU 收尾即可退出。`extract_noprint`
-  仍 timeout，说明问题不是 `printf` 本身，而是两次抽取后进入 hart0
-  `result[]` 标量 `fld/fadd/fsd` 汇总或等价标量收尾路径。
-- 2026-06-10 候选规避失败：`SPATZ_CDOTP_SINGLE_CORE` 避开跨核汇总后，
-  `old_singlecore_M128` 仍 timeout；`SPATZ_CDOTP_DIRECT_ACC_ASSIGN` 直接
-  将 `cdotp_v64b()` 返回值赋给 `acc` 后，`old_direct_singlecore_M128` 仍
-  timeout。因此不能把单核或 direct assign 作为当前修复结论。
-- 对照运行 `timeout 180s ctest -R "vfcmacc$" --output-on-failure`，退出码为
-  0；`vfcmacc` ISA regression 用时 117.31 秒并通过，说明当前 simulator
-  基础路径仍可执行并退出，blocker 限定在 benchmark 类目标。
-
-风险：
-
-- Node 6 尚未取得 `M <= 1024` old/new cycles 或 correctness 结果；不得使用本
-  node 声称 `vfcmacc.vv` benchmark speedup。
-- `dp-cdotp_vfcmacc` new path 已编译链接，但 `M128` RTL runtime 仍无 pass
-  证据。
-- 分块 DMA 主流程降低了全量驻留的已知 TCDM 风险，但未解决当前 RTL
-  benchmark 停滞；后续必须先用 `M <= 1024` 的目标和 RTL trace 定位 benchmark 在
-  vector reduction/result writeback/barrier 附近等待的根因。
-- `dp-cdotp_scalar_M128` 是诊断入口，不是性能目标；它通过后不能推导 old/new
-  vector benchmark 已修复。后续应优先比较 old `cdotp_v64b`、new `vfcmacc`
-  和非 fused scalar 路径在 result 写回前后的 trace 差异。
-- 当前最新边界是“两次 vector-to-FPR 抽取后的标量 FPU 收尾”。已排除：
-  `M128` 数据/DMA/barrier 主流程、单次 reduction+extract、连续两次
-  reduction 不抽取、两次 reduction+extract 但不进入 collect/summary。
-  未解决：抽取后的标量 `fld/fadd/fsd` 汇总、本地标量累加、最终校验/收尾为何
-  会导致 RTL benchmark 无法退出。
-
-## Node 7：Mnemonic 与工具链整理
+## Node 6：Mnemonic 与工具链整理
 
 状态：阻塞（工具链 source 未展开，installed LLVM 不支持 mnemonic）
 
@@ -787,13 +630,89 @@ install/llvm/bin/clang -x assembler ...`，退出码为 0；随后
 
 风险：
 
-- Node 7 未能把 `.insn` 替换为正式 mnemonic；v1 软件路径仍依赖固定编码
+- Node 6 未能把 `.insn` 替换为正式 mnemonic；v1 软件路径仍依赖固定编码
   wrapper。
 - 正式 mnemonic support 需要展开并 patch pinned LLVM/binutils source，或安装
   已包含 `vfcmacc.vv` 的预构建工具链；不得把完整 `make all/toolchain` 构建混入
   本 node 默认修复路径。
 
-## Node 8：v2 Datapath 评审门
+## Node 7：v2 Datapath 评审门
+  `PATH="$PWD/.venv/bin:$PATH" make -C hw/system/spatz_cluster sw.vlt`，
+  退出码为 0；软件测试树重建后 `ctest -N -R "dp-cdotp_scalar_M128$"`
+  列出 1 个诊断目标。构建日志仍包含既有 runtime/benchmark warnings 和
+  DWARF address range table diagnostic。
+- 2026-06-10 诊断过程中，初版 scalar 循环被编译为 `fmadd.d/fmsub.d`
+  fused 标量序列，`timeout 120s ctest -V -R "dp-cdotp_scalar_M128$"`
+  能退出但 correctness 失败。该结果不能作为主流程错误结论，只能说明 fused
+  标量诊断本身会干扰定位。最终将诊断路径改为 `volatile` 中间乘积，反汇编确认
+  热循环只含 `fmul.d/fsub.d/fadd.d`，无 RVV、`fmadd.d` 或 `fmsub.d`。
+- 2026-06-10 运行
+  `timeout 120s ctest -V -R "dp-cdotp_scalar_M128$"`，退出码为 0；串口输出
+  `dp-cdotp scalar M128: cycles=9359 ...` 和 `Verification: SUCCESS`，
+  CTest 用时约 17.27 秒。该证据表明 `M128` 数据、DMA、barrier、`result`
+  写回和最终 correctness check 可收敛；剩余 blocker 更集中在
+  `cdotp_v64b` 的向量/fused 计算序列、其 result 写回前后的交互，或 timeout trace
+  截断边界。
+- 2026-06-10 继续只用 `M128` 做最小向量诊断。已通过的诊断目标：
+  `dp-cdotp_vec_load_M128`、`dp-cdotp_vec_mac_M128`、
+  `dp-cdotp_vec_reduce_real_M128`、`dp-cdotp_vec_reduce_imag_M128`、
+  `dp-cdotp_vec_reduce_noextract_M128`、`dp-cdotp_vec_extract_nocollect_M128`
+  和 `dp-cdotp_vec_extract_nosummary_M128`。其中 `extract_nocollect`
+  用时约 1.90 秒，`extract_nosummary` 用时约 1.87 秒。
+- 2026-06-10 失败的最小诊断目标：
+  `timeout 120s ctest -V -R "dp-cdotp_vec_extract_drop_M128$"` 退出码为
+  124；`timeout 120s ctest -V -R "dp-cdotp_vec_extract_noprint_M128$"`
+  退出码为 124；`timeout 120s ctest -V -R
+  "dp-cdotp_old_singlecore_M128$"` 退出码为 124；`timeout 120s ctest -V -R
+  "dp-cdotp_old_direct_singlecore_M128$"` 退出码为 124。
+- 2026-06-10 trace/反汇编边界：两次 `vfredusum.vs` 加两次 `vfmv.f.s`
+  本身可以 retire；`extract_nocollect` 和 `extract_nosummary` 证明抽取后
+  只要跳过 `result[]` 汇总/后续标量 FPU 收尾即可退出。`extract_noprint`
+  仍 timeout，说明问题不是 `printf` 本身，而是两次抽取后进入 hart0
+  `result[]` 标量 `fld/fadd/fsd` 汇总或等价标量收尾路径。
+- 2026-06-10 候选规避失败：`SPATZ_CDOTP_SINGLE_CORE` 避开跨核汇总后，
+  `old_singlecore_M128` 仍 timeout；`SPATZ_CDOTP_DIRECT_ACC_ASSIGN` 直接
+  将 `cdotp_v64b()` 返回值赋给 `acc` 后，`old_direct_singlecore_M128` 仍
+  timeout。因此不能把单核或 direct assign 作为当前修复结论。
+- 对照运行 `timeout 180s ctest -R "vfcmacc$" --output-on-failure`，退出码为
+  0；`vfcmacc` ISA regression 用时 117.31 秒并通过，说明当前 simulator
+  基础路径仍可执行并退出，blocker 限定在 benchmark 类目标。
+
+## Node 6：Mnemonic 与工具链整理
+
+状态：阻塞（工具链 source 未展开，installed LLVM 不支持 mnemonic）
+
+目标：
+
+- 把临时 `.insn` 或固定编码 wrapper 替换为正式 mnemonic。
+- 明确 assembler、objdump 和 LLVM 支持边界。
+
+修改范围：
+
+- `docs/complex-instruction-extension/toolchain_mnemonic_status.md`
+- `docs/complex-instruction-extension/PHASE_RESULTS.md`
+- `docs/complex-instruction-extension/GIT_NOTES.md`
+
+验收标准：
+
+- [ ] inline asm 可写 `vfcmacc.vv` mnemonic：阻塞。当前 installed LLVM 14.0.6
+      assembler 报 `unrecognized instruction mnemonic`。
+- [x] benchmark 不需要 binary patch：当前 benchmark 使用固定 `.insn` wrapper，
+      不手工 patch binary。
+- [ ] objdump 能显示 `vfcmacc.vv`：阻塞。`.insn` 可汇编成
+      `57 18 80 ea`，但 `llvm-objdump` 显示 `<unknown>`。
+- [x] LLVM 自动 SelectionDAG lowering 仍不纳入本 node；已记录为 v1 之外的
+      follow-up。
+
+风险：
+
+- Node 6 未能把 `.insn` 替换为正式 mnemonic；v1 软件路径仍依赖固定编码
+  wrapper。
+- 正式 mnemonic support 需要展开并 patch pinned LLVM/binutils source，或安装
+  已包含 `vfcmacc.vv` 的预构建工具链；不得把完整 `make all/toolchain` 构建混入
+  本 node 默认修复路径。
+
+## Node 7：v2 Datapath 评审门
 
 状态：已完成
 
@@ -834,50 +753,6 @@ install/llvm/bin/clang -x assembler ...`，退出码为 0；随后
 
 - v2 no-go 决策依赖当前未完成的 benchmark/toolchain 证据；若 Node 6/7 后续解锁，
   必须重新打开评审，而不是直接开始 RTL。
-
-## 2026-06-08 Plan hardening：Goal 一次性执行补强
-
-状态：已完成
-
-目标：
-
-- 将 `PLAN.md` 从方向性计划补强为 goal 可连续执行规格。
-- 冻结 opcode 生成、scoreboard hazard、VFU 原子性和 benchmark 默认决策。
-- 拆分原 Node 5，降低长跑执行时的中途决策风险。
-
-修改范围：
-
-- `docs/complex-instruction-extension/PLAN.md`
-- `docs/complex-instruction-extension/PHASE_RESULTS.md`
-- `docs/complex-instruction-extension/GIT_NOTES.md`
-
-验收标准：
-
-- `PLAN.md` 明确 `make update_opcodes` 是 Node 2 唯一默认 opcode 入口。
-- `PLAN.md` 明确 v1 使用 conservative serialization fence，不扩展 multi-imag
-  scoreboard request。
-- `PLAN.md` 明确 Node 6 benchmark 默认验收 `dp-cdotp` old/new `M128/M1024`，
-  并禁止把 `M4096` 这类大数据用于可行性验证。
-- 原 Node 5 拆分为 Node 5a、5b、5c、5d。
-
-证据：
-
-- 2026-06-08 运行 `git diff --check`，退出码为 0，未发现 whitespace error。
-
-风险：
-
-- 本次只修改文档，不执行 RTL、opcode 或 benchmark 实现。
-
-## 2026-06-10 dp-cdotp M128 诊断续记
-
-状态：进行中
-
-目标：
-
-- 继续执行小规模验证约束：可行性验证禁止使用 `M4096` 等大数据；本轮只运行
-  `M128` 目标。
-- 清理会导致 `dp-cdotp_old_M128` 新增 timeout 的临时普通路径实验，恢复普通
-  `old/vfcmacc` 路径为原始 `vfredusum.vs` + `vfmv.f.s` 收尾。
 - 保留 `vec_store_scalar` 诊断路径，新增 `vec_store_scalar_m1`，用于验证
   reduction 后用 `vse64.v` 取 scalar 时 `LMUL=m4` 与 `LMUL=m1` 是否影响
   lane0 位置。

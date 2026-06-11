@@ -943,154 +943,18 @@ NaN/zero sign 和 serialization fence regression 均已覆盖。
 2026-06-08
 ```
 
-Node：
+## 2026-06-08 Node 6 记录
 
-```text
-Node 6：Benchmark A/B 与性能报告
-```
-
-分支和状态：
-
-```text
-## feature/cfma-instruction-extension
- M docs/complex-instruction-extension/PHASE_RESULTS.md
- M hw/system/spatz_cluster/src/generated/testharness.sv
- M hw/system/spatz_cluster/test/bootrom.elf
- M sw/spatzBenchmarks/CMakeLists.txt
- M sw/spatzBenchmarks/dp-cdotp/kernel/cdotp.c
- M sw/spatzBenchmarks/dp-cdotp/main.c
-?? .venv
-?? logs/
-```
-
-计划提交：
-
-```text
-[cfma] Add vfcmacc dp-cdotp benchmark path
-```
-
-修改范围：
-
-```text
-M  sw/spatzBenchmarks/CMakeLists.txt
-M  sw/spatzBenchmarks/dp-cdotp/kernel/cdotp.c
-M  sw/spatzBenchmarks/dp-cdotp/main.c
-M  docs/complex-instruction-extension/PHASE_RESULTS.md
-M  docs/complex-instruction-extension/GIT_NOTES.md
-```
-
-目的：
-
-- 在 `dp-cdotp` 中注册 old/new A/B CTest 目标：
-  `dp-cdotp_old_M128`、`dp-cdotp_vfcmacc_M128`、`dp-cdotp_old_M1024` 和
-  `dp-cdotp_vfcmacc_M1024`。
-- 使用 `SPATZ_USE_VFCMACC=0/1` 选择四指令 reference sequence 或
-  `vfcmacc.vv` 固定编码路径。
-- 输出静态 instruction count proxy：old path inner loop `7`、complex MAC `4`；
-  new path inner loop `4`、complex MAC `1`。
-- 将 `dp-cdotp/main.c` 改成 `CDOTP_TILE_ELEMS=1024` 的分块 DMA/分块累加主流程，
-  避免 M4096 full-resident input 触发既有 TCDM 风险。
-- 2026-06-10 起，默认 bring-up、可行性验证和 Node 6 A/B 验收禁止使用
-  `M4096` 这类过大数据；允许范围收敛为 `M <= 1024`，优先使用 `M128`
-  定位，再用 `M1024` 做扩展确认。
-- 新增 `dp-cdotp_scalar_M128` 诊断目标，复用 `M128` 数据、DMA、barrier、
-  `result` 写回和最终 correctness check，但用非 fused 标量复数累加隔离
-  `cdotp_v64b` 向量/fused 计算路径。
-
-验证命令：
-
-```text
-TDD red/blocker: cd hw/system/spatz_cluster/sw/build && ctest -V -R "dp-cdotp_old_M128$":
-STALLED，约 13 分钟未返回；trace_hart_00000/00001 停在 745/530 行且 mtime 不再更新，随后手动停止。
-cd hw/system/spatz_cluster/sw/build && timeout 600s ctest -V -R "dp-cdotp_ver2_M128$":
-FAIL，退出码 124；trace 停在 767/559 行且 mtime 不再更新。
-PATH="$PWD/.venv/bin:$PATH" make -C hw/system/spatz_cluster sw.vlt:
-PASS，退出码 0。
-cd hw/system/spatz_cluster/sw/build && ctest -N -R "dp-cdotp_(old|vfcmacc)_M(128|4096)$":
-PASS，退出码 0；列出 4 个 Node 6 目标。
-cd hw/system/spatz_cluster/sw/build && timeout 600s ctest -V -R "dp-cdotp_old_M128$":
-FAIL，退出码 124；分块后仍停在 766/559 行且 mtime 不再更新。
-cd hw/system/spatz_cluster/sw/build && timeout 180s ctest -R "vfcmacc$" --output-on-failure:
-PASS，退出码 0；`vfcmacc` ISA regression 用时 117.31 秒。
-cd hw/system/spatz_cluster/sw/build && ctest -N -R "dp-cdotp_(old|vfcmacc)_M(128|1024)$":
-PASS，退出码 0；列出 4 个小规模 Node 6 A/B 目标。
-cd hw/system/spatz_cluster/sw/build && timeout 90s ctest -V -R "dp-cdotp_old_M128$":
-FAIL，退出码 124；90 秒内无 benchmark 串口输出。
-cd hw/system/spatz_cluster/sw/build && timeout 90s ctest -V -R "dp-cdotp_vfcmacc_M128$":
-FAIL，退出码 124；90 秒内无 benchmark 串口输出。
-cd hw/system/spatz_cluster/sw/build && timeout 180s ctest -V -R "vfnmsac$":
-PASS，退出码 0；用时约 29.41 秒。
-cd hw/system/spatz_cluster/sw/build && timeout 180s ctest -V -R "vfredusum$":
-PASS，退出码 0；用时约 56.84 秒。
-cd hw/system/spatz_cluster/sw/build && timeout 120s ctest -V -R "dp-fdotp_aligned_M128$":
-PASS，退出码 0；用时约 2.05 秒。
-cd hw/system/spatz_cluster/sw/build && timeout 120s ctest -V -R "dp-caxpy_M1024$":
-PASS，退出码 0；用时约 2.66 秒。
-cd hw/system/spatz_cluster/sw/build && ctest -N -R "dp-cdotp_scalar_M128$":
-RED，退出码 0；`Total Tests: 0`，确认诊断目标尚未注册。
-PATH="$PWD/.venv/bin:$PATH" make -C hw/system/spatz_cluster sw.vlt:
-PASS，退出码 0；软件测试树重建后注册 `dp-cdotp_scalar_M128`。
-install/llvm/bin/llvm-objdump -d --mcpu=snitch --mattr=a --mattr=v --mattr=m --mattr=zfh \
-  hw/system/spatz_cluster/sw/build/spatzBenchmarks/test-spatzBenchmarks-dp-cdotp_scalar_M128:
-PASS，确认诊断热循环只含 `fmul.d/fsub.d/fadd.d`，无 RVV、`fmadd.d` 或 `fmsub.d`。
-cd hw/system/spatz_cluster/sw/build && timeout 120s ctest -V -R "dp-cdotp_scalar_M128$":
-PASS，退出码 0；串口输出 `Verification: SUCCESS`，用时约 17.02 秒。
-git diff --check: 提交前运行并记录。
-```
-
-结果摘要：
-
-```text
-Node 6 的代码侧 A/B 入口、CTest 注册、software build 和静态 instruction proxy 已完成。
-但 RTL benchmark 运行收敛阻塞：`dp-cdotp_old_M128` 和既有 `dp-cdotp_ver2_M128`
-均在 600 秒内无法结束，trace 早早停止更新。尚未取得 old/new cycles、correctness
-数据，因此本 node 标记为阻塞，不声称 benchmark speedup。后续小规模验证显示
-`dp-cdotp_old_M128` 与 `dp-cdotp_vfcmacc_M128` 都在 90 秒 timeout；但 `vfnmsac`、
-`vfredusum`、`dp-fdotp_aligned_M128` 和 `dp-caxpy_M1024` 可通过，问题更可能集中在
-`dp-cdotp` 的复数向量 kernel、result writeback/barrier 区域或 timeout trace
-截断边界，而不是全局 DMA、barrier、result 指针或单条 reduction 指令损坏。
-新增的非 fused `dp-cdotp_scalar_M128` 诊断目标可通过，进一步证明 `M128`
-数据、分块 DMA、barrier、result 写回和最终 correctness check 主流程可收敛；
-剩余 blocker 应继续集中在 `cdotp_v64b` 向量/fused 计算序列及其写回前后交互。
-```
-
-实际提交：
-
-```text
-926ef7dd9dd8f2816db14cdc8588e5801faf24f2
-```
-
-遗留风险：
-
-```text
-需要后续用波形或 RTL trace 定位 benchmark 在 vector reduction/result
-writeback/barrier 附近等待的根因。`dp-cdotp_vfcmacc` new path 已构建，但没有
-runtime pass 证据。可行性验证禁止回退到 `M4096`；后续应在 `M128` 上比较
-old `cdotp_v64b`、new `vfcmacc` 与已通过的非 fused scalar 诊断路径，继续定位
-vector/fused 计算序列和 barrier/writeback 之间的责任边界。
-工作树中仍存在未 stage 的本地生成差异
-`hw/system/spatz_cluster/src/generated/testharness.sv` 与
-`hw/system/spatz_cluster/test/bootrom.elf`，本 node 不提交这些产物。
-```
-
-远端 Git 操作：
-
-```text
-暂无。
-```
-
-## 2026-06-08 Node 7 记录
-
-日期：
+日期:
 
 ```text
 2026-06-08
 ```
 
-Node：
+Node:
 
 ```text
-Node 7：Mnemonic 与工具链整理
+Node 6：Mnemonic 与工具链整理
 ```
 
 分支和状态：
@@ -1181,7 +1045,7 @@ benchmark 部分。
 Node：
 
 ```text
-Node 8：v2 Datapath 评审门
+Node 7：v2 Datapath 评审门
 ```
 
 分支和状态：
