@@ -56,9 +56,9 @@ tmp/
 *.tmp
 
 # =========================================================
-# Logs
+# Logs (allow for debugging, but exclude large benchmark logs)
 # =========================================================
-*.log
+# *.log  # Temporarily allowed for Node 6 benchmark debugging
 
 # =========================================================
 # Git internals
@@ -95,11 +95,12 @@ datasets/
 checkpoints/
 
 # =========================================================
-# Common generated RTL dirs
+# Common generated RTL dirs (allow work-vlt traces for debugging)
 # =========================================================
 hw/**/generated/
 hw/**/build/
 hw/**/sim/
+# hw/system/spatz_cluster/work-vlt/  # Temporarily allowed for trace analysis
 
 # =========================================================
 # Verilator
