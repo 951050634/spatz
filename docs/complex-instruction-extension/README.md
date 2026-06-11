@@ -15,3 +15,11 @@ benchmark 的完整闭环；后续版本再评估是否加入专用复数 FMA �
 - [GIT_NOTES.md](GIT_NOTES.md)：分支、提交、验证命令和远端 Git 操作记录。
 - [register_layout.md](register_layout.md)：`vfcmacc.vv` v1 寄存器布局合法表、
   非法策略和编码决策。
+- [node6_summary.md](node6_summary.md)：Node 6 验证总结，vfcmacc 指令在 dp-caxpy
+  上完全正确，dp-cdotp 问题为独立 bug。
+- [node7_toolchain_status.md](node7_toolchain_status.md)：Node 7 toolchain mnemonic
+  支持状态，riscv-opcodes 已更新，binutils 待更新。
+- [dedicated_hardware_path.md](dedicated_hardware_path.md)：实现专用 Complex FMA
+  硬件的技术路径和投入产出分析。
+- [fence_explained.md](fence_explained.md)：Conservative serialization fence
+  机制详解，为什么需要以及如何优化。
