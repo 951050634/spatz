@@ -25,3 +25,5 @@ benchmark 的完整闭环；后续版本再评估是否加入专用复数 FMA �
   机制详解，为什么需要以及如何优化。
 - [complex_fma_hardware_design.md](complex_fma_hardware_design.md)：专用 Complex FMA
   硬件单元详细设计方案，包括架构、实施计划和验收标准。
+- [instruction_extension_guide.md](instruction_extension_guide.md)：添加新复数指令的
+  完整流程指南，包括 vfcmacc 的价值分析和未来扩展路线图。
