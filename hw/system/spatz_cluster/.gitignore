@@ -14,3 +14,4 @@ vc_hdrs.h
 logs
 logs/
 Testing/
+*.elf

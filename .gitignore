@@ -29,5 +29,4 @@ install
 Testing/
 logs/
 *.elf
-**/generated/*.sv
 .venv

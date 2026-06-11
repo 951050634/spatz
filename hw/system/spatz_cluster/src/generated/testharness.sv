@@ -58,8 +58,28 @@ module testharness (
  **************/
 
 `ifdef VCD_DUMP
-  // Waveform dumping is controlled by the C++ harness (`-t`/`--trace`).
-  // Keeping an empty block here preserves compatibility with existing compile flags.
+  initial begin: vcd_dump
+    // Wait for the reset
+    wait (rst_ni);
+
+    // Wait until the probe is high
+    while (!cluster_probe)
+      @(posedge clk_i);
+
+    // Dump signals of group 0
+    $dumpfile(`VCD_DUMP_FILE);
+    $dumpvars(0, i_cluster_wrapper);
+    $dumpon;
+
+    // Wait until the probe is low
+    while (cluster_probe)
+      @(posedge clk_i);
+
+    $dumpoff;
+
+    // Stop the execution
+    $finish(0);
+  end: vcd_dump
 `endif
 
   /************************
