@@ -26,3 +26,8 @@ mems
 install
 .projectBender.lock
 .venv/
+.venv/
+Testing/
+logs/
+*.elf
+**/generated/*.sv
