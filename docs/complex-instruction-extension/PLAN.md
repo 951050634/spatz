@@ -198,10 +198,7 @@ make -C hw/system/spatz_cluster sw.vlt
   的 RTL/benchmark 验收。
 
 - Benchmark 默认在 `dp-cdotp` 上新增 old/new 两套 CTest 目标，使用
-  `SPATZ_USE_VFCMACC=0/1` 选择路径。可行性验证禁止使用过大数据集；默认
-  验收只允许 `M <= 1024` 的目标，优先使用 `M128` 与 `M1024`。`M4096`
-  这类大数据不得作为可行性验证、RTL bring-up 或默认验收规模，只能在小规模
-  correctness/cycle 数据稳定后作为单独扩展性能实验。
+  `SPATZ_USE_VFCMACC=0/1` 选择路径。验收使用 `M128`、`M1024` 和 `M4096` 规模。
 
 ## 3. ISA 与数值语义
 
