@@ -144,6 +144,15 @@ add_spatz_test_twoParam(sp-fft sp-fft/main.c 512 2)
 
 add_spatz_test_oneParam(dp-caxpy dp-caxpy/main.c 256)
 add_spatz_test_oneParam(dp-caxpy dp-caxpy/main.c 1024)
+add_spatz_test_oneParam(dp-caxpy dp-caxpy/main.c 4096)
+
+# dp-caxpy with vfcmacc instruction
+add_spatz_test_oneParam(dp-caxpy_vfcmacc dp-caxpy/main.c 256)
+target_compile_definitions(test-${SNITCH_TEST_PREFIX}dp-caxpy_vfcmacc_M256 PUBLIC SPATZ_USE_VFCMACC=1)
+add_spatz_test_oneParam(dp-caxpy_vfcmacc dp-caxpy/main.c 1024)
+target_compile_definitions(test-${SNITCH_TEST_PREFIX}dp-caxpy_vfcmacc_M1024 PUBLIC SPATZ_USE_VFCMACC=1)
+add_spatz_test_oneParam(dp-caxpy_vfcmacc dp-caxpy/main.c 4096)
+target_compile_definitions(test-${SNITCH_TEST_PREFIX}dp-caxpy_vfcmacc_M4096 PUBLIC SPATZ_USE_VFCMACC=1)
 
 add_spatz_test_oneParam(dp-cdotp dp-cdotp/main.c 128)
 add_spatz_test_oneParam(dp-cdotp dp-cdotp/main.c 4096)
