@@ -168,7 +168,117 @@ module fpnew_complex_fma
     // (Will be connected to FMA outputs in next steps)
   end
 
-  // TODO: FMA unit instantiation (2x)
+  // -----------------------
+  // FMA Unit Instantiation
+  // -----------------------
+  // Two FMA units for time-multiplexed complex arithmetic
+
+  // FMA0 signals
+  logic [2:0][WIDTH-1:0] fma0_operands;
+  logic [2:0]            fma0_is_boxed;
+  fpnew_pkg::operation_e fma0_op;
+  logic                  fma0_op_mod;
+  logic                  fma0_in_valid;
+  logic                  fma0_in_ready;
+  logic [WIDTH-1:0]      fma0_result;
+  fpnew_pkg::status_t    fma0_status;
+  logic                  fma0_out_valid;
+  logic                  fma0_out_ready;
+  logic                  fma0_busy;
+
+  // FMA1 signals
+  logic [2:0][WIDTH-1:0] fma1_operands;
+  logic [2:0]            fma1_is_boxed;
+  fpnew_pkg::operation_e fma1_op;
+  logic                  fma1_op_mod;
+  logic                  fma1_in_valid;
+  logic                  fma1_in_ready;
+  logic [WIDTH-1:0]      fma1_result;
+  fpnew_pkg::status_t    fma1_status;
+  logic                  fma1_out_valid;
+  logic                  fma1_out_ready;
+  logic                  fma1_busy;
+
+  // FMA Unit 0
+  fpnew_fma #(
+    .FpFormat    ( FpFormat    ),
+    .NumPipeRegs ( NumPipeRegs ),
+    .PipeConfig  ( PipeConfig  ),
+    .TagType     ( logic       ),
+    .AuxType     ( logic       )
+  ) i_fma0 (
+    .clk_i           ( clk_i           ),
+    .rst_ni          ( rst_ni          ),
+    .operands_i      ( fma0_operands   ),
+    .is_boxed_i      ( fma0_is_boxed   ),
+    .rnd_mode_i      ( rnd_mode_i      ),
+    .op_i            ( fma0_op         ),
+    .op_mod_i        ( fma0_op_mod     ),
+    .tag_i           ( 1'b0            ),
+    .mask_i          ( 1'b0            ),
+    .aux_i           ( 1'b0            ),
+    .in_valid_i      ( fma0_in_valid   ),
+    .in_ready_o      ( fma0_in_ready   ),
+    .flush_i         ( flush_i         ),
+    .result_o        ( fma0_result     ),
+    .status_o        ( fma0_status     ),
+    .extension_bit_o (                 ), // unused
+    .tag_o           (                 ), // unused
+    .mask_o          (                 ), // unused
+    .aux_o           (                 ), // unused
+    .out_valid_o     ( fma0_out_valid  ),
+    .out_ready_i     ( fma0_out_ready  ),
+    .busy_o          ( fma0_busy       )
+  );
+
+  // FMA Unit 1
+  fpnew_fma #(
+    .FpFormat    ( FpFormat    ),
+    .NumPipeRegs ( NumPipeRegs ),
+    .PipeConfig  ( PipeConfig  ),
+    .TagType     ( logic       ),
+    .AuxType     ( logic       )
+  ) i_fma1 (
+    .clk_i           ( clk_i           ),
+    .rst_ni          ( rst_ni          ),
+    .operands_i      ( fma1_operands   ),
+    .is_boxed_i      ( fma1_is_boxed   ),
+    .rnd_mode_i      ( rnd_mode_i      ),
+    .op_i            ( fma1_op         ),
+    .op_mod_i        ( fma1_op_mod     ),
+    .tag_i           ( 1'b0            ),
+    .mask_i          ( 1'b0            ),
+    .aux_i           ( 1'b0            ),
+    .in_valid_i      ( fma1_in_valid   ),
+    .in_ready_o      ( fma1_in_ready   ),
+    .flush_i         ( flush_i         ),
+    .result_o        ( fma1_result     ),
+    .status_o        ( fma1_status     ),
+    .extension_bit_o (                 ), // unused
+    .tag_o           (                 ), // unused
+    .mask_o          (                 ), // unused
+    .aux_o           (                 ), // unused
+    .out_valid_o     ( fma1_out_valid  ),
+    .out_ready_i     ( fma1_out_ready  ),
+    .busy_o          ( fma1_busy       )
+  );
+
+  // Temporary assignments (will be replaced with multiplexer logic)
+  assign fma0_operands  = '0;
+  assign fma0_is_boxed  = '1;  // Assume properly boxed for FP64
+  assign fma0_op        = fpnew_pkg::FMADD;
+  assign fma0_op_mod    = 1'b0;
+  assign fma0_in_valid  = 1'b0;
+  assign fma0_out_ready = 1'b1;
+
+  assign fma1_operands  = '0;
+  assign fma1_is_boxed  = '1;  // Assume properly boxed for FP64
+  assign fma1_op        = fpnew_pkg::FMADD;
+  assign fma1_op_mod    = 1'b0;
+  assign fma1_in_valid  = 1'b0;
+  assign fma1_out_ready = 1'b1;
+
+  // TODO: Operand multiplexer
   // TODO: Operand multiplexer
   // TODO: Result routing
 
