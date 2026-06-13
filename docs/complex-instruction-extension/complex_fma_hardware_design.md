@@ -1279,5 +1279,4 @@ git commit -m "[cfma] Update documentation and finalize implementation"
 5. 最终完成所有 18 个步骤并通过所有验收标准
 
 当前分支：feature/cfma-instruction-extension
-目标：实现 3.5× 性能提升，从 ~28 cycles/element → 8 cycles/element
 ```
