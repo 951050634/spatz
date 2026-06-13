@@ -51,18 +51,89 @@ module fpnew_complex_fma
   output logic                     busy_o
 );
 
-  // TODO: State machine (4 states)
+  // ----------------
+  // State Machine
+  // ----------------
+  typedef enum logic [1:0] {
+    IDLE         = 2'b00,  // Waiting for new operation
+    MULTIPLY_PH1 = 2'b01,  // Compute prod_rr = a.real * b.real, prod_ii = a.imag * b.imag
+    MULTIPLY_PH2 = 2'b10,  // Compute prod_ri = a.real * b.imag, prod_ir = a.imag * b.real
+    ADD_PHASE    = 2'b11   // Compute final results: result.real and result.imag
+  } cfma_state_e;
+
+  cfma_state_e state_q, state_d;
+
+  // ----------------
+  // State Register
+  // ----------------
+  always_ff @(posedge clk_i or negedge rst_ni) begin
+    if (!rst_ni) begin
+      state_q <= IDLE;
+    end else begin
+      state_q <= state_d;
+    end
+  end
+
+  // ----------------------
+  // State Transition Logic
+  // ----------------------
+  always_comb begin
+    // Default: stay in current state
+    state_d = state_q;
+
+    unique case (state_q)
+      IDLE: begin
+        // Start operation when valid input arrives
+        if (op_valid_i) begin
+          state_d = MULTIPLY_PH1;
+        end
+      end
+
+      MULTIPLY_PH1: begin
+        // Automatically transition to next phase
+        state_d = MULTIPLY_PH2;
+      end
+
+      MULTIPLY_PH2: begin
+        // Automatically transition to add phase
+        state_d = ADD_PHASE;
+      end
+
+      ADD_PHASE: begin
+        // Return to IDLE when result is consumed
+        if (result_ready_i) begin
+          state_d = IDLE;
+        end
+      end
+
+      default: begin
+        state_d = IDLE;
+      end
+    endcase
+  end
+
+  // ----------------------
+  // Control Signal Outputs
+  // ----------------------
+
+  // op_ready_o: Ready to accept new operation only in IDLE state
+  assign op_ready_o = (state_q == IDLE);
+
+  // result_valid_o: Result is valid only in ADD_PHASE state
+  assign result_valid_o = (state_q == ADD_PHASE);
+
+  // busy_o: Module is busy when not in IDLE state
+  assign busy_o = (state_q != IDLE);
+
   // TODO: Intermediate registers (4x 64-bit)
   // TODO: FMA unit instantiation (2x)
-  // TODO: Control logic
+  // TODO: Operand multiplexer
+  // TODO: Result routing
 
-  // Temporary implementation to prevent compilation errors
-  assign op_ready_o     = 1'b0;
+  // Temporary assignments to prevent compilation errors
   assign result_real_o  = '0;
   assign result_imag_o  = '0;
   assign status_o       = '0;
-  assign result_valid_o = 1'b0;
   assign tag_o          = tag_i;
-  assign busy_o         = 1'b0;
 
 endmodule : fpnew_complex_fma
