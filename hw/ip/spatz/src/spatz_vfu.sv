@@ -1380,6 +1380,74 @@ module spatz_vfu
         assign fpu_result_tag = tag;
       end: gen_fpu_tag
     end : gen_fpnew
+
+    // =========================================
+    // Complex FMA Hardware Unit (Experimental)
+    // =========================================
+    // Dedicated hardware for complex FMA operations (VFCMADD)
+
+    // CFMA module interface signals
+    logic                      cfma_op_valid;
+    logic                      cfma_op_ready;
+    logic [ELEN-1:0]           cfma_operand_a_real;
+    logic [ELEN-1:0]           cfma_operand_a_imag;
+    logic [ELEN-1:0]           cfma_operand_b_real;
+    logic [ELEN-1:0]           cfma_operand_b_imag;
+    logic [ELEN-1:0]           cfma_operand_c_real;
+    logic [ELEN-1:0]           cfma_operand_c_imag;
+    logic [ELEN-1:0]           cfma_result_real;
+    logic [ELEN-1:0]           cfma_result_imag;
+    fpnew_pkg::status_t        cfma_status;
+    logic                      cfma_result_valid;
+    logic                      cfma_result_ready;
+    logic                      cfma_busy;
+    vfu_tag_t                  cfma_tag_in;
+    vfu_tag_t                  cfma_tag_out;
+
+    // Complex FMA module instantiation
+    fpnew_complex_fma #(
+      .FpFormat    ( fpnew_pkg::FP64 ),
+      .NumPipeRegs ( 0               ),
+      .PipeConfig  ( fpnew_pkg::BEFORE ),
+      .TagType     ( vfu_tag_t       )
+    ) i_complex_fma (
+      .clk_i               ( clk_i                ),
+      .rst_ni              ( rst_ni               ),
+      // Operands
+      .operand_a_real_i    ( cfma_operand_a_real  ),
+      .operand_a_imag_i    ( cfma_operand_a_imag  ),
+      .operand_b_real_i    ( cfma_operand_b_real  ),
+      .operand_b_imag_i    ( cfma_operand_b_imag  ),
+      .operand_c_real_i    ( cfma_operand_c_real  ),
+      .operand_c_imag_i    ( cfma_operand_c_imag  ),
+      // Control
+      .rnd_mode_i          ( spatz_req.rm         ),
+      .op_valid_i          ( cfma_op_valid        ),
+      .op_ready_o          ( cfma_op_ready        ),
+      .flush_i             ( 1'b0                 ),
+      // Results
+      .result_real_o       ( cfma_result_real     ),
+      .result_imag_o       ( cfma_result_imag     ),
+      .status_o            ( cfma_status          ),
+      .result_valid_o      ( cfma_result_valid    ),
+      .result_ready_i      ( cfma_result_ready    ),
+      // Side channels
+      .tag_i               ( cfma_tag_in          ),
+      .tag_o               ( cfma_tag_out         ),
+      .busy_o              ( cfma_busy            )
+    );
+
+    // Temporary: tie off signals (will be connected in later steps)
+    assign cfma_operand_a_real = '0;
+    assign cfma_operand_a_imag = '0;
+    assign cfma_operand_b_real = '0;
+    assign cfma_operand_b_imag = '0;
+    assign cfma_operand_c_real = '0;
+    assign cfma_operand_c_imag = '0;
+    assign cfma_op_valid       = 1'b0;
+    assign cfma_result_ready   = 1'b0;
+    assign cfma_tag_in         = '{vsew: EW_64, default: '0};
+
   end: gen_fpu else begin: gen_no_fpu
     assign is_fpu_busy      = 1'b0;
     assign fpu_in_ready     = '0;
