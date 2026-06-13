@@ -164,8 +164,28 @@ module fpnew_complex_fma
     prod_ri_d = prod_ri_q;
     prod_ir_d = prod_ir_q;
 
-    // Update intermediate results based on state
-    // (Will be connected to FMA outputs in next steps)
+    // Capture intermediate results from FMA outputs
+    unique case (state_q)
+      MULTIPLY_PH1: begin
+        // Capture results when FMA units complete phase 1
+        if (fma0_out_valid && fma1_out_valid) begin
+          prod_rr_d = fma0_result;  // a.real * b.real
+          prod_ii_d = fma1_result;  // a.imag * b.imag
+        end
+      end
+
+      MULTIPLY_PH2: begin
+        // Capture results when FMA units complete phase 2
+        if (fma0_out_valid && fma1_out_valid) begin
+          prod_ri_d = fma0_result;  // a.real * b.imag
+          prod_ir_d = fma1_result;  // a.imag * b.real
+        end
+      end
+
+      default: begin
+        // Keep current values
+      end
+    endcase
   end
 
   // -----------------------
@@ -352,12 +372,44 @@ module fpnew_complex_fma
     endcase
   end
 
-  // TODO: Result routing
+  // ---------------------
+  // Result Routing Logic
+  // ---------------------
+  // Route FMA results to final outputs in ADD_PHASE
+
+  // Final results are valid only in ADD_PHASE
+  assign result_real_o = fma0_result;  // c.real + prod_rr - prod_ii
+  assign result_imag_o = fma1_result;  // c.imag + prod_ri + prod_ir (approximation)
+
+  // Merge status flags from both FMA units
+  // In ADD_PHASE, use the status from final computation
+  // In other phases, accumulate any exceptions
+  always_comb begin
+    status_o = '0;
+
+    unique case (state_q)
+      ADD_PHASE: begin
+        // Final phase: merge status from both FMA units
+        status_o.NV = fma0_status.NV | fma1_status.NV;  // Invalid
+        status_o.DZ = fma0_status.DZ | fma1_status.DZ;  // Divide by zero (shouldn't happen)
+        status_o.OF = fma0_status.OF | fma1_status.OF;  // Overflow
+        status_o.UF = fma0_status.UF | fma1_status.UF;  // Underflow
+        status_o.NX = fma0_status.NX | fma1_status.NX;  // Inexact
+      end
+
+      default: begin
+        // No status output in intermediate phases
+        status_o = '0;
+      end
+    endcase
+  end
+
+  // Tag propagation (pass through)
+  assign tag_o = tag_i;
+
+  // TODO: Complete integration
 
   // Temporary assignments to prevent compilation errors
-  assign result_real_o  = '0;
-  assign result_imag_o  = '0;
-  assign status_o       = '0;
-  assign tag_o          = tag_i;
+  // (These will be removed once fully integrated)
 
 endmodule : fpnew_complex_fma
