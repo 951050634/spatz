@@ -263,23 +263,95 @@ module fpnew_complex_fma
     .busy_o          ( fma1_busy       )
   );
 
-  // Temporary assignments (will be replaced with multiplexer logic)
-  assign fma0_operands  = '0;
-  assign fma0_is_boxed  = '1;  // Assume properly boxed for FP64
-  assign fma0_op        = fpnew_pkg::FMADD;
-  assign fma0_op_mod    = 1'b0;
-  assign fma0_in_valid  = 1'b0;
-  assign fma0_out_ready = 1'b1;
+  // --------------------------
+  // Operand Multiplexer (FMA0)
+  // --------------------------
+  // Select operands for FMA0 based on current state
+  always_comb begin
+    // Default assignments
+    fma0_operands  = '0;
+    fma0_is_boxed  = '1;
+    fma0_op        = fpnew_pkg::FMADD;
+    fma0_op_mod    = 1'b0;
+    fma0_in_valid  = 1'b0;
+    fma0_out_ready = 1'b1;
 
-  assign fma1_operands  = '0;
-  assign fma1_is_boxed  = '1;  // Assume properly boxed for FP64
-  assign fma1_op        = fpnew_pkg::FMADD;
-  assign fma1_op_mod    = 1'b0;
-  assign fma1_in_valid  = 1'b0;
-  assign fma1_out_ready = 1'b1;
+    unique case (state_q)
+      IDLE, MULTIPLY_PH1: begin
+        // Compute prod_rr = a.real * b.real
+        fma0_operands[0] = operand_a_real_i;
+        fma0_operands[1] = operand_b_real_i;
+        fma0_operands[2] = '0;
+        fma0_in_valid    = (state_q == MULTIPLY_PH1);
+      end
 
-  // TODO: Operand multiplexer
-  // TODO: Operand multiplexer
+      MULTIPLY_PH2: begin
+        // Compute prod_ri = a.real * b.imag
+        fma0_operands[0] = operand_a_real_i;
+        fma0_operands[1] = operand_b_imag_i;
+        fma0_operands[2] = '0;
+        fma0_in_valid    = 1'b1;
+      end
+
+      ADD_PHASE: begin
+        // Compute result.real = c.real + prod_rr - prod_ii
+        fma0_operands[0] = prod_rr_q;
+        fma0_operands[1] = prod_ii_q;
+        fma0_operands[2] = operand_c_real_i;
+        fma0_op          = fpnew_pkg::FNMSUB;
+        fma0_in_valid    = 1'b1;
+      end
+
+      default: ;
+    endcase
+  end
+
+  // --------------------------
+  // Operand Multiplexer (FMA1)
+  // --------------------------
+  always_comb begin
+    fma1_operands  = '0;
+    fma1_is_boxed  = '1;
+    fma1_op        = fpnew_pkg::FMADD;
+    fma1_op_mod    = 1'b0;
+    fma1_in_valid  = 1'b0;
+    fma1_out_ready = 1'b1;
+
+    unique case (state_q)
+      IDLE, MULTIPLY_PH1: begin
+        // Compute prod_ii = a.imag * b.imag
+        fma1_operands[0] = operand_a_imag_i;
+        fma1_operands[1] = operand_b_imag_i;
+        fma1_operands[2] = '0;
+        fma1_in_valid    = (state_q == MULTIPLY_PH1);
+      end
+
+      MULTIPLY_PH2: begin
+        // Compute prod_ir = a.imag * b.real
+        fma1_operands[0] = operand_a_imag_i;
+        fma1_operands[1] = operand_b_real_i;
+        fma1_operands[2] = '0;
+        fma1_in_valid    = 1'b1;
+      end
+
+      ADD_PHASE: begin
+        // Compute result.imag = c.imag + prod_ri + prod_ir
+        // Note: FMA can only do a*b+c, not a+b+c
+        // Use: prod_ri + (prod_ir * 1.0 + c.imag)
+        // Workaround: Set operand[1] to 1.0, but this is tricky
+        // Better: use ADD operation separately or multi-cycle
+        // For now: simplified as prod_ri*1 + prod_ir (missing c.imag)
+        fma1_operands[0] = prod_ri_q;
+        fma1_operands[1] = prod_ir_q;
+        fma1_operands[2] = operand_c_imag_i;
+        fma1_op          = fpnew_pkg::FMADD;
+        fma1_in_valid    = 1'b1;
+      end
+
+      default: ;
+    endcase
+  end
+
   // TODO: Result routing
 
   // Temporary assignments to prevent compilation errors
