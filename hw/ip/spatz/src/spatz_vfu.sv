@@ -1437,16 +1437,62 @@ module spatz_vfu
       .busy_o              ( cfma_busy            )
     );
 
-    // Temporary: tie off signals (will be connected in later steps)
-    assign cfma_operand_a_real = '0;
-    assign cfma_operand_a_imag = '0;
-    assign cfma_operand_b_real = '0;
-    assign cfma_operand_b_imag = '0;
-    assign cfma_operand_c_real = '0;
-    assign cfma_operand_c_imag = '0;
-    assign cfma_op_valid       = 1'b0;
-    assign cfma_result_ready   = 1'b0;
-    assign cfma_tag_in         = '{vsew: EW_64, default: '0};
+    // =========================================================
+    // Step 11: CFMA operand collection (split VRF read)
+    // =========================================================
+    // The existing 4-phase address-offset logic already selects the
+    // correct real/imag part of each operand per phase. We latch the
+    // module-level operand1/2/3 buses (operand2=vs2=a, operand1=vs1=b,
+    // operand3=vd=c) into 6 dedicated registers, one complex pair at a
+    // time, reusing the in-flight VRF reads (no extra read ports).
+    //
+    // Phase mapping (see cfma_*_offset logic around line 861):
+    //   Cfma_RR : operand2=a.real, operand1=b.real, operand3=c.real
+    //   Cfma_II : operand2=a.imag, operand1=b.imag
+    //   Cfma_RI : operand3=c.imag
+    logic [ELEN-1:0] cfma_a_real_q, cfma_a_imag_q;
+    logic [ELEN-1:0] cfma_b_real_q, cfma_b_imag_q;
+    logic [ELEN-1:0] cfma_c_real_q, cfma_c_imag_q;
+
+    always_ff @(posedge clk_i or negedge rst_ni) begin
+      if (!rst_ni) begin
+        cfma_a_real_q <= '0;
+        cfma_a_imag_q <= '0;
+        cfma_b_real_q <= '0;
+        cfma_b_imag_q <= '0;
+        cfma_c_real_q <= '0;
+        cfma_c_imag_q <= '0;
+      end else if (cfma_insn && word_issued) begin
+        unique case (cfma_phase_q)
+          Cfma_RR: begin
+            cfma_a_real_q <= operand2[ELEN-1:0];
+            cfma_b_real_q <= operand1[ELEN-1:0];
+            cfma_c_real_q <= operand3[ELEN-1:0];
+          end
+          Cfma_II: begin
+            cfma_a_imag_q <= operand2[ELEN-1:0];
+            cfma_b_imag_q <= operand1[ELEN-1:0];
+          end
+          Cfma_RI: begin
+            cfma_c_imag_q <= operand3[ELEN-1:0];
+          end
+          default: ; // Cfma_IR: all operands already latched
+        endcase
+      end
+    end
+
+    // Drive the CFMA hardware operands from the collected registers
+    assign cfma_operand_a_real = cfma_a_real_q;
+    assign cfma_operand_a_imag = cfma_a_imag_q;
+    assign cfma_operand_b_real = cfma_b_real_q;
+    assign cfma_operand_b_imag = cfma_b_imag_q;
+    assign cfma_operand_c_real = cfma_c_real_q;
+    assign cfma_operand_c_imag = cfma_c_imag_q;
+
+    // All six operands are valid once the final phase (Cfma_IR) issues.
+    assign cfma_op_valid     = cfma_insn && (cfma_phase_q == Cfma_IR) && word_issued;
+    assign cfma_result_ready = 1'b1;
+    assign cfma_tag_in       = input_tag;
 
   end: gen_fpu else begin: gen_no_fpu
     assign is_fpu_busy      = 1'b0;
