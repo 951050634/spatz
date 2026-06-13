@@ -125,7 +125,49 @@ module fpnew_complex_fma
   // busy_o: Module is busy when not in IDLE state
   assign busy_o = (state_q != IDLE);
 
-  // TODO: Intermediate registers (4x 64-bit)
+  // -----------------------------
+  // Intermediate Result Registers
+  // -----------------------------
+  // Store intermediate products from multiply phases
+
+  // prod_rr = a.real * b.real (computed in MULTIPLY_PH1)
+  logic [WIDTH-1:0] prod_rr_q, prod_rr_d;
+
+  // prod_ii = a.imag * b.imag (computed in MULTIPLY_PH1)
+  logic [WIDTH-1:0] prod_ii_q, prod_ii_d;
+
+  // prod_ri = a.real * b.imag (computed in MULTIPLY_PH2)
+  logic [WIDTH-1:0] prod_ri_q, prod_ri_d;
+
+  // prod_ir = a.imag * b.real (computed in MULTIPLY_PH2)
+  logic [WIDTH-1:0] prod_ir_q, prod_ir_d;
+
+  // Register update logic
+  always_ff @(posedge clk_i or negedge rst_ni) begin
+    if (!rst_ni) begin
+      prod_rr_q <= '0;
+      prod_ii_q <= '0;
+      prod_ri_q <= '0;
+      prod_ir_q <= '0;
+    end else begin
+      prod_rr_q <= prod_rr_d;
+      prod_ii_q <= prod_ii_d;
+      prod_ri_q <= prod_ri_d;
+      prod_ir_q <= prod_ir_d;
+    end
+  end
+
+  // Default: hold current values
+  always_comb begin
+    prod_rr_d = prod_rr_q;
+    prod_ii_d = prod_ii_q;
+    prod_ri_d = prod_ri_q;
+    prod_ir_d = prod_ir_q;
+
+    // Update intermediate results based on state
+    // (Will be connected to FMA outputs in next steps)
+  end
+
   // TODO: FMA unit instantiation (2x)
   // TODO: Operand multiplexer
   // TODO: Result routing
