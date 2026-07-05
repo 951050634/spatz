@@ -165,6 +165,17 @@ make -C hw/system/spatz_cluster sw.vlt
 涉及测试新增或行为变化的 node 还必须从 `hw/system/spatz_cluster/sw/build`
 运行目标 CTest。
 
+允许进行长时间编译工作以验证指令集修改的合理性。涉及 RTL、opcode、decode、
+benchmark 或 ISA 行为的修改，不得因为 `make -C hw/system/spatz_cluster
+bin/spatz_cluster.vlt`、`make -C hw/system/spatz_cluster sw.vlt` 或目标 CTest
+耗时较长而跳过验证。长时间验证运行时必须记录：
+
+- 命令、工作目录和必要环境变量。
+- 开始时间、结束时间和总耗时。
+- 退出码。
+- 关键输出摘要，包括 error、fatal warning、timeout、CTest 失败项或成功计数。
+- 若失败或超时，记录为该 node 的风险或 blocker，不得把对应功能标记为已完成。
+
 ### 2.4 Goal 一次性执行默认决策
 
 后续如果使用 goal 功能连续执行本计划，以下决策为默认实现要求。执行 agent

@@ -1,116 +1,85 @@
 # 会话恢复信息
 
-**最后更新**: 2026-06-13  
-**分支**: feature/cfma-instruction-extension  
-**最后 Commit**: bb47b77
+**最后更新**: 2026-07-06
+**工作树**: `/home/wxt/spatz-cfma`
+**分支**: `feature/cfma-instruction-extension`
+**最新提交**: `0de3f7f [cfma] Implement split VRF read logic for 6 complex FMA operands`
 
 ---
 
 ## 快速状态
 
-✅ **已完成**: 11/18 步骤 (61.1%)  
-⏳ **当前任务**: 步骤 11 - 实现 VRF 读取逻辑  
-🎯 **目标**: 完成 18 步 Complex FMA 硬件单元实施
+- 当前工程目标：在 Spatz 上完成 `vfcmacc.vv` / CFMA 指令扩展的 RTL、软件和验证闭环。
+- 当前进度口径：18 步硬件实施计划中，步骤 1-11 已完成，步骤 15 曾提前完成过一次
+  全系统编译验证。
+- 当前工作区：存在 1 个未提交 RTL 修改，文件为
+  `hw/ip/spatz/src/spatz_vfu.sv`。
+- 未提交修改内容：Step 12 的 CFMA split VRF write-back 草稿，新增两拍写回 FSM，
+  将 `result.real` 写回 `vd`，将 `result.imag` 写回 `vd + LMUL`。
+- 当前风险：Step 12 写回输出尚未接入现有 VRF 写仲裁/控制路径，也尚未针对本轮
+  未提交修改运行编译验证。
 
 ---
 
-## 下次会话启动命令
+## 恢复命令
 
 ```bash
 cd /home/wxt/spatz-cfma
-git checkout feature/cfma-instruction-extension
+git status --short --branch
 git log --oneline -5
+git diff -- hw/ip/spatz/src/spatz_vfu.sv
+```
 
-# 阅读进度文档
-cat docs/complex-instruction-extension/PROGRESS_REPORT.md
-cat docs/complex-instruction-extension/SESSION_SUMMARY.md
+继续实施前优先阅读：
 
-# 查看下一步详细说明
-grep -A 50 "步骤 11" docs/complex-instruction-extension/complex_fma_hardware_design.md
+```bash
+sed -n '1,160p' docs/complex-instruction-extension/README.md
+sed -n '1,180p' docs/complex-instruction-extension/PHASE_RESULTS.md
+sed -n '780,880p' docs/complex-instruction-extension/complex_fma_hardware_design.md
 ```
 
 ---
 
-## 关键文件位置
+## 关键文件
 
-**核心模块**:
-- `hw/ip/spatz/src/fpnew_complex_fma.sv` - CFMA 硬件单元 (415 行)
-- `hw/ip/spatz/src/spatz_vfu.sv` - VFU 集成点 (已实例化 CFMA)
-
-**文档**:
-- `docs/complex-instruction-extension/complex_fma_hardware_design.md` - 18 步实施计划
-- `docs/complex-instruction-extension/PROGRESS_REPORT.md` - 进度报告
-- `docs/complex-instruction-extension/SESSION_SUMMARY.md` - 会话总结
-
-**编译**:
-- `hw/system/spatz_cluster/bin/spatz_cluster.vlt` - 已编译的仿真器 (18 MB)
+- `hw/ip/spatz/src/fpnew_complex_fma.sv`：CFMA 硬件单元。
+- `hw/ip/spatz/src/spatz_vfu.sv`：VFU 集成点；当前未提交 Step 12 写回草稿位于此文件。
+- `Bender.yml`：硬件编译配置，已包含 CFMA 模块。
+- `docs/complex-instruction-extension/complex_fma_hardware_design.md`：18 步硬件实施计划。
+- `docs/complex-instruction-extension/PHASE_RESULTS.md`：验收证据与风险记录。
+- `docs/complex-instruction-extension/GIT_NOTES.md`：提交与验证命令记录。
 
 ---
 
-## 步骤 11 快速提示
+## 下一步建议
 
-**任务**: 实现 CFMA 操作数路由（VRF 读取逻辑）
+1. 检查当前 `spatz_vfu.sv` 中 Step 12 写回 FSM 的时序：确认 `cfma_result_valid`、
+   pending 标志和 `spatz_req` 生命周期不会在两拍写回期间失配。
+2. 将 `cfma_wb_addr`、`cfma_wb_data`、`cfma_wb_we`、`cfma_wb_be` 接入现有 VRF
+   写回仲裁，而不是只停留在局部信号。
+3. 处理 CFMA 写回与普通 FPU/vector pipeline 写回的优先级和互斥关系。
+4. 运行文档要求的验证命令，至少包括：
 
-**位置**: `hw/ip/spatz/src/spatz_vfu.sv`，约第 520 行附近的 `vreg_addr_proc` 块
+   ```bash
+   git diff --check
+   make -C hw/system/spatz_cluster bin/spatz_cluster.vlt
+   ```
 
-**需要做的**:
-1. 检测 `cfma_insn` (VFCMADD 指令)
-2. 创建 2-phase 读取状态机
-3. Phase 1: 读取 vs2 (a.real), vs2+LMUL (a.imag), vs1 (b.real)
-4. Phase 2: 读取 vs1+LMUL (b.imag), vd (c.real), vd+LMUL (c.imag)
-5. 锁存操作数到寄存器
-6. 连接到 `cfma_operand_*_i` 信号
-7. 控制 `cfma_op_valid` 时序
-
-**验收标准**:
-- ✓ 分拍读取状态机实现
-- ✓ 地址计算考虑 LMUL
-- ✓ 操作数锁存寄存器
-- ✓ cfma_op_valid 控制正确
-- ✓ 编译通过
+5. 将验证结果写入 `PHASE_RESULTS.md` 和 `GIT_NOTES.md`。
 
 ---
 
-## 已知问题提醒
+## 长时间编译验证规则
 
-1. **FMA1 ADD_PHASE**: `result.imag = c.imag + prod_ri + prod_ir` 需要 3 个加数，当前实现简化，需要在后续步骤验证
-2. **VRF 带宽**: 采用分拍访问策略，总延迟 2+3+2=7 cycles
-3. **Fence 机制**: 步骤 14 需要处理
-
----
-
-## Git 状态
-
-```
-bb47b77 [cfma] Session summary: 11/18 steps completed (61%)
-181188e [cfma] Verify step 15 (compilation) passed alongside step 10
-f99a6a6 [cfma] Add progress report: 10/18 steps completed
-0a1841a [cfma] Instantiate fpnew_complex_fma module in spatz_vfu
-a391eff [cfma] Complete fpnew_complex_fma module implementation and pass lint check
-```
-
-**总计**: 13 个 commits
+允许进行长时间编译工作以验证指令集修改的合理性。涉及 RTL、opcode、decode、
+benchmark 或 ISA 行为的修改时，可以运行完整 Verilator 构建、软件构建和目标 CTest；
+编译耗时长不是跳过验证的理由。每次验证必须记录命令、开始/结束时间、退出码和关键
+输出摘要。如果长时间编译失败或超时，只能记录为失败证据，不能把对应步骤标为完成。
 
 ---
 
-## 预计剩余工作
+## 当前不要误判的事项
 
-- 步骤 11-14 (集成): 12-16 小时
-- 步骤 16-17 (测试): 8-12 小时
-- 步骤 18 (清理): 2-3 小时
-
-**总计**: 22-31 小时
-
----
-
-## 恢复上下文的关键信息
-
-1. **架构选择**: 时分复用 2 FMA，3 cycle 核心延迟
-2. **接口**: 6 输入（复数操作数）+ 2 输出（复数结果）
-3. **状态机**: 4 状态 (IDLE, MULTIPLY_PH1, MULTIPLY_PH2, ADD_PHASE)
-4. **当前状态**: 模块完成，已集成到 VFU，编译通过
-5. **下一步**: 连接 VRF 读取逻辑
-
----
-
-**准备就绪** ✅ 可以继续实施步骤 11-18
+- 不要把 Step 12 标记为完成；当前只有未提交写回草稿，尚未完成仲裁接入和编译验证。
+- 重复且过期的旧状态报告已删除；当前状态以本文和 `PHASE_RESULTS.md` 为准。
+- 不要声称 benchmark correctness 或 speedup 已完成；后续仍需 Step 16-17 验证。

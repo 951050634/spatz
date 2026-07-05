@@ -780,3 +780,87 @@ install/llvm/bin/clang -x assembler ...`，退出码为 0；随后
 `dp-cdotp_vfcmacc_M128` 尚未修复，不得声称 benchmark correctness 或 speedup。
 后续应继续定位 reduction 写回位置/内容与 `vfmv.f.s` 后 FPR/FP LSU 交互。
 ```
+
+## 文档重构：同步 CFMA 当前状态和长时间编译规则
+
+状态：进行中记录已完成，RTL 功能未在本节点验证
+
+目标：
+
+- 将 `docs/complex-instruction-extension/` 的入口和状态文档同步到当前工作树状态。
+- 明确 Step 11 已由最新提交完成，Step 12 只有未提交写回草稿，尚未完成仲裁接入和
+  编译验证。
+- 增加工程规则：允许进行长时间编译工作以验证指令集修改的合理性。
+
+修改范围：
+
+- `docs/complex-instruction-extension/README.md`
+- `docs/complex-instruction-extension/RESUME_INFO.md`
+- `docs/complex-instruction-extension/PLAN.md`
+- `docs/complex-instruction-extension/complex_fma_hardware_design.md`
+- `docs/complex-instruction-extension/PHASE_RESULTS.md`
+- `docs/complex-instruction-extension/GIT_NOTES.md`
+
+验收标准：
+
+- [x] 入口文档指向当前恢复路径。
+- [x] 入口文档指向当前状态文件，避免继续依赖过期状态报告。
+- [x] 长时间编译验证许可写入计划和硬件设计文档。
+- [x] 明确本轮未验证当前未提交 RTL 草稿，不能声称 Step 12 完成。
+
+证据：
+
+- 2026-07-06 检查 `git status --short --branch`，当前分支为
+  `feature/cfma-instruction-extension`，工作区已有未提交
+  `hw/ip/spatz/src/spatz_vfu.sv` 修改。
+- 2026-07-06 检查 `git log --oneline -8`，最新提交为
+  `0de3f7f [cfma] Implement split VRF read logic for 6 complex FMA operands`。
+- 本节点只整理文档；未运行 `make -C hw/system/spatz_cluster bin/spatz_cluster.vlt`，
+  因此不对当前 Step 12 RTL 草稿作编译通过声明。
+
+风险：
+
+- 重复且过期的历史状态报告已不再作为当前入口；阅读时以 `RESUME_INFO.md`
+  和本文件最新记录为准。
+- Step 12 需要后续单独完成仲裁接入、长时间编译验证和提交记录。
+
+## 文档精简：删除过期状态报告
+
+状态：已完成
+
+目标：
+
+- 删除重复且容易过期的状态总结文件。
+- 保留当前恢复入口、实施计划、设计依据和可审计证据。
+- 移除指向已删除文件的入口引用。
+
+删除范围：
+
+- `docs/complex-instruction-extension/FINAL_STATUS.md`
+- `docs/complex-instruction-extension/SESSION_SUMMARY.md`
+- `docs/complex-instruction-extension/PROGRESS_REPORT.md`
+- `docs/complex-instruction-extension/step10_15_summary.md`
+- `docs/complex-instruction-extension/step9_verification_report.md`
+
+保留的当前文档集合：
+
+- `README.md`：文档导航。
+- `RESUME_INFO.md`：恢复入口和当前状态。
+- `PLAN.md`：工程边界和 v1 指令计划。
+- `complex_fma_hardware_design.md`：CFMA 硬件实施计划。
+- `PHASE_RESULTS.md`：验收证据和风险记录。
+- `GIT_NOTES.md`：Git 与验证记录。
+- `fpnew_structure.md`、`register_layout.md`、`dedicated_hardware_path.md`、
+  `toolchain_mnemonic_status.md`：设计和工具链支撑资料。
+
+验收标准：
+
+- [x] README 不再链接已删除文件。
+- [x] RESUME_INFO 不再要求阅读已删除的 PROGRESS_REPORT。
+- [x] 当前状态仍明确：Step 11 已完成，Step 12 写回草稿未验证。
+- [x] 长时间编译验证规则仍保留在 README、RESUME_INFO、PLAN 和硬件设计文档中。
+
+风险：
+
+- 被删除文件中的部分历史叙事不再作为独立文件保留；需要历史证据时使用 Git 历史、
+  `PHASE_RESULTS.md` 和 `GIT_NOTES.md`。

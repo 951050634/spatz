@@ -1367,3 +1367,82 @@ runtime 边界可退出。
 ```text
 暂无。
 ```
+
+## 文档重构：同步当前状态和长时间编译规则
+
+日期：2026-07-06
+
+本轮分支和状态：
+
+```text
+## feature/cfma-instruction-extension
+ M hw/ip/spatz/src/spatz_vfu.sv
+```
+
+计划提交名：
+
+```text
+[cfma] Refresh complex instruction extension docs
+```
+
+修改范围：
+
+```text
+M docs/complex-instruction-extension/README.md
+M docs/complex-instruction-extension/RESUME_INFO.md
+M docs/complex-instruction-extension/PLAN.md
+M docs/complex-instruction-extension/complex_fma_hardware_design.md
+M docs/complex-instruction-extension/PHASE_RESULTS.md
+M docs/complex-instruction-extension/GIT_NOTES.md
+D docs/complex-instruction-extension/FINAL_STATUS.md
+D docs/complex-instruction-extension/SESSION_SUMMARY.md
+D docs/complex-instruction-extension/PROGRESS_REPORT.md
+D docs/complex-instruction-extension/step10_15_summary.md
+D docs/complex-instruction-extension/step9_verification_report.md
+```
+
+内容摘要：
+
+```text
+- 将 README 改为当前文档导航入口。
+- 重写 RESUME_INFO，记录最新提交 0de3f7f、Step 11 已完成、Step 12 有未提交写回草稿。
+- 删除重复且容易过期的历史状态报告，保留 `RESUME_INFO.md` 和 `PHASE_RESULTS.md` 作为当前状态入口。
+- 在 PLAN 和 complex_fma_hardware_design 中加入长时间编译验证许可和记录要求。
+- 明确本轮不验证当前 RTL 草稿，不得声明 Step 12 已完成。
+```
+
+验证记录：
+
+```text
+git diff --check: PASS，退出码 0。
+
+rg -n "当前任务\*\*: 步骤 11|下次会话中继续步骤 11|最后 Commit\*\*: bb47b77|建议\*\*: 在下次会话中继续步骤 11|立即行动（步骤 11）|⏳ \*\*实现 VRF 读取逻辑\*\*" docs/complex-instruction-extension/README.md docs/complex-instruction-extension/RESUME_INFO.md docs/complex-instruction-extension/PHASE_RESULTS.md docs/complex-instruction-extension/GIT_NOTES.md:
+PASS，无匹配结果。
+
+未运行 `make -C hw/system/spatz_cluster bin/spatz_cluster.vlt`，因为本轮提交范围是文档重构；当前未提交 RTL 草稿仍需后续单独编译验证。
+```
+
+实际提交：
+
+```text
+提交后由 `git log -1 --oneline` 确认。
+```
+
+补充：删除过期状态报告
+
+```text
+日期：2026-07-06
+目的：按当前状态精简 docs，删除重复、过期且容易误导的状态总结文件。
+删除：
+- docs/complex-instruction-extension/FINAL_STATUS.md
+- docs/complex-instruction-extension/SESSION_SUMMARY.md
+- docs/complex-instruction-extension/PROGRESS_REPORT.md
+- docs/complex-instruction-extension/step10_15_summary.md
+- docs/complex-instruction-extension/step9_verification_report.md
+保留：README、RESUME_INFO、PLAN、complex_fma_hardware_design、PHASE_RESULTS、GIT_NOTES 和设计支撑资料。
+
+验证：
+- git diff --check: PASS，退出码 0。
+- 已检查当前 docs 中没有指向已删除文件的 Markdown 链接或恢复命令。
+- 已检查当前状态入口不再包含 “当前任务是步骤 11” 等过期指引；GIT_NOTES 中保留的旧检查命令属于审计记录。
+```

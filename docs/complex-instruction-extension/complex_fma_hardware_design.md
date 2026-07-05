@@ -785,6 +785,10 @@ git commit -m "[cfma] Instantiate fpnew_complex_fma module in spatz_vfu"
 
 ### 步骤 11：实现 CFMA 操作数路由（VRF 读取逻辑）
 
+**当前状态（2026-07-06）**：已由提交
+`0de3f7f [cfma] Implement split VRF read logic for 6 complex FMA operands` 完成。
+以下内容保留为设计依据和审计记录。
+
 **目标**：从 VRF 读取 6 个操作数，分拍路由到 CFMA 模块
 
 **具体任务**：
@@ -828,6 +832,10 @@ git commit -m "[cfma] Implement split VRF read logic for 6 complex FMA operands"
 ---
 
 ### 步骤 12：实现 CFMA 结果写回逻辑
+
+**当前状态（2026-07-06）**：进行中。工作区已有未提交草稿，在
+`hw/ip/spatz/src/spatz_vfu.sv` 中新增两拍写回 FSM 和 `cfma_wb_*` 局部信号。
+该草稿尚未接入现有 VRF 写仲裁，也尚未完成本轮编译验证，因此不得标记为完成。
 
 **目标**：将 CFMA 的 2 个结果分拍写回 VRF
 
@@ -942,6 +950,12 @@ git commit -m "[cfma] Handle fence and data dependency for CFMA hardware unit"
 ### 步骤 15：全系统编译和语法验证
 
 **目标**：确保所有修改能够成功编译
+
+**长时间编译许可**：允许进行长时间编译工作以验证指令集修改的合理性。RTL、opcode、
+decode、benchmark 或 ISA 行为发生变化后，应运行完整 Verilator 构建、软件构建或
+目标 CTest；耗时较长不是跳过验证的理由。每次长时间验证必须记录命令、开始/结束
+时间、退出码和关键输出摘要。失败或超时必须记录为风险或 blocker，不能把相关步骤
+标为完成。
 
 **具体任务**：
 1. 清理之前的编译产物：
