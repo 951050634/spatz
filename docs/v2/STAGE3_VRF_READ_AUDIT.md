@@ -139,3 +139,58 @@ CFMA_READ_BUNDLE elem=<idx> vsew=<...> lmul=<...>
 - [ ] 增加 directed trace 或 testbench 证明 R0/R1 六 operand 来源。
 - [ ] `make bin/spatz_cluster.vlt` 通过。
 - [ ] v1 fallback `vfcmacc|vfmacc|vfnmsac` regression 仍通过。
+
+## 8. 已完成小阶段：standalone read collector RTL
+
+本小阶段新增了 standalone RTL helper：
+
+```text
+hw/ip/spatz/src/spatz_cfma_read_collector.sv
+hw/ip/spatz/test/spatz_cfma_read_collector_tb.sv
+```
+
+该 helper 已实现并验证阶段 3 冻结的 R0/R1 mapping：
+
+| Beat | Port 0 | Port 1 | Port 2 |
+| --- | --- | --- | --- |
+| R0 | `a.real` | `a.imag` | `b.real` |
+| R1 | `b.imag` | `c.real` | `c.imag` |
+
+已验证行为：
+
+- `start_valid/start_ready` 只在 idle 接受一次 request；
+- R0 在三个 `vrf_rvalid_i` 全部有效前保持地址和 read enable；
+- R1 在三个 `vrf_rvalid_i` 全部有效前保持地址和 read enable；
+- bundle valid 后冻结六个 operand、`vd_real_addr`、`vd_imag_addr`、`elem_idx`、`last`；
+- `bundle_ready_i=0` 时 bundle 保持稳定并 backpressure 新 start；
+- bundle handshake 后回到 idle。
+
+TDD 红灯：
+
+```text
+stage3_read_collector_red_build.txt: Cannot find file containing module: 'spatz_cfma_read_collector'
+```
+
+最终验证证据：
+
+```text
+docs/v2/evidence/stage3_read_collector_final_verification.txt
+```
+
+最终验证命令包括：
+
+```bash
+git diff --check
+install/verilator/bin/verilator_bin --binary --timing -Wno-TIMESCALEMOD \
+  hw/ip/spatz/src/spatz_cfma_read_collector.sv \
+  hw/ip/spatz/test/spatz_cfma_read_collector_tb.sv \
+  --top-module spatz_cfma_read_collector_tb
+PATH="$PWD/.venv/bin:$PATH" make -C hw/system/spatz_cluster bin/spatz_cluster.vlt
+cd hw/system/spatz_cluster/sw/build && \
+  PATH="/home/wxt/spatz-cfma/.venv/bin:$PATH" \
+  ctest -R 'riscvTests-rtl-(vfcmacc|vfmacc|vfnmsac)$' --output-on-failure
+```
+
+结果：standalone collector test PASS；system Verilator build PASS；v1 fallback regression PASS，3/3。
+
+注意：该 helper 已加入 `Bender.yml`，但尚未接入 `spatz_vfu.sv` 的 architectural datapath。下一小阶段应把 helper 接入 VFU dedicated path 的 gated/scaffold flow，并产生真实 `cfma_read_bundle_valid`，仍不启用 dedicated writeback。

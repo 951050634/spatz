@@ -104,3 +104,32 @@
 - placeholder scan (`TBD|TODO|待定|以后补|fill in|implement later`)：PASS。
 
 结论：阶段 3 RTL 改造入口已明确；下一步实现 dedicated read collector 和 directed operand trace/test。
+
+## 2026-07-07 阶段 3 小阶段：standalone CFMA read collector RTL
+
+计划提交信息：`[cfma-v2] Add standalone CFMA VRF read collector`
+
+主要内容：
+
+- 新增 `hw/ip/spatz/src/spatz_cfma_read_collector.sv`，实现阶段 3 的两拍 VRF read collector：
+  - R0: `a.real`, `a.imag`, `b.real`；
+  - R1: `b.imag`, `c.real`, `c.imag`；
+  - bundle 阶段冻结六 operand、`vd_real_addr`、`vd_imag_addr`、`elem_idx`、`last`；
+  - `bundle_ready_i=0` 时保持 bundle 稳定并 backpressure 新 start。
+- 新增 `hw/ip/spatz/test/spatz_cfma_read_collector_tb.sv`，standalone 验证 R0/R1 地址映射、data latch 和 backpressure。
+- 将 `spatz_cfma_read_collector.sv` 加入 `Bender.yml`，确保系统 build 会解析该 RTL。
+- 更新 `docs/v2/STAGE3_VRF_READ_AUDIT.md`，记录本小阶段完成内容、红灯和最终验证证据。
+- 新增证据：
+  - `docs/v2/evidence/stage3_read_collector_red_build.txt`；
+  - `docs/v2/evidence/stage3_read_collector_red_status.txt`；
+  - `docs/v2/evidence/stage3_read_collector_final_verification.txt`。
+
+验证命令：
+
+- `git diff --check`：PASS；
+- `install/verilator/bin/verilator_bin --binary --timing -Wno-TIMESCALEMOD ... spatz_cfma_read_collector_tb.sv`：PASS；
+- `build/cfma_v2/obj_read_collector_final/Vspatz_cfma_read_collector_tb`：PASS；
+- `PATH="$PWD/.venv/bin:$PATH" make -C hw/system/spatz_cluster bin/spatz_cluster.vlt`：PASS；
+- `cd hw/system/spatz_cluster/sw/build && PATH="/home/wxt/spatz-cfma/.venv/bin:$PATH" ctest -R 'riscvTests-rtl-(vfcmacc|vfmacc|vfnmsac)$' --output-on-failure`：PASS，3/3。
+
+结论：阶段 3 的 standalone read collector RTL 和验证已完成；下一小阶段需要把 collector 接入 VFU gated/scaffold flow，产生 frozen `cfma_read_bundle_valid`，但仍不启用 dedicated writeback。

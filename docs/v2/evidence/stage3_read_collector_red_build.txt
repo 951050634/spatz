@@ -1,0 +1,14 @@
+%Error: hw/ip/spatz/test/spatz_cfma_read_collector_tb.sv:56:3: Cannot find file containing module: 'spatz_cfma_read_collector'
+   56 |   spatz_cfma_read_collector #(
+      |   ^~~~~~~~~~~~~~~~~~~~~~~~~
+%Error: hw/ip/spatz/test/spatz_cfma_read_collector_tb.sv:56:3: This may be because there's no search path specified with -I<dir>.
+   56 |   spatz_cfma_read_collector #(
+      |   ^~~~~~~~~~~~~~~~~~~~~~~~~
+        ... Looked in:
+             spatz_cfma_read_collector
+             spatz_cfma_read_collector.v
+             spatz_cfma_read_collector.sv
+             build/cfma_v2/obj_read_collector_red/spatz_cfma_read_collector
+             build/cfma_v2/obj_read_collector_red/spatz_cfma_read_collector.v
+             build/cfma_v2/obj_read_collector_red/spatz_cfma_read_collector.sv
+%Error: Exiting due to 2 error(s)
