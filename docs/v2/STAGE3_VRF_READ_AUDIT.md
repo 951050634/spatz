@@ -194,3 +194,45 @@ cd hw/system/spatz_cluster/sw/build && \
 结果：standalone collector test PASS；system Verilator build PASS；v1 fallback regression PASS，3/3。
 
 注意：该 helper 已加入 `Bender.yml`，但尚未接入 `spatz_vfu.sv` 的 architectural datapath。下一小阶段应把 helper 接入 VFU dedicated path 的 gated/scaffold flow，并产生真实 `cfma_read_bundle_valid`，仍不启用 dedicated writeback。
+
+## 9. 已完成小阶段：VFU read collector scaffold 集成
+
+本小阶段把 standalone collector 接入 `hw/ip/spatz/src/spatz_vfu.sv` 的 `gen_fpu` 区域，作为默认禁用的阶段 3 scaffold。
+
+新增 VFU 内部开关：
+
+```systemverilog
+localparam bit CfmaDedicatedReadCollectorEn = 1'b0;
+localparam bit CfmaDedicatedWritebackEn     = 1'b0;
+```
+
+当前集成属性：
+
+- `spatz_cfma_read_collector` 已在 VFU 中实例化；
+- 地址计算已按阶段 2/3 契约统一为 `a=vs1`, `b=vs2`, `c=vd`：
+  - `a.real = vs1 + vstart`；
+  - `a.imag = vs1 + LMUL + vstart`；
+  - `b.real = vs2 + vstart`；
+  - `b.imag = vs2 + LMUL + vstart`；
+  - `c.real = vd + vstart`；
+  - `c.imag = vd + LMUL + vstart`；
+- collector 的 R0/R1 address/data/bundle wires 已被系统 build 解析；
+- 默认 `CfmaDedicatedReadCollectorEn=1'b0`，collector 不接管 `vrf_raddr_o/vrf_re_o`，不改变 v1 fallback architectural behavior；
+- `CfmaDedicatedWritebackEn` 仍为 `1'b0`。
+
+最终验证证据：
+
+```text
+docs/v2/evidence/stage3_vfu_read_collector_scaffold_verification.txt
+```
+
+验证结果：
+
+```text
+git diff --check: PASS
+standalone read collector Verilator build/run: PASS
+system Verilator build: PASS
+ctest -R 'riscvTests-rtl-(vfcmacc|vfmacc|vfnmsac)$': PASS, 3/3
+```
+
+该小阶段仍不是完整阶段 3 退出：下一步必须受控启用 collector 对 VRF read port 的 mux/trace，生成真实 `cfma_read_bundle_valid`，并用 directed sentinel test 证明六 operand 来自正确 architectural register group。

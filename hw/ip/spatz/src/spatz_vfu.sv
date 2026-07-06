@@ -1411,12 +1411,95 @@ module spatz_vfu
     logic                      cfma_busy;
     vfu_tag_t                  cfma_tag_in;
     vfu_tag_t                  cfma_tag_out;
-    // Dedicated CFMA result write-back is intentionally disabled for v1.
-    // The existing four-phase FPU path is the verified architectural path.
-    // Re-enable only after the dedicated unit supports dynamic FP formats,
-    // packed e16/e32 lanes, complete complex arithmetic/status flags, and
-    // mask/tail write-back semantics.
-    localparam bit CfmaDedicatedWritebackEn = 1'b0;
+    // Dedicated CFMA read collection and result write-back are intentionally
+    // disabled by default.  The existing four-phase FPU path is still the
+    // verified architectural path.  The read collector is instantiated as a
+    // stage-3 scaffold so the frozen R0/R1 request-bundle interface is parsed
+    // by normal builds, but it does not drive the VRF ports until explicitly
+    // enabled in a later stage.
+    localparam bit CfmaDedicatedReadCollectorEn = 1'b0;
+    localparam bit CfmaDedicatedWritebackEn     = 1'b0;
+
+    // =========================================================
+    // CFMA v2 dedicated read collector scaffold (default off)
+    // =========================================================
+    logic                      cfma_read_start_valid;
+    logic                      cfma_read_start_ready;
+    vrf_addr_t                 cfma_read_a_real_addr;
+    vrf_addr_t                 cfma_read_a_imag_addr;
+    vrf_addr_t                 cfma_read_b_real_addr;
+    vrf_addr_t                 cfma_read_b_imag_addr;
+    vrf_addr_t                 cfma_read_c_real_addr;
+    vrf_addr_t                 cfma_read_c_imag_addr;
+    vrf_addr_t [2:0]           cfma_read_vrf_raddr;
+    logic      [2:0]           cfma_read_vrf_re;
+    logic                      cfma_read_bundle_valid;
+    logic                      cfma_read_bundle_ready;
+    vrf_data_t                 cfma_read_a_real;
+    vrf_data_t                 cfma_read_a_imag;
+    vrf_data_t                 cfma_read_b_real;
+    vrf_data_t                 cfma_read_b_imag;
+    vrf_data_t                 cfma_read_c_real;
+    vrf_data_t                 cfma_read_c_imag;
+    vrf_addr_t                 cfma_read_vd_real_addr;
+    vrf_addr_t                 cfma_read_vd_imag_addr;
+    vlen_t                     cfma_read_elem_idx;
+    logic                      cfma_read_last;
+    logic                      cfma_read_busy;
+
+    always_comb begin : cfma_read_addr_proc
+      automatic vreg_t cfma_read_lmul = cfma_lmul_offset(spatz_req.vtype.vlmul);
+
+      cfma_read_a_real_addr = vrf_addr_t'((spatz_req.vs1 + vstart) << $clog2(NrWordsPerVector));
+      cfma_read_a_imag_addr = vrf_addr_t'((spatz_req.vs1 + cfma_read_lmul + vstart) <<
+                                          $clog2(NrWordsPerVector));
+      cfma_read_b_real_addr = vrf_addr_t'((spatz_req.vs2 + vstart) << $clog2(NrWordsPerVector));
+      cfma_read_b_imag_addr = vrf_addr_t'((spatz_req.vs2 + cfma_read_lmul + vstart) <<
+                                          $clog2(NrWordsPerVector));
+      cfma_read_c_real_addr = vrf_addr_t'((spatz_req.vd + vstart) << $clog2(NrWordsPerVector));
+      cfma_read_c_imag_addr = vrf_addr_t'((spatz_req.vd + cfma_read_lmul + vstart) <<
+                                          $clog2(NrWordsPerVector));
+    end
+
+    assign cfma_read_start_valid = CfmaDedicatedReadCollectorEn && spatz_req_valid &&
+                                   cfma_insn && word_issued && (cfma_phase_q == Cfma_RR);
+    assign cfma_read_bundle_ready = 1'b1;
+
+    spatz_cfma_read_collector #(
+      .ELEN      ( $bits(vrf_data_t) ),
+      .AddrWidth ( $bits(vrf_addr_t) ),
+      .ElemWidth ( $bits(vlen_t)     )
+    ) i_cfma_read_collector (
+      .clk_i          ( clk_i                  ),
+      .rst_ni         ( rst_ni                 ),
+      .start_valid_i  ( cfma_read_start_valid  ),
+      .start_ready_o  ( cfma_read_start_ready  ),
+      .a_real_addr_i  ( cfma_read_a_real_addr  ),
+      .a_imag_addr_i  ( cfma_read_a_imag_addr  ),
+      .b_real_addr_i  ( cfma_read_b_real_addr  ),
+      .b_imag_addr_i  ( cfma_read_b_imag_addr  ),
+      .c_real_addr_i  ( cfma_read_c_real_addr  ),
+      .c_imag_addr_i  ( cfma_read_c_imag_addr  ),
+      .elem_idx_i     ( vl_q                   ),
+      .last_i         ( last_request           ),
+      .vrf_raddr_o    ( cfma_read_vrf_raddr    ),
+      .vrf_re_o       ( cfma_read_vrf_re       ),
+      .vrf_rvalid_i   ( vrf_rvalid_i           ),
+      .vrf_rdata_i    ( vrf_rdata_i            ),
+      .bundle_valid_o ( cfma_read_bundle_valid ),
+      .bundle_ready_i ( cfma_read_bundle_ready ),
+      .a_real_o       ( cfma_read_a_real       ),
+      .a_imag_o       ( cfma_read_a_imag       ),
+      .b_real_o       ( cfma_read_b_real       ),
+      .b_imag_o       ( cfma_read_b_imag       ),
+      .c_real_o       ( cfma_read_c_real       ),
+      .c_imag_o       ( cfma_read_c_imag       ),
+      .vd_real_addr_o ( cfma_read_vd_real_addr ),
+      .vd_imag_addr_o ( cfma_read_vd_imag_addr ),
+      .elem_idx_o     ( cfma_read_elem_idx     ),
+      .last_o         ( cfma_read_last         ),
+      .busy_o         ( cfma_read_busy         )
+    );
 
     // Complex FMA module instantiation
     fpnew_complex_fma #(

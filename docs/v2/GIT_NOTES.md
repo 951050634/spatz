@@ -133,3 +133,31 @@
 - `cd hw/system/spatz_cluster/sw/build && PATH="/home/wxt/spatz-cfma/.venv/bin:$PATH" ctest -R 'riscvTests-rtl-(vfcmacc|vfmacc|vfnmsac)$' --output-on-failure`：PASS，3/3。
 
 结论：阶段 3 的 standalone read collector RTL 和验证已完成；下一小阶段需要把 collector 接入 VFU gated/scaffold flow，产生 frozen `cfma_read_bundle_valid`，但仍不启用 dedicated writeback。
+
+## 2026-07-07 阶段 3 小阶段：VFU read collector scaffold 集成
+
+计划提交信息：`[cfma-v2] Scaffold CFMA read collector in VFU`
+
+主要内容：
+
+- 修改 `hw/ip/spatz/src/spatz_vfu.sv`，在 `gen_fpu` 区域实例化 `spatz_cfma_read_collector`。
+- 新增默认禁用开关：
+  - `CfmaDedicatedReadCollectorEn = 1'b0`；
+  - `CfmaDedicatedWritebackEn = 1'b0`。
+- 增加 VFU 内部 dedicated read address 计算，统一为阶段 2 契约中的 `a=vs1`, `b=vs2`, `c=vd`：
+  - `a.real/a.imag` 来自 `vs1/vs1+LMUL`；
+  - `b.real/b.imag` 来自 `vs2/vs2+LMUL`；
+  - `c.real/c.imag` 来自 `vd/vd+LMUL`。
+- collector 输出 frozen bundle wires 已被系统 build 解析，但默认不接管 VRF read ports，不影响 v1 fallback。
+- 更新 `docs/v2/STAGE3_VRF_READ_AUDIT.md`，记录 scaffold 集成状态和下一步 gap。
+- 新增 `docs/v2/evidence/stage3_vfu_read_collector_scaffold_verification.txt` 保存验证转录。
+
+验证命令：
+
+- `git diff --check`：PASS；
+- `install/verilator/bin/verilator_bin --binary --timing -Wno-TIMESCALEMOD ... spatz_cfma_read_collector_tb.sv`：PASS；
+- `build/cfma_v2/obj_read_collector_scaffold/Vspatz_cfma_read_collector_tb`：PASS；
+- `PATH="$PWD/.venv/bin:$PATH" make -C hw/system/spatz_cluster bin/spatz_cluster.vlt`：PASS；
+- `cd hw/system/spatz_cluster/sw/build && PATH="/home/wxt/spatz-cfma/.venv/bin:$PATH" ctest -R 'riscvTests-rtl-(vfcmacc|vfmacc|vfnmsac)$' --output-on-failure`：PASS，3/3。
+
+结论：VFU scaffold 集成通过 build 和 fallback regression；阶段 3 下一小阶段需要受控 mux/trace collector，证明真实 VRF 六操作数读取来源。
