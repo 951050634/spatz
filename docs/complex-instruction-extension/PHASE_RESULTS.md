@@ -864,3 +864,56 @@ install/llvm/bin/clang -x assembler ...`，退出码为 0；随后
 
 - 被删除文件中的部分历史叙事不再作为独立文件保留；需要历史证据时使用 Git 历史、
   `PHASE_RESULTS.md` 和 `GIT_NOTES.md`。
+
+## Step 12 回归审查：专用 CFMA 写回默认禁用
+
+状态：进行中，Step 12 不标记完成
+
+目标：
+
+- 审查当前未提交 Step 12 split VRF write-back 草稿是否能作为默认功能路径。
+- 保留已验证的 `vfcmacc` ISA 行为，避免未完成 dedicated hardware result path
+  覆盖四阶段 FPU 路径。
+
+修改范围：
+
+- `hw/ip/spatz/src/spatz_vfu.sv`
+- `docs/complex-instruction-extension/RESUME_INFO.md`
+- `docs/complex-instruction-extension/complex_fma_hardware_design.md`
+- `docs/complex-instruction-extension/PHASE_RESULTS.md`
+- `docs/complex-instruction-extension/GIT_NOTES.md`
+
+审查结论：
+
+- 当前 Step 12 写回 FSM 和 VRF mux 草稿可保留，但通过
+  `CfmaDedicatedWritebackEn = 1'b0` 默认禁用。
+- `vfcmacc` 功能结果继续来自已验证的现有四阶段 FPU CFMA 路径。
+- 不能把 Step 12 记为完成；专用硬件路径尚未满足 e16/e32 packed lane、动态 FP
+  format、完整 complex arithmetic/status flags、mask/tail byte enable 和 response
+  timing 要求。
+
+证据：
+
+- 2026-07-06 运行 `git diff --check`，退出码为 0。
+- 2026-07-06 运行
+  `PATH="$PWD/.venv/bin:$PATH" make -C hw/system/spatz_cluster
+bin/spatz_cluster.vlt`，退出码为 0；执行 fresh Verilator build。输出包含既有
+  Bender `description` 字段告警、Verilator LATCH warnings；最终 Verilator report
+  显示 Walltime 124.447 s，并生成 `bin/spatz_cluster.vlt`。
+- 2026-07-06 运行
+  `PATH="$PWD/.venv/bin:$PATH" make -C hw/system/spatz_cluster sw.vlt`，
+  退出码为 0；命令重建 `hw/system/spatz_cluster/sw/build`，CMake 重新加入
+  `vfcmacc_illegal`、`vfcmacc` 等 ISA/RTL 软件测试目标，并完成软件目标编译。
+  输出包含既有 runtime/benchmark warnings 和 DWARF address range diagnostic。
+- 2026-07-06 在 `hw/system/spatz_cluster/sw/build` 运行
+  `PATH="$PWD/.venv/bin:$PATH" ctest -R
+'riscvTests-rtl-(vfcmacc|vfmacc|vfnmsac)$' --output-on-failure`，退出码为 0；
+  3/3 tests passed。`vfmacc` 用时 22.11s，`vfcmacc` 用时 118.53s，
+  `vfnmsac` 用时 22.22s，总用时 162.86s。
+
+下一步：
+
+- Step 13 先做控制架构决策：保留四阶段 FPU 路径作为 v1 功能实现，或重新设计并验证
+  完整 dedicated CFMA path。
+- 若选择 dedicated path，必须先补 `fpnew_complex_fma` 独立 reference/testbench，
+  再打开 dedicated write-back guard；不能直接启用当前 Step 12 草稿。
