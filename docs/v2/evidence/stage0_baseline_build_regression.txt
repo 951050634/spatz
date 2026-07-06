@@ -1,0 +1,1685 @@
+# CFMA v2 baseline build/regression transcript
+
+Started: 2026-07-07T01:10:59+08:00
+Branch: feature/cfma-v2-datapath
+HEAD: 460c5eb
+
+```text
+$ PATH="$PWD/.venv/bin:$PATH" make -C hw/system/spatz_cluster bin/spatz_cluster.vlt
+make: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster'
+[33;1mwarning:[m [W03] Ignoring unknown field `description` in manifest package for tech_cells_generic.
+[33;1mwarning:[m [W03] Ignoring unknown field `description` in manifest package for tech_cells_generic.
+make: 'bin/spatz_cluster.vlt' is up to date.
+make: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster'
+exit(make-bin)=0
+$ PATH="$PWD/.venv/bin:$PATH" make -C hw/system/spatz_cluster sw.vlt
+make: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster'
+[33;1mwarning:[m [W03] Ignoring unknown field `description` in manifest package for tech_cells_generic.
+[33;1mwarning:[m [W03] Ignoring unknown field `description` in manifest package for tech_cells_generic.
+rm -rf sw/build
+mkdir -p sw/build
+cd sw/build && cmake-3.18.1 -DLLVM_PATH=/home/wxt/spatz-cfma/install/llvm -DGCC_PATH=/home/wxt/spatz-cfma/install/riscv-gcc -DPYTHON=python3 -DSNITCH_SIMULATOR=../../../../../hw/system/spatz_cluster/bin/spatz_cluster.vlt -DBUILD_TESTS=ON -DSPATZ_CLUSTER_CFG=spatz_cluster.default.dram.hjson -DMEM_DRAM_ORIGIN=2147483648 -DMEM_DRAM_SIZE=2147483648 -DSNRT_BASE_HARTID=0 -DSNRT_CLUSTER_CORE_NUM=2 -DSNRT_TCDM_START_ADDR=1048576 -DSNRT_CLUSTER_OFFSET=0 -DSNRT_TCDM_SIZE=131072 -DSNRT_NFPU_PER_CORE=4 -DELEN=64 .. && make -j8
+-- The C compiler identification is Clang 14.0.6
+-- The ASM compiler identification is Clang with GNU-like command-line
+-- Found assembler: /home/wxt/spatz-cfma/install/llvm/bin/clang
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: /home/wxt/spatz-cfma/install/llvm/bin/clang - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Using RTL simulator: /home/wxt/spatz-cfma/hw/system/spatz_cluster/bin/spatz_cluster.vlt
+-- Using runtime: snRuntime-cluster
+-- Using common linker script: /home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build/snRuntime/common.ld
+-- Generic OpenMP runtime
+-- Adding test: tls
+-- Adding test: simple
+-- Adding test: varargs_1
+-- Adding test: varargs_2
+-- Adding test: barrier
+-- Adding test: fence_i
+-- Adding test: interrupt-local
+-- Adding test: printf_simple
+-- Adding test: dma_simple
+-- Adding test: atomics
+-- Adding test: vsetvli
+-- Adding test: vadd
+-- Adding test: vsub
+-- Adding test: vrsub
+-- Adding test: vwadd
+-- Adding test: vwaddu
+-- Adding test: vwsub
+-- Adding test: vwsubu
+-- Adding test: vand
+-- Adding test: vor
+-- Adding test: vxor
+-- Adding test: vsll
+-- Adding test: vsrl
+-- Adding test: vsra
+-- Adding test: vmin
+-- Adding test: vminu
+-- Adding test: vmax
+-- Adding test: vmaxu
+-- Adding test: vmul
+-- Adding test: vmulh
+-- Adding test: vmulhu
+-- Adding test: vmulhsu
+-- Adding test: vwmul
+-- Adding test: vwmulu
+-- Adding test: vwmulsu
+-- Adding test: vmacc
+-- Adding test: vmadd
+-- Adding test: vnmsac
+-- Adding test: vnmsub
+-- Adding test: vwmacc
+-- Adding test: vwmaccu
+-- Adding test: vwmaccus
+-- Adding test: vwmaccsu
+-- Adding test: vredsum
+-- Adding test: vredand
+-- Adding test: vredor
+-- Adding test: vredxor
+-- Adding test: vredmin
+-- Adding test: vredminu
+-- Adding test: vredmax
+-- Adding test: vredmaxu
+-- Adding test: vmv
+-- Adding test: vslide1up
+-- Adding test: vslideup
+-- Adding test: vslide1down
+-- Adding test: vslidedown
+-- Adding test: vdiv
+-- Adding test: vdivu
+-- Adding test: vrem
+-- Adding test: vremu
+-- Adding test: vfadd
+-- Adding test: vfsub
+-- Adding test: vfrsub
+-- Adding test: vfmin
+-- Adding test: vfmax
+-- Adding test: vfmul
+-- Adding test: vfmacc
+-- Adding test: v20_reduction_test
+-- Adding test: v20_accumulation_test
+-- Adding test: vfcmacc_illegal
+-- Adding test: vfcmacc
+-- Adding test: vfnmacc
+-- Adding test: vfmsac
+-- Adding test: vfnmsac
+-- Adding test: vfmadd
+-- Adding test: vfnmadd
+-- Adding test: vfmsub
+-- Adding test: vfnmsub
+-- Adding test: vfredmin
+-- Adding test: vfredmax
+-- Adding test: vfredosum
+-- Adding test: vfredusum
+-- Adding test: vfwadd
+-- Adding test: vfwsub
+-- Adding test: vfwmul
+-- Adding test: vfwmacc
+-- Adding test: vfwmsac
+-- Adding test: vfwnmsac
+-- Adding test: vfsgnj
+-- Adding test: vfsgnjn
+-- Adding test: vfsgnjx
+-- Adding test: vfcvt
+-- Adding test: vfncvt
+-- Adding test: vfmv
+-- Adding test: dp-fmatmul_M64_N64_K64
+-- Adding test: dp-fmatmul_M64_N128_K64
+-- Adding test: dp-fmatmul_M128_N128_K128
+-- Adding test: sp-fmatmul_M64_N64_K64
+-- Adding test: sp-fmatmul_M64_N128_K64
+-- Adding test: hp-fmatmul_M64_N64_K64
+-- Adding test: hp-fmatmul_M64_N128_K64
+-- Adding test: hp-fmatmul_M128_N128_K128
+-- Adding test: widening-hp-fmatmul_M64_N64_K64
+-- Adding test: widening-hp-fmatmul_M64_N128_K64
+-- Adding test: widening-hp-fmatmul_M128_N128_K128
+-- Adding test: widening-bp-fmatmul_M64_N64_K64
+-- Adding test: widening-bp-fmatmul_M64_N128_K64
+-- Adding test: widening-bp-fmatmul_M128_N128_K128
+-- Adding test: widening-bp-fmatmul_M128_N256_K128
+-- Adding test: sdotp-hp-fmatmul_M64_N64_K64
+-- Adding test: sdotp-hp-fmatmul_M64_N128_K64
+-- Adding test: sdotp-hp-fmatmul_M128_N128_K128
+-- Adding test: sdotp-bp-fmatmul_M64_N64_K64
+-- Adding test: sdotp-bp-fmatmul_M64_N128_K64
+-- Adding test: sdotp-bp-fmatmul_M128_N128_K128
+-- Adding test: sdotp-bp-fmatmul_M128_N256_K128
+-- Adding test: dp-faxpy_M256
+-- Adding test: dp-faxpy_M1024
+-- Adding test: dp-fdotp_M128
+-- Adding test: dp-fdotp_M1024
+-- Adding test: dp-fdotp_M2048
+-- Adding test: dp-fconv2d_M32_N32_K7
+-- Adding test: dp-fconv2d_M64_N64_K7
+-- Adding test: dp-fft_M128_N2
+-- Adding test: sp-fft_M256_N2
+-- Adding test: sp-fft_M512_N2
+-- Adding test: dp-caxpy_M256
+-- Adding test: dp-caxpy_M1024
+-- Adding test: dp-caxpy_M4096
+-- Adding test: dp-caxpy_vfcmacc_M256
+-- Adding test: dp-caxpy_vfcmacc_M1024
+-- Adding test: dp-caxpy_vfcmacc_M4096
+-- Adding test: dp-cdotp_M128
+-- Adding test: dp-cdotp_M4096
+-- Adding test: dp-cdotp_old_M128
+-- Adding test: dp-cdotp_vfcmacc_M128
+-- Adding test: dp-cdotp_old_M1024
+-- Adding test: dp-cdotp_vfcmacc_M1024
+-- Adding test: dp-cdotp_scalar_M128
+-- Adding test: dp-cdotp_vec_load_M128
+-- Adding test: dp-cdotp_vec_mac_M128
+-- Adding test: dp-cdotp_vec_reduce_real_M128
+-- Adding test: dp-cdotp_vec_reduce_imag_M128
+-- Adding test: dp-cdotp_vec_reduce_both_M128
+-- Adding test: dp-cdotp_vec_reduce_noextract_M128
+-- Adding test: dp-cdotp_vec_extract_drop_M128
+-- Adding test: dp-cdotp_vec_extract_nocollect_M128
+-- Adding test: dp-cdotp_vec_extract_nosummary_M128
+-- Adding test: dp-cdotp_vec_extract_noprint_M128
+-- Adding test: dp-cdotp_vec_store_scalar_M128
+-- Adding test: dp-cdotp_vec_store_scalar_m1_M128
+-- Adding test: dp-cdotp_old_singlecore_M128
+-- Adding test: dp-cdotp_vfcmacc_singlecore_M128
+-- Adding test: dp-cdotp_old_direct_singlecore_M128
+-- Adding test: dp-cdotp_vfcmacc_direct_singlecore_M128
+-- Adding test: dp-cdotp_ver2_M128
+-- Adding test: dp-cdotp_ver2_M1024
+-- Adding test: dp-cdotp_ver2_M2048
+-- Adding test: dp-fdotp_aligned_M128
+-- Adding test: dp-fdotp_aligned_M1024
+-- Adding test: dp-fdotp_aligned_M2048
+-- Adding test: dp-cdotp_aligned_M128
+-- Adding test: dp-cdotp_aligned_M1024
+-- Adding test: dp-cdotp_aligned_M2048
+-- Adding test: dp-cmatmul_M64_N64_K64
+-- Adding test: dp-cmatmul_M64_N128_K64
+-- Adding test: dp-cmatmul_M128_N128_K128
+-- Adding test: dp-cmatmul_ver2_M64_N64_K64
+-- Adding test: dp-cmatmul_ver2_M64_N128_K64
+-- Adding test: dp-cmatmul_ver2_M128_N128_K128
+-- Configuring done (0.8s)
+-- Generating done (0.5s)
+-- Build files have been written to: /home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build
+make[1]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[2]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[  0%] Building C object spatzBenchmarks/CMakeFiles/benchmark.dir/benchmark/benchmark.c.o
+[  0%] Building C object spatzBenchmarks/CMakeFiles/widening-hp-fmatmul.dir/widening-hp-fmatmul/kernel/widening-fmatmul.c.o
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[  0%] Building C object spatzBenchmarks/CMakeFiles/hp-fmatmul.dir/hp-fmatmul/kernel/hp-fmatmul.c.o
+[  1%] Building C object spatzBenchmarks/CMakeFiles/widening-bp-fmatmul.dir/widening-bp-fmatmul/kernel/widening-fmatmul.c.o
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[  1%] Building C object spatzBenchmarks/CMakeFiles/dp-fmatmul.dir/dp-fmatmul/kernel/dp-fmatmul.c.o
+[  1%] Building ASM object snRuntime/CMakeFiles/snRuntime-cluster.dir/start.S.o
+[  1%] Building C object spatzBenchmarks/CMakeFiles/sp-fmatmul.dir/sp-fmatmul/kernel/sp-fmatmul.c.o
+[  1%] Building C object spatzBenchmarks/CMakeFiles/sdotp-hp-fmatmul.dir/sdotp-hp-fmatmul/kernel/sdotp-fmatmul.c.o
+[  1%] Linking C static library libbenchmark.a
+[  2%] Linking C static library libwidening-hp-fmatmul.a
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[  2%] Linking C static library libwidening-bp-fmatmul.a
+[  2%] Linking C static library libhp-fmatmul.a
+[  2%] Built target benchmark
+[  3%] Building C object snRuntime/CMakeFiles/snRuntime-cluster.dir/src/platforms/shared/start.c.o
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[  3%] Built target widening-hp-fmatmul
+/home/wxt/spatz-cfma/sw/snRuntime/src/platforms/shared/start.c:40:45: warning: unused parameter 'spm_end' [-Wunused-parameter]
+                     void *spm_start, void *spm_end,
+                                            ^
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[  3%] Built target widening-bp-fmatmul
+[  4%] Linking C static library libdp-fmatmul.a
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+1 warning generated.
+[  4%] Building ASM object snRuntime/CMakeFiles/snRuntime-cluster.dir/src/platforms/standalone/start_snitch.S.o
+[  5%] Linking C static library libsp-fmatmul.a
+[  5%] Built target hp-fmatmul
+[  5%] Building C object spatzBenchmarks/CMakeFiles/sdotp-bp-fmatmul.dir/sdotp-bp-fmatmul/kernel/sdotp-fmatmul.c.o
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[  5%] Building C object snRuntime/CMakeFiles/snRuntime-cluster.dir/src/platforms/standalone/putchar.c.o
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[  5%] Building C object spatzBenchmarks/CMakeFiles/dp-faxpy.dir/dp-faxpy/kernel/faxpy.c.o
+[  5%] Built target dp-fmatmul
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[  5%] Building C object snRuntime/CMakeFiles/snRuntime-cluster.dir/src/barrier.c.o
+[  5%] Building C object spatzBenchmarks/CMakeFiles/dp-fdotp.dir/dp-fdotp/kernel/fdotp.c.o
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[  6%] Building C object snRuntime/CMakeFiles/snRuntime-cluster.dir/src/dma.c.o
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[  6%] Building C object spatzBenchmarks/CMakeFiles/dp-fconv2d.dir/dp-fconv2d/kernel/fconv2d.c.o
+[  6%] Built target sp-fmatmul
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[  7%] Linking C static library libdp-faxpy.a
+[  7%] Building C object snRuntime/CMakeFiles/snRuntime-cluster.dir/src/memcpy.c.o
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[  8%] Linking C static library libdp-fdotp.a
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[  8%] Building C object snRuntime/CMakeFiles/snRuntime-cluster.dir/src/printf.c.o
+[  9%] Linking C static library libsdotp-bp-fmatmul.a
+[  9%] Building C object spatzBenchmarks/CMakeFiles/dp-fft.dir/dp-fft/kernel/fft.c.o
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[  9%] Linking C static library libsdotp-hp-fmatmul.a
+[  9%] Built target dp-faxpy
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[  9%] Linking C static library libdp-fft.a
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 10%] Building C object snRuntime/CMakeFiles/snRuntime-cluster.dir/src/team.c.o
+[ 10%] Built target sdotp-hp-fmatmul
+[ 10%] Built target sdotp-bp-fmatmul
+[ 10%] Built target dp-fdotp
+[ 10%] Building C object spatzBenchmarks/CMakeFiles/sp-fft.dir/sp-fft/kernel/fft.c.o
+[ 10%] Building C object snRuntime/CMakeFiles/snRuntime-cluster.dir/src/alloc.c.o
+[ 10%] Building C object snRuntime/CMakeFiles/snRuntime-cluster.dir/src/perf_cnt.c.o
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 10%] Built target dp-fft
+[ 10%] Building C object snRuntime/CMakeFiles/snRuntime-cluster.dir/src/interrupt.c.o
+[ 11%] Building C object snRuntime/CMakeFiles/snRuntime-cluster.dir/src/omp/omp.c.o
+[ 11%] Building C object snRuntime/CMakeFiles/snRuntime-cluster.dir/src/omp/kmp.c.o
+[ 11%] Building C object snRuntime/CMakeFiles/snRuntime-cluster.dir/src/omp/eu.c.o
+[ 11%] Building C object snRuntime/CMakeFiles/snRuntime-cluster.dir/src/dm.c.o
+In file included from /home/wxt/spatz-cfma/sw/snRuntime/src/omp/omp.c:5:
+/home/wxt/spatz-cfma/sw/snRuntime/include/omp.h:129:45: warning: returning 'volatile omp_t *' from a function with result type 'omp_t *' discards qualifiers [-Wincompatible-pointer-types-discards-qualifiers]
+static inline omp_t *omp_getData() { return omp_p; }
+                                            ^~~~~
+/home/wxt/spatz-cfma/sw/snRuntime/src/omp/omp.c:70:18: warning: passing 'volatile omp_t *' to parameter of type 'omp_t *' discards qualifiers [-Wincompatible-pointer-types-discards-qualifiers]
+        initTeam(omp_p, &omp_p->plainTeam);
+                 ^~~~~
+/home/wxt/spatz-cfma/sw/snRuntime/src/omp/omp.c:45:36: note: passing argument to parameter '_this' here
+static inline void initTeam(omp_t *_this, omp_team_t *team) {
+                                   ^
+/home/wxt/spatz-cfma/sw/snRuntime/src/omp/omp.c:70:25: warning: passing 'volatile omp_team_t *' to parameter of type 'omp_team_t *' discards qualifiers [-Wincompatible-pointer-types-discards-qualifiers]
+        initTeam(omp_p, &omp_p->plainTeam);
+                        ^~~~~~~~~~~~~~~~~
+/home/wxt/spatz-cfma/sw/snRuntime/src/omp/omp.c:45:55: note: passing argument to parameter 'team' here
+static inline void initTeam(omp_t *_this, omp_team_t *team) {
+                                                      ^
+/home/wxt/spatz-cfma/sw/snRuntime/src/omp/omp.c:75:22: warning: assigning to 'omp_t *volatile' from 'volatile omp_t *' discards qualifiers [-Wincompatible-pointer-types-discards-qualifiers]
+        omp_p_global = omp_p;
+                     ^ ~~~~~
+/home/wxt/spatz-cfma/sw/snRuntime/src/omp/omp.c:65:27: warning: comparison of integers of different signs: 'int' and 'unsigned int' [-Wsign-compare]
+        for (int i = 0; i < sizeof(omp_p->plainTeam.core_epoch) /
+                        ~ ^ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+In file included from /home/wxt/spatz-cfma/sw/snRuntime/src/omp/kmp.c:12:
+/home/wxt/spatz-cfma/sw/snRuntime/include/omp.h:129:45: warning: returning 'volatile omp_t *' from a function with result type 'omp_t *' discards qualifiers [-Wincompatible-pointer-types-discards-qualifiers]
+static inline omp_t *omp_getData() { return omp_p; }
+                                            ^~~~~
+5 warnings generated.
+1 warning generated.
+[ 11%] Linking C static library libsp-fft.a
+[ 11%] Linking C static library libdp-fconv2d.a
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 11%] Built target dp-fconv2d
+[ 11%] Built target sp-fft
+[ 12%] Linking C static library libsnRuntime-cluster.a
+error: address range table at offset 0x0 has a premature terminator entry at offset 0x10
+error: address range table at offset 0x0 has a premature terminator entry at offset 0x10
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 12%] Built target snRuntime-cluster
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 13%] Building C object snRuntime/CMakeFiles/test-snRuntime-printf_simple.dir/tests/printf_simple.c.o
+[ 14%] Building C object snRuntime/CMakeFiles/test-snRuntime-varargs_2.dir/tests/varargs_2.c.o
+[ 15%] Building C object snRuntime/CMakeFiles/test-snRuntime-tls.dir/tests/tls.c.o
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 16%] Building C object snRuntime/CMakeFiles/test-snRuntime-barrier.dir/tests/barrier.c.o
+[ 17%] Building C object snRuntime/CMakeFiles/test-snRuntime-fence_i.dir/tests/fence_i.c.o
+/home/wxt/spatz-cfma/sw/snRuntime/tests/varargs_2.c:7:46: warning: unknown attribute 'optimize' ignored [-Wunknown-attributes]
+int __attribute__((noinline)) __attribute__((optimize(1)))
+                                             ^~~~~~~~~~~
+[ 17%] Building C object snRuntime/CMakeFiles/test-snRuntime-simple.dir/tests/simple.c.o
+[ 17%] Building C object snRuntime/CMakeFiles/test-snRuntime-interrupt-local.dir/tests/interrupt-local.c.o
+[ 17%] Building C object snRuntime/CMakeFiles/test-snRuntime-varargs_1.dir/tests/varargs_1.c.o
+1 warning generated.
+[ 17%] Linking C executable test-snRuntime-printf_simple
+[ 17%] Linking C executable test-snRuntime-fence_i
+[ 17%] Linking C executable test-snRuntime-varargs_2
+/home/wxt/spatz-cfma/sw/snRuntime/tests/varargs_1.c:7:46: warning: unknown attribute 'optimize' ignored [-Wunknown-attributes]
+int __attribute__((noinline)) __attribute__((optimize(1))) sum(int N, ...) {
+                                             ^~~~~~~~~~~
+[ 17%] Linking C executable test-snRuntime-barrier
+1 warning generated.
+[ 17%] Linking C executable test-snRuntime-varargs_1
+[ 17%] Linking C executable test-snRuntime-tls
+[ 17%] Linking C executable test-snRuntime-interrupt-local
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 17%] Linking C executable test-snRuntime-simple
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 17%] Built target test-snRuntime-fence_i
+[ 17%] Built target test-snRuntime-varargs_2
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 17%] Built target test-snRuntime-printf_simple
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 17%] Building C object snRuntime/CMakeFiles/test-snRuntime-dma_simple.dir/tests/dma_simple.c.o
+[ 17%] Built target test-snRuntime-barrier
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 17%] Built target test-snRuntime-tls
+[ 17%] Building C object snRuntime/CMakeFiles/test-snRuntime-atomics.dir/tests/atomics.c.o
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 17%] Built target test-snRuntime-varargs_1
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 17%] Building C object riscvTests/CMakeFiles/test-riscvTests-vsetvli.dir/isa/rv64uv/vsetvli.c.o
+[ 17%] Built target test-snRuntime-simple
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 17%] Building C object riscvTests/CMakeFiles/test-riscvTests-vsub.dir/isa/rv64uv/vsub.c.o
+[ 18%] Building C object riscvTests/CMakeFiles/test-riscvTests-vrsub.dir/isa/rv64uv/vrsub.c.o
+[ 18%] Built target test-snRuntime-interrupt-local
+[ 18%] Building C object riscvTests/CMakeFiles/test-riscvTests-vadd.dir/isa/rv64uv/vadd.c.o
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 18%] Building C object riscvTests/CMakeFiles/test-riscvTests-vwadd.dir/isa/rv64uv/vwadd.c.o
+[ 18%] Linking C executable test-snRuntime-dma_simple
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 18%] Building C object riscvTests/CMakeFiles/test-riscvTests-vwaddu.dir/isa/rv64uv/vwaddu.c.o
+[ 18%] Linking C executable test-riscvTests-vsetvli
+[ 18%] Linking C executable test-snRuntime-atomics
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 18%] Built target test-snRuntime-dma_simple
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 18%] Built target test-snRuntime-atomics
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 18%] Building C object riscvTests/CMakeFiles/test-riscvTests-vwsub.dir/isa/rv64uv/vwsub.c.o
+[ 18%] Linking C executable test-riscvTests-vrsub
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 19%] Linking C executable test-riscvTests-vsub
+[ 19%] Building C object riscvTests/CMakeFiles/test-riscvTests-vwsubu.dir/isa/rv64uv/vwsubu.c.o
+[ 19%] Built target test-riscvTests-vsetvli
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 19%] Linking C executable test-riscvTests-vadd
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 19%] Building C object riscvTests/CMakeFiles/test-riscvTests-vand.dir/isa/rv64uv/vand.c.o
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 19%] Built target test-riscvTests-vrsub
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 19%] Built target test-riscvTests-vsub
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 19%] Building C object riscvTests/CMakeFiles/test-riscvTests-vor.dir/isa/rv64uv/vor.c.o
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 19%] Built target test-riscvTests-vadd
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 20%] Building C object riscvTests/CMakeFiles/test-riscvTests-vxor.dir/isa/rv64uv/vxor.c.o
+[ 21%] Linking C executable test-riscvTests-vwaddu
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 21%] Linking C executable test-riscvTests-vwadd
+[ 22%] Building C object riscvTests/CMakeFiles/test-riscvTests-vsll.dir/isa/rv64uv/vsll.c.o
+[ 23%] Linking C executable test-riscvTests-vwsub
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 23%] Built target test-riscvTests-vwadd
+[ 23%] Built target test-riscvTests-vwaddu
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 23%] Building C object riscvTests/CMakeFiles/test-riscvTests-vsrl.dir/isa/rv64uv/vsrl.c.o
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 24%] Linking C executable test-riscvTests-vand
+[ 24%] Linking C executable test-riscvTests-vwsubu
+[ 24%] Building C object riscvTests/CMakeFiles/test-riscvTests-vsra.dir/isa/rv64uv/vsra.c.o
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 24%] Built target test-riscvTests-vwsub
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 24%] Linking C executable test-riscvTests-vxor
+[ 24%] Linking C executable test-riscvTests-vor
+[ 24%] Building C object riscvTests/CMakeFiles/test-riscvTests-vmin.dir/isa/rv64uv/vmin.c.o
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 24%] Built target test-riscvTests-vand
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 24%] Built target test-riscvTests-vwsubu
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 25%] Building C object riscvTests/CMakeFiles/test-riscvTests-vminu.dir/isa/rv64uv/vminu.c.o
+[ 25%] Building C object riscvTests/CMakeFiles/test-riscvTests-vmax.dir/isa/rv64uv/vmax.c.o
+[ 25%] Linking C executable test-riscvTests-vsrl
+[ 25%] Linking C executable test-riscvTests-vsll
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 25%] Built target test-riscvTests-vxor
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 25%] Built target test-riscvTests-vor
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 25%] Linking C executable test-riscvTests-vmin
+[ 26%] Building C object riscvTests/CMakeFiles/test-riscvTests-vmaxu.dir/isa/rv64uv/vmaxu.c.o
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 26%] Linking C executable test-riscvTests-vminu
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 26%] Building C object riscvTests/CMakeFiles/test-riscvTests-vmul.dir/isa/rv64uv/vmul.c.o
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 27%] Linking C executable test-riscvTests-vsra
+[ 27%] Built target test-riscvTests-vsrl
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 27%] Built target test-riscvTests-vsll
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 27%] Built target test-riscvTests-vmin
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 27%] Linking C executable test-riscvTests-vmax
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 27%] Building C object riscvTests/CMakeFiles/test-riscvTests-vmulh.dir/isa/rv64uv/vmulh.c.o
+[ 27%] Building C object riscvTests/CMakeFiles/test-riscvTests-vmulhu.dir/isa/rv64uv/vmulhu.c.o
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 27%] Building C object riscvTests/CMakeFiles/test-riscvTests-vmulhsu.dir/isa/rv64uv/vmulhsu.c.o
+[ 27%] Built target test-riscvTests-vminu
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 27%] Built target test-riscvTests-vsra
+[ 27%] Building C object riscvTests/CMakeFiles/test-riscvTests-vwmul.dir/isa/rv64uv/vwmul.c.o
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 27%] Built target test-riscvTests-vmax
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 27%] Building C object riscvTests/CMakeFiles/test-riscvTests-vwmulu.dir/isa/rv64uv/vwmulu.c.o
+[ 27%] Linking C executable test-riscvTests-vmulhu
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 27%] Linking C executable test-riscvTests-vmaxu
+[ 27%] Building C object riscvTests/CMakeFiles/test-riscvTests-vwmulsu.dir/isa/rv64uv/vwmulsu.c.o
+[ 27%] Linking C executable test-riscvTests-vmulh
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 28%] Linking C executable test-riscvTests-vmul
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 28%] Built target test-riscvTests-vmulhu
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 28%] Built target test-riscvTests-vmaxu
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 30%] Linking C executable test-riscvTests-vmulhsu
+[ 30%] Building C object riscvTests/CMakeFiles/test-riscvTests-vmacc.dir/isa/rv64uv/vmacc.c.o
+[ 30%] Built target test-riscvTests-vmulh
+[ 29%] Building C object riscvTests/CMakeFiles/test-riscvTests-vmadd.dir/isa/rv64uv/vmadd.c.o
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 31%] Linking C executable test-riscvTests-vwmulsu
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 31%] Built target test-riscvTests-vmul
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 31%] Building C object riscvTests/CMakeFiles/test-riscvTests-vnmsac.dir/isa/rv64uv/vnmsac.c.o
+[ 31%] Linking C executable test-riscvTests-vwmul
+[ 31%] Linking C executable test-riscvTests-vwmulu
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 31%] Building C object riscvTests/CMakeFiles/test-riscvTests-vnmsub.dir/isa/rv64uv/vnmsub.c.o
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 31%] Linking C executable test-riscvTests-vmadd
+[ 31%] Built target test-riscvTests-vmulhsu
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 31%] Built target test-riscvTests-vwmulsu
+[ 31%] Built target test-riscvTests-vwmul
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 31%] Building C object riscvTests/CMakeFiles/test-riscvTests-vwmacc.dir/isa/rv64uv/vwmacc.c.o
+[ 31%] Built target test-riscvTests-vwmulu
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 31%] Linking C executable test-riscvTests-vmacc
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 31%] Linking C executable test-riscvTests-vnmsac
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 31%] Building C object riscvTests/CMakeFiles/test-riscvTests-vwmaccu.dir/isa/rv64uv/vwmaccu.c.o
+[ 31%] Building C object riscvTests/CMakeFiles/test-riscvTests-vwmaccus.dir/isa/rv64uv/vwmaccus.c.o
+[ 31%] Building C object riscvTests/CMakeFiles/test-riscvTests-vwmaccsu.dir/isa/rv64uv/vwmaccsu.c.o
+[ 31%] Built target test-riscvTests-vmadd
+[ 32%] Linking C executable test-riscvTests-vnmsub
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 33%] Building C object riscvTests/CMakeFiles/test-riscvTests-vredsum.dir/isa/rv64uv/vredsum.c.o
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 34%] Linking C executable test-riscvTests-vwmaccsu
+[ 34%] Built target test-riscvTests-vnmsac
+[ 34%] Built target test-riscvTests-vmacc
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 35%] Linking C executable test-riscvTests-vwmaccus
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 35%] Building C object riscvTests/CMakeFiles/test-riscvTests-vredor.dir/isa/rv64uv/vredor.c.o
+[ 35%] Built target test-riscvTests-vnmsub
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 35%] Building C object riscvTests/CMakeFiles/test-riscvTests-vredand.dir/isa/rv64uv/vredand.c.o
+[ 35%] Linking C executable test-riscvTests-vwmaccu
+[ 35%] Linking C executable test-riscvTests-vwmacc
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 35%] Building C object riscvTests/CMakeFiles/test-riscvTests-vredxor.dir/isa/rv64uv/vredxor.c.o
+[ 35%] Built target test-riscvTests-vwmaccsu
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 36%] Linking C executable test-riscvTests-vredand
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 36%] Built target test-riscvTests-vwmaccus
+[ 36%] Linking C executable test-riscvTests-vredxor
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 36%] Building C object riscvTests/CMakeFiles/test-riscvTests-vredmin.dir/isa/rv64uv/vredmin.c.o
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 36%] Built target test-riscvTests-vwmaccu
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 37%] Building C object riscvTests/CMakeFiles/test-riscvTests-vredminu.dir/isa/rv64uv/vredminu.c.o
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 37%] Building C object riscvTests/CMakeFiles/test-riscvTests-vredmax.dir/isa/rv64uv/vredmax.c.o
+[ 37%] Linking C executable test-riscvTests-vredor
+[ 37%] Built target test-riscvTests-vwmacc
+[ 37%] Linking C executable test-riscvTests-vredsum
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 37%] Built target test-riscvTests-vredxor
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 37%] Built target test-riscvTests-vredand
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 37%] Building C object riscvTests/CMakeFiles/test-riscvTests-vredmaxu.dir/isa/rv64uv/vredmaxu.c.o
+[ 37%] Linking C executable test-riscvTests-vredmin
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 37%] Linking C executable test-riscvTests-vredmax
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 37%] Building C object riscvTests/CMakeFiles/test-riscvTests-vmv.dir/isa/rv64uv/vmv.c.o
+[ 37%] Linking C executable test-riscvTests-vredminu
+[ 37%] Building C object riscvTests/CMakeFiles/test-riscvTests-vslide1up.dir/isa/rv64uv/vslide1up.c.o
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 37%] Built target test-riscvTests-vredor
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 37%] Built target test-riscvTests-vredsum
+[ 38%] Linking C executable test-riscvTests-vredmaxu
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 38%] Building C object riscvTests/CMakeFiles/test-riscvTests-vslideup.dir/isa/rv64uv/vslideup.c.o
+[ 38%] Built target test-riscvTests-vredmin
+[ 39%] Building C object riscvTests/CMakeFiles/test-riscvTests-vslide1down.dir/isa/rv64uv/vslide1down.c.o
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 39%] Built target test-riscvTests-vredmax
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 39%] Linking C executable test-riscvTests-vslide1up
+[ 39%] Built target test-riscvTests-vredminu
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 40%] Building C object riscvTests/CMakeFiles/test-riscvTests-vslidedown.dir/isa/rv64uv/vslidedown.c.o
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 40%] Building C object riscvTests/CMakeFiles/test-riscvTests-vdiv.dir/isa/rv64uv/vdiv.c.o
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 40%] Building C object riscvTests/CMakeFiles/test-riscvTests-vdivu.dir/isa/rv64uv/vdivu.c.o
+[ 40%] Built target test-riscvTests-vredmaxu
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 41%] Linking C executable test-riscvTests-vmv
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 41%] Built target test-riscvTests-vslide1up
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 42%] Building C object riscvTests/CMakeFiles/test-riscvTests-vrem.dir/isa/rv64uv/vrem.c.o
+[ 42%] Linking C executable test-riscvTests-vslideup
+[ 42%] Linking C executable test-riscvTests-vslide1down
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 42%] Building C object riscvTests/CMakeFiles/test-riscvTests-vremu.dir/isa/rv64uv/vremu.c.o
+[ 43%] Linking C executable test-riscvTests-vdivu
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 43%] Linking C executable test-riscvTests-vslidedown
+[ 43%] Built target test-riscvTests-vslide1down
+[ 43%] Linking C executable test-riscvTests-vdiv
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 43%] Built target test-riscvTests-vmv
+[ 43%] Linking C executable test-riscvTests-vrem
+[ 43%] Building C object riscvTests/CMakeFiles/test-riscvTests-vfadd.dir/isa/rv64uv/vfadd.c.o
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 43%] Built target test-riscvTests-vslideup
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 44%] Building C object riscvTests/CMakeFiles/test-riscvTests-vfsub.dir/isa/rv64uv/vfsub.c.o
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 44%] Built target test-riscvTests-vdivu
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 44%] Built target test-riscvTests-vslidedown
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 44%] Built target test-riscvTests-vdiv
+[ 44%] Building C object riscvTests/CMakeFiles/test-riscvTests-vfrsub.dir/isa/rv64uv/vfrsub.c.o
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 44%] Building C object riscvTests/CMakeFiles/test-riscvTests-vfmin.dir/isa/rv64uv/vfmin.c.o
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 45%] Building C object riscvTests/CMakeFiles/test-riscvTests-vfmax.dir/isa/rv64uv/vfmax.c.o
+[ 46%] Building C object riscvTests/CMakeFiles/test-riscvTests-vfmul.dir/isa/rv64uv/vfmul.c.o
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 46%] Linking C executable test-riscvTests-vremu
+[ 46%] Built target test-riscvTests-vrem
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 47%] Building C object riscvTests/CMakeFiles/test-riscvTests-vfmacc.dir/isa/rv64uv/vfmacc.c.o
+[ 47%] Linking C executable test-riscvTests-vfmin
+[ 48%] Linking C executable test-riscvTests-vfrsub
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 48%] Linking C executable test-riscvTests-vfsub
+[ 48%] Built target test-riscvTests-vremu
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 48%] Linking C executable test-riscvTests-vfadd
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 48%] Linking C executable test-riscvTests-vfmax
+[ 49%] Building C object riscvTests/CMakeFiles/test-riscvTests-vfcmacc_smoke.dir/isa/rv64uv/vfcmacc_smoke.c.o
+[ 49%] Linking C executable test-riscvTests-vfmacc
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 49%] Linking C executable test-riscvTests-vfmul
+[ 49%] Built target test-riscvTests-vfmin
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 49%] Built target test-riscvTests-vfrsub
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 49%] Building C object riscvTests/CMakeFiles/test-riscvTests-v20_reduction_test.dir/isa/rv64uv/v20_reduction_test.c.o
+[ 49%] Building C object riscvTests/CMakeFiles/test-riscvTests-v20_accumulation_test.dir/isa/rv64uv/v20_accumulation_test.c.o
+[ 49%] Linking C executable test-riscvTests-vfcmacc_smoke
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 49%] Built target test-riscvTests-vfmax
+[ 49%] Built target test-riscvTests-vfsub
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 50%] Linking C executable test-riscvTests-v20_reduction_test
+[ 50%] Built target test-riscvTests-vfadd
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 50%] Building C object riscvTests/CMakeFiles/test-riscvTests-vfcmacc_illegal.dir/isa/rv64uv/vfcmacc_illegal.c.o
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 50%] Built target test-riscvTests-vfcmacc_smoke
+[ 50%] Built target test-riscvTests-vfmacc
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 50%] Linking C executable test-riscvTests-v20_accumulation_test
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 50%] Building C object riscvTests/CMakeFiles/test-riscvTests-vfnmacc.dir/isa/rv64uv/vfnmacc.c.o
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 50%] Built target test-riscvTests-vfmul
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 51%] Building C object riscvTests/CMakeFiles/test-riscvTests-vfcmacc.dir/isa/rv64uv/vfcmacc.c.o
+[ 52%] Building C object riscvTests/CMakeFiles/test-riscvTests-vfmsac.dir/isa/rv64uv/vfmsac.c.o
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 52%] Building C object riscvTests/CMakeFiles/test-riscvTests-vfmadd.dir/isa/rv64uv/vfmadd.c.o
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 52%] Building C object riscvTests/CMakeFiles/test-riscvTests-vfnmsac.dir/isa/rv64uv/vfnmsac.c.o
+[ 52%] Built target test-riscvTests-v20_reduction_test
+[ 52%] Linking C executable test-riscvTests-vfcmacc_illegal
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 52%] Built target test-riscvTests-v20_accumulation_test
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 52%] Building C object riscvTests/CMakeFiles/test-riscvTests-vfnmadd.dir/isa/rv64uv/vfnmadd.c.o
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 52%] Building C object riscvTests/CMakeFiles/test-riscvTests-vfmsub.dir/isa/rv64uv/vfmsub.c.o
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 52%] Linking C executable test-riscvTests-vfmsac
+[ 52%] Linking C executable test-riscvTests-vfmadd
+[ 52%] Built target test-riscvTests-vfcmacc_illegal
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 53%] Linking C executable test-riscvTests-vfnmacc
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 53%] Building C object riscvTests/CMakeFiles/test-riscvTests-vfnmsub.dir/isa/rv64uv/vfnmsub.c.o
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 53%] Built target test-riscvTests-vfmadd
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 53%] Built target test-riscvTests-vfmsac
+[ 54%] Linking C executable test-riscvTests-vfnmsac
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 54%] Building C object riscvTests/CMakeFiles/test-riscvTests-vfredmin.dir/isa/rv64uv/vfredmin.c.o
+[ 54%] Built target test-riscvTests-vfnmacc
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 54%] Linking C executable test-riscvTests-vfnmadd
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 54%] Building C object riscvTests/CMakeFiles/test-riscvTests-vfredmax.dir/isa/rv64uv/vfredmax.c.o
+[ 54%] Building C object riscvTests/CMakeFiles/test-riscvTests-vfredosum.dir/isa/rv64uv/vfredosum.c.o
+[ 54%] Linking C executable test-riscvTests-vfmsub
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 54%] Built target test-riscvTests-vfnmsac
+[ 54%] Linking C executable test-riscvTests-vfredmin
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 54%] Linking C executable test-riscvTests-vfnmsub
+[ 54%] Building C object riscvTests/CMakeFiles/test-riscvTests-vfredusum.dir/isa/rv64uv/vfredusum.c.o
+[ 54%] Built target test-riscvTests-vfnmadd
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 54%] Linking C executable test-riscvTests-vfcmacc
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 55%] Linking C executable test-riscvTests-vfredmax
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 55%] Built target test-riscvTests-vfmsub
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 55%] Building C object riscvTests/CMakeFiles/test-riscvTests-vfwadd.dir/isa/rv64uv/vfwadd.c.o
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 55%] Built target test-riscvTests-vfredmin
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 56%] Building C object riscvTests/CMakeFiles/test-riscvTests-vfwsub.dir/isa/rv64uv/vfwsub.c.o
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 57%] Building C object riscvTests/CMakeFiles/test-riscvTests-vfwmul.dir/isa/rv64uv/vfwmul.c.o
+[ 57%] Built target test-riscvTests-vfcmacc
+[ 57%] Built target test-riscvTests-vfnmsub
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 58%] Linking C executable test-riscvTests-vfredosum
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 58%] Built target test-riscvTests-vfredmax
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 59%] Building C object riscvTests/CMakeFiles/test-riscvTests-vfwmacc.dir/isa/rv64uv/vfwmacc.c.o
+[ 59%] Building C object riscvTests/CMakeFiles/test-riscvTests-vfwmsac.dir/isa/rv64uv/vfwmsac.c.o
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 59%] Building C object riscvTests/CMakeFiles/test-riscvTests-vfwnmsac.dir/isa/rv64uv/vfwnmsac.c.o
+[ 59%] Linking C executable test-riscvTests-vfredusum
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 59%] Linking C executable test-riscvTests-vfwmul
+[ 59%] Built target test-riscvTests-vfredosum
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 59%] Linking C executable test-riscvTests-vfwadd
+[ 59%] Linking C executable test-riscvTests-vfwmacc
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 59%] Linking C executable test-riscvTests-vfwmsac
+[ 59%] Building C object riscvTests/CMakeFiles/test-riscvTests-vfsgnj.dir/isa/rv64uv/vfsgnj.c.o
+[ 59%] Linking C executable test-riscvTests-vfwsub
+[ 59%] Linking C executable test-riscvTests-vfwnmsac
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 59%] Built target test-riscvTests-vfredusum
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 59%] Built target test-riscvTests-vfwmul
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 59%] Built target test-riscvTests-vfwmacc
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 59%] Built target test-riscvTests-vfwadd
+[ 59%] Building C object riscvTests/CMakeFiles/test-riscvTests-vfsgnjn.dir/isa/rv64uv/vfsgnjn.c.o
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 59%] Building C object riscvTests/CMakeFiles/test-riscvTests-vfsgnjx.dir/isa/rv64uv/vfsgnjx.c.o
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 59%] Built target test-riscvTests-vfwmsac
+[ 59%] Building C object riscvTests/CMakeFiles/test-riscvTests-vfcvt.dir/isa/rv64uv/vfcvt.c.o
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 59%] Built target test-riscvTests-vfwnmsac
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 59%] Built target test-riscvTests-vfwsub
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 59%] Building C object riscvTests/CMakeFiles/test-riscvTests-vfncvt.dir/isa/rv64uv/vfncvt.c.o
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 59%] Building C object riscvTests/CMakeFiles/test-riscvTests-vfmv.dir/isa/rv64uv/vfmv.c.o
+[ 59%] Building C object spatzBenchmarks/CMakeFiles/test-spatzBenchmarks-dp-fmatmul_M64_N128_K64.dir/dp-fmatmul/main.c.o
+[ 59%] Building C object spatzBenchmarks/CMakeFiles/test-spatzBenchmarks-dp-fmatmul_M64_N64_K64.dir/dp-fmatmul/main.c.o
+[ 59%] Linking C executable test-riscvTests-vfsgnj
+[ 60%] Linking C executable test-riscvTests-vfsgnjn
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 60%] Linking C executable test-riscvTests-vfsgnjx
+[ 60%] Built target test-riscvTests-vfsgnjn
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 61%] Linking C executable test-riscvTests-vfmv
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 61%] Building C object spatzBenchmarks/CMakeFiles/test-spatzBenchmarks-dp-fmatmul_M128_N128_K128.dir/dp-fmatmul/main.c.o
+[ 61%] Built target test-riscvTests-vfsgnj
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 61%] Built target test-riscvTests-vfsgnjx
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 62%] Building C object spatzBenchmarks/CMakeFiles/test-spatzBenchmarks-sp-fmatmul_M64_N64_K64.dir/sp-fmatmul/main.c.o
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 62%] Building C object spatzBenchmarks/CMakeFiles/test-spatzBenchmarks-sp-fmatmul_M64_N128_K64.dir/sp-fmatmul/main.c.o
+[ 62%] Linking C executable test-riscvTests-vfcvt
+[ 62%] Built target test-riscvTests-vfmv
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 63%] Linking C executable test-spatzBenchmarks-dp-fmatmul_M64_N64_K64
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 63%] Building C object spatzBenchmarks/CMakeFiles/test-spatzBenchmarks-hp-fmatmul_M64_N64_K64.dir/hp-fmatmul/main.c.o
+[ 63%] Linking C executable test-riscvTests-vfncvt
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 63%] Linking C executable test-spatzBenchmarks-dp-fmatmul_M64_N128_K64
+[ 63%] Built target test-spatzBenchmarks-dp-fmatmul_M64_N64_K64
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 63%] Built target test-riscvTests-vfcvt
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 63%] Building C object spatzBenchmarks/CMakeFiles/test-spatzBenchmarks-hp-fmatmul_M64_N128_K64.dir/hp-fmatmul/main.c.o
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 63%] Building C object spatzBenchmarks/CMakeFiles/test-spatzBenchmarks-hp-fmatmul_M128_N128_K128.dir/hp-fmatmul/main.c.o
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 63%] Built target test-riscvTests-vfncvt
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 63%] Built target test-spatzBenchmarks-dp-fmatmul_M64_N128_K64
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 63%] Building C object spatzBenchmarks/CMakeFiles/test-spatzBenchmarks-widening-hp-fmatmul_M64_N64_K64.dir/widening-hp-fmatmul/main.c.o
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 64%] Building C object spatzBenchmarks/CMakeFiles/test-spatzBenchmarks-widening-hp-fmatmul_M64_N128_K64.dir/widening-hp-fmatmul/main.c.o
+[ 64%] Linking C executable test-spatzBenchmarks-sp-fmatmul_M64_N64_K64
+[ 64%] Linking C executable test-spatzBenchmarks-sp-fmatmul_M64_N128_K64
+[ 64%] Linking C executable test-spatzBenchmarks-hp-fmatmul_M64_N64_K64
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 64%] Built target test-spatzBenchmarks-sp-fmatmul_M64_N64_K64
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 65%] Linking C executable test-spatzBenchmarks-dp-fmatmul_M128_N128_K128
+[ 66%] Linking C executable test-spatzBenchmarks-hp-fmatmul_M64_N128_K64
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 66%] Building C object spatzBenchmarks/CMakeFiles/test-spatzBenchmarks-widening-hp-fmatmul_M128_N128_K128.dir/widening-hp-fmatmul/main.c.o
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 66%] Built target test-spatzBenchmarks-sp-fmatmul_M64_N128_K64
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 66%] Built target test-spatzBenchmarks-hp-fmatmul_M64_N64_K64
+[ 66%] Linking C executable test-spatzBenchmarks-widening-hp-fmatmul_M64_N64_K64
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 66%] Linking C executable test-spatzBenchmarks-hp-fmatmul_M128_N128_K128
+[ 66%] Built target test-spatzBenchmarks-dp-fmatmul_M128_N128_K128
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 66%] Building C object spatzBenchmarks/CMakeFiles/test-spatzBenchmarks-widening-bp-fmatmul_M64_N128_K64.dir/widening-bp-fmatmul/main.c.o
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 67%] Building C object spatzBenchmarks/CMakeFiles/test-spatzBenchmarks-widening-bp-fmatmul_M64_N64_K64.dir/widening-bp-fmatmul/main.c.o
+[ 67%] Built target test-spatzBenchmarks-hp-fmatmul_M64_N128_K64
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 67%] Linking C executable test-spatzBenchmarks-widening-hp-fmatmul_M64_N128_K64
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 67%] Built target test-spatzBenchmarks-widening-hp-fmatmul_M64_N64_K64
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 67%] Building C object spatzBenchmarks/CMakeFiles/test-spatzBenchmarks-widening-bp-fmatmul_M128_N128_K128.dir/widening-bp-fmatmul/main.c.o
+[ 68%] Building C object spatzBenchmarks/CMakeFiles/test-spatzBenchmarks-widening-bp-fmatmul_M128_N256_K128.dir/widening-bp-fmatmul/main.c.o
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 68%] Built target test-spatzBenchmarks-hp-fmatmul_M128_N128_K128
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 68%] Building C object spatzBenchmarks/CMakeFiles/test-spatzBenchmarks-sdotp-hp-fmatmul_M64_N64_K64.dir/sdotp-hp-fmatmul/main.c.o
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 68%] Building C object spatzBenchmarks/CMakeFiles/test-spatzBenchmarks-sdotp-hp-fmatmul_M64_N128_K64.dir/sdotp-hp-fmatmul/main.c.o
+[ 68%] Built target test-spatzBenchmarks-widening-hp-fmatmul_M64_N128_K64
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 68%] Building C object spatzBenchmarks/CMakeFiles/test-spatzBenchmarks-sdotp-hp-fmatmul_M128_N128_K128.dir/sdotp-hp-fmatmul/main.c.o
+[ 68%] Linking C executable test-spatzBenchmarks-widening-bp-fmatmul_M64_N64_K64
+[ 68%] Linking C executable test-spatzBenchmarks-widening-hp-fmatmul_M128_N128_K128
+[ 68%] Linking C executable test-spatzBenchmarks-widening-bp-fmatmul_M64_N128_K64
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 68%] Built target test-spatzBenchmarks-widening-bp-fmatmul_M64_N64_K64
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 69%] Linking C executable test-spatzBenchmarks-sdotp-hp-fmatmul_M64_N64_K64
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 69%] Built target test-spatzBenchmarks-widening-hp-fmatmul_M128_N128_K128
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 69%] Building C object spatzBenchmarks/CMakeFiles/test-spatzBenchmarks-sdotp-bp-fmatmul_M64_N64_K64.dir/sdotp-bp-fmatmul/main.c.o
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 69%] Linking C executable test-spatzBenchmarks-widening-bp-fmatmul_M128_N128_K128
+[ 69%] Built target test-spatzBenchmarks-widening-bp-fmatmul_M64_N128_K64
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 69%] Building C object spatzBenchmarks/CMakeFiles/test-spatzBenchmarks-sdotp-bp-fmatmul_M64_N128_K64.dir/sdotp-bp-fmatmul/main.c.o
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 69%] Linking C executable test-spatzBenchmarks-widening-bp-fmatmul_M128_N256_K128
+[ 69%] Built target test-spatzBenchmarks-sdotp-hp-fmatmul_M64_N64_K64
+[ 69%] Building C object spatzBenchmarks/CMakeFiles/test-spatzBenchmarks-sdotp-bp-fmatmul_M128_N128_K128.dir/sdotp-bp-fmatmul/main.c.o
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 69%] Linking C executable test-spatzBenchmarks-sdotp-hp-fmatmul_M64_N128_K64
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 69%] Building C object spatzBenchmarks/CMakeFiles/test-spatzBenchmarks-sdotp-bp-fmatmul_M128_N256_K128.dir/sdotp-bp-fmatmul/main.c.o
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 69%] Built target test-spatzBenchmarks-widening-bp-fmatmul_M128_N128_K128
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 69%] Built target test-spatzBenchmarks-widening-bp-fmatmul_M128_N256_K128
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 69%] Building C object spatzBenchmarks/CMakeFiles/test-spatzBenchmarks-dp-faxpy_M256.dir/dp-faxpy/main.c.o
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 69%] Built target test-spatzBenchmarks-sdotp-hp-fmatmul_M64_N128_K64
+[ 69%] Linking C executable test-spatzBenchmarks-sdotp-bp-fmatmul_M64_N64_K64
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 70%] Building C object spatzBenchmarks/CMakeFiles/test-spatzBenchmarks-dp-faxpy_M1024.dir/dp-faxpy/main.c.o
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 71%] Linking C executable test-spatzBenchmarks-sdotp-bp-fmatmul_M64_N128_K64
+[ 71%] Building C object spatzBenchmarks/CMakeFiles/test-spatzBenchmarks-dp-fdotp_M128.dir/dp-fdotp/main.c.o
+[ 71%] Linking C executable test-spatzBenchmarks-dp-faxpy_M256
+[ 71%] Linking C executable test-spatzBenchmarks-dp-faxpy_M1024
+[ 72%] Linking C executable test-spatzBenchmarks-sdotp-hp-fmatmul_M128_N128_K128
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 72%] Built target test-spatzBenchmarks-sdotp-bp-fmatmul_M64_N64_K64
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 72%] Built target test-spatzBenchmarks-sdotp-bp-fmatmul_M64_N128_K64
+[ 73%] Building C object spatzBenchmarks/CMakeFiles/test-spatzBenchmarks-dp-fdotp_M1024.dir/dp-fdotp/main.c.o
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 73%] Linking C executable test-spatzBenchmarks-dp-fdotp_M128
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 73%] Built target test-spatzBenchmarks-dp-faxpy_M1024
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 74%] Linking C executable test-spatzBenchmarks-sdotp-bp-fmatmul_M128_N128_K128
+[ 75%] Building C object spatzBenchmarks/CMakeFiles/test-spatzBenchmarks-dp-fdotp_M2048.dir/dp-fdotp/main.c.o
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 75%] Built target test-spatzBenchmarks-sdotp-hp-fmatmul_M128_N128_K128
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 76%] Building C object spatzBenchmarks/CMakeFiles/test-spatzBenchmarks-dp-fconv2d_M32_N32_K7.dir/dp-fconv2d/main.c.o
+[ 76%] Linking C executable test-spatzBenchmarks-dp-fdotp_M1024
+[ 76%] Built target test-spatzBenchmarks-dp-faxpy_M256
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 77%] Building C object spatzBenchmarks/CMakeFiles/test-spatzBenchmarks-dp-fft_M128_N2.dir/dp-fft/main.c.o
+[ 77%] Building C object spatzBenchmarks/CMakeFiles/test-spatzBenchmarks-dp-fconv2d_M64_N64_K7.dir/dp-fconv2d/main.c.o
+[ 77%] Built target test-spatzBenchmarks-dp-fdotp_M128
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 77%] Linking C executable test-spatzBenchmarks-dp-fdotp_M2048
+[ 77%] Built target test-spatzBenchmarks-sdotp-bp-fmatmul_M128_N128_K128
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 77%] Building C object spatzBenchmarks/CMakeFiles/test-spatzBenchmarks-sp-fft_M256_N2.dir/sp-fft/main.c.o
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 77%] Built target test-spatzBenchmarks-dp-fdotp_M1024
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 77%] Linking C executable test-spatzBenchmarks-sdotp-bp-fmatmul_M128_N256_K128
+[ 78%] Building C object spatzBenchmarks/CMakeFiles/test-spatzBenchmarks-sp-fft_M512_N2.dir/sp-fft/main.c.o
+[ 78%] Linking C executable test-spatzBenchmarks-dp-fft_M128_N2
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 78%] Building C object spatzBenchmarks/CMakeFiles/test-spatzBenchmarks-dp-caxpy_M256.dir/dp-caxpy/main.c.o
+[ 78%] Built target test-spatzBenchmarks-dp-fdotp_M2048
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 78%] Built target test-spatzBenchmarks-sdotp-bp-fmatmul_M128_N256_K128
+[ 78%] Linking C executable test-spatzBenchmarks-sp-fft_M256_N2
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 78%] Building C object spatzBenchmarks/CMakeFiles/test-spatzBenchmarks-dp-caxpy_M1024.dir/dp-caxpy/main.c.o
+[ 78%] Built target test-spatzBenchmarks-dp-fft_M128_N2
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 78%] Building C object spatzBenchmarks/CMakeFiles/test-spatzBenchmarks-dp-caxpy_M4096.dir/dp-caxpy/main.c.o
+[ 78%] Linking C executable test-spatzBenchmarks-sp-fft_M512_N2
+[ 78%] Building C object spatzBenchmarks/CMakeFiles/test-spatzBenchmarks-dp-caxpy_vfcmacc_M256.dir/dp-caxpy/main.c.o
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 78%] Linking C executable test-spatzBenchmarks-dp-caxpy_M256
+[ 78%] Built target test-spatzBenchmarks-sp-fft_M256_N2
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 78%] Building C object spatzBenchmarks/CMakeFiles/test-spatzBenchmarks-dp-caxpy_vfcmacc_M1024.dir/dp-caxpy/main.c.o
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 78%] Linking C executable test-spatzBenchmarks-dp-fconv2d_M32_N32_K7
+[ 79%] Linking C executable test-spatzBenchmarks-dp-caxpy_M1024
+[ 79%] Built target test-spatzBenchmarks-sp-fft_M512_N2
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 80%] Linking C executable test-spatzBenchmarks-dp-caxpy_vfcmacc_M256
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 80%] Built target test-spatzBenchmarks-dp-caxpy_M256
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 80%] Building C object spatzBenchmarks/CMakeFiles/test-spatzBenchmarks-dp-caxpy_vfcmacc_M4096.dir/dp-caxpy/main.c.o
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 80%] Building C object spatzBenchmarks/CMakeFiles/test-spatzBenchmarks-dp-cdotp_M128.dir/dp-cdotp/main.c.o
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 80%] Linking C executable test-spatzBenchmarks-dp-caxpy_vfcmacc_M1024
+[ 80%] Built target test-spatzBenchmarks-dp-caxpy_vfcmacc_M256
+[ 80%] Built target test-spatzBenchmarks-dp-fconv2d_M32_N32_K7
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 80%] Built target test-spatzBenchmarks-dp-caxpy_M1024
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 80%] Building C object spatzBenchmarks/CMakeFiles/test-spatzBenchmarks-dp-cdotp_M4096.dir/dp-cdotp/main.c.o
+[ 81%] Linking C executable test-spatzBenchmarks-dp-caxpy_M4096
+[ 81%] Building C object spatzBenchmarks/CMakeFiles/test-spatzBenchmarks-dp-cdotp_old_M128.dir/dp-cdotp/main.c.o
+[ 82%] Linking C executable test-spatzBenchmarks-dp-cdotp_M128
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 82%] Building C object spatzBenchmarks/CMakeFiles/test-spatzBenchmarks-dp-cdotp_vfcmacc_M128.dir/dp-cdotp/main.c.o
+[ 82%] Built target test-spatzBenchmarks-dp-caxpy_vfcmacc_M1024
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 83%] Linking C executable test-spatzBenchmarks-dp-cdotp_old_M128
+[ 83%] Building C object spatzBenchmarks/CMakeFiles/test-spatzBenchmarks-dp-cdotp_old_M1024.dir/dp-cdotp/main.c.o
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 83%] Built target test-spatzBenchmarks-dp-caxpy_M4096
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 83%] Linking C executable test-spatzBenchmarks-dp-cdotp_vfcmacc_M128
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 83%] Built target test-spatzBenchmarks-dp-cdotp_M128
+[ 83%] Built target test-spatzBenchmarks-dp-cdotp_old_M128
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 83%] Building C object spatzBenchmarks/CMakeFiles/test-spatzBenchmarks-dp-cdotp_vfcmacc_M1024.dir/dp-cdotp/main.c.o
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 84%] Building C object spatzBenchmarks/CMakeFiles/test-spatzBenchmarks-dp-cdotp_vec_load_M128.dir/dp-cdotp/main.c.o
+[ 84%] Linking C executable test-spatzBenchmarks-dp-fconv2d_M64_N64_K7
+[ 84%] Building C object spatzBenchmarks/CMakeFiles/test-spatzBenchmarks-dp-cdotp_scalar_M128.dir/dp-cdotp/main.c.o
+[ 84%] Linking C executable test-spatzBenchmarks-dp-cdotp_old_M1024
+[ 84%] Linking C executable test-spatzBenchmarks-dp-caxpy_vfcmacc_M4096
+[ 84%] Linking C executable test-spatzBenchmarks-dp-cdotp_M4096
+[ 84%] Linking C executable test-spatzBenchmarks-dp-cdotp_vec_load_M128
+[ 84%] Linking C executable test-spatzBenchmarks-dp-cdotp_scalar_M128
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 84%] Built target test-spatzBenchmarks-dp-fconv2d_M64_N64_K7
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 85%] Linking C executable test-spatzBenchmarks-dp-cdotp_vfcmacc_M1024
+[ 85%] Built target test-spatzBenchmarks-dp-cdotp_vfcmacc_M128
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 85%] Building C object spatzBenchmarks/CMakeFiles/test-spatzBenchmarks-dp-cdotp_vec_mac_M128.dir/dp-cdotp/main.c.o
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 85%] Building C object spatzBenchmarks/CMakeFiles/test-spatzBenchmarks-dp-cdotp_vec_reduce_real_M128.dir/dp-cdotp/main.c.o
+[ 85%] Built target test-spatzBenchmarks-dp-caxpy_vfcmacc_M4096
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 85%] Built target test-spatzBenchmarks-dp-cdotp_old_M1024
+[ 85%] Built target test-spatzBenchmarks-dp-cdotp_M4096
+[ 85%] Built target test-spatzBenchmarks-dp-cdotp_vec_load_M128
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 85%] Building C object spatzBenchmarks/CMakeFiles/test-spatzBenchmarks-dp-cdotp_vec_reduce_imag_M128.dir/dp-cdotp/main.c.o
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 85%] Built target test-spatzBenchmarks-dp-cdotp_scalar_M128
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 86%] Building C object spatzBenchmarks/CMakeFiles/test-spatzBenchmarks-dp-cdotp_vec_extract_drop_M128.dir/dp-cdotp/main.c.o
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 87%] Building C object spatzBenchmarks/CMakeFiles/test-spatzBenchmarks-dp-cdotp_vec_reduce_both_M128.dir/dp-cdotp/main.c.o
+[ 88%] Building C object spatzBenchmarks/CMakeFiles/test-spatzBenchmarks-dp-cdotp_vec_reduce_noextract_M128.dir/dp-cdotp/main.c.o
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 88%] Linking C executable test-spatzBenchmarks-dp-cdotp_vec_mac_M128
+[ 88%] Linking C executable test-spatzBenchmarks-dp-cdotp_vec_reduce_real_M128
+[ 88%] Building C object spatzBenchmarks/CMakeFiles/test-spatzBenchmarks-dp-cdotp_vec_extract_nocollect_M128.dir/dp-cdotp/main.c.o
+[ 88%] Built target test-spatzBenchmarks-dp-cdotp_vfcmacc_M1024
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 88%] Linking C executable test-spatzBenchmarks-dp-cdotp_vec_extract_drop_M128
+[ 88%] Building C object spatzBenchmarks/CMakeFiles/test-spatzBenchmarks-dp-cdotp_vec_extract_nosummary_M128.dir/dp-cdotp/main.c.o
+[ 88%] Linking C executable test-spatzBenchmarks-dp-cdotp_vec_extract_nocollect_M128
+[ 88%] Linking C executable test-spatzBenchmarks-dp-cdotp_vec_reduce_imag_M128
+[ 88%] Linking C executable test-spatzBenchmarks-dp-cdotp_vec_reduce_both_M128
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 88%] Linking C executable test-spatzBenchmarks-dp-cdotp_vec_extract_nosummary_M128
+[ 88%] Linking C executable test-spatzBenchmarks-dp-cdotp_vec_reduce_noextract_M128
+[ 88%] Built target test-spatzBenchmarks-dp-cdotp_vec_mac_M128
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 88%] Built target test-spatzBenchmarks-dp-cdotp_vec_reduce_real_M128
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 89%] Building C object spatzBenchmarks/CMakeFiles/test-spatzBenchmarks-dp-cdotp_vec_extract_noprint_M128.dir/dp-cdotp/main.c.o
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 89%] Built target test-spatzBenchmarks-dp-cdotp_vec_reduce_imag_M128
+[ 89%] Built target test-spatzBenchmarks-dp-cdotp_vec_extract_drop_M128
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 89%] Built target test-spatzBenchmarks-dp-cdotp_vec_extract_nocollect_M128
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 90%] Building C object spatzBenchmarks/CMakeFiles/test-spatzBenchmarks-dp-cdotp_vec_store_scalar_M128.dir/dp-cdotp/main.c.o
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 90%] Built target test-spatzBenchmarks-dp-cdotp_vec_extract_nosummary_M128
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 90%] Built target test-spatzBenchmarks-dp-cdotp_vec_reduce_both_M128
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 91%] Building C object spatzBenchmarks/CMakeFiles/test-spatzBenchmarks-dp-cdotp_old_singlecore_M128.dir/dp-cdotp/main.c.o
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 91%] Built target test-spatzBenchmarks-dp-cdotp_vec_reduce_noextract_M128
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 91%] Building C object spatzBenchmarks/CMakeFiles/test-spatzBenchmarks-dp-cdotp_vec_store_scalar_m1_M128.dir/dp-cdotp/main.c.o
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 91%] Building C object spatzBenchmarks/CMakeFiles/test-spatzBenchmarks-dp-cdotp_vfcmacc_singlecore_M128.dir/dp-cdotp/main.c.o
+[ 91%] Building C object spatzBenchmarks/CMakeFiles/test-spatzBenchmarks-dp-cdotp_vfcmacc_direct_singlecore_M128.dir/dp-cdotp/main.c.o
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 91%] Building C object spatzBenchmarks/CMakeFiles/test-spatzBenchmarks-dp-cdotp_old_direct_singlecore_M128.dir/dp-cdotp/main.c.o
+[ 91%] Building C object spatzBenchmarks/CMakeFiles/test-spatzBenchmarks-dp-cdotp_ver2_M128.dir/dp-cdotp_ver2/main.c.o
+[ 91%] Linking C executable test-spatzBenchmarks-dp-cdotp_vec_extract_noprint_M128
+[ 92%] Linking C executable test-spatzBenchmarks-dp-cdotp_vec_store_scalar_m1_M128
+[ 92%] Linking C executable test-spatzBenchmarks-dp-cdotp_old_singlecore_M128
+[ 92%] Linking C executable test-spatzBenchmarks-dp-cdotp_vfcmacc_singlecore_M128
+[ 92%] Linking C executable test-spatzBenchmarks-dp-cdotp_vec_store_scalar_M128
+[ 93%] Linking C executable test-spatzBenchmarks-dp-cdotp_vfcmacc_direct_singlecore_M128
+[ 94%] Linking C executable test-spatzBenchmarks-dp-cdotp_ver2_M128
+[ 94%] Linking C executable test-spatzBenchmarks-dp-cdotp_old_direct_singlecore_M128
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 94%] Built target test-spatzBenchmarks-dp-cdotp_vec_extract_noprint_M128
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 94%] Built target test-spatzBenchmarks-dp-cdotp_old_singlecore_M128
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 94%] Built target test-spatzBenchmarks-dp-cdotp_vec_store_scalar_m1_M128
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 94%] Built target test-spatzBenchmarks-dp-cdotp_vec_store_scalar_M128
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 94%] Building C object spatzBenchmarks/CMakeFiles/test-spatzBenchmarks-dp-cdotp_ver2_M1024.dir/dp-cdotp_ver2/main.c.o
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 94%] Building C object spatzBenchmarks/CMakeFiles/test-spatzBenchmarks-dp-cdotp_ver2_M2048.dir/dp-cdotp_ver2/main.c.o
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 95%] Building C object spatzBenchmarks/CMakeFiles/test-spatzBenchmarks-dp-fdotp_aligned_M128.dir/dp-fdotp_aligned/main.c.o
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 95%] Built target test-spatzBenchmarks-dp-cdotp_vfcmacc_singlecore_M128
+[ 95%] Building C object spatzBenchmarks/CMakeFiles/test-spatzBenchmarks-dp-fdotp_aligned_M1024.dir/dp-fdotp_aligned/main.c.o
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 95%] Built target test-spatzBenchmarks-dp-cdotp_vfcmacc_direct_singlecore_M128
+[ 95%] Built target test-spatzBenchmarks-dp-cdotp_ver2_M128
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 95%] Built target test-spatzBenchmarks-dp-cdotp_old_direct_singlecore_M128
+[ 95%] Building C object spatzBenchmarks/CMakeFiles/test-spatzBenchmarks-dp-cdotp_aligned_M128.dir/dp-cdotp_aligned/main.c.o
+[ 95%] Building C object spatzBenchmarks/CMakeFiles/test-spatzBenchmarks-dp-fdotp_aligned_M2048.dir/dp-fdotp_aligned/main.c.o
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 95%] Building C object spatzBenchmarks/CMakeFiles/test-spatzBenchmarks-dp-cdotp_aligned_M1024.dir/dp-cdotp_aligned/main.c.o
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 95%] Building C object spatzBenchmarks/CMakeFiles/test-spatzBenchmarks-dp-cdotp_aligned_M2048.dir/dp-cdotp_aligned/main.c.o
+[ 95%] Linking C executable test-spatzBenchmarks-dp-fdotp_aligned_M128
+[ 95%] Linking C executable test-spatzBenchmarks-dp-fdotp_aligned_M1024
+[ 95%] Linking C executable test-spatzBenchmarks-dp-cdotp_ver2_M1024
+[ 95%] Linking C executable test-spatzBenchmarks-dp-cdotp_aligned_M128
+[ 96%] Linking C executable test-spatzBenchmarks-dp-cdotp_aligned_M1024
+[ 96%] Linking C executable test-spatzBenchmarks-dp-cdotp_ver2_M2048
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 96%] Linking C executable test-spatzBenchmarks-dp-fdotp_aligned_M2048
+[ 96%] Built target test-spatzBenchmarks-dp-fdotp_aligned_M1024
+[ 97%] Linking C executable test-spatzBenchmarks-dp-cdotp_aligned_M2048
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 97%] Built target test-spatzBenchmarks-dp-cdotp_ver2_M1024
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 97%] Built target test-spatzBenchmarks-dp-cdotp_aligned_M128
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 97%] Built target test-spatzBenchmarks-dp-fdotp_aligned_M128
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 97%] Building C object spatzBenchmarks/CMakeFiles/test-spatzBenchmarks-dp-cmatmul_M64_N128_K64.dir/dp-cmatmul/main.c.o
+[ 97%] Building C object spatzBenchmarks/CMakeFiles/test-spatzBenchmarks-dp-cmatmul_M64_N64_K64.dir/dp-cmatmul/main.c.o
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 97%] Building C object spatzBenchmarks/CMakeFiles/test-spatzBenchmarks-dp-cmatmul_M128_N128_K128.dir/dp-cmatmul/main.c.o
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 97%] Building C object spatzBenchmarks/CMakeFiles/test-spatzBenchmarks-dp-cmatmul_ver2_M64_N64_K64.dir/dp-cmatmul_ver2/main.c.o
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 97%] Built target test-spatzBenchmarks-dp-cdotp_aligned_M2048
+[ 97%] Built target test-spatzBenchmarks-dp-cdotp_aligned_M1024
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 97%] Built target test-spatzBenchmarks-dp-cdotp_ver2_M2048
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 97%] Built target test-spatzBenchmarks-dp-fdotp_aligned_M2048
+[ 97%] Building C object spatzBenchmarks/CMakeFiles/test-spatzBenchmarks-dp-cmatmul_ver2_M128_N128_K128.dir/dp-cmatmul_ver2/main.c.o
+[ 98%] Building C object spatzBenchmarks/CMakeFiles/test-spatzBenchmarks-dp-cmatmul_ver2_M64_N128_K64.dir/dp-cmatmul_ver2/main.c.o
+In file included from /home/wxt/spatz-cfma/sw/spatzBenchmarks/dp-cmatmul/main.c:9:
+In file included from /home/wxt/spatz-cfma/sw/spatzBenchmarks/dp-cmatmul/kernel/dp-cmatmul.c:1:
+/home/wxt/spatz-cfma/sw/spatzBenchmarks/dp-cmatmul/kernel/dp-cmatmul.h:9:13: warning: inline function 'matmul_2xVL' is not defined [-Wundefined-inline]
+inline void matmul_2xVL(cdouble *c, const cdouble *a, const cdouble *b,
+            ^
+/home/wxt/spatz-cfma/sw/spatzBenchmarks/dp-cmatmul/kernel/dp-cmatmul.c:11:9: note: used here
+        matmul_2xVL(c, a, b, 0, M, N, P, 0, P);
+        ^
+In file included from /home/wxt/spatz-cfma/sw/spatzBenchmarks/dp-cmatmul/main.c:9:
+In file included from /home/wxt/spatz-cfma/sw/spatzBenchmarks/dp-cmatmul/kernel/dp-cmatmul.c:1:
+/home/wxt/spatz-cfma/sw/spatzBenchmarks/dp-cmatmul/kernel/dp-cmatmul.h:15:13: warning: inline function 'matmul_4xVL' is not defined [-Wundefined-inline]
+inline void matmul_4xVL(cdouble *c, const cdouble *a, const cdouble *b,
+            ^
+/home/wxt/spatz-cfma/sw/spatzBenchmarks/dp-cmatmul/kernel/dp-cmatmul.c:15:9: note: used here
+        matmul_4xVL(c, a, b, 0, M, N, P, 0, P);
+        ^
+In file included from /home/wxt/spatz-cfma/sw/spatzBenchmarks/dp-cmatmul/main.c:9:
+In file included from /home/wxt/spatz-cfma/sw/spatzBenchmarks/dp-cmatmul/kernel/dp-cmatmul.c:1:
+/home/wxt/spatz-cfma/sw/spatzBenchmarks/dp-cmatmul/kernel/dp-cmatmul.h:9:13: warning: inline function 'matmul_2xVL' is not defined [-Wundefined-inline]
+inline void matmul_2xVL(cdouble *c, const cdouble *a, const cdouble *b,
+            ^
+/home/wxt/spatz-cfma/sw/spatzBenchmarks/dp-cmatmul/kernel/dp-cmatmul.c:11:9: note: used here
+        matmul_2xVL(c, a, b, 0, M, N, P, 0, P);
+        ^
+In file included from /home/wxt/spatz-cfma/sw/spatzBenchmarks/dp-cmatmul/main.c:9:
+In file included from /home/wxt/spatz-cfma/sw/spatzBenchmarks/dp-cmatmul/kernel/dp-cmatmul.c:1:
+/home/wxt/spatz-cfma/sw/spatzBenchmarks/dp-cmatmul/kernel/dp-cmatmul.h:15:13: warning: inline function 'matmul_4xVL' is not defined [-Wundefined-inline]
+inline void matmul_4xVL(cdouble *c, const cdouble *a, const cdouble *b,
+            ^
+/home/wxt/spatz-cfma/sw/spatzBenchmarks/dp-cmatmul/kernel/dp-cmatmul.c:15:9: note: used here
+        matmul_4xVL(c, a, b, 0, M, N, P, 0, P);
+        ^
+In file included from /home/wxt/spatz-cfma/sw/spatzBenchmarks/dp-cmatmul_ver2/main.c:10:
+In file included from /home/wxt/spatz-cfma/sw/spatzBenchmarks/dp-cmatmul_ver2/../dp-cmatmul/kernel/dp-cmatmul.c:1:
+/home/wxt/spatz-cfma/sw/spatzBenchmarks/dp-cmatmul_ver2/../dp-cmatmul/kernel/dp-cmatmul.h:9:13: warning: inline function 'matmul_2xVL' is not defined [-Wundefined-inline]
+inline void matmul_2xVL(cdouble *c, const cdouble *a, const cdouble *b,
+            ^
+/home/wxt/spatz-cfma/sw/spatzBenchmarks/dp-cmatmul_ver2/../dp-cmatmul/kernel/dp-cmatmul.c:11:9: note: used here
+        matmul_2xVL(c, a, b, 0, M, N, P, 0, P);
+        ^
+In file included from /home/wxt/spatz-cfma/sw/spatzBenchmarks/dp-cmatmul_ver2/main.c:10:
+In file included from /home/wxt/spatz-cfma/sw/spatzBenchmarks/dp-cmatmul_ver2/../dp-cmatmul/kernel/dp-cmatmul.c:1:
+/home/wxt/spatz-cfma/sw/spatzBenchmarks/dp-cmatmul_ver2/../dp-cmatmul/kernel/dp-cmatmul.h:15:13: warning: inline function 'matmul_4xVL' is not defined [-Wundefined-inline]
+inline void matmul_4xVL(cdouble *c, const cdouble *a, const cdouble *b,
+            ^
+/home/wxt/spatz-cfma/sw/spatzBenchmarks/dp-cmatmul_ver2/../dp-cmatmul/kernel/dp-cmatmul.c:15:9: note: used here
+        matmul_4xVL(c, a, b, 0, M, N, P, 0, P);
+        ^
+2 warnings generated.
+[ 98%] Linking C executable test-spatzBenchmarks-dp-cmatmul_M64_N128_K64
+In file included from /home/wxt/spatz-cfma/sw/spatzBenchmarks/dp-cmatmul_ver2/main.c:10:
+In file included from /home/wxt/spatz-cfma/sw/spatzBenchmarks/dp-cmatmul_ver2/../dp-cmatmul/kernel/dp-cmatmul.c:1:
+/home/wxt/spatz-cfma/sw/spatzBenchmarks/dp-cmatmul_ver2/../dp-cmatmul/kernel/dp-cmatmul.h:9:13: warning: inline function 'matmul_2xVL' is not defined [-Wundefined-inline]
+inline void matmul_2xVL(cdouble *c, const cdouble *a, const cdouble *b,
+            ^
+/home/wxt/spatz-cfma/sw/spatzBenchmarks/dp-cmatmul_ver2/../dp-cmatmul/kernel/dp-cmatmul.c:11:9: note: used here
+        matmul_2xVL(c, a, b, 0, M, N, P, 0, P);
+        ^
+In file included from /home/wxt/spatz-cfma/sw/spatzBenchmarks/dp-cmatmul_ver2/main.c:10:
+In file included from /home/wxt/spatz-cfma/sw/spatzBenchmarks/dp-cmatmul_ver2/../dp-cmatmul/kernel/dp-cmatmul.c:1:
+/home/wxt/spatz-cfma/sw/spatzBenchmarks/dp-cmatmul_ver2/../dp-cmatmul/kernel/dp-cmatmul.h:15:13: warning: inline function 'matmul_4xVL' is not defined [-Wundefined-inline]
+inline void matmul_4xVL(cdouble *c, const cdouble *a, const cdouble *b,
+            ^
+/home/wxt/spatz-cfma/sw/spatzBenchmarks/dp-cmatmul_ver2/../dp-cmatmul/kernel/dp-cmatmul.c:15:9: note: used here
+        matmul_4xVL(c, a, b, 0, M, N, P, 0, P);
+        ^
+In file included from /home/wxt/spatz-cfma/sw/spatzBenchmarks/dp-cmatmul_ver2/main.c:10:
+In file included from /home/wxt/spatz-cfma/sw/spatzBenchmarks/dp-cmatmul_ver2/../dp-cmatmul/kernel/dp-cmatmul.c:1:
+/home/wxt/spatz-cfma/sw/spatzBenchmarks/dp-cmatmul_ver2/../dp-cmatmul/kernel/dp-cmatmul.h:9:13: warning: inline function 'matmul_2xVL' is not defined [-Wundefined-inline]
+inline void matmul_2xVL(cdouble *c, const cdouble *a, const cdouble *b,
+            ^
+/home/wxt/spatz-cfma/sw/spatzBenchmarks/dp-cmatmul_ver2/../dp-cmatmul/kernel/dp-cmatmul.c:11:9: note: used here
+        matmul_2xVL(c, a, b, 0, M, N, P, 0, P);
+        ^
+In file included from /home/wxt/spatz-cfma/sw/spatzBenchmarks/dp-cmatmul_ver2/main.c:10:
+In file included from /home/wxt/spatz-cfma/sw/spatzBenchmarks/dp-cmatmul_ver2/../dp-cmatmul/kernel/dp-cmatmul.c:1:
+/home/wxt/spatz-cfma/sw/spatzBenchmarks/dp-cmatmul_ver2/../dp-cmatmul/kernel/dp-cmatmul.h:15:13: warning: inline function 'matmul_4xVL' is not defined [-Wundefined-inline]
+inline void matmul_4xVL(cdouble *c, const cdouble *a, const cdouble *b,
+            ^
+/home/wxt/spatz-cfma/sw/spatzBenchmarks/dp-cmatmul_ver2/../dp-cmatmul/kernel/dp-cmatmul.c:15:9: note: used here
+        matmul_4xVL(c, a, b, 0, M, N, P, 0, P);
+        ^
+2 warnings generated.
+[ 98%] Linking C executable test-spatzBenchmarks-dp-cmatmul_ver2_M64_N64_K64
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+2 warnings generated.
+[ 98%] Built target test-spatzBenchmarks-dp-cmatmul_M64_N128_K64
+[ 99%] Linking C executable test-spatzBenchmarks-dp-cmatmul_M64_N64_K64
+In file included from /home/wxt/spatz-cfma/sw/spatzBenchmarks/dp-cmatmul/main.c:9:
+In file included from /home/wxt/spatz-cfma/sw/spatzBenchmarks/dp-cmatmul/kernel/dp-cmatmul.c:1:
+/home/wxt/spatz-cfma/sw/spatzBenchmarks/dp-cmatmul/kernel/dp-cmatmul.h:9:13: warning: inline function 'matmul_2xVL' is not defined [-Wundefined-inline]
+inline void matmul_2xVL(cdouble *c, const cdouble *a, const cdouble *b,
+            ^
+/home/wxt/spatz-cfma/sw/spatzBenchmarks/dp-cmatmul/kernel/dp-cmatmul.c:11:9: note: used here
+        matmul_2xVL(c, a, b, 0, M, N, P, 0, P);
+        ^
+In file included from /home/wxt/spatz-cfma/sw/spatzBenchmarks/dp-cmatmul/main.c:9:
+In file included from /home/wxt/spatz-cfma/sw/spatzBenchmarks/dp-cmatmul/kernel/dp-cmatmul.c:1:
+/home/wxt/spatz-cfma/sw/spatzBenchmarks/dp-cmatmul/kernel/dp-cmatmul.h:15:13: warning: inline function 'matmul_4xVL' is not defined [-Wundefined-inline]
+inline void matmul_4xVL(cdouble *c, const cdouble *a, const cdouble *b,
+            ^
+/home/wxt/spatz-cfma/sw/spatzBenchmarks/dp-cmatmul/kernel/dp-cmatmul.c:15:9: note: used here
+        matmul_4xVL(c, a, b, 0, M, N, P, 0, P);
+        ^
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 99%] Built target test-spatzBenchmarks-dp-cmatmul_M64_N64_K64
+[ 99%] Built target test-spatzBenchmarks-dp-cmatmul_ver2_M64_N64_K64
+2 warnings generated.
+[ 99%] Linking C executable test-spatzBenchmarks-dp-cmatmul_ver2_M64_N128_K64
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 99%] Built target test-spatzBenchmarks-dp-cmatmul_ver2_M64_N128_K64
+2 warnings generated.
+[ 99%] Linking C executable test-spatzBenchmarks-dp-cmatmul_ver2_M128_N128_K128
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[ 99%] Built target test-spatzBenchmarks-dp-cmatmul_ver2_M128_N128_K128
+2 warnings generated.
+[100%] Linking C executable test-spatzBenchmarks-dp-cmatmul_M128_N128_K128
+make[3]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+[100%] Built target test-spatzBenchmarks-dp-cmatmul_M128_N128_K128
+make[2]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make[1]: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build'
+make: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster'
+exit(make-sw)=0
+$ cd hw/system/spatz_cluster/sw/build && PATH="/home/wxt/spatz-cfma/.venv/bin:$PATH" ctest -R 'riscvTests-rtl-(vfcmacc|vfmacc|vfnmsac)$' --output-on-failure
+Test project /home/wxt/spatz-cfma/hw/system/spatz_cluster/sw/build
+    Start 67: riscvTests-rtl-riscvTests-rtl-vfmacc
+1/3 Test #67: riscvTests-rtl-riscvTests-rtl-vfmacc ....   Passed   22.02 sec
+    Start 71: riscvTests-rtl-riscvTests-rtl-vfcmacc
+2/3 Test #71: riscvTests-rtl-riscvTests-rtl-vfcmacc ...   Passed  116.85 sec
+    Start 74: riscvTests-rtl-riscvTests-rtl-vfnmsac
+3/3 Test #74: riscvTests-rtl-riscvTests-rtl-vfnmsac ...   Passed   22.14 sec
+
+100% tests passed, 0 tests failed out of 3
+
+Label Time Summary:
+riscvTests-    = 161.01 sec*proc (3 tests)
+
+Total Test time (real) = 161.01 sec
+exit(ctest)=0
+```
+
+Finished: 2026-07-07T01:13:53+08:00
