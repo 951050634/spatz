@@ -14,7 +14,13 @@ module spatz_vfu
   import cf_math_pkg::idx_width;
   import fpnew_pkg::*; #(
     /// FPU configuration.
-    parameter fpu_implementation_t FPUImplementation = fpu_implementation_t'(0)
+    parameter fpu_implementation_t FPUImplementation = fpu_implementation_t'(0),
+    /// Stage-3 experimental scaffold: allow the dedicated CFMA read collector
+    /// to drive VFU VRF read ports.  Default off; v1 fallback remains default.
+    parameter bit CfmaDedicatedReadCollectorEn = 1'b0,
+    /// Stage-5 experimental scaffold: allow dedicated CFMA split write-back.
+    /// Default off until dedicated-mode ISA regression is closed.
+    parameter bit CfmaDedicatedWritebackEn = 1'b0
   ) (
     input  logic             clk_i,
     input  logic             rst_ni,
@@ -854,6 +860,12 @@ module spatz_vfu
   logic      cfma_wb_we;
   vrf_be_t   cfma_wb_be;
 
+  // CFMA v2 read collector mux scaffold.  Defaults are driven to idle unless
+  // the FPU generate block instantiates and enables the collector.
+  vrf_addr_t [2:0] cfma_read_mux_raddr;
+  logic      [2:0] cfma_read_mux_re;
+  logic            cfma_read_mux_en;
+
   // Address register
   vrf_addr_t [2:0] vreg_addr_q, vreg_addr_d;
   `FF(vreg_addr_q, vreg_addr_d, '0)
@@ -916,6 +928,9 @@ module spatz_vfu
       vreg_addr_d[1] = vreg_addr_q[1] + (!spatz_req.op_arith.widen_vs1 || widening_upper_q);
       vreg_addr_d[2] = vreg_addr_q[2] + (!spatz_req.op_arith.is_reduction && (!spatz_req.op_arith.is_narrowing || narrowing_upper_q));
     end
+
+    if (cfma_read_mux_en)
+      vrf_raddr_o = cfma_read_mux_raddr;
   end: vreg_addr_proc
 
   always_comb begin : operand_req_proc
@@ -977,7 +992,7 @@ module spatz_vfu
   end
 
   // Register file signals
-  assign vrf_re_o    = vreg_r_req;
+  assign vrf_re_o    = cfma_read_mux_en ? cfma_read_mux_re : vreg_r_req;
   assign vrf_we_o    = cfma_wb_we ? 1'b1 : vreg_we;
   assign vrf_wbe_o   = cfma_wb_we ? cfma_wb_be : vreg_wbe;
   assign vrf_wdata_o = cfma_wb_we ? cfma_wb_data : vreg_wdata;
@@ -1411,14 +1426,12 @@ module spatz_vfu
     logic                      cfma_busy;
     vfu_tag_t                  cfma_tag_in;
     vfu_tag_t                  cfma_tag_out;
-    // Dedicated CFMA read collection and result write-back are intentionally
-    // disabled by default.  The existing four-phase FPU path is still the
-    // verified architectural path.  The read collector is instantiated as a
-    // stage-3 scaffold so the frozen R0/R1 request-bundle interface is parsed
-    // by normal builds, but it does not drive the VRF ports until explicitly
-    // enabled in a later stage.
-    localparam bit CfmaDedicatedReadCollectorEn = 1'b0;
-    localparam bit CfmaDedicatedWritebackEn     = 1'b0;
+    // Dedicated CFMA read collection and result write-back are disabled by
+    // default through module parameters.  The existing four-phase FPU path is
+    // still the verified architectural path.  The read collector is
+    // instantiated as a stage-3 scaffold so the frozen R0/R1 request-bundle
+    // interface is parsed by normal builds, but it only drives the VRF read
+    // ports when CfmaDedicatedReadCollectorEn is explicitly overridden.
 
     // =========================================================
     // CFMA v2 dedicated read collector scaffold (default off)
@@ -1500,6 +1513,23 @@ module spatz_vfu
       .last_o         ( cfma_read_last         ),
       .busy_o         ( cfma_read_busy         )
     );
+
+    assign cfma_read_mux_en    = CfmaDedicatedReadCollectorEn && cfma_read_busy;
+    assign cfma_read_mux_raddr = cfma_read_vrf_raddr;
+    assign cfma_read_mux_re    = cfma_read_vrf_re;
+
+    // pragma translate_off
+    always_ff @(posedge clk_i) begin : cfma_read_bundle_trace_proc
+      if (CfmaDedicatedReadCollectorEn && cfma_read_bundle_valid &&
+          cfma_read_bundle_ready) begin
+        $display("CFMA_READ_BUNDLE elem=%0d last=%0b a.real=0x%0h a.imag=0x%0h b.real=0x%0h b.imag=0x%0h c.real=0x%0h c.imag=0x%0h vd.real.addr=0x%0h vd.imag.addr=0x%0h",
+                 cfma_read_elem_idx, cfma_read_last, cfma_read_a_real,
+                 cfma_read_a_imag, cfma_read_b_real, cfma_read_b_imag,
+                 cfma_read_c_real, cfma_read_c_imag, cfma_read_vd_real_addr,
+                 cfma_read_vd_imag_addr);
+      end
+    end
+    // pragma translate_on
 
     // Complex FMA module instantiation
     fpnew_complex_fma #(
@@ -1692,6 +1722,9 @@ module spatz_vfu
     assign cfma_wb_data     = '0;
     assign cfma_wb_we       = 1'b0;
     assign cfma_wb_be       = '0;
+    assign cfma_read_mux_en    = 1'b0;
+    assign cfma_read_mux_raddr = '0;
+    assign cfma_read_mux_re    = '0;
   end: gen_no_fpu
 
 endmodule : spatz_vfu

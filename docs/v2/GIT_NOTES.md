@@ -161,3 +161,28 @@
 - `cd hw/system/spatz_cluster/sw/build && PATH="/home/wxt/spatz-cfma/.venv/bin:$PATH" ctest -R 'riscvTests-rtl-(vfcmacc|vfmacc|vfnmsac)$' --output-on-failure`：PASS，3/3。
 
 结论：VFU scaffold 集成通过 build 和 fallback regression；阶段 3 下一小阶段需要受控 mux/trace collector，证明真实 VRF 六操作数读取来源。
+
+## 2026-07-07 阶段 3 小阶段：参数化 VFU read collector mux/trace scaffold
+
+计划提交信息：`[cfma-v2] Parameterize VFU CFMA read collector mux scaffold`
+
+主要内容：
+
+- 修改 `hw/ip/spatz/src/spatz_vfu.sv`，把 collector/writeback enable 从内部 localparam 推进为 VFU module 参数：
+  - `CfmaDedicatedReadCollectorEn = 1'b0`；
+  - `CfmaDedicatedWritebackEn = 1'b0`。
+- 增加外层 `cfma_read_mux_*` wires，使 collector 输出可以在 enable 打开时覆盖 `vrf_raddr_o/vrf_re_o`。
+- 默认配置下 mux 关闭，v1 fallback 行为不变。
+- 增加仿真-only `CFMA_READ_BUNDLE` trace scaffold，后续 enable-mode directed test 可用它检查六 operand address/data。
+- 更新 `docs/v2/STAGE3_VRF_READ_AUDIT.md`，记录本小阶段完成内容和剩余 gap。
+- 新增 `docs/v2/evidence/stage3_vfu_read_collector_mux_scaffold_verification.txt` 保存验证转录。
+
+验证命令：
+
+- `git diff --check`：PASS；
+- `install/verilator/bin/verilator_bin --binary --timing -Wno-TIMESCALEMOD ... spatz_cfma_read_collector_tb.sv`：PASS；
+- `build/cfma_v2/obj_read_collector_mux/Vspatz_cfma_read_collector_tb`：PASS；
+- `PATH="$PWD/.venv/bin:$PATH" make -C hw/system/spatz_cluster bin/spatz_cluster.vlt`：PASS；
+- `cd hw/system/spatz_cluster/sw/build && PATH="/home/wxt/spatz-cfma/.venv/bin:$PATH" ctest -R 'riscvTests-rtl-(vfcmacc|vfmacc|vfnmsac)$' --output-on-failure`：PASS，3/3。
+
+结论：默认关闭的 VFU read collector mux/trace scaffold 通过 build 和 fallback regression；完整阶段 3 仍需 enable-mode directed trace closure。

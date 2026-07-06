@@ -236,3 +236,60 @@ ctest -R 'riscvTests-rtl-(vfcmacc|vfmacc|vfnmsac)$': PASS, 3/3
 ```
 
 该小阶段仍不是完整阶段 3 退出：下一步必须受控启用 collector 对 VRF read port 的 mux/trace，生成真实 `cfma_read_bundle_valid`，并用 directed sentinel test 证明六 operand 来自正确 architectural register group。
+
+## 10. 已完成小阶段：参数化 mux/trace scaffold
+
+本小阶段把 read collector scaffold 从硬编码禁用推进为 VFU module 参数控制，并把 collector 输出接入 VRF read 输出 mux 的默认关闭路径。
+
+新增/调整：
+
+```systemverilog
+parameter bit CfmaDedicatedReadCollectorEn = 1'b0;
+parameter bit CfmaDedicatedWritebackEn     = 1'b0;
+```
+
+以及外层 mux scaffold：
+
+```systemverilog
+assign vrf_re_o = cfma_read_mux_en ? cfma_read_mux_re : vreg_r_req;
+if (cfma_read_mux_en)
+  vrf_raddr_o = cfma_read_mux_raddr;
+```
+
+`gen_fpu` 内部现在把 collector 输出连到外层 mux wires：
+
+```systemverilog
+assign cfma_read_mux_en    = CfmaDedicatedReadCollectorEn && cfma_read_busy;
+assign cfma_read_mux_raddr = cfma_read_vrf_raddr;
+assign cfma_read_mux_re    = cfma_read_vrf_re;
+```
+
+并加入仿真 trace scaffold，在 `cfma_read_bundle_valid && cfma_read_bundle_ready` 时打印：
+
+```text
+CFMA_READ_BUNDLE elem=<...> last=<...> a.real=<...> a.imag=<...> b.real=<...> b.imag=<...> c.real=<...> c.imag=<...> vd.real.addr=<...> vd.imag.addr=<...>
+```
+
+默认配置下 `CfmaDedicatedReadCollectorEn=0`，因此：
+
+- collector 不驱动 VRF read ports；
+- v1 four-phase fallback 仍是 architectural path；
+- dedicated writeback 仍关闭；
+- build/regression 用于证明默认路径未回归。
+
+最终验证证据：
+
+```text
+docs/v2/evidence/stage3_vfu_read_collector_mux_scaffold_verification.txt
+```
+
+验证结果：
+
+```text
+git diff --check: PASS
+standalone read collector Verilator build/run: PASS
+system Verilator build: PASS
+ctest -R 'riscvTests-rtl-(vfcmacc|vfmacc|vfnmsac)$': PASS, 3/3
+```
+
+该小阶段仍不是完整阶段 3 退出。原因：`CfmaDedicatedReadCollectorEn=1` 的真实 VFU execution/trace 尚未关闭；当前只是使 mux/trace path 可参数化、可编译、默认关闭。下一小阶段需要让 enable-mode 在不暴露 partial state 的前提下生成真实 bundle trace，并用 directed sentinel program 检查六 operand 来源。
