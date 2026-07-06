@@ -244,8 +244,13 @@ module spatz_cluster_wrapper
   localparam int unsigned NumSpatzFPUs             [NumCores] = '{default: 4};
   localparam int unsigned NumSpatzIPUs             [NumCores] = '{default: 1};
   localparam int unsigned NumSpatzTCDMPorts        [NumCores] = '{default: 4};
+`ifdef CFMA_DEDICATED_V2
+  localparam bit [NumCores-1:0] CfmaDedicatedReadCollectorEn = '1;
+  localparam bit [NumCores-1:0] CfmaDedicatedWritebackEn = '1;
+`else
   localparam bit [NumCores-1:0] CfmaDedicatedReadCollectorEn = '0;
   localparam bit [NumCores-1:0] CfmaDedicatedWritebackEn = '0;
+`endif
 
   typedef logic [IwcAxiIdOutWidth-1:0] axi_id_out_iwc_t;
 

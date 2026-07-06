@@ -64,3 +64,76 @@ ctest -R 'riscvTests-rtl-(vfcmacc|vfmacc|vfnmsac)$': PASS, 3/3
 - dedicated-mode `vfcmacc` ISA test；
 - fflags/mask/tail/e16/e32 closure；
 - 决定是否、何时切换默认 architectural path。
+
+## 5. 小阶段：`CFMA_DEDICATED_V2` dedicated-mode build switch
+
+在系统参数透传之后，本小阶段新增一个显式编译期开关：
+
+```systemverilog
+`ifdef CFMA_DEDICATED_V2
+  localparam bit [NumCores-1:0] CfmaDedicatedReadCollectorEn = '1;
+  localparam bit [NumCores-1:0] CfmaDedicatedWritebackEn = '1;
+`else
+  localparam bit [NumCores-1:0] CfmaDedicatedReadCollectorEn = '0;
+  localparam bit [NumCores-1:0] CfmaDedicatedWritebackEn = '0;
+`endif
+```
+
+涉及：
+
+```text
+hw/system/spatz_cluster/src/generated/spatz_cluster_wrapper.sv
+hw/system/spatz_cluster/src/spatz_cluster_wrapper.sv.tpl
+```
+
+该开关不改变默认 build；只有在 Verilator/Bender `DEFS=-DCFMA_DEDICATED_V2` 时，cluster 内每个 Spatz core 才启用 dedicated read collector 和 dedicated split writeback。
+
+### Trace gating
+
+首次 full `vfcmacc` dedicated-mode CTest 尝试长时间无结果。系统化排查后确认：smoke 可快速通过，但 full test 会执行大量 CFMA，默认 `$display` 每个 bundle/result 会严重拖慢仿真。因此本小阶段把以下 trace 改为显式 `CFMA_DEDICATED_V2_TRACE` 才启用：
+
+```text
+CFMA_READ_BUNDLE
+CFMA_COMPUTE_RESULT
+```
+
+默认 dedicated-mode regression 不再打印 per-CFMA trace；需要调试时可额外传入：
+
+```text
+-DEFS="-DCFMA_DEDICATED_V2 -DCFMA_DEDICATED_V2_TRACE"
+```
+
+### 验证结果
+
+完整证据：
+
+```text
+docs/v2/evidence/stage6_dedicated_mode_switch_attempt.txt
+```
+
+覆盖：
+
+```text
+git diff --check: PASS
+CFMA_DEDICATED_V2 switch grep: PASS
+dedicated-mode system Verilator build: PASS
+vfcmacc_smoke direct run: PASS
+full vfcmacc direct run: PASS
+default-off system Verilator rebuild: PASS
+default-off v1 fallback regression: PASS, 3/3
+```
+
+full dedicated-mode `vfcmacc` direct run 输出：
+
+```text
+[SUCCESS] Program finished successfully
+```
+
+### 剩余 gap
+
+该小阶段首次证明 dedicated-mode system build 可以跑通 full `vfcmacc` ISA test。但完整 v2 closure 仍需要：
+
+- dedicated-mode `vfcmacc_illegal`/mask-tail/fflags 细分验证；
+- dedicated-mode `vfmacc/vfnmsac` 非 CFMA regression 旁路确认；
+- benchmark/performance；
+- 默认切换前的文档化决策。

@@ -303,3 +303,29 @@
 - `cd hw/system/spatz_cluster/sw/build && PATH="/home/wxt/spatz-cfma/.venv/bin:$PATH" ctest -R 'riscvTests-rtl-(vfcmacc|vfmacc|vfnmsac)$' --output-on-failure`：PASS，3/3。
 
 结论：系统层已具备默认关闭的 CFMA dedicated 控制参数透传路径；默认 v1 fallback build/regression 未回归。后续可基于该路径构建 dedicated-mode ISA regression。
+
+## 2026-07-07 阶段 6 小阶段：`CFMA_DEDICATED_V2` 系统 dedicated-mode 开关
+
+计划提交信息：`[cfma-v2] Add CFMA dedicated system build switch`
+
+主要内容：
+
+- 修改 `hw/system/spatz_cluster/src/generated/spatz_cluster_wrapper.sv` 和 `spatz_cluster_wrapper.sv.tpl`，新增 `CFMA_DEDICATED_V2` 编译期开关：
+  - 默认：`CfmaDedicatedReadCollectorEn='0`, `CfmaDedicatedWritebackEn='0`；
+  - `-DCFMA_DEDICATED_V2`：两个 enable per-core 全部置 1。
+- 修改 `hw/ip/spatz/src/spatz_vfu.sv`，把 `CFMA_READ_BUNDLE` / `CFMA_COMPUTE_RESULT` 仿真打印放到 `CFMA_DEDICATED_V2_TRACE` 下，避免 full ISA regression 因 per-CFMA `$display` 极慢。
+- 更新 `docs/v2/STAGE6_SYSTEM_INTEGRATION.md`，记录 dedicated-mode build switch、trace gating 和验证结果。
+- 新增/更新 `docs/v2/evidence/stage6_dedicated_mode_switch_attempt.txt` 保存验证转录。
+
+验证命令：
+
+- `git diff --check`：PASS；
+- `grep -R "CFMA_DEDICATED_V2" ...`：PASS；
+- `PATH="$PWD/.venv/bin:$PATH" make -C hw/system/spatz_cluster clean.vlt`：PASS；
+- `PATH="$PWD/.venv/bin:$PATH" make -C hw/system/spatz_cluster DEFS=-DCFMA_DEDICATED_V2 bin/spatz_cluster.vlt`：PASS；
+- `timeout 180s hw/system/spatz_cluster/bin/spatz_cluster.vlt hw/system/spatz_cluster/sw/build/riscvTests/test-riscvTests-vfcmacc_smoke`：PASS；
+- `timeout 600s hw/system/spatz_cluster/bin/spatz_cluster.vlt hw/system/spatz_cluster/sw/build/riscvTests/test-riscvTests-vfcmacc`：PASS，输出 `[SUCCESS] Program finished successfully`；
+- default-off rebuild：`PATH="$PWD/.venv/bin:$PATH" make -C hw/system/spatz_cluster bin/spatz_cluster.vlt`：PASS；
+- default-off regression：`ctest -R 'riscvTests-rtl-(vfcmacc|vfmacc|vfnmsac)$' --output-on-failure`：PASS，3/3。
+
+结论：系统层 dedicated-mode build switch 已可用，且 full `vfcmacc` dedicated-mode direct ISA run 通过；默认关闭 v1 fallback regression 未回归。下一步继续 dedicated-mode illegal/mask/tail/fflags 与性能 closure。

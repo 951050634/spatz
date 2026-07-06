@@ -1524,6 +1524,7 @@ module spatz_vfu
     assign cfma_read_mux_re    = cfma_read_vrf_re;
 
     // pragma translate_off
+`ifdef CFMA_DEDICATED_V2_TRACE
     always_ff @(posedge clk_i) begin : cfma_read_bundle_trace_proc
       if (CfmaDedicatedReadCollectorEn && cfma_read_bundle_valid &&
           cfma_read_bundle_ready) begin
@@ -1538,6 +1539,7 @@ module spatz_vfu
                  cfma_read_vd_real_addr, cfma_read_vd_imag_addr);
       end
     end
+`endif
     // pragma translate_on
 
     // Complex FMA module instantiation
@@ -1652,6 +1654,7 @@ module spatz_vfu
     assign cfma_tag_in = cfma_tag_bundle;
 
     // pragma translate_off
+`ifdef CFMA_DEDICATED_V2_TRACE
     always_ff @(posedge clk_i) begin : cfma_compute_result_trace_proc
       if (CfmaDedicatedReadCollectorEn && cfma_result_valid &&
           cfma_result_ready) begin
@@ -1659,6 +1662,7 @@ module spatz_vfu
                  cfma_result_real, cfma_result_imag, cfma_status);
       end
     end
+`endif
     // pragma translate_on
 
     // =========================================================

@@ -314,6 +314,13 @@ module ${cfg['name']}_wrapper
   localparam int unsigned NumSpatzFPUs             [NumCores] = '{default: ${cfg['n_fpu']}};
   localparam int unsigned NumSpatzIPUs             [NumCores] = '{default: ${cfg['n_ipu']}};
   localparam int unsigned NumSpatzTCDMPorts        [NumCores] = '{default: ${cfg['spatz_nports']}};
+`ifdef CFMA_DEDICATED_V2
+  localparam bit [NumCores-1:0] CfmaDedicatedReadCollectorEn = '1;
+  localparam bit [NumCores-1:0] CfmaDedicatedWritebackEn = '1;
+`else
+  localparam bit [NumCores-1:0] CfmaDedicatedReadCollectorEn = '0;
+  localparam bit [NumCores-1:0] CfmaDedicatedWritebackEn = '0;
+`endif
 
   typedef logic [IwcAxiIdOutWidth-1:0] axi_id_out_iwc_t;
 
