@@ -244,6 +244,8 @@ module spatz_cluster_wrapper
   localparam int unsigned NumSpatzFPUs             [NumCores] = '{default: 4};
   localparam int unsigned NumSpatzIPUs             [NumCores] = '{default: 1};
   localparam int unsigned NumSpatzTCDMPorts        [NumCores] = '{default: 4};
+  localparam bit [NumCores-1:0] CfmaDedicatedReadCollectorEn = '0;
+  localparam bit [NumCores-1:0] CfmaDedicatedWritebackEn = '0;
 
   typedef logic [IwcAxiIdOutWidth-1:0] axi_id_out_iwc_t;
 
@@ -297,6 +299,8 @@ module spatz_cluster_wrapper
     .ICacheLineCount (spatz_cluster_pkg::ICacheLineCount),
     .ICacheWays (spatz_cluster_pkg::ICacheWays),
     .FPUImplementation (spatz_cluster_pkg::FPUImplementation),
+    .CfmaDedicatedReadCollectorEn (CfmaDedicatedReadCollectorEn),
+    .CfmaDedicatedWritebackEn (CfmaDedicatedWritebackEn),
     .SnitchPMACfg (spatz_cluster_pkg::SnitchPMACfg),
     .NumIntOutstandingLoads (NumIntOutstandingLoads),
     .NumIntOutstandingMem (NumIntOutstandingMem),

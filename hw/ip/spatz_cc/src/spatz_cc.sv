@@ -51,6 +51,9 @@ module spatz_cc
     parameter type                                         dma_perf_t               = logic,
     /// FPU configuration.
     parameter fpu_implementation_t                         FPUImplementation        = fpu_implementation_t'(0),
+    /// CFMA v2 experimental dedicated datapath controls. Defaults off.
+    parameter bit                                          CfmaDedicatedReadCollectorEn = 1'b0,
+    parameter bit                                          CfmaDedicatedWritebackEn = 1'b0,
     /// Boot address of core.
     parameter logic                                 [31:0] BootAddr                 = 32'h0000_1000,
     /// Reduced-register extension
@@ -281,6 +284,8 @@ module spatz_cc
     .NrMemPorts         (NumMemPortsPerSpatz     ),
     .NumOutstandingLoads(NumSpatzOutstandingLoads),
     .FPUImplementation  (FPUImplementation       ),
+    .CfmaDedicatedReadCollectorEn(CfmaDedicatedReadCollectorEn),
+    .CfmaDedicatedWritebackEn(CfmaDedicatedWritebackEn),
     .RegisterRsp        (RegisterOffloadRsp      ),
     .dreq_t             (dreq_t                  ),
     .drsp_t             (drsp_t                  ),

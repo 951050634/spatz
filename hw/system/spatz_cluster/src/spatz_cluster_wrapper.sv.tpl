@@ -512,6 +512,8 @@ module ${cfg['name']}_wrapper
     .ICacheLineCount (${cfg['pkg_name']}::ICacheLineCount),
     .ICacheWays (${cfg['pkg_name']}::ICacheWays),
     .FPUImplementation (${cfg['pkg_name']}::FPUImplementation),
+    .CfmaDedicatedReadCollectorEn (CfmaDedicatedReadCollectorEn),
+    .CfmaDedicatedWritebackEn (CfmaDedicatedWritebackEn),
     .SnitchPMACfg (${cfg['pkg_name']}::SnitchPMACfg),
     .NumIntOutstandingLoads (NumIntOutstandingLoads),
     .NumIntOutstandingMem (NumIntOutstandingMem),

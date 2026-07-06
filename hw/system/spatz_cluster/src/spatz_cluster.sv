@@ -63,6 +63,9 @@ module spatz_cluster
     /// # Core-global parameters
     /// FPU configuration.
     parameter fpu_implementation_t                           FPUImplementation        [NrCores] = '{default: fpu_implementation_t'(0)},
+    /// CFMA v2 experimental dedicated datapath controls. Defaults off.
+    parameter bit                              [NrCores-1:0] CfmaDedicatedReadCollectorEn = '0,
+    parameter bit                              [NrCores-1:0] CfmaDedicatedWritebackEn = '0,
     /// Per-core enabling of the custom `Xdma` ISA extensions.
     parameter bit                              [NrCores-1:0] Xdma                               = '{default: '0},
     /// # Per-core parameters
@@ -752,6 +755,8 @@ module spatz_cluster
       .NumIntOutstandingMem    (NumIntOutstandingMem[i]    ),
       .NumSpatzOutstandingLoads(NumSpatzOutstandingLoads[i]),
       .FPUImplementation       (FPUImplementation[i]       ),
+      .CfmaDedicatedReadCollectorEn(CfmaDedicatedReadCollectorEn[i]),
+      .CfmaDedicatedWritebackEn(CfmaDedicatedWritebackEn[i]),
       .RegisterOffloadRsp      (RegisterOffloadRsp         ),
       .RegisterCoreReq         (RegisterCoreReq            ),
       .RegisterCoreRsp         (RegisterCoreRsp            ),

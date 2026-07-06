@@ -282,3 +282,24 @@
 - `cd hw/system/spatz_cluster/sw/build && PATH="/home/wxt/spatz-cfma/.venv/bin:$PATH" ctest -R 'riscvTests-rtl-(vfcmacc|vfmacc|vfnmsac)$' --output-on-failure`：PASS，3/3。
 
 结论：Stage 5 dedicated writeback microflow 已完成 directed closure；默认关闭系统路径和 v1 fallback regression 未回归。下一阶段需要 dedicated-mode ISA-level regression/默认切换前的 mask-tail-fflags closure。
+
+## 2026-07-07 阶段 6 小阶段：系统层 CFMA dedicated 参数透传
+
+计划提交信息：`[cfma-v2] Plumb CFMA dedicated controls through cluster`
+
+主要内容：
+
+- 修改 `hw/ip/spatz_cc/src/spatz_cc.sv`，新增默认关闭的 `CfmaDedicatedReadCollectorEn` / `CfmaDedicatedWritebackEn` 参数并传入 `spatz`。
+- 修改 `hw/system/spatz_cluster/src/spatz_cluster.sv`，新增 per-core bit vector 参数并传入每个 `spatz_cc`。
+- 修改 `hw/system/spatz_cluster/src/generated/spatz_cluster_wrapper.sv` 和 `spatz_cluster_wrapper.sv.tpl`，新增默认 `'0` localparam 并传入 `spatz_cluster`。
+- 新增 `docs/v2/STAGE6_SYSTEM_INTEGRATION.md`，记录系统层参数路径与剩余 gap。
+- 新增 `docs/v2/evidence/stage6_system_param_passthrough_verification.txt` 保存验证转录。
+
+验证命令：
+
+- `git diff --check`：PASS；
+- pass-through grep check：PASS；
+- `PATH="$PWD/.venv/bin:$PATH" make -C hw/system/spatz_cluster bin/spatz_cluster.vlt`：PASS；
+- `cd hw/system/spatz_cluster/sw/build && PATH="/home/wxt/spatz-cfma/.venv/bin:$PATH" ctest -R 'riscvTests-rtl-(vfcmacc|vfmacc|vfnmsac)$' --output-on-failure`：PASS，3/3。
+
+结论：系统层已具备默认关闭的 CFMA dedicated 控制参数透传路径；默认 v1 fallback build/regression 未回归。后续可基于该路径构建 dedicated-mode ISA regression。
