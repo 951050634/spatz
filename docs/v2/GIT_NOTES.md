@@ -214,3 +214,38 @@
 - `cd hw/system/spatz_cluster/sw/build && PATH="/home/wxt/spatz-cfma/.venv/bin:$PATH" ctest -R 'riscvTests-rtl-(vfcmacc|vfmacc|vfnmsac)$' --output-on-failure`：PASS，3/3。
 
 结论：阶段 3 的 dedicated read collector 已完成 VFU enable-mode 定向 trace closure；默认关闭的 v1 fallback 仍通过系统 build 和三条 RTL regression。下一阶段可进入 dedicated compute path 连接，但仍保持 writeback/default path 受控关闭。
+
+## 2026-07-07 阶段 4 小阶段：read bundle 驱动 dedicated compute
+
+计划提交信息：`[cfma-v2] Drive CFMA compute from read collector bundle`
+
+主要内容：
+
+- 新增 `hw/ip/spatz/test/spatz_vfu_cfma_compute_bundle_tb.sv`，在 `CfmaDedicatedReadCollectorEn=1`、`CfmaDedicatedWritebackEn=0` 下驱动 FP64 directed case：
+  - `a = 1 + 2i`；
+  - `b = 3 + 4i`；
+  - `c = 5 + 6i`；
+  - expected result = `0 + 16i`。
+- TDD 红灯证明旧 RTL 虽能形成正确 `CFMA_READ_BUNDLE`，但 `fpnew_complex_fma` 仍消费旧四阶段 latch，real result 错为 `0xc028000000000000`。
+- 修改 `hw/ip/spatz/src/spatz_vfu.sv`：
+  - enable-mode 下 `cfma_operand_*` 改由 `cfma_read_*[ELEN-1:0]` 驱动；
+  - enable-mode 下 `cfma_op_valid = cfma_read_bundle_valid`；
+  - `cfma_read_bundle_ready` 接 `cfma_op_ready`，避免 compute backpressure 下丢 bundle；
+  - 默认关闭路径继续保留旧四阶段 prototype latch，不改变 v1 fallback。
+- 新增 `docs/v2/STAGE4_DEDICATED_COMPUTE.md` 记录阶段目标、红灯、RTL 修改、验证结果和剩余 gap。
+- 新增 `docs/v2/evidence/stage4_vfu_compute_bundle_verification.txt` 保存完整验证转录。
+
+验证命令：
+
+- `git diff --check`：PASS；
+- `/home/wxt/spatz/install/bender/bender script verilator -t spatz -t rtl`：PASS；
+- `install/verilator/bin/verilator_bin --binary --timing ... spatz_vfu_cfma_compute_bundle_tb.sv`：PASS；
+- `build/cfma_v2/obj_vfu_cfma_compute_bundle_verify/Vspatz_vfu_cfma_compute_bundle_tb`：PASS；
+- `install/verilator/bin/verilator_bin --binary --timing ... spatz_vfu_cfma_read_mux_tb.sv`：PASS；
+- `build/cfma_v2/obj_vfu_cfma_read_mux_stage4_verify/Vspatz_vfu_cfma_read_mux_tb`：PASS；
+- `install/verilator/bin/verilator_bin --binary --timing ... fpnew_complex_fma_tb.sv`：PASS；
+- `build/cfma_v2/obj_complex_fma_stage4_verify/Vfpnew_complex_fma_tb`：PASS；
+- `PATH="$PWD/.venv/bin:$PATH" make -C hw/system/spatz_cluster bin/spatz_cluster.vlt`：PASS；
+- `cd hw/system/spatz_cluster/sw/build && PATH="/home/wxt/spatz-cfma/.venv/bin:$PATH" ctest -R 'riscvTests-rtl-(vfcmacc|vfmacc|vfnmsac)$' --output-on-failure`：PASS，3/3。
+
+结论：阶段 4 的 dedicated compute 已能在 enable-mode 下直接消费阶段 3 read bundle 并产生正确 FP64 directed result；默认关闭的 v1 fallback 仍通过系统 build 和三条 RTL regression。下一阶段应冻结 result/writeback tag，并验证 real/imag 两拍写回原子性。

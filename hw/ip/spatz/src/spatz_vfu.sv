@@ -1476,7 +1476,7 @@ module spatz_vfu
 
     assign cfma_read_start_valid = CfmaDedicatedReadCollectorEn && spatz_req_valid &&
                                    cfma_insn && word_issued && (cfma_phase_q == Cfma_RR);
-    assign cfma_read_bundle_ready = 1'b1;
+    assign cfma_read_bundle_ready = CfmaDedicatedReadCollectorEn ? cfma_op_ready : 1'b1;
 
     spatz_cfma_read_collector #(
       .ELEN      ( $bits(vrf_data_t) ),
@@ -1612,18 +1612,39 @@ module spatz_vfu
       end
     end
 
-    // Drive the CFMA hardware operands from the collected registers
-    assign cfma_operand_a_real = cfma_a_real_q;
-    assign cfma_operand_a_imag = cfma_a_imag_q;
-    assign cfma_operand_b_real = cfma_b_real_q;
-    assign cfma_operand_b_imag = cfma_b_imag_q;
-    assign cfma_operand_c_real = cfma_c_real_q;
-    assign cfma_operand_c_imag = cfma_c_imag_q;
+    // Drive the CFMA hardware operands.  Default-off mode preserves the
+    // legacy four-phase prototype latch; Stage-4 enable-mode consumes the
+    // frozen two-beat read-collector bundle directly.
+    assign cfma_operand_a_real = CfmaDedicatedReadCollectorEn ?
+                                 cfma_read_a_real[ELEN-1:0] : cfma_a_real_q;
+    assign cfma_operand_a_imag = CfmaDedicatedReadCollectorEn ?
+                                 cfma_read_a_imag[ELEN-1:0] : cfma_a_imag_q;
+    assign cfma_operand_b_real = CfmaDedicatedReadCollectorEn ?
+                                 cfma_read_b_real[ELEN-1:0] : cfma_b_real_q;
+    assign cfma_operand_b_imag = CfmaDedicatedReadCollectorEn ?
+                                 cfma_read_b_imag[ELEN-1:0] : cfma_b_imag_q;
+    assign cfma_operand_c_real = CfmaDedicatedReadCollectorEn ?
+                                 cfma_read_c_real[ELEN-1:0] : cfma_c_real_q;
+    assign cfma_operand_c_imag = CfmaDedicatedReadCollectorEn ?
+                                 cfma_read_c_imag[ELEN-1:0] : cfma_c_imag_q;
 
-    // All six operands are valid once the final phase (Cfma_IR) issues.
-    assign cfma_op_valid     = cfma_insn && (cfma_phase_q == Cfma_IR) && word_issued;
+    // Default-off mode fires once the final legacy phase issues.  Stage-4
+    // enable-mode fires exactly when the frozen collector bundle handshakes.
+    assign cfma_op_valid     = CfmaDedicatedReadCollectorEn ?
+                               cfma_read_bundle_valid :
+                               (cfma_insn && (cfma_phase_q == Cfma_IR) && word_issued);
     assign cfma_result_ready = CfmaDedicatedWritebackEn ? !cfma_wb_pending_q : 1'b1;
     assign cfma_tag_in       = input_tag;
+
+    // pragma translate_off
+    always_ff @(posedge clk_i) begin : cfma_compute_result_trace_proc
+      if (CfmaDedicatedReadCollectorEn && cfma_result_valid &&
+          cfma_result_ready) begin
+        $display("CFMA_COMPUTE_RESULT real=0x%0h imag=0x%0h fflags=0x%0h",
+                 cfma_result_real, cfma_result_imag, cfma_status);
+      end
+    end
+    // pragma translate_on
 
     // =========================================================
     // Step 12: CFMA result write-back logic (split VRF write)
