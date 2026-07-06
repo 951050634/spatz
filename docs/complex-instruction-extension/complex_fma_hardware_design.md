@@ -833,9 +833,19 @@ git commit -m "[cfma] Implement split VRF read logic for 6 complex FMA operands"
 
 ### 步骤 12：实现 CFMA 结果写回逻辑
 
-**当前状态（2026-07-06）**：进行中。工作区已有未提交草稿，在
-`hw/ip/spatz/src/spatz_vfu.sv` 中新增两拍写回 FSM 和 `cfma_wb_*` 局部信号。
-该草稿尚未接入现有 VRF 写仲裁，也尚未完成本轮编译验证，因此不得标记为完成。
+**当前状态（2026-07-06）**：进行中，不能标记完成。工作区已有未提交草稿，在
+`hw/ip/spatz/src/spatz_vfu.sv` 中新增两拍写回 FSM、`cfma_wb_*` 信号和 VRF 写回
+mux 接入；但专用写回路径通过 `CfmaDedicatedWritebackEn = 1'b0` 默认禁用。
+默认功能路径仍是已验证的现有四阶段 FPU CFMA 路径。
+
+**禁用原因**：启用 dedicated CFMA result write-back 会覆盖既有正确结果并导致
+`vfcmacc` RTL regression 出错。当前专用硬件路径还缺少动态 FP format、packed
+e16/e32 lane 语义、完整 complex arithmetic/status flags，以及经过验证的
+mask/tail byte enable 和 response timing。
+
+**本轮验证结论**：在专用写回默认禁用后，`git diff --check`、Spatz cluster
+Verilator build，以及 `vfcmacc/vfmacc/vfnmsac` RTL regression 均通过。该证据只证明
+guard 后没有破坏既有功能路径，不证明 dedicated hardware path 可启用。
 
 **目标**：将 CFMA 的 2 个结果分拍写回 VRF
 
@@ -863,13 +873,13 @@ git commit -m "[cfma] Implement split VRF read logic for 6 complex FMA operands"
 7. 考虑与普通 FPU 结果的仲裁（mux）
 
 **验收标准**：
-- ✓ 实现了 CFMA 专用的写回状态机
-- ✓ 分 2 拍写回 2 个结果
-- ✓ 写地址正确计算了 LMUL 偏移
-- ✓ vrf_we_o 信号正确控制
-- ✓ byte enable 逻辑正确
-- ✓ 与现有写回逻辑正确仲裁（不冲突）
-- ✓ 编译通过
+- [x] 实现了 CFMA 专用的写回状态机草稿。
+- [x] 分 2 拍写回 2 个结果的 FSM 草稿存在。
+- [x] 写地址草稿包含 LMUL 偏移计算。
+- [x] VRF 写回 mux 草稿可编译。
+- [ ] byte enable 逻辑已在 dedicated path 启用模式下验证。
+- [ ] 与现有写回逻辑在 dedicated path 启用模式下正确仲裁。
+- [ ] dedicated hardware path 启用后 `vfcmacc` ISA regression 通过。
 
 **Git 操作**：
 ```bash
@@ -880,6 +890,11 @@ git commit -m "[cfma] Implement split VRF write logic for complex FMA results"
 ---
 
 ### 步骤 13：更新 CFMA phase 控制逻辑
+
+**当前建议（2026-07-06）**：先做架构决策，不要直接默认启用
+`USE_CFMA_HARDWARE`。当前已知可工作的 v1 功能路径是四阶段 FPU 复用实现；专用硬件
+路径必须先补齐动态 FP format、packed lane、complex arithmetic、status flags、
+mask/tail 和写回时序验证后才能作为默认路径。
 
 **目标**：修改现有的 4-phase 串行逻辑，改用专用硬件单元
 

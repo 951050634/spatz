@@ -1376,6 +1376,10 @@ runtime 边界可退出。
 
 ```text
 ## feature/cfma-instruction-extension
+ M docs/complex-instruction-extension/GIT_NOTES.md
+ M docs/complex-instruction-extension/PHASE_RESULTS.md
+ M docs/complex-instruction-extension/RESUME_INFO.md
+ M docs/complex-instruction-extension/complex_fma_hardware_design.md
  M hw/ip/spatz/src/spatz_vfu.sv
 ```
 
@@ -1445,4 +1449,73 @@ PASS，无匹配结果。
 - git diff --check: PASS，退出码 0。
 - 已检查当前 docs 中没有指向已删除文件的 Markdown 链接或恢复命令。
 - 已检查当前状态入口不再包含 “当前任务是步骤 11” 等过期指引；GIT_NOTES 中保留的旧检查命令属于审计记录。
+```
+
+## Step 12 回归审查和验证记录
+
+日期：2026-07-06
+
+本轮分支和状态：
+
+```text
+## feature/cfma-instruction-extension
+ M hw/ip/spatz/src/spatz_vfu.sv
+```
+
+计划提交名：
+
+```text
+[cfma] Guard incomplete dedicated CFMA writeback path
+```
+
+修改范围：
+
+```text
+M hw/ip/spatz/src/spatz_vfu.sv
+M docs/complex-instruction-extension/RESUME_INFO.md
+M docs/complex-instruction-extension/complex_fma_hardware_design.md
+M docs/complex-instruction-extension/PHASE_RESULTS.md
+M docs/complex-instruction-extension/GIT_NOTES.md
+```
+
+内容摘要：
+
+```text
+- Step 12 split VRF write-back 草稿保留在 RTL 中，但通过
+  CfmaDedicatedWritebackEn = 1'b0 默认禁用。
+- 默认功能路径恢复为已验证的四阶段 FPU CFMA 路径。
+- 记录 dedicated hardware path 尚未满足动态 FP format、packed e16/e32 lane、
+  complex arithmetic/status flags、mask/tail byte enable 和 response timing 要求。
+- Step 12 不标记完成；下一步转入 Step 13 架构决策。
+```
+
+验证记录：
+
+```text
+git diff --check:
+PASS，退出码 0。
+
+PATH="$PWD/.venv/bin:$PATH" make -C hw/system/spatz_cluster bin/spatz_cluster.vlt:
+PASS，退出码 0。执行 fresh Verilator build；输出包含既有 Bender `description`
+字段告警和 Verilator LATCH warnings；最终 Verilator report 显示 Walltime
+124.447 s，并生成 `bin/spatz_cluster.vlt`。
+
+PATH="$PWD/.venv/bin:$PATH" make -C hw/system/spatz_cluster sw.vlt:
+PASS，退出码 0。命令重建 `hw/system/spatz_cluster/sw/build`，CMake 重新加入
+`vfcmacc_illegal`、`vfcmacc` 等 ISA/RTL 软件测试目标，并完成软件目标编译。
+输出包含既有 runtime/benchmark warnings 和 DWARF address range diagnostic。
+
+cd hw/system/spatz_cluster/sw/build &&
+PATH="$PWD/.venv/bin:$PATH" ctest -R
+'riscvTests-rtl-(vfcmacc|vfmacc|vfnmsac)$' --output-on-failure:
+PASS，退出码 0。3/3 tests passed；总用时 162.86 s。
+vfmacc 22.11 s，vfcmacc 118.53 s，vfnmsac 22.22 s。
+```
+
+遗留风险：
+
+```text
+专用 CFMA 硬件路径仍不可作为默认实现启用；不能声称 dedicated hardware
+correctness、benchmark correctness 或 speedup。Step 13 必须先决定保留 v1
+四阶段路径，或补齐并重新验证完整 dedicated path。
 ```

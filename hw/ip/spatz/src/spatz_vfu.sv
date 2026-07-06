@@ -846,6 +846,14 @@ module spatz_vfu
   logic          vreg_we;
   logic    [2:0] vreg_r_req;
 
+  // CFMA dedicated hardware write-back path. The regular VFU write-back
+  // remains the default; this path is muxed onto the VRF port only while a
+  // captured CFMA hardware result is being drained.
+  vrf_addr_t cfma_wb_addr;
+  vrf_data_t cfma_wb_data;
+  logic      cfma_wb_we;
+  vrf_be_t   cfma_wb_be;
+
   // Address register
   vrf_addr_t [2:0] vreg_addr_q, vreg_addr_d;
   `FF(vreg_addr_q, vreg_addr_d, '0)
@@ -866,7 +874,7 @@ module spatz_vfu
     vreg_addr_d = vreg_addr_q;
 
     vrf_raddr_o = vreg_addr_d;
-    vrf_waddr_o = vrf_addr_t'(result_tag.vd_addr);
+    vrf_waddr_o = cfma_wb_we ? cfma_wb_addr : vrf_addr_t'(result_tag.vd_addr);
 
     // Tag (propagated with the operations)
     input_tag = '{
@@ -970,9 +978,9 @@ module spatz_vfu
 
   // Register file signals
   assign vrf_re_o    = vreg_r_req;
-  assign vrf_we_o    = vreg_we;
-  assign vrf_wbe_o   = vreg_wbe;
-  assign vrf_wdata_o = vreg_wdata;
+  assign vrf_we_o    = cfma_wb_we ? 1'b1 : vreg_we;
+  assign vrf_wbe_o   = cfma_wb_we ? cfma_wb_be : vreg_wbe;
+  assign vrf_wdata_o = cfma_wb_we ? cfma_wb_data : vreg_wdata;
   assign vrf_id_o    = {result_tag.id, {3{spatz_req.id}}};
 
   //////////
@@ -1403,6 +1411,12 @@ module spatz_vfu
     logic                      cfma_busy;
     vfu_tag_t                  cfma_tag_in;
     vfu_tag_t                  cfma_tag_out;
+    // Dedicated CFMA result write-back is intentionally disabled for v1.
+    // The existing four-phase FPU path is the verified architectural path.
+    // Re-enable only after the dedicated unit supports dynamic FP formats,
+    // packed e16/e32 lanes, complete complex arithmetic/status flags, and
+    // mask/tail write-back semantics.
+    localparam bit CfmaDedicatedWritebackEn = 1'b0;
 
     // Complex FMA module instantiation
     fpnew_complex_fma #(
@@ -1491,8 +1505,98 @@ module spatz_vfu
 
     // All six operands are valid once the final phase (Cfma_IR) issues.
     assign cfma_op_valid     = cfma_insn && (cfma_phase_q == Cfma_IR) && word_issued;
-    assign cfma_result_ready = 1'b1;
+    assign cfma_result_ready = CfmaDedicatedWritebackEn ? !cfma_wb_pending_q : 1'b1;
     assign cfma_tag_in       = input_tag;
+
+    // =========================================================
+    // Step 12: CFMA result write-back logic (split VRF write)
+    // =========================================================
+    // The complex hardware unit produces result.real and result.imag in
+    // a single cycle. Because the VRF has a single write port per beat,
+    // we write them back in two beats: real to vd, imag to vd+LMUL.
+    // A small 2-state FSM sequences the two writes; a pending flag holds
+    // the captured results until both beats complete.
+    typedef enum logic {
+      CFMA_WRITE_REAL,
+      CFMA_WRITE_IMAG
+    } cfma_write_state_e;
+
+    cfma_write_state_e cfma_write_state_q, cfma_write_state_d;
+    logic [ELEN-1:0]   cfma_wb_real_q, cfma_wb_real_d;
+    logic [ELEN-1:0]   cfma_wb_imag_q, cfma_wb_imag_d;
+    vrf_addr_t         cfma_wb_real_addr_q, cfma_wb_real_addr_d;
+    vrf_addr_t         cfma_wb_imag_addr_q, cfma_wb_imag_addr_d;
+    vrf_be_t           cfma_wb_be_q, cfma_wb_be_d;
+    logic              cfma_wb_pending_q, cfma_wb_pending_d;
+
+    `FF(cfma_write_state_q, cfma_write_state_d, CFMA_WRITE_REAL)
+    `FF(cfma_wb_real_q, cfma_wb_real_d, '0)
+    `FF(cfma_wb_imag_q, cfma_wb_imag_d, '0)
+    `FF(cfma_wb_real_addr_q, cfma_wb_real_addr_d, '0)
+    `FF(cfma_wb_imag_addr_q, cfma_wb_imag_addr_d, '0)
+    `FF(cfma_wb_be_q, cfma_wb_be_d, '0)
+    `FF(cfma_wb_pending_q, cfma_wb_pending_d, 1'b0)
+
+    always_comb begin : cfma_writeback_proc
+      automatic vreg_t cfma_wb_lmul = cfma_lmul_offset(spatz_req.vtype.vlmul);
+      automatic vrf_addr_t cfma_wb_lmul_words =
+          vrf_addr_t'(cfma_wb_lmul) << $clog2(NrWordsPerVector);
+      automatic vrf_be_t cfma_wb_lane_be = '0;
+
+      for (int unsigned byte_idx = 0; byte_idx < ELENB; byte_idx++)
+        cfma_wb_lane_be[byte_idx] = 1'b1;
+
+      cfma_write_state_d = cfma_write_state_q;
+      cfma_wb_real_d     = cfma_wb_real_q;
+      cfma_wb_imag_d     = cfma_wb_imag_q;
+      cfma_wb_real_addr_d = cfma_wb_real_addr_q;
+      cfma_wb_imag_addr_d = cfma_wb_imag_addr_q;
+      cfma_wb_be_d       = cfma_wb_be_q;
+      cfma_wb_pending_d  = cfma_wb_pending_q;
+
+      cfma_wb_addr = '0;
+      cfma_wb_data = '0;
+      cfma_wb_we   = 1'b0;
+      cfma_wb_be   = '0;
+
+      // Capture a freshly produced complex result
+      if (CfmaDedicatedWritebackEn && cfma_result_valid && !cfma_wb_pending_q) begin
+        cfma_wb_real_d      = cfma_result_real;
+        cfma_wb_imag_d      = cfma_result_imag;
+        cfma_wb_imag_addr_d = vrf_addr_t'(cfma_tag_out.vd_addr);
+        cfma_wb_real_addr_d = vrf_addr_t'(cfma_tag_out.vd_addr - cfma_wb_lmul_words);
+        cfma_wb_be_d        = cfma_wb_lane_be &
+                              cfma_active_wbe(cfma_tag_out, spatz_req.vl,
+                                               spatz_req.op_arith.vm, cfma_mask_q);
+        cfma_wb_pending_d   = 1'b1;
+      end
+
+      // Two-beat write-back FSM
+      if (cfma_wb_pending_q) begin
+        unique case (cfma_write_state_q)
+          CFMA_WRITE_REAL: begin
+            // Write real part to vd
+            cfma_wb_addr              = cfma_wb_real_addr_q;
+            cfma_wb_data[ELEN-1:0]    = cfma_wb_real_q;
+            cfma_wb_we                = 1'b1;
+            cfma_wb_be                = cfma_wb_be_q;
+            if (vrf_wvalid_i)
+              cfma_write_state_d = CFMA_WRITE_IMAG;
+          end
+          CFMA_WRITE_IMAG: begin
+            // Write imag part to vd + LMUL
+            cfma_wb_addr              = cfma_wb_imag_addr_q;
+            cfma_wb_data[ELEN-1:0]    = cfma_wb_imag_q;
+            cfma_wb_we                = 1'b1;
+            cfma_wb_be                = cfma_wb_be_q;
+            if (vrf_wvalid_i) begin
+              cfma_write_state_d = CFMA_WRITE_REAL;
+              cfma_wb_pending_d  = 1'b0; // both beats done
+            end
+          end
+        endcase
+      end
+    end : cfma_writeback_proc
 
   end: gen_fpu else begin: gen_no_fpu
     assign is_fpu_busy      = 1'b0;
@@ -1501,6 +1605,10 @@ module spatz_vfu
     assign fpu_result_valid = '0;
     assign fpu_result_tag   = '0;
     assign fpu_status_raw   = '0;
+    assign cfma_wb_addr     = '0;
+    assign cfma_wb_data     = '0;
+    assign cfma_wb_we       = 1'b0;
+    assign cfma_wb_be       = '0;
   end: gen_no_fpu
 
 endmodule : spatz_vfu
