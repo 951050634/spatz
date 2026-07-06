@@ -1,52 +1,55 @@
-# CFMA Performance and Benchmark Evidence
+# CFMA v1 性能与测试证据
 
-**Date**: 2026-07-06  
-**Branch**: `feature/cfma-instruction-extension`  
-**Scope**: v1 evidence only
+**记录日期**：2026-07-06
+**整理日期**：2026-07-07
+**范围**：v1 四阶段 FPU 复用实现
 
-## Scope
+## 1. 结论
 
-This document records the evidence available for the current v1 implementation. The v1
-`vfcmacc` path uses the verified four-phase FPU reuse implementation in
-`hw/ip/spatz/src/spatz_vfu.sv`. The dedicated CFMA hardware write-back prototype remains
-compiled but disabled by `CfmaDedicatedWritebackEn = 1'b0`.
+v1 不声明完整 benchmark correctness，也不声明 speedup。
 
-The results below must not be read as proof of dedicated CFMA hardware correctness or
-speedup.
+当前可以说明的是：
 
-## Commands
+- `vfcmacc.vv` 将软件可见复数 MAC 指令序列从 4 条折叠为 1 条；
+- 该折叠降低 fetch/decode/offload/issue queue 压力；
+- 当前硬件内部仍执行 4 个 FPU phase，因此不应期待原始 FPU 吞吐的大幅提升；
+- dedicated datapath 默认禁用，不能作为性能结果来源。
+
+## 2. 已记录命令与结果
+
+### 基础检查
 
 ```bash
 git diff --check
 ```
 
-Result: PASS, exit 0, no output.
+结果：PASS。
+
+### RTL 仿真器构建
 
 ```bash
 PATH="$PWD/.venv/bin:$PATH" make -C hw/system/spatz_cluster bin/spatz_cluster.vlt
 ```
 
-Result: PASS, exit 0. The simulator target was already up to date. Output included the
-known Bender `description` warning and then:
+结果：PASS，目标已是最新或构建完成。
 
-```text
-make: 'bin/spatz_cluster.vlt' is up to date.
-```
+### 软件构建
 
 ```bash
 PATH="$PWD/.venv/bin:$PATH" make -C hw/system/spatz_cluster sw.vlt
 ```
 
-Result: PASS, exit 0. The software tree was rebuilt, CMake registered
-`vfcmacc_illegal` and `vfcmacc`, and the build completed. Output still contains existing
-runtime/benchmark warnings, including `dp-cmatmul` inline-function warnings.
+结果：PASS，CTest 注册了 `vfcmacc_illegal` 和 `vfcmacc`。
+
+### ISA RTL 回归
 
 ```bash
-cd hw/system/spatz_cluster/sw/build &&
-PATH="/home/wxt/spatz-cfma/.venv/bin:$PATH" ctest -R 'riscvTests-rtl-(vfcmacc|vfmacc|vfnmsac)$' --output-on-failure
+cd hw/system/spatz_cluster/sw/build
+PATH="/home/wxt/spatz-cfma/.venv/bin:$PATH" \
+  ctest -R 'riscvTests-rtl-(vfcmacc|vfmacc|vfnmsac)$' --output-on-failure
 ```
 
-Result: PASS, exit 0. 3/3 tests passed.
+结果：PASS，3/3 通过。
 
 ```text
 vfmacc:  27.18 s
@@ -55,61 +58,41 @@ vfnmsac: 21.69 s
 Total:   186.35 s
 ```
 
+### 性能测试探针
+
 ```bash
-cd hw/system/spatz_cluster/sw/build &&
-PATH="/home/wxt/spatz-cfma/.venv/bin:$PATH" ctest -R 'spatzBenchmarks-rtl-spatzBenchmarks-rtl-(dp-cdotp_old_M128|dp-cdotp_vfcmacc_M128|dp-caxpy_M256|dp-caxpy_vfcmacc_M256)$' --output-on-failure
+cd hw/system/spatz_cluster/sw/build
+PATH="/home/wxt/spatz-cfma/.venv/bin:$PATH" \
+  ctest -R 'spatzBenchmarks-rtl-spatzBenchmarks-rtl-(dp-cdotp_old_M128|dp-cdotp_vfcmacc_M128|dp-caxpy_M256|dp-caxpy_vfcmacc_M256)$' --output-on-failure
 ```
 
-Result: INTERRUPTED, exit 130, after the `dp-cdotp_old_M128` RTL run exceeded 17 minutes
-without completing. The completed sub-results before interruption were:
+结果：该轮被中断，退出码 130。已观察到：
 
-```text
-dp-caxpy_M256:         PASS, 1.59 s
-dp-caxpy_vfcmacc_M256: PASS, 1.51 s
-dp-cdotp_old_M128:     did not complete within the observed 17-minute window
-dp-cdotp_vfcmacc_M128: not reached in this run
-```
-
-CTest temporary evidence:
-
-- `hw/system/spatz_cluster/sw/build/Testing/Temporary/LastTest.log.tmp` records the two
-  passing `dp-caxpy` probe tests.
-- The long-running process was
-  `bin/spatz_cluster.vlt sw/build/spatzBenchmarks/test-spatzBenchmarks-dp-cdotp_old_M128`.
-
-## Results
-
-| Target | Result | Time | Claim Supported |
+| Target | 结果 | 时间 | 结论 |
 | --- | --- | ---: | --- |
-| `riscvTests-rtl-vfmacc` | PASS | 27.18 s | Non-CFMA FMA regression still passes |
-| `riscvTests-rtl-vfcmacc` | PASS | 137.46 s | v1 `vfcmacc` ISA behavior still passes |
-| `riscvTests-rtl-vfnmsac` | PASS | 21.69 s | Neighbor FMA regression still passes |
-| `dp-caxpy_M256` | PASS | 1.59 s | Small baseline benchmark can run to completion |
-| `dp-caxpy_vfcmacc_M256` | PASS | 1.51 s | Small vfcmacc benchmark can run to completion |
-| `dp-cdotp_old_M128` | Incomplete | >17 min | Benchmark closure remains blocked |
-| `dp-cdotp_vfcmacc_M128` | Not reached | n/a | No claim |
+| `dp-caxpy_M256` | PASS | 1.59 s | 小规模 baseline probe 可完成 |
+| `dp-caxpy_vfcmacc_M256` | PASS | 1.51 s | 小规模 vfcmacc probe 可完成 |
+| `dp-cdotp_old_M128` | 未完成 | >17 min | performance closure blocked |
+| `dp-cdotp_vfcmacc_M128` | 未执行到 | n/a | 无结论 |
 
-## Claims Not Made
+## 3. 不作出的声明
 
-- Dedicated CFMA hardware correctness is not claimed.
-- Full benchmark correctness is not claimed.
-- Speedup is not claimed.
-- Step 12 dedicated write-back completion is not claimed.
-- The old Step 17 target of `>2x` speedup is not satisfied by this evidence.
+v1 不声明：
 
-## Next Work
+- dedicated CFMA hardware correctness；
+- full benchmark correctness；
+- speedup；
+- Step 12 dedicated writeback completion；
+- 旧目标 `>2x` 或 `3.5x` 已达成。
 
-Recommended next goal:
+## 4. 三种方案的预期效率边界
 
-```text
-Option A: keep v1 four-phase FPU path and clean up or remove the unused dedicated prototype.
-```
+| 方案 | 软件指令数 | 内部计算 | 预期效率 |
+| --- | ---: | --- | --- |
+| 不使用复数指令 | 4 条 | 4 次普通 FPU op | baseline 1.0x |
+| v1 `vfcmacc.vv` | 1 条 | 4 个内部 FPU phase | cycle 约 1.0-1.2x；指令数 4x 降低 |
+| v2 dedicated datapath | 1 条 | dedicated complex-FMA | 目标 2x+，理想 3-4x；尚未证明 |
 
-Alternative future goal:
+## 5. 后续工作
 
-```text
-Option B: reopen dedicated CFMA hardware only after an independent `fpnew_complex_fma`
-reference/testbench exists and the path supports dynamic FP formats, packed e16/e32 lanes,
-complete complex arithmetic/status flags, mask/tail byte enables, response timing, and
-write-back arbitration.
-```
+性能闭环应放到 v2 或独立 benchmark closure 分支中进行。完成前不得把 probe 数据当成正式 speedup 证据。
