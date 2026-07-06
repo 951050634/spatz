@@ -5,7 +5,17 @@
 // Complex FMA Hardware Unit for Spatz VFU
 // Implements: result = c + a * b (complex arithmetic)
 //
-// Author: Complex FMA Implementation Team
+//   real = c.real + a.real * b.real - a.imag * b.imag
+//   imag = c.imag + a.imag * b.real + a.real * b.imag
+//
+// The block deliberately follows the v1 architectural accumulation order with
+// two fpnew_fma instances and two arithmetic rounds.  This makes the dedicated
+// block a standalone, handshaked unit while preserving the verified v1 phase
+// order as the initial v2 correctness contract:
+//   phase 1: real_acc = FMADD (a.real, b.real, c.real)
+//            imag_acc = FMADD (a.imag, b.real, c.imag)
+//   phase 2: real     = FNMSUB(a.imag, b.imag, real_acc)
+//            imag     = FMADD (a.real, b.imag, imag_acc)
 
 `include "common_cells/registers.svh"
 
@@ -51,147 +61,31 @@ module fpnew_complex_fma
   output logic                     busy_o
 );
 
-  // ----------------
-  // State Machine
-  // ----------------
-  typedef enum logic [1:0] {
-    IDLE         = 2'b00,  // Waiting for new operation
-    MULTIPLY_PH1 = 2'b01,  // Compute prod_rr = a.real * b.real, prod_ii = a.imag * b.imag
-    MULTIPLY_PH2 = 2'b10,  // Compute prod_ri = a.real * b.imag, prod_ir = a.imag * b.real
-    ADD_PHASE    = 2'b11   // Compute final results: result.real and result.imag
+  typedef enum logic [2:0] {
+    IDLE,
+    PHASE1_ISSUE,
+    PHASE1_WAIT,
+    PHASE2_ISSUE,
+    PHASE2_WAIT,
+    RESULT
   } cfma_state_e;
 
   cfma_state_e state_q, state_d;
 
-  // ----------------
-  // State Register
-  // ----------------
-  always_ff @(posedge clk_i or negedge rst_ni) begin
-    if (!rst_ni) begin
-      state_q <= IDLE;
-    end else begin
-      state_q <= state_d;
-    end
-  end
+  logic accept_input;
+  logic phase1_result_valid;
+  logic phase2_result_valid;
+  logic fma_pair_ready;
 
-  // ----------------------
-  // State Transition Logic
-  // ----------------------
-  always_comb begin
-    // Default: stay in current state
-    state_d = state_q;
-
-    unique case (state_q)
-      IDLE: begin
-        // Start operation when valid input arrives
-        if (op_valid_i) begin
-          state_d = MULTIPLY_PH1;
-        end
-      end
-
-      MULTIPLY_PH1: begin
-        // Automatically transition to next phase
-        state_d = MULTIPLY_PH2;
-      end
-
-      MULTIPLY_PH2: begin
-        // Automatically transition to add phase
-        state_d = ADD_PHASE;
-      end
-
-      ADD_PHASE: begin
-        // Return to IDLE when result is consumed
-        if (result_ready_i) begin
-          state_d = IDLE;
-        end
-      end
-
-      default: begin
-        state_d = IDLE;
-      end
-    endcase
-  end
-
-  // ----------------------
-  // Control Signal Outputs
-  // ----------------------
-
-  // op_ready_o: Ready to accept new operation only in IDLE state
-  assign op_ready_o = (state_q == IDLE);
-
-  // result_valid_o: Result is valid only in ADD_PHASE state
-  assign result_valid_o = (state_q == ADD_PHASE);
-
-  // busy_o: Module is busy when not in IDLE state
-  assign busy_o = (state_q != IDLE);
-
-  // -----------------------------
-  // Intermediate Result Registers
-  // -----------------------------
-  // Store intermediate products from multiply phases
-
-  // prod_rr = a.real * b.real (computed in MULTIPLY_PH1)
-  logic [WIDTH-1:0] prod_rr_q, prod_rr_d;
-
-  // prod_ii = a.imag * b.imag (computed in MULTIPLY_PH1)
-  logic [WIDTH-1:0] prod_ii_q, prod_ii_d;
-
-  // prod_ri = a.real * b.imag (computed in MULTIPLY_PH2)
-  logic [WIDTH-1:0] prod_ri_q, prod_ri_d;
-
-  // prod_ir = a.imag * b.real (computed in MULTIPLY_PH2)
-  logic [WIDTH-1:0] prod_ir_q, prod_ir_d;
-
-  // Register update logic
-  always_ff @(posedge clk_i or negedge rst_ni) begin
-    if (!rst_ni) begin
-      prod_rr_q <= '0;
-      prod_ii_q <= '0;
-      prod_ri_q <= '0;
-      prod_ir_q <= '0;
-    end else begin
-      prod_rr_q <= prod_rr_d;
-      prod_ii_q <= prod_ii_d;
-      prod_ri_q <= prod_ri_d;
-      prod_ir_q <= prod_ir_d;
-    end
-  end
-
-  // Default: hold current values
-  always_comb begin
-    prod_rr_d = prod_rr_q;
-    prod_ii_d = prod_ii_q;
-    prod_ri_d = prod_ri_q;
-    prod_ir_d = prod_ir_q;
-
-    // Capture intermediate results from FMA outputs
-    unique case (state_q)
-      MULTIPLY_PH1: begin
-        // Capture results when FMA units complete phase 1
-        if (fma0_out_valid && fma1_out_valid) begin
-          prod_rr_d = fma0_result;  // a.real * b.real
-          prod_ii_d = fma1_result;  // a.imag * b.imag
-        end
-      end
-
-      MULTIPLY_PH2: begin
-        // Capture results when FMA units complete phase 2
-        if (fma0_out_valid && fma1_out_valid) begin
-          prod_ri_d = fma0_result;  // a.real * b.imag
-          prod_ir_d = fma1_result;  // a.imag * b.real
-        end
-      end
-
-      default: begin
-        // Keep current values
-      end
-    endcase
-  end
-
-  // -----------------------
-  // FMA Unit Instantiation
-  // -----------------------
-  // Two FMA units for time-multiplexed complex arithmetic
+  logic [WIDTH-1:0] a_real_q, a_imag_q;
+  logic [WIDTH-1:0] b_real_q, b_imag_q;
+  logic [WIDTH-1:0] c_real_q, c_imag_q;
+  logic [WIDTH-1:0] real_acc_q, real_acc_d;
+  logic [WIDTH-1:0] imag_acc_q, imag_acc_d;
+  logic [WIDTH-1:0] result_real_q, result_real_d;
+  logic [WIDTH-1:0] result_imag_q, result_imag_d;
+  fpnew_pkg::status_t status_q, status_d;
+  TagType tag_q, tag_d;
 
   // FMA0 signals
   logic [2:0][WIDTH-1:0] fma0_operands;
@@ -219,7 +113,147 @@ module fpnew_complex_fma
   logic                  fma1_out_ready;
   logic                  fma1_busy;
 
-  // FMA Unit 0
+  function automatic fpnew_pkg::status_t merge_status(
+    input fpnew_pkg::status_t lhs,
+    input fpnew_pkg::status_t rhs0,
+    input fpnew_pkg::status_t rhs1
+  );
+    fpnew_pkg::status_t merged;
+    begin
+      merged.NV = lhs.NV | rhs0.NV | rhs1.NV;
+      merged.DZ = lhs.DZ | rhs0.DZ | rhs1.DZ;
+      merged.OF = lhs.OF | rhs0.OF | rhs1.OF;
+      merged.UF = lhs.UF | rhs0.UF | rhs1.UF;
+      merged.NX = lhs.NX | rhs0.NX | rhs1.NX;
+      return merged;
+    end
+  endfunction
+
+  assign accept_input        = op_valid_i && op_ready_o;
+  assign phase1_result_valid = fma0_out_valid && fma1_out_valid &&
+                               ((state_q == PHASE1_ISSUE) || (state_q == PHASE1_WAIT));
+  assign phase2_result_valid = fma0_out_valid && fma1_out_valid &&
+                               ((state_q == PHASE2_ISSUE) || (state_q == PHASE2_WAIT));
+  assign fma_pair_ready      = fma0_in_ready && fma1_in_ready;
+
+  always_comb begin
+    state_d = state_q;
+
+    unique case (state_q)
+      IDLE: begin
+        if (op_valid_i)
+          state_d = PHASE1_ISSUE;
+      end
+      PHASE1_ISSUE: begin
+        if (phase1_result_valid)
+          state_d = PHASE2_ISSUE;
+        else if (fma_pair_ready)
+          state_d = PHASE1_WAIT;
+      end
+      PHASE1_WAIT: begin
+        if (phase1_result_valid)
+          state_d = PHASE2_ISSUE;
+      end
+      PHASE2_ISSUE: begin
+        if (phase2_result_valid)
+          state_d = RESULT;
+        else if (fma_pair_ready)
+          state_d = PHASE2_WAIT;
+      end
+      PHASE2_WAIT: begin
+        if (phase2_result_valid)
+          state_d = RESULT;
+      end
+      RESULT: begin
+        if (result_ready_i)
+          state_d = IDLE;
+      end
+      default: state_d = IDLE;
+    endcase
+
+    if (flush_i)
+      state_d = IDLE;
+  end
+
+  always_comb begin
+    real_acc_d    = real_acc_q;
+    imag_acc_d    = imag_acc_q;
+    result_real_d = result_real_q;
+    result_imag_d = result_imag_q;
+    status_d      = status_q;
+    tag_d         = tag_q;
+
+    if (accept_input) begin
+      status_d = '0;
+      tag_d    = tag_i;
+    end
+
+    if (phase1_result_valid) begin
+      real_acc_d = fma0_result;
+      imag_acc_d = fma1_result;
+      status_d   = merge_status(status_d, fma0_status, fma1_status);
+    end
+
+    if (phase2_result_valid) begin
+      result_real_d = fma0_result;
+      result_imag_d = fma1_result;
+      status_d      = merge_status(status_d, fma0_status, fma1_status);
+    end
+
+    if (flush_i) begin
+      real_acc_d    = '0;
+      imag_acc_d    = '0;
+      result_real_d = '0;
+      result_imag_d = '0;
+      status_d      = '0;
+      tag_d         = '0;
+    end
+  end
+
+  always_ff @(posedge clk_i or negedge rst_ni) begin
+    if (!rst_ni) begin
+      state_q       <= IDLE;
+      a_real_q      <= '0;
+      a_imag_q      <= '0;
+      b_real_q      <= '0;
+      b_imag_q      <= '0;
+      c_real_q      <= '0;
+      c_imag_q      <= '0;
+      real_acc_q    <= '0;
+      imag_acc_q    <= '0;
+      result_real_q <= '0;
+      result_imag_q <= '0;
+      status_q      <= '0;
+      tag_q         <= '0;
+    end else begin
+      state_q       <= state_d;
+      real_acc_q    <= real_acc_d;
+      imag_acc_q    <= imag_acc_d;
+      result_real_q <= result_real_d;
+      result_imag_q <= result_imag_d;
+      status_q      <= status_d;
+      tag_q         <= tag_d;
+
+      if (accept_input) begin
+        a_real_q <= operand_a_real_i;
+        a_imag_q <= operand_a_imag_i;
+        b_real_q <= operand_b_real_i;
+        b_imag_q <= operand_b_imag_i;
+        c_real_q <= operand_c_real_i;
+        c_imag_q <= operand_c_imag_i;
+      end
+
+      if (flush_i) begin
+        a_real_q <= '0;
+        a_imag_q <= '0;
+        b_real_q <= '0;
+        b_imag_q <= '0;
+        c_real_q <= '0;
+        c_imag_q <= '0;
+      end
+    end
+  end
+
   fpnew_fma #(
     .FpFormat    ( FpFormat    ),
     .NumPipeRegs ( NumPipeRegs ),
@@ -242,16 +276,15 @@ module fpnew_complex_fma
     .flush_i         ( flush_i         ),
     .result_o        ( fma0_result     ),
     .status_o        ( fma0_status     ),
-    .extension_bit_o (                 ), // unused
-    .tag_o           (                 ), // unused
-    .mask_o          (                 ), // unused
-    .aux_o           (                 ), // unused
+    .extension_bit_o (                 ),
+    .tag_o           (                 ),
+    .mask_o          (                 ),
+    .aux_o           (                 ),
     .out_valid_o     ( fma0_out_valid  ),
     .out_ready_i     ( fma0_out_ready  ),
     .busy_o          ( fma0_busy       )
   );
 
-  // FMA Unit 1
   fpnew_fma #(
     .FpFormat    ( FpFormat    ),
     .NumPipeRegs ( NumPipeRegs ),
@@ -274,21 +307,16 @@ module fpnew_complex_fma
     .flush_i         ( flush_i         ),
     .result_o        ( fma1_result     ),
     .status_o        ( fma1_status     ),
-    .extension_bit_o (                 ), // unused
-    .tag_o           (                 ), // unused
-    .mask_o          (                 ), // unused
-    .aux_o           (                 ), // unused
+    .extension_bit_o (                 ),
+    .tag_o           (                 ),
+    .mask_o          (                 ),
+    .aux_o           (                 ),
     .out_valid_o     ( fma1_out_valid  ),
     .out_ready_i     ( fma1_out_ready  ),
     .busy_o          ( fma1_busy       )
   );
 
-  // --------------------------
-  // Operand Multiplexer (FMA0)
-  // --------------------------
-  // Select operands for FMA0 based on current state
   always_comb begin
-    // Default assignments
     fma0_operands  = '0;
     fma0_is_boxed  = '1;
     fma0_op        = fpnew_pkg::FMADD;
@@ -297,38 +325,26 @@ module fpnew_complex_fma
     fma0_out_ready = 1'b1;
 
     unique case (state_q)
-      IDLE, MULTIPLY_PH1: begin
-        // Compute prod_rr = a.real * b.real
-        fma0_operands[0] = operand_a_real_i;
-        fma0_operands[1] = operand_b_real_i;
-        fma0_operands[2] = '0;
-        fma0_in_valid    = (state_q == MULTIPLY_PH1);
-      end
-
-      MULTIPLY_PH2: begin
-        // Compute prod_ri = a.real * b.imag
-        fma0_operands[0] = operand_a_real_i;
-        fma0_operands[1] = operand_b_imag_i;
-        fma0_operands[2] = '0;
+      PHASE1_ISSUE: begin
+        // real_acc = c.real + a.real * b.real
+        fma0_operands[0] = a_real_q;
+        fma0_operands[1] = b_real_q;
+        fma0_operands[2] = c_real_q;
+        fma0_op          = fpnew_pkg::FMADD;
         fma0_in_valid    = 1'b1;
       end
-
-      ADD_PHASE: begin
-        // Compute result.real = c.real + prod_rr - prod_ii
-        fma0_operands[0] = prod_rr_q;
-        fma0_operands[1] = prod_ii_q;
-        fma0_operands[2] = operand_c_real_i;
+      PHASE2_ISSUE: begin
+        // real = real_acc - a.imag * b.imag
+        fma0_operands[0] = a_imag_q;
+        fma0_operands[1] = b_imag_q;
+        fma0_operands[2] = real_acc_q;
         fma0_op          = fpnew_pkg::FNMSUB;
         fma0_in_valid    = 1'b1;
       end
-
       default: ;
     endcase
   end
 
-  // --------------------------
-  // Operand Multiplexer (FMA1)
-  // --------------------------
   always_comb begin
     fma1_operands  = '0;
     fma1_is_boxed  = '1;
@@ -338,78 +354,33 @@ module fpnew_complex_fma
     fma1_out_ready = 1'b1;
 
     unique case (state_q)
-      IDLE, MULTIPLY_PH1: begin
-        // Compute prod_ii = a.imag * b.imag
-        fma1_operands[0] = operand_a_imag_i;
-        fma1_operands[1] = operand_b_imag_i;
-        fma1_operands[2] = '0;
-        fma1_in_valid    = (state_q == MULTIPLY_PH1);
-      end
-
-      MULTIPLY_PH2: begin
-        // Compute prod_ir = a.imag * b.real
-        fma1_operands[0] = operand_a_imag_i;
-        fma1_operands[1] = operand_b_real_i;
-        fma1_operands[2] = '0;
-        fma1_in_valid    = 1'b1;
-      end
-
-      ADD_PHASE: begin
-        // Compute result.imag = c.imag + prod_ri + prod_ir
-        // Note: FMA can only do a*b+c, not a+b+c
-        // Use: prod_ri + (prod_ir * 1.0 + c.imag)
-        // Workaround: Set operand[1] to 1.0, but this is tricky
-        // Better: use ADD operation separately or multi-cycle
-        // For now: simplified as prod_ri*1 + prod_ir (missing c.imag)
-        fma1_operands[0] = prod_ri_q;
-        fma1_operands[1] = prod_ir_q;
-        fma1_operands[2] = operand_c_imag_i;
+      PHASE1_ISSUE: begin
+        // imag_acc = c.imag + a.imag * b.real
+        fma1_operands[0] = a_imag_q;
+        fma1_operands[1] = b_real_q;
+        fma1_operands[2] = c_imag_q;
         fma1_op          = fpnew_pkg::FMADD;
         fma1_in_valid    = 1'b1;
       end
-
+      PHASE2_ISSUE: begin
+        // imag = imag_acc + a.real * b.imag
+        fma1_operands[0] = a_real_q;
+        fma1_operands[1] = b_imag_q;
+        fma1_operands[2] = imag_acc_q;
+        fma1_op          = fpnew_pkg::FMADD;
+        fma1_in_valid    = 1'b1;
+      end
       default: ;
     endcase
   end
 
-  // ---------------------
-  // Result Routing Logic
-  // ---------------------
-  // Route FMA results to final outputs in ADD_PHASE
+  assign op_ready_o     = (state_q == IDLE);
+  assign result_valid_o = (state_q == RESULT);
+  assign busy_o         = (state_q != IDLE) | fma0_busy | fma1_busy;
 
-  // Final results are valid only in ADD_PHASE
-  assign result_real_o = fma0_result;  // c.real + prod_rr - prod_ii
-  assign result_imag_o = fma1_result;  // c.imag + prod_ri + prod_ir (approximation)
-
-  // Merge status flags from both FMA units
-  // In ADD_PHASE, use the status from final computation
-  // In other phases, accumulate any exceptions
-  always_comb begin
-    status_o = '0;
-
-    unique case (state_q)
-      ADD_PHASE: begin
-        // Final phase: merge status from both FMA units
-        status_o.NV = fma0_status.NV | fma1_status.NV;  // Invalid
-        status_o.DZ = fma0_status.DZ | fma1_status.DZ;  // Divide by zero (shouldn't happen)
-        status_o.OF = fma0_status.OF | fma1_status.OF;  // Overflow
-        status_o.UF = fma0_status.UF | fma1_status.UF;  // Underflow
-        status_o.NX = fma0_status.NX | fma1_status.NX;  // Inexact
-      end
-
-      default: begin
-        // No status output in intermediate phases
-        status_o = '0;
-      end
-    endcase
-  end
-
-  // Tag propagation (pass through)
-  assign tag_o = tag_i;
-
-  // TODO: Complete integration
-
-  // Temporary assignments to prevent compilation errors
-  // (These will be removed once fully integrated)
+  assign result_real_o  = result_real_q;
+  assign result_imag_o  = result_imag_q;
+  assign status_o       = status_q;
+  assign tag_o          = tag_q;
 
 endmodule : fpnew_complex_fma
