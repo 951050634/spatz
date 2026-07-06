@@ -186,3 +186,31 @@
 - `cd hw/system/spatz_cluster/sw/build && PATH="/home/wxt/spatz-cfma/.venv/bin:$PATH" ctest -R 'riscvTests-rtl-(vfcmacc|vfmacc|vfnmsac)$' --output-on-failure`：PASS，3/3。
 
 结论：默认关闭的 VFU read collector mux/trace scaffold 通过 build 和 fallback regression；完整阶段 3 仍需 enable-mode directed trace closure。
+
+## 2026-07-07 阶段 3 小阶段：VFU enable-mode read collector directed trace closure
+
+计划提交信息：`[cfma-v2] Verify VFU CFMA read collector enable mode`
+
+主要内容：
+
+- 修改 `hw/ip/spatz/src/spatz.sv`，把 `CfmaDedicatedReadCollectorEn` 和 `CfmaDedicatedWritebackEn` 作为 top-level Spatz 参数透传到 `spatz_vfu`，默认仍为关闭。
+- 修改 `hw/ip/spatz/src/spatz_vfu.sv`，扩展仿真-only `CFMA_READ_BUNDLE` trace，使其打印六个 operand 的地址与数据。
+- 新增 `hw/ip/spatz/test/spatz_vfu_cfma_read_mux_tb.sv`，在 `CfmaDedicatedReadCollectorEn=1` 下定向验证：
+  - R0: `a.real=vs1`, `a.imag=vs1+LMUL`, `b.real=vs2`；
+  - R1: `b.imag=vs2+LMUL`, `c.real=vd`, `c.imag=vd+LMUL`；
+  - bundle trace 中 sentinel data 与地址一致。
+- 更新 `docs/v2/STAGE3_VRF_READ_AUDIT.md`，记录 enable-mode closure、trace 样例和阶段 3 closure 状态。
+- 新增 `docs/v2/evidence/stage3_vfu_read_collector_enable_mode_verification.txt` 保存完整验证转录。
+
+验证命令：
+
+- `git diff --check`：PASS；
+- `/home/wxt/spatz/install/bender/bender script verilator -t spatz -t rtl`：PASS；
+- `install/verilator/bin/verilator_bin --binary --timing ... spatz_vfu_cfma_read_mux_tb.sv`：PASS；
+- `build/cfma_v2/obj_vfu_cfma_read_mux_verify/Vspatz_vfu_cfma_read_mux_tb`：PASS；
+- `install/verilator/bin/verilator_bin --binary --timing ... spatz_cfma_read_collector_tb.sv`：PASS；
+- `build/cfma_v2/obj_read_collector_enable_verify/Vspatz_cfma_read_collector_tb`：PASS；
+- `PATH="$PWD/.venv/bin:$PATH" make -C hw/system/spatz_cluster bin/spatz_cluster.vlt`：PASS；
+- `cd hw/system/spatz_cluster/sw/build && PATH="/home/wxt/spatz-cfma/.venv/bin:$PATH" ctest -R 'riscvTests-rtl-(vfcmacc|vfmacc|vfnmsac)$' --output-on-failure`：PASS，3/3。
+
+结论：阶段 3 的 dedicated read collector 已完成 VFU enable-mode 定向 trace closure；默认关闭的 v1 fallback 仍通过系统 build 和三条 RTL regression。下一阶段可进入 dedicated compute path 连接，但仍保持 writeback/default path 受控关闭。

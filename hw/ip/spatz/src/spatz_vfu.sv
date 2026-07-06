@@ -1522,11 +1522,15 @@ module spatz_vfu
     always_ff @(posedge clk_i) begin : cfma_read_bundle_trace_proc
       if (CfmaDedicatedReadCollectorEn && cfma_read_bundle_valid &&
           cfma_read_bundle_ready) begin
-        $display("CFMA_READ_BUNDLE elem=%0d last=%0b a.real=0x%0h a.imag=0x%0h b.real=0x%0h b.imag=0x%0h c.real=0x%0h c.imag=0x%0h vd.real.addr=0x%0h vd.imag.addr=0x%0h",
-                 cfma_read_elem_idx, cfma_read_last, cfma_read_a_real,
-                 cfma_read_a_imag, cfma_read_b_real, cfma_read_b_imag,
-                 cfma_read_c_real, cfma_read_c_imag, cfma_read_vd_real_addr,
-                 cfma_read_vd_imag_addr);
+        $display("CFMA_READ_BUNDLE elem=%0d last=%0b a.real.addr=0x%0h a.real=0x%0h a.imag.addr=0x%0h a.imag=0x%0h b.real.addr=0x%0h b.real=0x%0h b.imag.addr=0x%0h b.imag=0x%0h c.real.addr=0x%0h c.real=0x%0h c.imag.addr=0x%0h c.imag=0x%0h vd.real.addr=0x%0h vd.imag.addr=0x%0h",
+                 cfma_read_elem_idx, cfma_read_last,
+                 cfma_read_a_real_addr, cfma_read_a_real,
+                 cfma_read_a_imag_addr, cfma_read_a_imag,
+                 cfma_read_b_real_addr, cfma_read_b_real,
+                 cfma_read_b_imag_addr, cfma_read_b_imag,
+                 cfma_read_c_real_addr, cfma_read_c_real,
+                 cfma_read_c_imag_addr, cfma_read_c_imag,
+                 cfma_read_vd_real_addr, cfma_read_vd_imag_addr);
       end
     end
     // pragma translate_on

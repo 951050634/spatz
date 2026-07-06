@@ -293,3 +293,61 @@ ctest -R 'riscvTests-rtl-(vfcmacc|vfmacc|vfnmsac)$': PASS, 3/3
 ```
 
 该小阶段仍不是完整阶段 3 退出。原因：`CfmaDedicatedReadCollectorEn=1` 的真实 VFU execution/trace 尚未关闭；当前只是使 mux/trace path 可参数化、可编译、默认关闭。下一小阶段需要让 enable-mode 在不暴露 partial state 的前提下生成真实 bundle trace，并用 directed sentinel program 检查六 operand 来源。
+
+## 11. 已完成小阶段：VFU enable-mode directed trace closure
+
+本小阶段在不启用 dedicated writeback、默认路径继续关闭的前提下，完成 `CfmaDedicatedReadCollectorEn=1` 的 VFU 级定向可观测验证。
+
+新增/调整：
+
+- `hw/ip/spatz/src/spatz.sv` 新增并透传默认关闭参数：
+  - `CfmaDedicatedReadCollectorEn = 1'b0`；
+  - `CfmaDedicatedWritebackEn = 1'b0`。
+- `hw/ip/spatz/src/spatz_vfu.sv` 的仿真-only `CFMA_READ_BUNDLE` trace 扩展为同时打印六个 operand 的地址和数据，便于直接审查来源。
+- 新增 `hw/ip/spatz/test/spatz_vfu_cfma_read_mux_tb.sv`，实例化：
+  - `spatz_vfu #(.CfmaDedicatedReadCollectorEn(1'b1), .CfmaDedicatedWritebackEn(1'b0))`；
+  - 驱动一条 `VFCMADD`，`vs1=5`, `vs2=9`, `vd=13`, `LMUL=1`, `SEW=64`, `VL=1`；
+  - 用 sentinel data 根据 `vrf_raddr_o` 返回唯一数据；
+  - 断言 R0/R1 mux 输出：
+    - R0 port0/1/2 = `vs1`, `vs1+LMUL`, `vs2`；
+    - R1 port0/1/2 = `vs2+LMUL`, `vd`, `vd+LMUL`。
+
+TDD 红灯：
+
+```text
+spatz parameter pass-through missing
+```
+
+以及 testbench 首次运行暴露采样点问题：`@(posedge clk)` 后 NBA 尚未更新，导致误把 R0 当作 R1 检查。根因确认后，testbench 在时钟沿后延迟一个 timestep 再检查 R1。
+
+定向 trace 样例：
+
+```text
+CFMA_READ_BUNDLE elem=0 last=0 a.real.addr=0xa a.real=0xaaaa000000000001 a.imag.addr=0xc a.imag=0xaaaa000000000002 b.real.addr=0x12 b.real=0xbbbb000000000001 b.imag.addr=0x14 b.imag=0xbbbb000000000002 c.real.addr=0x1a c.real=0xcccc000000000001 c.imag.addr=0x1c c.imag=0xcccc000000000002 vd.real.addr=0x1a vd.imag.addr=0x1c
+SPATZ_VFU_CFMA_READ_MUX_TB_PASS
+```
+
+这里 `NrWordsPerVector=2`，因此地址 `0xa/0xc/0x12/0x14/0x1a/0x1c` 分别对应 register group `5/6/9/10/13/14`，匹配阶段 3 契约 `a=vs1`, `b=vs2`, `c=vd`。
+
+最终验证证据：
+
+```text
+docs/v2/evidence/stage3_vfu_read_collector_enable_mode_verification.txt
+```
+
+验证结果：
+
+```text
+git diff --check: PASS
+VFU enable-mode directed read mux Verilator build/run: PASS
+standalone read collector Verilator build/run: PASS
+system Verilator build with default-off parameters: PASS
+ctest -R 'riscvTests-rtl-(vfcmacc|vfmacc|vfnmsac)$': PASS, 3/3
+```
+
+阶段 3 当前 closure 状态：
+
+- 已证明 standalone collector R0/R1 mapping、backpressure 和 bundle freeze；
+- 已证明 VFU enable-mode 下 collector 能接管三读端口并形成六 operand trace；
+- 默认配置仍关闭 dedicated read collector/writeback，v1 fallback regression 未回归；
+- 后续阶段 4 可以在该 frozen bundle 基础上接 dedicated compute path，但仍不得默认 architectural writeback。

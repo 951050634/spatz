@@ -28,6 +28,12 @@ module spatz import spatz_pkg::*; import rvv_pkg::*; import fpnew_pkg::*; #(
     parameter type                          spatz_rsp_t         = logic,
     /// FPU configuration.
     parameter fpu_implementation_t          FPUImplementation   = fpu_implementation_t'(0),
+    /// Stage-3 experimental scaffold: allow dedicated CFMA read collector to
+    /// drive the VFU VRF read ports. Default off; v1 fallback remains default.
+    parameter bit                           CfmaDedicatedReadCollectorEn = 1'b0,
+    /// Stage-5 experimental scaffold: allow dedicated CFMA split write-back.
+    /// Default off until dedicated-mode ISA regression is closed.
+    parameter bit                           CfmaDedicatedWritebackEn = 1'b0,
     // Derived parameters. DO NOT CHANGE!
     parameter int                  unsigned NumOutstandingLoads = 8
   ) (
@@ -443,7 +449,9 @@ module spatz import spatz_pkg::*; import rvv_pkg::*; import fpnew_pkg::*; #(
   /////////
 
   spatz_vfu #(
-    .FPUImplementation(FPUImplementation)
+    .FPUImplementation(FPUImplementation),
+    .CfmaDedicatedReadCollectorEn(CfmaDedicatedReadCollectorEn),
+    .CfmaDedicatedWritebackEn(CfmaDedicatedWritebackEn)
   ) i_vfu (
     .clk_i            (clk_i                                                   ),
     .rst_ni           (rst_ni                                                  ),
