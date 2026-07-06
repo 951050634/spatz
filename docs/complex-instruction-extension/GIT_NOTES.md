@@ -1519,3 +1519,63 @@ vfmacc 22.11 s，vfcmacc 118.53 s，vfnmsac 22.22 s。
 correctness、benchmark correctness 或 speedup。Step 13 必须先决定保留 v1
 四阶段路径，或补齐并重新验证完整 dedicated path。
 ```
+
+
+## Step 13-18 v1 收尾记录
+
+日期：2026-07-06
+
+计划提交名：
+
+```text
+[cfma] Finalize v1 CFMA closure docs
+```
+
+修改范围：
+
+```text
+M docs/complex-instruction-extension/complex_fma_hardware_design.md
+M docs/complex-instruction-extension/PHASE_RESULTS.md
+M docs/complex-instruction-extension/GIT_NOTES.md
+M docs/complex-instruction-extension/RESUME_INFO.md
+A docs/complex-instruction-extension/cfma_performance_results.md
+A docs/complex-instruction-extension/IMPLEMENTATION_SUMMARY.md
+A docs/superpowers/plans/2026-07-06-cfma-step13-18-v1-finalization.md
+```
+
+内容摘要：
+
+```text
+- 将 Step 13-18 收敛到当前 v1 四阶段 FPU path 的架构决策和验证证据。
+- 记录 dedicated CFMA write-back prototype 仍由 CfmaDedicatedWritebackEn = 1'b0 禁用。
+- 新增 performance evidence 文档和 implementation summary。
+- 记录 benchmark probe 的真实结果：小规模 dp-caxpy 通过，dp-cdotp_old_M128 长时间不返回。
+```
+
+验证记录：
+
+```text
+git diff --check:
+PASS，退出码 0，无输出。
+
+PATH="$PWD/.venv/bin:$PATH" make -C hw/system/spatz_cluster bin/spatz_cluster.vlt:
+PASS，退出码 0；目标 up to date。
+
+PATH="$PWD/.venv/bin:$PATH" make -C hw/system/spatz_cluster sw.vlt:
+PASS，退出码 0；CMake 注册 vfcmacc_illegal/vfcmacc，软件树构建完成。
+
+cd hw/system/spatz_cluster/sw/build &&
+PATH="/home/wxt/spatz-cfma/.venv/bin:$PATH" ctest -R 'riscvTests-rtl-(vfcmacc|vfmacc|vfnmsac)$' --output-on-failure:
+PASS，退出码 0；3/3 passed；vfmacc 27.18s，vfcmacc 137.46s，vfnmsac 21.69s；总用时 186.35s。
+
+cd hw/system/spatz_cluster/sw/build &&
+PATH="/home/wxt/spatz-cfma/.venv/bin:$PATH" ctest -R 'spatzBenchmarks-rtl-spatzBenchmarks-rtl-(dp-cdotp_old_M128|dp-cdotp_vfcmacc_M128|dp-caxpy_M256|dp-caxpy_vfcmacc_M256)$' --output-on-failure:
+INTERRUPTED，退出码 130；dp-caxpy_M256 PASS 1.59s；dp-caxpy_vfcmacc_M256 PASS 1.51s；dp-cdotp_old_M128 超过 17 分钟未完成；dp-cdotp_vfcmacc_M128 未运行到。
+```
+
+遗留风险：
+
+```text
+不声明 dedicated hardware correctness、完整 benchmark correctness 或 speedup。Step 17
+完整性能闭环仍需后续调查 dp-cdotp RTL 长跑/超时问题。
+```

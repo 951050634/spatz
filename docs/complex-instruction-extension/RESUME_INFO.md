@@ -9,23 +9,17 @@
 
 ## 快速状态
 
-- 当前工程目标：在 Spatz 上完成 `vfcmacc.vv` / CFMA 指令扩展的 RTL、软件和验证闭环。
-- 当前进度口径：18 步硬件实施计划中，步骤 1-11 已完成；步骤 12 有 RTL 草稿，
-  但不能标记完成。
-- 当前工作区：存在未提交修改，包含 1 个 RTL 文件和 4 个文档文件：
-  `hw/ip/spatz/src/spatz_vfu.sv`、`RESUME_INFO.md`、`PHASE_RESULTS.md`、
-  `GIT_NOTES.md` 和 `complex_fma_hardware_design.md`。
-- 未提交修改内容：Step 12 的 CFMA split VRF write-back 草稿，新增两拍写回 FSM，
-  并把该路径接入 VRF 写回 mux；但该专用写回路径通过
-  `CfmaDedicatedWritebackEn = 1'b0` 默认禁用。
-- 当前功能路径：`vfcmacc` 仍使用已验证的现有四阶段 FPU CFMA 路径。专用 CFMA
-  硬件结果不会覆盖该路径。
-- 当前风险：专用 CFMA 硬件路径尚未具备可启用条件。已知问题包括固定
-  `FP64` 实例化、只锁存 `operand*[ELEN-1:0]`、缺少 e16/e32 packed lane 语义，
-  以及 `fpnew_complex_fma.sv` 中 imag 计算语义未完成。
-- 当前验证：已针对默认禁用专用写回后的 RTL 运行 whitespace、Verilator build
-  和 `vfcmacc/vfmacc/vfnmsac` RTL 回归；结果记录在 `PHASE_RESULTS.md` 和
-  `GIT_NOTES.md`。
+- 当前工程目标：在 Spatz 上完成 `vfcmacc.vv` / CFMA 指令扩展的 v1 RTL、软件和验证闭环。
+- 当前 v1 功能路径：`vfcmacc` 使用已验证的现有四阶段 FPU CFMA 路径。
+- 专用 CFMA 写回路径：仍通过 `CfmaDedicatedWritebackEn = 1'b0` 默认禁用；不得作为
+  dedicated hardware correctness 证据。
+- Step 13-18 收尾：已补齐 v1 架构决策、build/ISA RTL regression 证据、性能证据
+  文档和实施总结。
+- 当前验证：`git diff --check`、`bin/spatz_cluster.vlt`、`sw.vlt`、
+  `riscvTests-rtl-(vfmacc|vfcmacc|vfnmsac)` 均在 2026-07-06 通过。
+- benchmark 状态：`dp-caxpy_M256` 和 `dp-caxpy_vfcmacc_M256` probes 通过；
+  `dp-cdotp_old_M128` 在观察到的 17 分钟窗口内未完成，因此不声明完整 benchmark
+  correctness 或 speedup。
 
 ---
 
@@ -61,16 +55,13 @@ sed -n '780,880p' docs/complex-instruction-extension/complex_fma_hardware_design
 
 ## 下一步建议
 
-1. 不要继续把当前 Step 12 草稿推进为完成态；它只应作为 disabled prototype
-   保留，避免破坏已通过的 ISA 行为。
-2. 做 Step 13 控制架构决策：
-   - v1 保守路线：明确保留现有四阶段 FPU 路径作为功能实现，删除或继续 guard
-     未完成的专用写回路径。
-   - 专用硬件路线：重新设计完整 dedicated CFMA path，包括动态 FP format、
-     packed e16/e32 lanes、正确 complex arithmetic、status flags、mask/tail byte
-     enable、response timing 和 VRF 写回仲裁。
-3. 若选择专用硬件路线，先补 `fpnew_complex_fma` 的独立 reference/testbench，
-   再重新打开 `CfmaDedicatedWritebackEn`，不能直接启用当前草稿。
+1. 推荐 Option A：保留 v1 四阶段 FPU path，清理或继续 guard unused dedicated
+   prototype，避免后续误启用未验证路径。
+2. 若继续追 Step 17，先调查 `dp-cdotp_old_M128` 在 RTL benchmark probe 中超过
+   17 分钟未完成的问题；完成前不要声明完整 benchmark correctness 或 speedup。
+3. 若选择 dedicated hardware 路线，必须先补 `fpnew_complex_fma` 独立 reference/testbench，
+   再重新设计动态 FP format、packed e16/e32 lanes、complex arithmetic/status flags、
+   mask/tail byte enable、response timing 和 VRF 写回仲裁。
 
 ---
 

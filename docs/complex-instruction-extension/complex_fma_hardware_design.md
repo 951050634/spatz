@@ -891,6 +891,11 @@ git commit -m "[cfma] Implement split VRF write logic for complex FMA results"
 
 ### 步骤 13：更新 CFMA phase 控制逻辑
 
+**v1 收尾状态（2026-07-06）**：已作为架构决策关闭。v1 不启用新的
+`USE_CFMA_HARDWARE` 默认路径；功能实现继续使用已验证的四阶段 FPU 复用路径。下面的
+原始 dedicated-hardware 目标保留为 v2/后续路线参考，不作为当前完成声明。
+
+
 **当前建议（2026-07-06）**：先做架构决策，不要直接默认启用
 `USE_CFMA_HARDWARE`。当前已知可工作的 v1 功能路径是四阶段 FPU 复用实现；专用硬件
 路径必须先补齐动态 FP format、packed lane、complex arithmetic、status flags、
@@ -914,13 +919,12 @@ mask/tail 和写回时序验证后才能作为默认路径。
    - 等待 cfma 硬件单元完成（通过 cfma_busy）
 7. 清理不再需要的 cfma_status 累积逻辑
 
-**验收标准**：
-- ✓ 添加了 USE_CFMA_HARDWARE 编译选项
-- ✓ 新逻辑正确绕过 4-phase 循环
-- ✓ 保留了向后兼容模式
-- ✓ cfma_wait_result 逻辑更新为监控硬件单元
-- ✓ 没有破坏非 CFMA 指令的执行
-- ✓ 编译通过
+**v1 验收标准（替代原 dedicated-hardware 验收）**：
+- [x] 明确不添加默认启用的 `USE_CFMA_HARDWARE` 路径。
+- [x] 保留四阶段 FPU 路径作为 v1 功能实现。
+- [x] `vfcmacc` ISA RTL regression 通过，证明未破坏当前功能路径。
+- [ ] dedicated hardware 绕过 4-phase 循环的实现与验证推迟到 v2。
+- [ ] dedicated hardware `cfma_wait_result`/`cfma_busy` 完整时序验证推迟到 v2。
 
 **Git 操作**：
 ```bash
@@ -931,6 +935,12 @@ git commit -m "[cfma] Update control logic to use dedicated CFMA hardware unit"
 ---
 
 ### 步骤 14：处理 CFMA 的 fence 和依赖关系
+
+**v1 收尾状态（2026-07-06）**：已按保守依赖策略关闭。v1 继续保留现有
+serialization/fence 处理来覆盖隐式 real/imag register group 依赖；该策略由
+`vfcmacc` ISA RTL regression 覆盖。dedicated hardware 的细粒度 scoreboard 优化推迟到
+重新打开专用路径后处理。
+
 
 **目标**：确保 CFMA 与其他指令的正确同步
 
@@ -947,12 +957,11 @@ git commit -m "[cfma] Update control logic to use dedicated CFMA hardware unit"
    - CFMA 写回完成后，清除 vd 的 busy 标记
 5. 测试场景：连续的 CFMA 指令，验证无数据冒险
 
-**验收标准**：
-- ✓ 理解了 CFMA 的依赖关系
-- ✓ fence 逻辑正确（或有理由移除）
-- ✓ scoreboard 正确更新
-- ✓ 不会引入数据冒险
-- ✓ 编译通过
+**v1 验收标准**：
+- [x] v1 继续使用保守 serialization/fence 策略处理隐式 real/imag group 依赖。
+- [x] `vfcmacc` ISA RTL regression 通过，覆盖当前 v1 hazard/fence 策略。
+- [x] `vfmacc`/`vfnmsac` 邻近 regression 通过，未发现普通 FMA 回归。
+- [ ] dedicated hardware scoreboard/RAW/WAW 优化未验证，推迟到 v2。
 
 **Git 操作**：
 ```bash
@@ -963,6 +972,11 @@ git commit -m "[cfma] Handle fence and data dependency for CFMA hardware unit"
 ---
 
 ### 步骤 15：全系统编译和语法验证
+
+**v1 收尾状态（2026-07-06）**：当前 v1 源码通过本轮 fresh verification closure。
+`git diff --check` 退出码 0；`bin/spatz_cluster.vlt` 目标退出码 0 且为 up to date；
+`sw.vlt` 退出码 0 并重新注册 `vfcmacc_illegal`/`vfcmacc` 测试。
+
 
 **目标**：确保所有修改能够成功编译
 
@@ -999,12 +1013,12 @@ decode、benchmark 或 ISA 行为发生变化后，应运行完整 Verilator 构
    - 生成的文件大小
    - 主要 warning 类型
 
-**验收标准**：
-- ✓ `make bin/spatz_cluster.vlt` 成功完成
-- ✓ 编译日志中 0 error
-- ✓ 所有 critical warning 已解决或有合理解释
-- ✓ 生成了可执行的仿真器二进制文件
-- ✓ 文件大小合理（与之前版本相比增长 < 20%）
+**v1 验收标准**：
+- [x] `make -C hw/system/spatz_cluster bin/spatz_cluster.vlt` 退出码 0。
+- [x] `make -C hw/system/spatz_cluster sw.vlt` 退出码 0。
+- [x] 生成/保留了可执行的 `bin/spatz_cluster.vlt`。
+- [x] 当前输出只有既有 Bender warning 和既有 benchmark build warnings；未出现 build error。
+- [ ] 未做二进制大小增长率审计；该项不作为本轮完成声明。
 
 **Git 操作**：
 ```bash
@@ -1015,6 +1029,13 @@ git commit -m "[cfma] Fix compilation errors and complete system integration"
 ---
 
 ### 步骤 16：功能仿真测试
+
+**v1 收尾状态（2026-07-06）**：ISA RTL 功能闭环通过。
+`riscvTests-rtl-(vfmacc|vfcmacc|vfnmsac)` 本轮 3/3 通过，总用时 186.35s。
+小规模 `dp-caxpy_M256` 和 `dp-caxpy_vfcmacc_M256` benchmark probes 通过；
+`dp-cdotp_old_M128` 在观察到的 17 分钟窗口内未完成，因此不能声称完整 benchmark
+correctness。
+
 
 **目标**：运行基本测试验证 CFMA 硬件单元功能正确
 
@@ -1042,12 +1063,12 @@ git commit -m "[cfma] Fix compilation errors and complete system integration"
    - cycle 数
    - 是否产生正确结果
 
-**验收标准**：
-- ✓ 仿真能够完整运行不崩溃
-- ✓ 没有 ERROR 或 FATAL 消息
-- ✓ CFMA 指令能够被识别和执行
-- ✓ 基本功能正确（即使性能未达标）
-- ✓ 波形显示状态转移正常
+**v1 验收标准**：
+- [x] `vfcmacc` ISA RTL regression 完整运行并通过。
+- [x] `vfmacc`/`vfnmsac` 邻近回归通过，未发现当前变更导致的 FMA 回归。
+- [x] 小规模 `dp-caxpy_M256` 与 `dp-caxpy_vfcmacc_M256` benchmark probes 通过。
+- [ ] `dp-cdotp_old_M128` 未在观察到的 17 分钟窗口内完成，完整 benchmark 功能闭环未关闭。
+- [ ] dedicated hardware 波形/状态转移验证推迟到 v2；v1 不声明该路径正确。
 
 **Git 操作**：
 ```bash
@@ -1059,6 +1080,13 @@ git commit -m "[cfma] Fix functional bugs found in simulation"
 ---
 
 ### 步骤 17：性能测试和优化
+
+**v1 收尾状态（2026-07-06）**：性能目标未作为完成项关闭。v1 路线使用四阶段
+FPU 复用实现，本轮只记录可复现 evidence：两个小规模 `dp-caxpy` probe 通过，
+`dp-cdotp_old_M128` 长时间未完成，未得到 old/new 对比数据。因此不声明 speedup，
+旧文档中的 `>2x`/`3.5x` 目标保留为 dedicated hardware/v2 目标而非当前结果。
+详见 `cfma_performance_results.md`。
+
 
 **目标**：验证性能提升是否达到预期目标
 
@@ -1095,12 +1123,12 @@ git commit -m "[cfma] Fix functional bugs found in simulation"
    - 瓶颈分析
    - 优化建议（如果需要）
 
-**验收标准**：
-- ✓ 所有 benchmark 运行完成
-- ✓ 性能数据完整记录
-- ✓ 加速比达到 2× 以上（目标 3.5×）
-- ✓ 功能正确性验证通过（结果与参考实现一致）
-- ✓ 性能报告文档完整
+**v1 验收标准**：
+- [x] 已创建 `cfma_performance_results.md` 记录本轮可复现 evidence。
+- [x] 小规模 `dp-caxpy_M256` 与 `dp-caxpy_vfcmacc_M256` probes 通过并记录时间。
+- [ ] 所有 benchmark 未运行完成；`dp-cdotp_old_M128` 长时间不返回。
+- [ ] 未获得完整 old/new benchmark correctness 对比。
+- [ ] 未证明 speedup；旧 `>2x`/`3.5x` 目标推迟到 dedicated hardware/v2。
 
 **Git 操作**：
 ```bash
@@ -1112,6 +1140,12 @@ git commit -m "[cfma] Add performance benchmark results and analysis"
 
 ### 步骤 18：文档更新和最终清理
 
+**v1 收尾状态（2026-07-06）**：文档交接已补齐：
+`IMPLEMENTATION_SUMMARY.md` 汇总 v1 范围、Step 13-18 closure 和残余风险；
+`cfma_performance_results.md` 记录本轮 benchmark/performance evidence 和明确 non-claims。
+代码层面未启用 dedicated path，下一步推荐清理或继续 guard unused dedicated prototype。
+
+
 **目标**：完善文档，清理临时代码，准备合并
 
 **具体任务**：
@@ -1120,7 +1154,7 @@ git commit -m "[cfma] Add performance benchmark results and analysis"
    - 更新架构图（如果需要）
    - 说明如何启用/禁用 CFMA 硬件
 2. 更新本文档：
-   - 标记所有步骤为已完成 ✅
+   - 标记各步骤的实际状态；未验证项必须保留为未完成或 deferred
    - 更新验收标准部分的实际结果
    - 添加实际的性能数据
 3. 清理代码：
@@ -1142,12 +1176,12 @@ git commit -m "[cfma] Add performance benchmark results and analysis"
    - 后续工作建议
 6. 准备 PR 描述（如果需要）
 
-**验收标准**：
-- ✓ 所有文档已更新
-- ✓ 代码清理完成
-- ✓ git 历史清晰（至少 15 个有意义的 commit）
-- ✓ IMPLEMENTATION_SUMMARY.md 完整
-- ✓ 可以提交 PR 或合并到 main
+**v1 验收标准**：
+- [x] `IMPLEMENTATION_SUMMARY.md` 已创建并记录 v1 scope、Step 13-18 closure 和 residual risks。
+- [x] `cfma_performance_results.md` 已创建并记录本轮 benchmark evidence/non-claims。
+- [x] 文档明确 dedicated path disabled，避免误声明 Step 12/13 dedicated hardware 完成。
+- [ ] 未做代码层面的 dedicated prototype 删除；推荐作为下一目标 Option A。
+- [ ] 是否提交 PR 或合并到 main 由后续分支收尾流程决定。
 
 **Git 操作**：
 ```bash
@@ -1161,27 +1195,23 @@ git commit -m "[cfma] Update documentation and finalize implementation"
 
 ### 功能正确性
 
-1. ✅ 所有现有 ISA tests 通过（不回归）
-2. ✅ 新增 complex FMA tests 通过：
-   - 基本正确性
-   - NaN/Inf 处理
-   - Rounding modes (RNE, RTZ, RDN, RUP, RMM)
-   - Subnormal 处理
-3. ✅ dp-caxpy, dp-cdotp benchmarks bit-identical 结果
+1. ✅ 当前本轮 `riscvTests-rtl-(vfmacc|vfcmacc|vfnmsac)` 通过，证明 v1 ISA RTL 路径未回归。
+2. ✅ `vfcmacc` ISA test 覆盖基本正确性、e16/e32/e64、mask/tail、fflags 与异常值相关场景。
+3. ⚠️ `dp-caxpy_M256` 和 `dp-caxpy_vfcmacc_M256` probes 通过；`dp-cdotp_old_M128` 未在观察窗口内完成，因此不声明完整 benchmark bit-identical correctness。
 
 ### 性能提升
 
-| Benchmark | 当前 | 目标 | 提升 |
-|-----------|------|------|------|
-| dp-caxpy M4096 | 4.09秒 | <2.5秒 | >40% |
-| dp-caxpy M1024 | 2.23秒 | <1.4秒 | >35% |
-| dp-caxpy M256 | 3.33秒 | <2.1秒 | >35% |
+| Benchmark | 本轮证据 | 当前结论 |
+|-----------|----------|----------|
+| dp-caxpy M256 | baseline 1.59s，vfcmacc 1.51s | 小规模 probe 可运行；不作为 speedup 结论 |
+| dp-cdotp M128 | old path >17 分钟未完成 | benchmark/performance closure blocked |
+| dedicated hardware path | 默认禁用 | 不声明性能收益 |
 
 ### 硬件开销
 
-1. ✅ 面积增加 <20%（相对 Spatz VFU）
-2. ✅ 时序满足目标频率（无退化）
-3. ✅ 功耗增加 <25%（complex workload）
+1. ⚠️ 未做面积评估；dedicated path 默认禁用。
+2. ✅ 当前 RTL simulator build 通过；未做 signoff timing claim。
+3. ⚠️ 未做功耗评估。
 
 ---
 
@@ -1269,27 +1299,30 @@ git commit -m "[cfma] Update documentation and finalize implementation"
 
 ### 当前方案 vs. 专用硬件单元
 
-| 指标 | 当前串行方案 | 专用硬件单元 | 改进 |
-|------|-------------|--------------|------|
-| 每元素 Cycles | ~28 cycles | 8 cycles | 3.5× |
-| VRF 访问次数 | 4 次往返 | 1 次往返 | 4× |
-| 硬件开销 | 基线 | +10-15% | 可接受 |
-| 实现复杂度 | 低 | 中等 | 可控 |
+**状态更新（2026-07-06）**：下表是旧 dedicated-hardware 路线的目标/假设，不是当前
+v1 结果。当前 v1 仍使用四阶段 FPU 复用路径；专用硬件默认禁用，未证明 correctness
+或 speedup。
 
-### 预期 Benchmark 性能
+| 指标 | v1 四阶段 FPU 路径 | 专用硬件单元目标 | 当前结论 |
+|------|--------------------|------------------|----------|
+| 每元素 Cycles | 未在本轮重新量化 | 旧目标 8 cycles | 未证明 |
+| VRF 访问次数 | 现有路径 | 旧目标 1 次往返 | 未实现为默认路径 |
+| 硬件开销 | 基线 | 旧假设 +10-15% | 未评估 |
+| 实现复杂度 | 已验证 v1 路径 | dedicated path 多项缺口 | 推迟到 v2 |
 
-| Benchmark | 当前 | 目标 | 加速比 |
-|-----------|------|------|--------|
-| dp-caxpy M4096 | 4.09秒 | ~1.2秒 | 3.4× |
-| dp-caxpy M1024 | 2.23秒 | ~0.65秒 | 3.4× |
-| dp-caxpy M256 | 3.33秒 | ~0.95秒 | 3.5× |
-| dp-cdotp | 基线 | 预计 3-3.5× | 3-3.5× |
+### Benchmark evidence
 
-**关键收益**：
-- ✅ 消除 4-phase 串行执行
-- ✅ 减少 VRF 访问延迟
-- ✅ 减少 pipeline bubble
-- ✅ 优化 fence 开销
+| Benchmark | 本轮证据 | 当前结论 |
+|-----------|----------|----------|
+| dp-caxpy M256 | baseline 1.59s，vfcmacc 1.51s | 小规模 probe 通过，不声明 speedup |
+| dp-cdotp M128 | old path >17 分钟未完成 | performance closure blocked |
+| dedicated hardware path | `CfmaDedicatedWritebackEn = 1'b0` | 不声明性能收益 |
+
+**旧路线预期收益（未证明）**：
+- 消除 4-phase 串行执行。
+- 减少 VRF 访问延迟。
+- 减少 pipeline bubble。
+- 优化 fence 开销。
 
 ---
 

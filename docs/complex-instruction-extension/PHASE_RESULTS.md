@@ -917,3 +917,52 @@ bin/spatz_cluster.vlt`，退出码为 0；执行 fresh Verilator build。输出�
   完整 dedicated CFMA path。
 - 若选择 dedicated path，必须先补 `fpnew_complex_fma` 独立 reference/testbench，
   再打开 dedicated write-back guard；不能直接启用当前 Step 12 草稿。
+
+
+## Step 13-18 v1 收尾：四阶段 FPU 路径最终证据
+
+状态：v1 文档与验证收尾完成；Step 17 完整 benchmark/performance 不标记完成
+
+目标：
+
+- 将 Step 13-18 从旧的 dedicated hardware 默认启用路线，收敛为当前已验证的 v1
+  四阶段 FPU 路线。
+- 保留 dedicated CFMA write-back prototype disabled，不声明其正确性或性能收益。
+- 运行 fresh build/RTL regression，并记录 benchmark probe 的实际结果。
+
+决策：
+
+- Step 13：v1 保留四阶段 FPU path，不添加默认启用的 `USE_CFMA_HARDWARE`。
+- Step 14：v1 保留 conservative serialization/fence；dedicated hardware scoreboard 优化
+  推迟。
+- Step 15：当前 v1 源码完成 build closure。
+- Step 16：当前 v1 ISA RTL 功能 regression 通过。
+- Step 17：完整 benchmark/performance closure 未完成，`dp-cdotp_old_M128` 长时间不
+  返回；不得声明 benchmark correctness 或 speedup。
+- Step 18：新增 `IMPLEMENTATION_SUMMARY.md` 和 `cfma_performance_results.md` 作为
+  收尾交接文档。
+
+本轮验证证据（2026-07-06）：
+
+- `git diff --check`：PASS，退出码 0，无输出。
+- `PATH="$PWD/.venv/bin:$PATH" make -C hw/system/spatz_cluster bin/spatz_cluster.vlt`：
+  PASS，退出码 0；目标 up to date，输出包含既有 Bender `description` warning。
+- `PATH="$PWD/.venv/bin:$PATH" make -C hw/system/spatz_cluster sw.vlt`：PASS，退出码
+  0；软件树重建完成，CMake 注册 `vfcmacc_illegal` 和 `vfcmacc`。
+- `ctest -R 'riscvTests-rtl-(vfcmacc|vfmacc|vfnmsac)$' --output-on-failure`：PASS，
+  3/3；`vfmacc` 27.18s，`vfcmacc` 137.46s，`vfnmsac` 21.69s，总用时 186.35s。
+- benchmark probe：`dp-caxpy_M256` PASS 1.59s；`dp-caxpy_vfcmacc_M256` PASS 1.51s；
+  `dp-cdotp_old_M128` 超过 17 分钟未完成，本轮手动中止 ctest，退出码 130；
+  `dp-cdotp_vfcmacc_M128` 未运行到。
+
+明确不声明：
+
+- 不声明 dedicated CFMA hardware correctness。
+- 不声明完整 benchmark correctness。
+- 不声明 speedup。
+- 不声明 Step 12 dedicated write-back path 已完成。
+
+下一步建议：
+
+- Option A：保留 v1 四阶段 FPU path，清理或继续 guard unused dedicated prototype。
+- Option B 只有在 `fpnew_complex_fma` 独立 reference/testbench 完成后才能重新打开。
