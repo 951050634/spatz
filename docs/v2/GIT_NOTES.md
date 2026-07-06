@@ -36,3 +36,30 @@
 - `cd hw/system/spatz_cluster/sw/build && PATH="/home/wxt/spatz-cfma/.venv/bin:$PATH" ctest -R 'riscvTests-rtl-(vfcmacc|vfmacc|vfnmsac)$' --output-on-failure`：PASS，3/3。
 
 结论：阶段 1 的 directed standalone arithmetic 切片通过；完整阶段 1 尚需继续覆盖 NaN/Inf、signed zero、rounding modes、fflags 和随机 tuple。
+
+## 2026-07-07 阶段 1 小阶段：扩展 standalone directed matrix
+
+计划提交信息：`[cfma-v2] Extend fpnew complex FMA standalone matrix`
+
+主要内容：
+
+- 重构 `hw/ip/spatz/test/fpnew_complex_fma_tb.sv`，支持命名 case、可变 rounding mode、expected value class（bits/NaN/any）和 expected status class（clear/NX-only/NV-only/any）。
+- 扩展 FP64/FP32/FP16 directed matrix：
+  - exact finite；
+  - signed zero；
+  - `+Inf` propagation；
+  - quiet NaN propagation；
+  - `+Inf * +0` invalid / `NV`；
+  - RNE/RUP rounding tie / `NX`；
+  - FP64 result backpressure 保持性。
+- 更新 `docs/v2/STAGE1_FPNEW_COMPLEX_FMA.md` 的阶段 1 覆盖状态与剩余 gap。
+- 新增 `docs/v2/evidence/stage1_matrix_verification.txt`，保存 fresh verification 转录。
+
+验证命令：
+
+- `git diff --check`：PASS；
+- `install/verilator/bin/verilator_bin --binary --timing ... hw/ip/spatz/test/fpnew_complex_fma_tb.sv --top-module fpnew_complex_fma_tb`：PASS；
+- `build/cfma_v2/obj_matrix_verify/Vfpnew_complex_fma_tb`：PASS，21 个 named cases 全部通过；
+- `PATH="$PWD/.venv/bin:$PATH" make -C hw/system/spatz_cluster bin/spatz_cluster.vlt`：PASS（目标已是最新）。
+
+结论：阶段 1 directed standalone matrix 已覆盖 e16/e32/e64 的 finite、signed zero、Inf、quiet NaN、invalid NV、rounding NX 和 backpressure；完整阶段 1 仍需 random/reference-driven tuple、RTZ/RDN/RMM、overflow/underflow、signaling NaN。

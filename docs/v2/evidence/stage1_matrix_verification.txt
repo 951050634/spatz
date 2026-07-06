@@ -1,0 +1,52 @@
+# CFMA v2 stage 1 extended matrix verification transcript
+
+Started: 2026-07-07T01:51:05+08:00
+Branch: feature/cfma-v2-datapath
+HEAD: d863bd3
+
+```text
+$ git diff --check
+exit(diff-check)=0
+$ install/verilator/bin/verilator_bin --binary --timing ... fpnew_complex_fma_tb.sv
+exit(verilator-build)=0
+- V e r i l a t i o n   R e p o r t: Verilator 5.034 2025-02-24 rev v5.034
+- Verilator: Built from 1078.925 MB sources in 519 modules, into 3.471 MB in 15 C++ files needing 0.016 MB
+- Verilator: Walltime 16.944 s (elab=0.646, cvt=0.701, bld=14.932); cpu 1.991 s on 1 threads; alloced 187.715 MB
+$ build/cfma_v2/obj_matrix_verify/Vfpnew_complex_fma_tb
+CASE PASS FP64 exact_finite                       rnd=0 real=0x3ff8000000000000 imag=0x4032000000000000 status=0
+CASE PASS FP32 exact_finite                       rnd=0 real=0x3fc00000 imag=0x41900000 status=0
+CASE PASS FP16 exact_finite                       rnd=0 real=0x0    imag=0x4c00 status=0
+CASE PASS FP64 signed_zero                        rnd=0 real=0x8000000000000000 imag=0x0                status=0
+CASE PASS FP32 signed_zero                        rnd=0 real=0x80000000 imag=0x0        status=0
+CASE PASS FP16 signed_zero                        rnd=0 real=0x8000 imag=0x0    status=0
+CASE PASS FP64 inf_propagation                    rnd=0 real=0x7ff0000000000000 imag=0x7ff0000000000000 status=0
+CASE PASS FP32 inf_propagation                    rnd=0 real=0x7f800000 imag=0x7f800000 status=0
+CASE PASS FP16 inf_propagation                    rnd=0 real=0x7c00 imag=0x7c00 status=0
+CASE PASS FP64 quiet_nan                          rnd=0 real=0x7ff8000000000000 imag=0x7ff8000000000000 status=0
+CASE PASS FP32 quiet_nan                          rnd=0 real=0x7fc00000 imag=0x7fc00000 status=0
+CASE PASS FP16 quiet_nan                          rnd=0 real=0x7e00 imag=0x7e00 status=0
+CASE PASS FP64 invalid_inf_times_zero             rnd=0 real=0x7ff8000000000000 imag=0x7ff0000000000000 status=10000
+CASE PASS FP32 invalid_inf_times_zero             rnd=0 real=0x7fc00000 imag=0x7f800000 status=10000
+CASE PASS FP16 invalid_inf_times_zero             rnd=0 real=0x7e00 imag=0x7c00 status=10000
+CASE PASS FP64 round_tie_rne                      rnd=0 real=0x3ff0000000000000 imag=0x0                status=1
+CASE PASS FP64 round_tie_rup_backpressure         rnd=3 real=0x3ff0000000000001 imag=0x0                status=1
+CASE PASS FP32 round_tie_rne                      rnd=0 real=0x3f800000 imag=0x0        status=1
+CASE PASS FP32 round_tie_rup                      rnd=3 real=0x3f800001 imag=0x0        status=1
+CASE PASS FP16 round_tie_rne                      rnd=0 real=0x3c00 imag=0x0    status=1
+CASE PASS FP16 round_tie_rup                      rnd=3 real=0x3c01 imag=0x0    status=1
+fpnew_complex_fma_tb: PASS extended FP64/FP32/FP16 directed matrix
+- hw/ip/spatz/test/fpnew_complex_fma_tb.sv:535: Verilog $finish
+- S i m u l a t i o n   R e p o r t: Verilator 5.034 2025-02-24
+- Verilator: $finish at 1us; walltime 0.001 s; speed 1.651 ms/s
+- Verilator: cpu 0.001 s on 1 threads; alloced 25 MB
+exit(fpnew_complex_fma_tb)=0
+$ PATH="$PWD/.venv/bin:$PATH" make -C hw/system/spatz_cluster bin/spatz_cluster.vlt
+make: Entering directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster'
+[33;1mwarning:[m [W03] Ignoring unknown field `description` in manifest package for tech_cells_generic.
+[33;1mwarning:[m [W03] Ignoring unknown field `description` in manifest package for tech_cells_generic.
+make: 'bin/spatz_cluster.vlt' is up to date.
+make: Leaving directory '/home/wxt/spatz-cfma/hw/system/spatz_cluster'
+exit(make-bin)=0
+```
+
+Finished: 2026-07-07T01:51:22+08:00

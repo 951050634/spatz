@@ -99,10 +99,24 @@ Total : 160.31 s
 - 当前 Spatz 默认 build 可编译；
 - dedicated writeback 仍默认禁用，v1 fallback regression 通过。
 
-尚未覆盖，仍属于阶段 1 后续工作：
+阶段 1 第二个 directed matrix 小阶段继续扩展了：
 
-- NaN/Inf/signed zero directed cases；
-- 非 exact rounding cases 与 RTZ/RDN/RUP/RMM rounding modes；
+- FP64/FP32/FP16 signed zero：检查 real `-0`、imag `+0` 与 flags clear；
+- FP64/FP32/FP16 `+Inf` propagation：检查 real/imag `+Inf` 与 flags clear；
+- FP64/FP32/FP16 quiet NaN propagation：只检查 NaN class，不固定 payload；
+- FP64/FP32/FP16 `+Inf * +0` invalid：检查 real NaN、imag `+Inf`、`NV` only；
+- FP64/FP32/FP16 rounding tie：RNE 保持 1.0，RUP 进到 next-up，`NX` only；
+- FP64 result backpressure：`result_ready_i=0` 下保持 `{valid,result,status}` 稳定 3 cycles。
+
+第二个小阶段 fresh verification 记录见：
+
+- `docs/v2/evidence/stage1_matrix_verification.txt`
+
+更新后仍未覆盖，继续属于阶段 1 后续工作：
+
+- RTZ/RDN/RMM rounding modes；
+- overflow/underflow directed cases；
+- signaling NaN；
 - 随机 operand tuple；
 - 以软件/SoftFloat 或 fpnew reference driver 自动生成 expected bits/fflags；
 - VFU 侧 dynamic FP format selection；
@@ -111,4 +125,4 @@ Total : 160.31 s
 
 ## 7. 下一步
 
-阶段 1 下一小阶段建议：把 standalone testbench 从 directed exact cases 扩展为 reference-driven matrix，优先覆盖 signed zero、NaN/Inf、rounding mode 和 fflags，再进入阶段 2 request/response 契约冻结。
+阶段 1 下一小阶段建议：引入 reference-vector 生成器或 fpnew reference driver，把当前 directed matrix 扩展到 RTZ/RDN/RMM、overflow/underflow、signaling NaN 和 random operand tuple。之后进入阶段 2 request/response 契约冻结。
