@@ -22,7 +22,7 @@ feature/cfma-instruction-extension
 
 ```text
 ## feature/cfma-instruction-extension
-?? docs/complex-instruction-extension/
+?? docs/v1/
 ```
 
 复制 `.codexignore` 后的待提交状态：
@@ -30,7 +30,7 @@ feature/cfma-instruction-extension
 ```text
 ## feature/cfma-instruction-extension
 ?? .codexignore
-?? docs/complex-instruction-extension/
+?? docs/v1/
 ```
 
 说明：
@@ -91,10 +91,10 @@ Node：
 
 ```text
 A  .codexignore
-A  docs/complex-instruction-extension/GIT_NOTES.md
-A  docs/complex-instruction-extension/PHASE_RESULTS.md
-A  docs/complex-instruction-extension/PLAN.md
-A  docs/complex-instruction-extension/README.md
+A  docs/v1/GIT_NOTES.md
+A  docs/v1/PHASE_RESULTS.md
+A  docs/v1/PLAN.md
+A  docs/v1/README.md
 ```
 
 目的：
@@ -136,9 +136,9 @@ make help 过程中提示 /home/wxt/spatz-cfma/install/bender/bender 不存在�
 范围：
 
 ```text
-M  docs/complex-instruction-extension/GIT_NOTES.md
-M  docs/complex-instruction-extension/PHASE_RESULTS.md
-M  docs/complex-instruction-extension/PLAN.md
+M  docs/v1/GIT_NOTES.md
+M  docs/v1/PHASE_RESULTS.md
+M  docs/v1/PLAN.md
 ```
 
 目的：
@@ -178,8 +178,8 @@ Node 1：Register Layout Reference 与 Encoding 决策
 
 ```text
 ## feature/cfma-instruction-extension
-?? docs/complex-instruction-extension/register_layout.md
-?? docs/complex-instruction-extension/scripts/
+?? docs/v1/register_layout.md
+?? docs/v1/scripts/
 ```
 
 计划提交：
@@ -191,11 +191,11 @@ Node 1：Register Layout Reference 与 Encoding 决策
 修改范围：
 
 ```text
-A  docs/complex-instruction-extension/register_layout.md
-A  docs/complex-instruction-extension/scripts/cfma_register_layout.py
-M  docs/complex-instruction-extension/PHASE_RESULTS.md
-M  docs/complex-instruction-extension/GIT_NOTES.md
-M  docs/complex-instruction-extension/README.md
+A  docs/v1/register_layout.md
+A  docs/v1/scripts/cfma_register_layout.py
+M  docs/v1/PHASE_RESULTS.md
+M  docs/v1/GIT_NOTES.md
+M  docs/v1/README.md
 ```
 
 目的：
@@ -209,8 +209,8 @@ M  docs/complex-instruction-extension/README.md
 验证命令：
 
 ```text
-python3 docs/complex-instruction-extension/scripts/cfma_register_layout.py: PASS，退出码 0。
-python3 docs/complex-instruction-extension/scripts/cfma_register_layout.py --write-md docs/complex-instruction-extension/register_layout.md: PASS，退出码 0。
+python3 docs/v1/scripts/cfma_register_layout.py: PASS，退出码 0。
+python3 docs/v1/scripts/cfma_register_layout.py --write-md docs/v1/register_layout.md: PASS，退出码 0。
 git diff --check: PASS，退出码 0。
 ```
 
@@ -282,8 +282,8 @@ M  hw/ip/snitch/src/snitch.sv
 M  sw/riscvTests/CMakeLists.txt
 A  sw/riscvTests/isa/rv64uv/vfcmacc_smoke.c
 A  sw/toolchain-patches/riscv-opcodes/vfcmacc-vv.patch
-M  docs/complex-instruction-extension/PHASE_RESULTS.md
-M  docs/complex-instruction-extension/GIT_NOTES.md
+M  docs/v1/PHASE_RESULTS.md
+M  docs/v1/GIT_NOTES.md
 ```
 
 目的：
@@ -382,8 +382,8 @@ M  hw/ip/spatz/src/spatz_decoder.sv
 M  hw/ip/spatz/src/spatz_pkg.sv.tpl
 M  sw/riscvTests/CMakeLists.txt
 A  sw/riscvTests/isa/rv64uv/vfcmacc_illegal.c
-M  docs/complex-instruction-extension/PHASE_RESULTS.md
-M  docs/complex-instruction-extension/GIT_NOTES.md
+M  docs/v1/PHASE_RESULTS.md
+M  docs/v1/GIT_NOTES.md
 ```
 
 目的：
@@ -461,7 +461,7 @@ Node 4：v1a Unmasked e32 多拍执行
 
 ```text
 ## feature/cfma-instruction-extension
- M docs/complex-instruction-extension/PHASE_RESULTS.md
+ M docs/v1/PHASE_RESULTS.md
  M hw/ip/spatz/src/spatz_vfu.sv
  M hw/system/spatz_cluster/src/generated/testharness.sv
  M hw/system/spatz_cluster/test/bootrom.elf
@@ -482,8 +482,8 @@ Node 4：v1a Unmasked e32 多拍执行
 M  hw/ip/spatz/src/spatz_vfu.sv
 M  sw/riscvTests/CMakeLists.txt
 A  sw/riscvTests/isa/rv64uv/vfcmacc_e32.c
-M  docs/complex-instruction-extension/PHASE_RESULTS.md
-M  docs/complex-instruction-extension/GIT_NOTES.md
+M  docs/v1/PHASE_RESULTS.md
+M  docs/v1/GIT_NOTES.md
 ```
 
 目的：
@@ -561,7 +561,7 @@ Node 5a：e64/e16 Format 支持
 
 ```text
 ## feature/cfma-instruction-extension
- M docs/complex-instruction-extension/PHASE_RESULTS.md
+ M docs/v1/PHASE_RESULTS.md
  M hw/ip/spatz/src/spatz_controller.sv
  M hw/system/spatz_cluster/src/generated/testharness.sv
  M hw/system/spatz_cluster/test/bootrom.elf
@@ -585,8 +585,8 @@ M  hw/ip/spatz/src/spatz_controller.sv
 M  sw/riscvTests/CMakeLists.txt
 R  sw/riscvTests/isa/rv64uv/vfcmacc_e32.c -> sw/riscvTests/isa/rv64uv/vfcmacc.c
 M  sw/riscvTests/isa/rv64uv/vfcmacc_illegal.c
-M  docs/complex-instruction-extension/PHASE_RESULTS.md
-M  docs/complex-instruction-extension/GIT_NOTES.md
+M  docs/v1/PHASE_RESULTS.md
+M  docs/v1/GIT_NOTES.md
 ```
 
 目的：
@@ -657,7 +657,7 @@ Node 5b：Mask、Tail 与 vstart 行为
 
 ```text
 ## feature/cfma-instruction-extension
- M docs/complex-instruction-extension/PHASE_RESULTS.md
+ M docs/v1/PHASE_RESULTS.md
  M hw/ip/spatz/src/spatz_vfu.sv
  M hw/system/spatz_cluster/src/generated/testharness.sv
  M hw/system/spatz_cluster/test/bootrom.elf
@@ -678,8 +678,8 @@ Node 5b：Mask、Tail 与 vstart 行为
 M  hw/ip/spatz/src/spatz_vfu.sv
 M  sw/riscvTests/isa/rv64uv/vfcmacc.c
 M  sw/riscvTests/isa/rv64uv/vfcmacc_illegal.c
-M  docs/complex-instruction-extension/PHASE_RESULTS.md
-M  docs/complex-instruction-extension/GIT_NOTES.md
+M  docs/v1/PHASE_RESULTS.md
+M  docs/v1/GIT_NOTES.md
 ```
 
 目的：
@@ -754,7 +754,7 @@ Node 5c：特殊数值、Rounding 与 FFLAGS
 
 ```text
 ## feature/cfma-instruction-extension
- M docs/complex-instruction-extension/PHASE_RESULTS.md
+ M docs/v1/PHASE_RESULTS.md
  M hw/system/spatz_cluster/src/generated/testharness.sv
  M hw/system/spatz_cluster/test/bootrom.elf
  M sw/riscvTests/isa/rv64uv/vfcmacc.c
@@ -771,8 +771,8 @@ Node 5c：特殊数值、Rounding 与 FFLAGS
 
 ```text
 M  sw/riscvTests/isa/rv64uv/vfcmacc.c
-M  docs/complex-instruction-extension/PHASE_RESULTS.md
-M  docs/complex-instruction-extension/GIT_NOTES.md
+M  docs/v1/PHASE_RESULTS.md
+M  docs/v1/GIT_NOTES.md
 ```
 
 目的：
@@ -850,7 +850,7 @@ Node 5d：Serialization Fence 与 Hazard Regression
 
 ```text
 ## feature/cfma-instruction-extension
- M docs/complex-instruction-extension/PHASE_RESULTS.md
+ M docs/v1/PHASE_RESULTS.md
  M hw/system/spatz_cluster/src/generated/testharness.sv
  M hw/system/spatz_cluster/test/bootrom.elf
  M sw/riscvTests/isa/rv64uv/vfcmacc.c
@@ -867,8 +867,8 @@ Node 5d：Serialization Fence 与 Hazard Regression
 
 ```text
 M  sw/riscvTests/isa/rv64uv/vfcmacc.c
-M  docs/complex-instruction-extension/PHASE_RESULTS.md
-M  docs/complex-instruction-extension/GIT_NOTES.md
+M  docs/v1/PHASE_RESULTS.md
+M  docs/v1/GIT_NOTES.md
 ```
 
 目的：
@@ -961,12 +961,12 @@ Node 6：Mnemonic 与工具链整理
 
 ```text
 ## feature/cfma-instruction-extension
- M docs/complex-instruction-extension/GIT_NOTES.md
- M docs/complex-instruction-extension/PHASE_RESULTS.md
+ M docs/v1/GIT_NOTES.md
+ M docs/v1/PHASE_RESULTS.md
  M hw/system/spatz_cluster/src/generated/testharness.sv
  M hw/system/spatz_cluster/test/bootrom.elf
 ?? .venv
-?? docs/complex-instruction-extension/toolchain_mnemonic_status.md
+?? docs/v1/toolchain_mnemonic_status.md
 ?? logs/
 ```
 
@@ -979,9 +979,9 @@ Node 6：Mnemonic 与工具链整理
 修改范围：
 
 ```text
-A  docs/complex-instruction-extension/toolchain_mnemonic_status.md
-M  docs/complex-instruction-extension/PHASE_RESULTS.md
-M  docs/complex-instruction-extension/GIT_NOTES.md
+A  docs/v1/toolchain_mnemonic_status.md
+M  docs/v1/PHASE_RESULTS.md
+M  docs/v1/GIT_NOTES.md
 ```
 
 目的：
@@ -1052,12 +1052,12 @@ Node 7：v2 Datapath 评审门
 
 ```text
 ## feature/cfma-instruction-extension
- M docs/complex-instruction-extension/GIT_NOTES.md
- M docs/complex-instruction-extension/PHASE_RESULTS.md
+ M docs/v1/GIT_NOTES.md
+ M docs/v1/PHASE_RESULTS.md
  M hw/system/spatz_cluster/src/generated/testharness.sv
  M hw/system/spatz_cluster/test/bootrom.elf
 ?? .venv
-?? docs/complex-instruction-extension/v2_datapath_review.md
+?? docs/v1/v2_datapath_review.md
 ?? logs/
 ```
 
@@ -1070,9 +1070,9 @@ Node 7：v2 Datapath 评审门
 修改范围：
 
 ```text
-A  docs/complex-instruction-extension/v2_datapath_review.md
-M  docs/complex-instruction-extension/PHASE_RESULTS.md
-M  docs/complex-instruction-extension/GIT_NOTES.md
+A  docs/v1/v2_datapath_review.md
+M  docs/v1/PHASE_RESULTS.md
+M  docs/v1/GIT_NOTES.md
 ```
 
 目的：
@@ -1134,14 +1134,14 @@ Node 6：dp-cdotp 小规模验证约束与 runtime blocker 续诊断
 
 ```text
 ## feature/cfma-instruction-extension
- M docs/complex-instruction-extension/GIT_NOTES.md
- M docs/complex-instruction-extension/PHASE_RESULTS.md
- M docs/complex-instruction-extension/PLAN.md
- M docs/complex-instruction-extension/README.md
- M docs/complex-instruction-extension/register_layout.md
- M docs/complex-instruction-extension/scripts/cfma_register_layout.py
- M docs/complex-instruction-extension/toolchain_mnemonic_status.md
- M docs/complex-instruction-extension/v2_datapath_review.md
+ M docs/v1/GIT_NOTES.md
+ M docs/v1/PHASE_RESULTS.md
+ M docs/v1/PLAN.md
+ M docs/v1/README.md
+ M docs/v1/register_layout.md
+ M docs/v1/scripts/cfma_register_layout.py
+ M docs/v1/toolchain_mnemonic_status.md
+ M docs/v1/v2_datapath_review.md
  M sw/spatzBenchmarks/CMakeLists.txt
  M sw/spatzBenchmarks/dp-cdotp/kernel/cdotp.c
  M sw/spatzBenchmarks/dp-cdotp/main.c
@@ -1156,14 +1156,14 @@ Node 6：dp-cdotp 小规模验证约束与 runtime blocker 续诊断
 修改范围：
 
 ```text
-M  docs/complex-instruction-extension/GIT_NOTES.md
-M  docs/complex-instruction-extension/PHASE_RESULTS.md
-M  docs/complex-instruction-extension/PLAN.md
-M  docs/complex-instruction-extension/README.md
-M  docs/complex-instruction-extension/register_layout.md
-M  docs/complex-instruction-extension/scripts/cfma_register_layout.py
-M  docs/complex-instruction-extension/toolchain_mnemonic_status.md
-M  docs/complex-instruction-extension/v2_datapath_review.md
+M  docs/v1/GIT_NOTES.md
+M  docs/v1/PHASE_RESULTS.md
+M  docs/v1/PLAN.md
+M  docs/v1/README.md
+M  docs/v1/register_layout.md
+M  docs/v1/scripts/cfma_register_layout.py
+M  docs/v1/toolchain_mnemonic_status.md
+M  docs/v1/v2_datapath_review.md
 M  sw/spatzBenchmarks/CMakeLists.txt
 M  sw/spatzBenchmarks/dp-cdotp/kernel/cdotp.c
 M  sw/spatzBenchmarks/dp-cdotp/main.c
@@ -1224,8 +1224,8 @@ speedup。后续调试必须继续使用 `M128` 或最多 `M1024`，禁止用 `M
 日期：2026-06-10
 计划提交：[cfma] Extend dp-cdotp M128 runtime diagnostics
 修改范围：
-M  docs/complex-instruction-extension/GIT_NOTES.md
-M  docs/complex-instruction-extension/PHASE_RESULTS.md
+M  docs/v1/GIT_NOTES.md
+M  docs/v1/PHASE_RESULTS.md
 M  sw/spatzBenchmarks/CMakeLists.txt
 M  sw/spatzBenchmarks/dp-cdotp/kernel/cdotp.c
 M  sw/spatzBenchmarks/dp-cdotp/main.c
@@ -1294,8 +1294,8 @@ scalar FPU `fld/fadd/fsd` 状态交互。
 M  sw/cmake/SnitchUtilities.cmake
 M  sw/spatzBenchmarks/CMakeLists.txt
 M  sw/spatzBenchmarks/dp-cdotp/kernel/cdotp.c
-M  docs/complex-instruction-extension/PHASE_RESULTS.md
-M  docs/complex-instruction-extension/GIT_NOTES.md
+M  docs/v1/PHASE_RESULTS.md
+M  docs/v1/GIT_NOTES.md
 ```
 
 目的：
@@ -1376,10 +1376,10 @@ runtime 边界可退出。
 
 ```text
 ## feature/cfma-instruction-extension
- M docs/complex-instruction-extension/GIT_NOTES.md
- M docs/complex-instruction-extension/PHASE_RESULTS.md
- M docs/complex-instruction-extension/RESUME_INFO.md
- M docs/complex-instruction-extension/complex_fma_hardware_design.md
+ M docs/v1/GIT_NOTES.md
+ M docs/v1/PHASE_RESULTS.md
+ M docs/v1/RESUME_INFO.md
+ M docs/v1/complex_fma_hardware_design.md
  M hw/ip/spatz/src/spatz_vfu.sv
 ```
 
@@ -1392,17 +1392,17 @@ runtime 边界可退出。
 修改范围：
 
 ```text
-M docs/complex-instruction-extension/README.md
-M docs/complex-instruction-extension/RESUME_INFO.md
-M docs/complex-instruction-extension/PLAN.md
-M docs/complex-instruction-extension/complex_fma_hardware_design.md
-M docs/complex-instruction-extension/PHASE_RESULTS.md
-M docs/complex-instruction-extension/GIT_NOTES.md
-D docs/complex-instruction-extension/FINAL_STATUS.md
-D docs/complex-instruction-extension/SESSION_SUMMARY.md
-D docs/complex-instruction-extension/PROGRESS_REPORT.md
-D docs/complex-instruction-extension/step10_15_summary.md
-D docs/complex-instruction-extension/step9_verification_report.md
+M docs/v1/README.md
+M docs/v1/RESUME_INFO.md
+M docs/v1/PLAN.md
+M docs/v1/complex_fma_hardware_design.md
+M docs/v1/PHASE_RESULTS.md
+M docs/v1/GIT_NOTES.md
+D docs/v1/FINAL_STATUS.md
+D docs/v1/SESSION_SUMMARY.md
+D docs/v1/PROGRESS_REPORT.md
+D docs/v1/step10_15_summary.md
+D docs/v1/step9_verification_report.md
 ```
 
 内容摘要：
@@ -1420,7 +1420,7 @@ D docs/complex-instruction-extension/step9_verification_report.md
 ```text
 git diff --check: PASS，退出码 0。
 
-rg -n "当前任务\*\*: 步骤 11|下次会话中继续步骤 11|最后 Commit\*\*: bb47b77|建议\*\*: 在下次会话中继续步骤 11|立即行动（步骤 11）|⏳ \*\*实现 VRF 读取逻辑\*\*" docs/complex-instruction-extension/README.md docs/complex-instruction-extension/RESUME_INFO.md docs/complex-instruction-extension/PHASE_RESULTS.md docs/complex-instruction-extension/GIT_NOTES.md:
+rg -n "当前任务\*\*: 步骤 11|下次会话中继续步骤 11|最后 Commit\*\*: bb47b77|建议\*\*: 在下次会话中继续步骤 11|立即行动（步骤 11）|⏳ \*\*实现 VRF 读取逻辑\*\*" docs/v1/README.md docs/v1/RESUME_INFO.md docs/v1/PHASE_RESULTS.md docs/v1/GIT_NOTES.md:
 PASS，无匹配结果。
 
 未运行 `make -C hw/system/spatz_cluster bin/spatz_cluster.vlt`，因为本轮提交范围是文档重构；当前未提交 RTL 草稿仍需后续单独编译验证。
@@ -1438,11 +1438,11 @@ PASS，无匹配结果。
 日期：2026-07-06
 目的：按当前状态精简 docs，删除重复、过期且容易误导的状态总结文件。
 删除：
-- docs/complex-instruction-extension/FINAL_STATUS.md
-- docs/complex-instruction-extension/SESSION_SUMMARY.md
-- docs/complex-instruction-extension/PROGRESS_REPORT.md
-- docs/complex-instruction-extension/step10_15_summary.md
-- docs/complex-instruction-extension/step9_verification_report.md
+- docs/v1/FINAL_STATUS.md
+- docs/v1/SESSION_SUMMARY.md
+- docs/v1/PROGRESS_REPORT.md
+- docs/v1/step10_15_summary.md
+- docs/v1/step9_verification_report.md
 保留：README、RESUME_INFO、PLAN、complex_fma_hardware_design、PHASE_RESULTS、GIT_NOTES 和设计支撑资料。
 
 验证：
@@ -1472,10 +1472,10 @@ PASS，无匹配结果。
 
 ```text
 M hw/ip/spatz/src/spatz_vfu.sv
-M docs/complex-instruction-extension/RESUME_INFO.md
-M docs/complex-instruction-extension/complex_fma_hardware_design.md
-M docs/complex-instruction-extension/PHASE_RESULTS.md
-M docs/complex-instruction-extension/GIT_NOTES.md
+M docs/v1/RESUME_INFO.md
+M docs/v1/complex_fma_hardware_design.md
+M docs/v1/PHASE_RESULTS.md
+M docs/v1/GIT_NOTES.md
 ```
 
 内容摘要：
@@ -1534,12 +1534,12 @@ correctness、benchmark correctness 或 speedup。Step 13 必须先决定保留 
 修改范围：
 
 ```text
-M docs/complex-instruction-extension/complex_fma_hardware_design.md
-M docs/complex-instruction-extension/PHASE_RESULTS.md
-M docs/complex-instruction-extension/GIT_NOTES.md
-M docs/complex-instruction-extension/RESUME_INFO.md
-A docs/complex-instruction-extension/cfma_performance_results.md
-A docs/complex-instruction-extension/IMPLEMENTATION_SUMMARY.md
+M docs/v1/complex_fma_hardware_design.md
+M docs/v1/PHASE_RESULTS.md
+M docs/v1/GIT_NOTES.md
+M docs/v1/RESUME_INFO.md
+A docs/v1/cfma_performance_results.md
+A docs/v1/IMPLEMENTATION_SUMMARY.md
 A docs/superpowers/plans/2026-07-06-cfma-step13-18-v1-finalization.md
 ```
 

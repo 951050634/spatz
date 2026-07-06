@@ -414,7 +414,7 @@ Cycle 7: 写回 result.imag
 2. 找到现有 fpnew_fma 模块的位置（如果存在独立文件）
 3. 查看 spatz_vfu.sv 中 FPU 实例化代码（约 1306 行附近的 gen_fpnew）
 4. 读取 fpnew_pkg 中的 operation_e 枚举定义，确认现有操作码
-5. 创建文档：`docs/complex-instruction-extension/fpnew_structure.md`
+5. 创建文档：`docs/v1/fpnew_structure.md`
    记录：
    - fpnew_pkg.sv 的路径
    - 现有 FPU 模块的实例化方式
@@ -428,7 +428,7 @@ Cycle 7: 写回 result.imag
 
 **Git 操作**：
 ```bash
-git add docs/complex-instruction-extension/fpnew_structure.md
+git add docs/v1/fpnew_structure.md
 git commit -m "[cfma] Document fpnew package structure and FPU architecture"
 ```
 
@@ -945,7 +945,7 @@ serialization/fence 处理来覆盖隐式 real/imag register group 依赖；该�
 **目标**：确保 CFMA 与其他指令的正确同步
 
 **具体任务**：
-1. 阅读 `docs/complex-instruction-extension/fence_explained.md`
+1. 阅读 `docs/v1/fence_explained.md`
 2. 确认 CFMA 硬件单元是否需要 fence：
    - 如果内部处理所有依赖：可以减少或消除 fence
    - 如果与 VRF 有 RAW/WAW 冲突：需要保留 fence
@@ -1115,7 +1115,7 @@ FPU 复用实现，本轮只记录可复现 evidence：两个小规模 `dp-caxpy
    - VRF 访问延迟？
    - fence 开销？
    - 状态机效率？
-6. 创建性能报告：`docs/complex-instruction-extension/cfma_performance_results.md`
+6. 创建性能报告：`docs/v1/cfma_performance_results.md`
    包含：
    - 测试配置
    - 各 benchmark 的详细数据
@@ -1132,7 +1132,7 @@ FPU 复用实现，本轮只记录可复现 evidence：两个小规模 `dp-caxpy
 
 **Git 操作**：
 ```bash
-git add docs/complex-instruction-extension/cfma_performance_results.md
+git add docs/v1/cfma_performance_results.md
 git commit -m "[cfma] Add performance benchmark results and analysis"
 ```
 
@@ -1167,7 +1167,7 @@ git commit -m "[cfma] Add performance benchmark results and analysis"
    git status  # 确保没有未跟踪的重要文件
    git log --oneline  # 检查 commit 历史
    ```
-5. 创建总结文档：`docs/complex-instruction-extension/IMPLEMENTATION_SUMMARY.md`
+5. 创建总结文档：`docs/v1/IMPLEMENTATION_SUMMARY.md`
    包含：
    - 实施过程概述
    - 遇到的主要问题和解决方案
@@ -1185,7 +1185,7 @@ git commit -m "[cfma] Add performance benchmark results and analysis"
 
 **Git 操作**：
 ```bash
-git add docs/complex-instruction-extension/*.md CLAUDE.md
+git add docs/v1/*.md CLAUDE.md
 git commit -m "[cfma] Update documentation and finalize implementation"
 ```
 
@@ -1254,8 +1254,8 @@ git commit -m "[cfma] Update documentation and finalize implementation"
 - `hw/ip/spatz/src/spatz_fpu_sequencer.sv` - FPU 序列器
 
 **相关文档**：
-- `docs/complex-instruction-extension/PLAN.md` - 项目总体规划
-- `docs/complex-instruction-extension/fence_explained.md` - Fence 机制
+- `docs/v1/PLAN.md` - 项目总体规划
+- `docs/v1/fence_explained.md` - Fence 机制
 
 ---
 
@@ -1331,7 +1331,7 @@ v1 结果。当前 v1 仍使用四阶段 FPU 复用路径；专用硬件默认�
 完成实施后，请将此提示词复制到新对话中使用 `/goal` 命令启动：
 
 ```
-根据 docs/complex-instruction-extension/complex_fma_hardware_design.md 中的详细实施步骤（步骤 1-18），完成 Spatz VFU 的 Complex FMA 硬件单元实现。
+根据 docs/v1/complex_fma_hardware_design.md 中的详细实施步骤（步骤 1-18），完成 Spatz VFU 的 Complex FMA 硬件单元实现。
 
 要求：
 1. 严格按照步骤顺序执行（步骤 1 → 步骤 18）

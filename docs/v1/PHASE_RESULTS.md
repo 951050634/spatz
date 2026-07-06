@@ -26,7 +26,7 @@
 - 2026-06-08 运行 `git worktree list --porcelain`，确认存在
   `/home/wxt/spatz-cfma`，分支为 `feature/cfma-instruction-extension`。
 - 2026-06-08 运行 `git status --short --branch`，当前工作树初始状态仅显示
-  `docs/complex-instruction-extension/` 未追踪。
+  `docs/v1/` 未追踪。
 - 2026-06-08 已将 `/home/wxt/spatz/.codexignore` 复制为
   `/home/wxt/spatz-cfma/.codexignore`。
 - 2026-06-08 运行 `cmp -s /home/wxt/spatz/.codexignore
@@ -54,11 +54,11 @@
 
 修改范围：
 
-- `docs/complex-instruction-extension/register_layout.md`
-- `docs/complex-instruction-extension/scripts/cfma_register_layout.py`
-- `docs/complex-instruction-extension/PHASE_RESULTS.md`
-- `docs/complex-instruction-extension/GIT_NOTES.md`
-- `docs/complex-instruction-extension/README.md`
+- `docs/v1/register_layout.md`
+- `docs/v1/scripts/cfma_register_layout.py`
+- `docs/v1/PHASE_RESULTS.md`
+- `docs/v1/GIT_NOTES.md`
+- `docs/v1/README.md`
 
 验收标准：
 
@@ -92,13 +92,13 @@ bring-up `.insn` 格式：
 证据：
 
 - 2026-06-08 01:55:09 CST 运行
-  `python3 docs/complex-instruction-extension/scripts/cfma_register_layout.py`，
+  `python3 docs/v1/scripts/cfma_register_layout.py`，
   退出码为 0；输出覆盖 `m1/m2/m4/m8` 的 `v0..v31` 共 128 行，并报告
   `Encoding VFCMACC_VV=32'b111010???????????001?????1010111 has no checked
 overlap.`。
 - 2026-06-08 运行
-  `python3 docs/complex-instruction-extension/scripts/cfma_register_layout.py
---write-md docs/complex-instruction-extension/register_layout.md`，退出码为 0，
+  `python3 docs/v1/scripts/cfma_register_layout.py
+--write-md docs/v1/register_layout.md`，退出码为 0，
   用脚本重新生成 `register_layout.md`。
 - 2026-06-08 运行 `python3 --version`，输出 `Python 3.12.3`。
 
@@ -125,8 +125,8 @@ overlap.`。
 - `hw/ip/snitch/src/snitch.sv`
 - `sw/riscvTests/CMakeLists.txt`
 - `sw/riscvTests/isa/rv64uv/vfcmacc_smoke.c`
-- `docs/complex-instruction-extension/PHASE_RESULTS.md`
-- `docs/complex-instruction-extension/GIT_NOTES.md`
+- `docs/v1/PHASE_RESULTS.md`
+- `docs/v1/GIT_NOTES.md`
 
 验收标准：
 
@@ -210,8 +210,8 @@ bin/spatz_cluster.vlt`，退出码为 0；Verilator 报告成功生成
 - `hw/ip/spatz/src/spatz_controller.sv`
 - `sw/riscvTests/CMakeLists.txt`
 - `sw/riscvTests/isa/rv64uv/vfcmacc_illegal.c`
-- `docs/complex-instruction-extension/PHASE_RESULTS.md`
-- `docs/complex-instruction-extension/GIT_NOTES.md`
+- `docs/v1/PHASE_RESULTS.md`
+- `docs/v1/GIT_NOTES.md`
 
 验收标准：
 
@@ -279,8 +279,8 @@ bin/spatz_cluster.vlt`，退出码为 0；最终重跑输出
 - `hw/ip/spatz/src/spatz_vfu.sv`
 - `sw/riscvTests/CMakeLists.txt`
 - `sw/riscvTests/isa/rv64uv/vfcmacc_e32.c`
-- `docs/complex-instruction-extension/PHASE_RESULTS.md`
-- `docs/complex-instruction-extension/GIT_NOTES.md`
+- `docs/v1/PHASE_RESULTS.md`
+- `docs/v1/GIT_NOTES.md`
 
 验收标准：
 
@@ -343,8 +343,8 @@ bin/spatz_cluster.vlt`，退出码为 0；最终重跑输出
 - `sw/riscvTests/CMakeLists.txt`
 - `sw/riscvTests/isa/rv64uv/vfcmacc.c`
 - `sw/riscvTests/isa/rv64uv/vfcmacc_illegal.c`
-- `docs/complex-instruction-extension/PHASE_RESULTS.md`
-- `docs/complex-instruction-extension/GIT_NOTES.md`
+- `docs/v1/PHASE_RESULTS.md`
+- `docs/v1/GIT_NOTES.md`
 
 验收标准：
 
@@ -400,8 +400,8 @@ bin/spatz_cluster.vlt`，退出码为 0；Verilator 5.034 重新生成并链接
 - `hw/ip/spatz/src/spatz_vfu.sv`
 - `sw/riscvTests/isa/rv64uv/vfcmacc.c`
 - `sw/riscvTests/isa/rv64uv/vfcmacc_illegal.c`
-- `docs/complex-instruction-extension/PHASE_RESULTS.md`
-- `docs/complex-instruction-extension/GIT_NOTES.md`
+- `docs/v1/PHASE_RESULTS.md`
+- `docs/v1/GIT_NOTES.md`
 
 验收标准：
 
@@ -457,8 +457,8 @@ bin/spatz_cluster.vlt`，退出码为 0；Verilator 5.034 重新生成并链接
 修改范围：
 
 - `sw/riscvTests/isa/rv64uv/vfcmacc.c`
-- `docs/complex-instruction-extension/PHASE_RESULTS.md`
-- `docs/complex-instruction-extension/GIT_NOTES.md`
+- `docs/v1/PHASE_RESULTS.md`
+- `docs/v1/GIT_NOTES.md`
 
 验收标准：
 
@@ -525,8 +525,8 @@ bin/spatz_cluster.vlt`，退出码为 0；Verilator 5.034 重新生成并链接
 修改范围：
 
 - `sw/riscvTests/isa/rv64uv/vfcmacc.c`
-- `docs/complex-instruction-extension/PHASE_RESULTS.md`
-- `docs/complex-instruction-extension/GIT_NOTES.md`
+- `docs/v1/PHASE_RESULTS.md`
+- `docs/v1/GIT_NOTES.md`
 
 验收标准：
 
@@ -590,9 +590,9 @@ bin/spatz_cluster.vlt`，退出码为 0；Verilator 重新生成并链接
 
 修改范围：
 
-- `docs/complex-instruction-extension/toolchain_mnemonic_status.md`
-- `docs/complex-instruction-extension/PHASE_RESULTS.md`
-- `docs/complex-instruction-extension/GIT_NOTES.md`
+- `docs/v1/toolchain_mnemonic_status.md`
+- `docs/v1/PHASE_RESULTS.md`
+- `docs/v1/GIT_NOTES.md`
 
 验收标准：
 
@@ -625,7 +625,7 @@ install/llvm/bin/clang -x assembler ...`，退出码为 0；随后
 - 2026-06-08 运行 `install/llvm/bin/clang --version`，输出 LLVM 14.0.6，
   revision 为 `pulp-platform/llvm-project b494f2d8...`。
 - 2026-06-08 新增
-  `docs/complex-instruction-extension/toolchain_mnemonic_status.md`，记录当前
+  `docs/v1/toolchain_mnemonic_status.md`，记录当前
   assembler/objdump 状态和后续解锁路径。
 
 风险：
@@ -689,9 +689,9 @@ install/llvm/bin/clang -x assembler ...`，退出码为 0；随后
 
 修改范围：
 
-- `docs/complex-instruction-extension/toolchain_mnemonic_status.md`
-- `docs/complex-instruction-extension/PHASE_RESULTS.md`
-- `docs/complex-instruction-extension/GIT_NOTES.md`
+- `docs/v1/toolchain_mnemonic_status.md`
+- `docs/v1/PHASE_RESULTS.md`
+- `docs/v1/GIT_NOTES.md`
 
 验收标准：
 
@@ -722,9 +722,9 @@ install/llvm/bin/clang -x assembler ...`，退出码为 0；随后
 
 修改范围：
 
-- `docs/complex-instruction-extension/v2_datapath_review.md`
-- `docs/complex-instruction-extension/PHASE_RESULTS.md`
-- `docs/complex-instruction-extension/GIT_NOTES.md`
+- `docs/v1/v2_datapath_review.md`
+- `docs/v1/PHASE_RESULTS.md`
+- `docs/v1/GIT_NOTES.md`
 
 验收标准：
 
@@ -737,7 +737,7 @@ install/llvm/bin/clang -x assembler ...`，退出码为 0；随后
 证据：
 
 - 2026-06-08 新增
-  `docs/complex-instruction-extension/v2_datapath_review.md`。
+  `docs/v1/v2_datapath_review.md`。
 - 评审输入状态：
   - v1 ISA 行为已有 RTL regression 覆盖：e32/e64/e16、mask/tail、
     vstart illegal、fflags、NaN/Inf、zero sign、rounding 和 serialization
@@ -787,19 +787,19 @@ install/llvm/bin/clang -x assembler ...`，退出码为 0；随后
 
 目标：
 
-- 将 `docs/complex-instruction-extension/` 的入口和状态文档同步到当前工作树状态。
+- 将 `docs/v1/` 的入口和状态文档同步到当前工作树状态。
 - 明确 Step 11 已由最新提交完成，Step 12 只有未提交写回草稿，尚未完成仲裁接入和
   编译验证。
 - 增加工程规则：允许进行长时间编译工作以验证指令集修改的合理性。
 
 修改范围：
 
-- `docs/complex-instruction-extension/README.md`
-- `docs/complex-instruction-extension/RESUME_INFO.md`
-- `docs/complex-instruction-extension/PLAN.md`
-- `docs/complex-instruction-extension/complex_fma_hardware_design.md`
-- `docs/complex-instruction-extension/PHASE_RESULTS.md`
-- `docs/complex-instruction-extension/GIT_NOTES.md`
+- `docs/v1/README.md`
+- `docs/v1/RESUME_INFO.md`
+- `docs/v1/PLAN.md`
+- `docs/v1/complex_fma_hardware_design.md`
+- `docs/v1/PHASE_RESULTS.md`
+- `docs/v1/GIT_NOTES.md`
 
 验收标准：
 
@@ -836,11 +836,11 @@ install/llvm/bin/clang -x assembler ...`，退出码为 0；随后
 
 删除范围：
 
-- `docs/complex-instruction-extension/FINAL_STATUS.md`
-- `docs/complex-instruction-extension/SESSION_SUMMARY.md`
-- `docs/complex-instruction-extension/PROGRESS_REPORT.md`
-- `docs/complex-instruction-extension/step10_15_summary.md`
-- `docs/complex-instruction-extension/step9_verification_report.md`
+- `docs/v1/FINAL_STATUS.md`
+- `docs/v1/SESSION_SUMMARY.md`
+- `docs/v1/PROGRESS_REPORT.md`
+- `docs/v1/step10_15_summary.md`
+- `docs/v1/step9_verification_report.md`
 
 保留的当前文档集合：
 
@@ -878,10 +878,10 @@ install/llvm/bin/clang -x assembler ...`，退出码为 0；随后
 修改范围：
 
 - `hw/ip/spatz/src/spatz_vfu.sv`
-- `docs/complex-instruction-extension/RESUME_INFO.md`
-- `docs/complex-instruction-extension/complex_fma_hardware_design.md`
-- `docs/complex-instruction-extension/PHASE_RESULTS.md`
-- `docs/complex-instruction-extension/GIT_NOTES.md`
+- `docs/v1/RESUME_INFO.md`
+- `docs/v1/complex_fma_hardware_design.md`
+- `docs/v1/PHASE_RESULTS.md`
+- `docs/v1/GIT_NOTES.md`
 
 审查结论：
 

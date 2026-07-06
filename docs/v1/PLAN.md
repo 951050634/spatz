@@ -99,9 +99,9 @@ branch: feature/cfma-instruction-extension
 本目录必须维护三类文档：
 
 ```text
-docs/complex-instruction-extension/PLAN.md
-docs/complex-instruction-extension/PHASE_RESULTS.md
-docs/complex-instruction-extension/GIT_NOTES.md
+docs/v1/PLAN.md
+docs/v1/PHASE_RESULTS.md
+docs/v1/GIT_NOTES.md
 ```
 
 每完成一个 node，必须更新 `PHASE_RESULTS.md`：
@@ -678,7 +678,7 @@ make -C hw/system/spatz_cluster help
 提交：
 
 ```sh
-git add .codexignore docs/complex-instruction-extension
+git add .codexignore docs/v1
 git commit -m "[cfma] Record complex instruction planning baseline"
 ```
 
@@ -693,8 +693,8 @@ git commit -m "[cfma] Record complex instruction planning baseline"
 建议新增文件：
 
 ```text
-docs/complex-instruction-extension/register_layout.md
-docs/complex-instruction-extension/scripts/cfma_register_layout.py
+docs/v1/register_layout.md
+docs/v1/scripts/cfma_register_layout.py
 ```
 
 脚本输出必须包含：
@@ -720,14 +720,14 @@ illegal reason
 验证：
 
 ```sh
-python3 docs/complex-instruction-extension/scripts/cfma_register_layout.py
+python3 docs/v1/scripts/cfma_register_layout.py
 git diff --check
 ```
 
 提交：
 
 ```sh
-git add docs/complex-instruction-extension
+git add docs/v1
 git commit -m "[cfma] Add complex register layout reference checks"
 ```
 
@@ -779,7 +779,7 @@ git diff --check
 提交：
 
 ```sh
-git add sw/toolchain hw/ip/snitch/src hw/ip/spatz/src docs/complex-instruction-extension
+git add sw/toolchain hw/ip/snitch/src hw/ip/spatz/src docs/v1
 git commit -m "[cfma] Add vfcmacc opcode pattern"
 ```
 
@@ -827,7 +827,7 @@ git diff --check
 提交：
 
 ```sh
-git add hw/ip/spatz/src sw/riscvTests docs/complex-instruction-extension
+git add hw/ip/spatz/src sw/riscvTests docs/v1
 git commit -m "[cfma] Decode vfcmacc in Spatz"
 ```
 
@@ -869,7 +869,7 @@ git diff --check
 提交：
 
 ```sh
-git add hw/ip/spatz/src sw/riscvTests docs/complex-instruction-extension
+git add hw/ip/spatz/src sw/riscvTests docs/v1
 git commit -m "[cfma] Add vfcmacc e32 micro-op execution"
 ```
 
@@ -885,7 +885,7 @@ git commit -m "[cfma] Add vfcmacc e32 micro-op execution"
 ```text
 hw/ip/spatz/src/spatz_vfu.sv
 sw/riscvTests/isa/rv64uv/vfcmacc.c
-docs/complex-instruction-extension/PHASE_RESULTS.md
+docs/v1/PHASE_RESULTS.md
 ```
 
 验收标准：
@@ -907,7 +907,7 @@ git diff --check
 提交：
 
 ```sh
-git add hw/ip/spatz/src sw/riscvTests docs/complex-instruction-extension
+git add hw/ip/spatz/src sw/riscvTests docs/v1
 git commit -m "[cfma] Add vfcmacc e64 and e16 behavior"
 ```
 
@@ -925,7 +925,7 @@ git commit -m "[cfma] Add vfcmacc e64 and e16 behavior"
 hw/ip/spatz/src/spatz_vfu.sv
 hw/ip/spatz/src/spatz_decoder.sv
 sw/riscvTests/isa/rv64uv/vfcmacc.c
-docs/complex-instruction-extension/PHASE_RESULTS.md
+docs/v1/PHASE_RESULTS.md
 ```
 
 验收标准：
@@ -948,7 +948,7 @@ git diff --check
 提交：
 
 ```sh
-git add hw/ip/spatz/src sw/riscvTests docs/complex-instruction-extension
+git add hw/ip/spatz/src sw/riscvTests docs/v1
 git commit -m "[cfma] Cover vfcmacc mask and tail behavior"
 ```
 
@@ -964,7 +964,7 @@ git commit -m "[cfma] Cover vfcmacc mask and tail behavior"
 ```text
 hw/ip/spatz/src/spatz_vfu.sv
 sw/riscvTests/isa/rv64uv/vfcmacc.c
-docs/complex-instruction-extension/PHASE_RESULTS.md
+docs/v1/PHASE_RESULTS.md
 ```
 
 验收标准：
@@ -988,7 +988,7 @@ git diff --check
 提交：
 
 ```sh
-git add hw/ip/spatz/src sw/riscvTests docs/complex-instruction-extension
+git add hw/ip/spatz/src sw/riscvTests docs/v1
 git commit -m "[cfma] Cover vfcmacc numerical corner cases"
 ```
 
@@ -1005,7 +1005,7 @@ git commit -m "[cfma] Cover vfcmacc numerical corner cases"
 hw/ip/spatz/src/spatz_controller.sv
 hw/ip/spatz/src/spatz_vfu.sv
 sw/riscvTests/isa/rv64uv/vfcmacc.c
-docs/complex-instruction-extension/PHASE_RESULTS.md
+docs/v1/PHASE_RESULTS.md
 ```
 
 验收标准：
@@ -1029,7 +1029,7 @@ git diff --check
 提交：
 
 ```sh
-git add hw/ip/spatz/src sw/riscvTests docs/complex-instruction-extension
+git add hw/ip/spatz/src sw/riscvTests docs/v1
 git commit -m "[cfma] Complete vfcmacc ISA behavior"
 ```
 
@@ -1051,7 +1051,7 @@ sw/toolchain/riscv-gnu-toolchain/riscv-binutils/opcodes/riscv-opc.c
 sw/toolchain/llvm-project/llvm/lib/Target/RISCV/RISCVInstrInfoV.td
 sw/toolchain/llvm-project/llvm/lib/Target/RISCV/RISCVInstrInfoVPseudos.td
 sw/spatzBenchmarks/dp-cdotp/kernel/cdotp.c
-docs/complex-instruction-extension/PHASE_RESULTS.md
+docs/v1/PHASE_RESULTS.md
 ```
 
 验收标准：
@@ -1072,7 +1072,7 @@ git diff --check
 提交：
 
 ```sh
-git add sw/toolchain sw/spatzBenchmarks docs/complex-instruction-extension
+git add sw/toolchain sw/spatzBenchmarks docs/v1
 git commit -m "[cfma] Add vfcmacc mnemonic support"
 ```
 
@@ -1105,7 +1105,7 @@ v2 决策项：
 提交：
 
 ```sh
-git add docs/complex-instruction-extension
+git add docs/v1
 git commit -m "[cfma] Record complex datapath v2 decision"
 ```
 

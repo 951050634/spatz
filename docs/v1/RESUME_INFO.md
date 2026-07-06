@@ -35,9 +35,9 @@ git diff -- hw/ip/spatz/src/spatz_vfu.sv
 继续实施前优先阅读：
 
 ```bash
-sed -n '1,160p' docs/complex-instruction-extension/README.md
-sed -n '1,180p' docs/complex-instruction-extension/PHASE_RESULTS.md
-sed -n '780,880p' docs/complex-instruction-extension/complex_fma_hardware_design.md
+sed -n '1,160p' docs/v1/README.md
+sed -n '1,180p' docs/v1/PHASE_RESULTS.md
+sed -n '780,880p' docs/v1/complex_fma_hardware_design.md
 ```
 
 ---
@@ -47,9 +47,9 @@ sed -n '780,880p' docs/complex-instruction-extension/complex_fma_hardware_design
 - `hw/ip/spatz/src/fpnew_complex_fma.sv`：CFMA 硬件单元。
 - `hw/ip/spatz/src/spatz_vfu.sv`：VFU 集成点；当前未提交 Step 12 写回草稿位于此文件。
 - `Bender.yml`：硬件编译配置，已包含 CFMA 模块。
-- `docs/complex-instruction-extension/complex_fma_hardware_design.md`：18 步硬件实施计划。
-- `docs/complex-instruction-extension/PHASE_RESULTS.md`：验收证据与风险记录。
-- `docs/complex-instruction-extension/GIT_NOTES.md`：提交与验证命令记录。
+- `docs/v1/complex_fma_hardware_design.md`：18 步硬件实施计划。
+- `docs/v1/PHASE_RESULTS.md`：验收证据与风险记录。
+- `docs/v1/GIT_NOTES.md`：提交与验证命令记录。
 
 ---
 
