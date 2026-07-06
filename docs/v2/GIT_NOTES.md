@@ -63,3 +63,26 @@
 - `PATH="$PWD/.venv/bin:$PATH" make -C hw/system/spatz_cluster bin/spatz_cluster.vlt`：PASS（目标已是最新）。
 
 结论：阶段 1 directed standalone matrix 已覆盖 e16/e32/e64 的 finite、signed zero、Inf、quiet NaN、invalid NV、rounding NX 和 backpressure；完整阶段 1 仍需 random/reference-driven tuple、RTZ/RDN/RMM、overflow/underflow、signaling NaN。
+
+## 2026-07-07 阶段 2：VFU Dedicated CFMA 契约冻结
+
+计划提交信息：`[cfma-v2] Freeze VFU dedicated CFMA contract`
+
+主要内容：
+
+- 新增 `docs/v2/STAGE2_VFU_CONTRACT.md`，冻结 `vfcmacc.vv` dedicated path 的 request/result/writeback 契约。
+- 明确 dedicated CFMA 初始为 blocking multi-cycle single-entry unit。
+- 明确 request/tag 必须冻结六操作数、`vd/vd+LMUL`、`vsew/vl/vm/mask_bits/elem_idx`、completion/debug 信息。
+- 明确 `cfma_req_valid/ready`、`cfma_rsp_valid/ready`、busy/backpressure 规则。
+- 新增 request、compute result、两拍 real/imag writeback timing table。
+- 明确 fflags 只在整条 instruction architectural completion 时暴露。
+- 明确 flush/kill/debug 策略为 non-resumable/no partial architectural completion。
+- 明确 v1 fallback 仍必须可选择，阶段 3/4 不默认启用 dedicated writeback。
+
+验证/自检：
+
+- `git diff --check`：PASS；
+- placeholder scan (`TBD|TODO|待定|以后补|fill in|implement later`)：PASS；
+- 阶段 2 退出标准已在文档第 11 节逐项对照。
+
+结论：阶段 2 设计契约文档退出标准满足；下一步进入阶段 3 六操作数 VRF 分拍读取的 RTL/trace 设计与验证。
