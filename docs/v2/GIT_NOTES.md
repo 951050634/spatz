@@ -354,3 +354,24 @@
 - `timeout 240s hw/system/spatz_cluster/bin/spatz_cluster.vlt hw/system/spatz_cluster/sw/build/riscvTests/test-riscvTests-vfnmsac`：PASS。
 
 结论：dedicated-mode 已通过 illegal 检查和非 CFMA FPU 旁路 regression；后续继续做 mask/tail/fflags、e16/e32 和 benchmark closure。
+
+## 2026-07-07 阶段 6 小阶段：dedicated-mode `vfcmacc` 覆盖审计
+
+计划提交信息：`[cfma-v2] Audit dedicated vfcmacc ISA coverage`
+
+主要内容：
+
+- 新增 `docs/v2/evidence/stage6_vfcmacc_coverage_audit.txt`，记录 `sw/riscvTests/isa/rv64uv/vfcmacc.c` 的覆盖审计 grep 和 dedicated-mode evidence cross-check。
+- 更新 `docs/v2/STAGE6_SYSTEM_INTEGRATION.md`，明确 full `vfcmacc` dedicated-mode direct run 已覆盖：
+  - e16/e32/e64 normal cases；
+  - mask/tail cases；
+  - fflags、RTZ rounding fflags、masked fflags；
+  - repeated/reference-comparison cases。
+- 将 Stage 6 剩余 gap 从“mask/tail/fflags/e16/e32 closure”收敛为 benchmark/performance、默认路径切换决策和最终 verification matrix 文档收尾。
+
+验证命令：
+
+- `git diff --check`：PASS；
+- `docs/v2/evidence/stage6_vfcmacc_coverage_audit.txt` evidence cross-check：PASS，确认 dedicated-mode `vfcmacc_smoke`、full `vfcmacc`、`vfcmacc_illegal`、`vfmacc`、`vfnmsac` direct runs 均有 `[SUCCESS] Program finished successfully` 证据。
+
+结论：dedicated-mode full `vfcmacc` ISA run 的现有 test body 已覆盖 mask/tail/fflags/e16/e32/e64 主功能维度；下一阶段转向 benchmark/performance 和默认路径决策。

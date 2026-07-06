@@ -190,3 +190,46 @@ reserved vf trapped as illegal.
 - non-CFMA `vfmacc/vfnmsac` direct run。
 
 剩余 gap 主要转向：mask/tail/fflags 更细粒度 dedicated-mode closure、e16/e32 packed-lane closure、benchmark/performance 和默认路径切换决策。
+
+## 7. 小阶段：full `vfcmacc` dedicated-mode coverage audit
+
+前一小阶段已经在 `CFMA_DEDICATED_V2` build 下跑通 full `vfcmacc` direct ISA run。本小阶段不修改 RTL，而是审计该 full test 对 dedicated path 的功能覆盖，避免把 mask/tail/fflags/e16/e32 误认为未验证 gap。
+
+完整证据：
+
+```text
+docs/v2/evidence/stage6_vfcmacc_coverage_audit.txt
+```
+
+审计对象：
+
+```text
+sw/riscvTests/isa/rv64uv/vfcmacc.c
+```
+
+该 ISA test 已覆盖：
+
+- e32 normal/repeated reference comparison；
+- e64 normal/mask/tail（`ELEN == 64` 时启用）；
+- e16 normal/mask/tail；
+- e32 mask/tail；
+- fflags snapshot、RTZ rounding fflags、masked fflags；
+- 后续 reference-comparison cases，包括 alternate operand/layout style 的 e32 cases。
+
+和 dedicated-mode evidence 交叉确认：
+
+```text
+vfcmacc_smoke direct run: PASS
+full vfcmacc direct run: PASS
+vfcmacc_illegal direct run: PASS
+vfmacc direct run: PASS
+vfnmsac direct run: PASS
+```
+
+因此，现有 full `vfcmacc` dedicated-mode direct run 已经覆盖 mask/tail/fflags/e16/e32/e64 主功能维度；`vfcmacc_illegal` dedicated-mode direct run 覆盖 illegal/layout/vstart/fmode/vf reserved 检查；`vfmacc`/`vfnmsac` direct runs 覆盖非 CFMA FPU 旁路不被 dedicated gating 破坏。
+
+阶段 6 剩余 gap 收敛为：
+
+- benchmark/performance 对比；
+- 默认路径是否切换到 dedicated v2 的决策；
+- 最终 full verification matrix 与 README/总结文档更新。

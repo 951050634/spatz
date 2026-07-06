@@ -1,0 +1,140 @@
+# Stage 6 vfcmacc dedicated-mode coverage audit
+Date: 2026-07-07T05:39:30+08:00
+Branch: feature/cfma-v2-datapath
+
+## git diff --check
+RESULT: PASS
+
+## vfcmacc.c case/capability grep
+9:#define VFCMACC_VV_VM1(vd, vs1, vs2)                                           \
+13:#define VFCMACC_VV_VM0(vd, vs1, vs2)                                           \
+17:#define VSET_POLICY(VLEN, VTYPE, LMUL, TAIL, MASK)                             \
+34:static void load_odd_lane_mask(void) {
+52:static void check_fflags(uint32_t casenum, unsigned int expected) {
+55:    printf("[TC %u] fflags FAILED. Got 0x%x, expected 0x%x.\n", casenum, got,
+61:  printf("[TC %u] fflags PASSED.\n", casenum);
+85:      printf("[TC %u] real[%u] FAILED. Got %u, expected %u.\n", casenum, i,
+110:      printf("[TC %u] imag[%u] FAILED. Got %u, expected %u.\n", casenum, i,
+117:  printf("[TC %u] PASSED.\n", casenum);
+120:static void compare_e16_v8_v9_active_else_orig(uint32_t casenum,
+141:      printf("[TC %u] real[%u] FAILED. Got %u, expected %u.\n", casenum, i,
+166:      printf("[TC %u] imag[%u] FAILED. Got %u, expected %u.\n", casenum, i,
+173:  printf("[TC %u] PASSED.\n", casenum);
+177:static void compare_e64_v8_v9_active_else_orig(uint32_t casenum,
+198:      printf("[TC %u] real[%u] FAILED. Got %lu, expected %lu.\n", casenum, i,
+223:      printf("[TC %u] imag[%u] FAILED. Got %lu, expected %lu.\n", casenum, i,
+230:  printf("[TC %u] PASSED.\n", casenum);
+244:      printf("[TC %u] real[%u] FAILED. Got %u, expected %u.\n", casenum, i,
+260:      printf("[TC %u] imag[%u] FAILED. Got %u, expected %u.\n", casenum, i,
+267:  printf("[TC %u] PASSED.\n", casenum);
+280:      printf("[TC %u] real-read[%u] FAILED. Got %u, expected %u.\n", casenum,
+296:      printf("[TC %u] imag-read[%u] FAILED. Got %u, expected %u.\n", casenum,
+303:  printf("[TC %u] PASSED.\n", casenum);
+306:static void compare_e16_v8_v9_against_v16_v17(uint32_t casenum) {
+316:      printf("[TC %u] real[%u] FAILED. Got %u, expected %u.\n", casenum, i,
+332:      printf("[TC %u] imag[%u] FAILED. Got %u, expected %u.\n", casenum, i,
+339:  printf("[TC %u] PASSED.\n", casenum);
+342:static void compare_e64_v8_v9_against_v16_v17(uint32_t casenum) {
+352:      printf("[TC %u] real[%u] FAILED. Got %lu, expected %lu.\n", casenum, i,
+368:      printf("[TC %u] imag[%u] FAILED. Got %lu, expected %lu.\n", casenum, i,
+375:  printf("[TC %u] PASSED.\n", casenum);
+378:static void load_e32_fixture(void) {
+379:  VSET(16, e32, m1);
+415:static void load_e32_special_fixture(void) {
+416:  VSET(16, e32, m1);
+448:static void run_e32_reference_v16_v17(void) {
+456:static void load_e16_fixture(void) {
+457:  VSET(16, e16, m1);
+478:static void load_e64_fixture(void) {
+479:  VSET(16, e64, m1);
+533:  load_e32_fixture();
+535:  VFCMACC_VV_VM1("v8", "v0", "v2");
+547:  load_e32_fixture();
+549:  VFCMACC_VV_VM1("v8", "v0", "v2");
+550:  VFCMACC_VV_VM1("v8", "v0", "v2");
+567:  load_e64_fixture();
+569:  VFCMACC_VV_VM1("v8", "v0", "v2");
+577:  compare_e64_v8_v9_against_v16_v17(3);
+579:  printf("[TC 3] SKIPPED: e64 requires ELEN=64.\n");
+584:  load_e16_fixture();
+586:  VFCMACC_VV_VM1("v8", "v0", "v2");
+594:  compare_e16_v8_v9_against_v16_v17(4);
+598:  load_e32_fixture();
+601:  load_odd_lane_mask();
+602:  VSET_POLICY(16, e32, m1, tu, mu);
+604:  VFCMACC_VV_VM0("v8", "v4", "v6");
+606:  VSET(16, e32, m1);
+617:  load_e32_fixture();
+619:  VSET_POLICY(12, e32, m1, tu, ma);
+621:  VFCMACC_VV_VM1("v8", "v0", "v2");
+623:  VSET(16, e32, m1);
+635:  load_e64_fixture();
+638:  load_odd_lane_mask();
+639:  VSET_POLICY(16, e64, m1, tu, mu);
+641:  VFCMACC_VV_VM0("v8", "v4", "v6");
+643:  VSET(16, e64, m1);
+650:  compare_e64_v8_v9_active_else_orig(7, 0xaa, 8);
+652:  printf("[TC 7] SKIPPED: e64 requires ELEN=64.\n");
+658:  load_e64_fixture();
+660:  VSET_POLICY(5, e64, m1, tu, ma);
+662:  VFCMACC_VV_VM1("v8", "v0", "v2");
+664:  VSET(16, e64, m1);
+671:  compare_e64_v8_v9_active_else_orig(8, 0xff, 5);
+673:  printf("[TC 8] SKIPPED: e64 requires ELEN=64.\n");
+678:  load_e16_fixture();
+681:  load_odd_lane_mask();
+682:  VSET_POLICY(16, e16, m1, tu, mu);
+684:  VFCMACC_VV_VM0("v8", "v4", "v6");
+686:  VSET(16, e16, m1);
+693:  compare_e16_v8_v9_active_else_orig(9, 0xaaaa, 16);
+697:  load_e16_fixture();
+699:  VSET_POLICY(11, e16, m1, tu, ma);
+701:  VFCMACC_VV_VM1("v8", "v0", "v2");
+703:  VSET(16, e16, m1);
+710:  compare_e16_v8_v9_active_else_orig(10, 0xffff, 11);
+714:  load_e32_special_fixture();
+717:  VFCMACC_VV_VM1("v8", "v0", "v2");
+721:  run_e32_reference_v16_v17();
+725:  check_fflags(11, ref_fflags);
+727:    printf("[TC 11] vfcmacc fflags snapshot FAILED. Got 0x%x, expected 0x%x.\n",
+735:  load_e32_special_fixture();
+739:  VFCMACC_VV_VM1("v8", "v0", "v2");
+743:  run_e32_reference_v16_v17();
+748:  check_fflags(12, ref_fflags);
+750:    printf("[TC 12] vfcmacc RTZ fflags snapshot FAILED. Got 0x%x, expected 0x%x.\n",
+758:  VSET(16, e32, m1);
+784:  load_odd_lane_mask();
+785:  VSET_POLICY(16, e32, m1, tu, mu);
+788:  VFCMACC_VV_VM0("v8", "v4", "v6");
+799:  check_fflags(13, ref_fflags);
+801:    printf("[TC 13] masked fflags snapshot FAILED. Got 0x%x, expected 0x%x.\n",
+809:  load_e32_fixture();
+816:  run_e32_reference_v16_v17();
+825:  load_e32_fixture();
+831:  run_e32_reference_v16_v17();
+836:  load_e32_fixture();
+842:  run_e32_reference_v16_v17();
+847:  load_e32_fixture();
+854:  run_e32_reference_v16_v17();
+855:  run_e32_reference_v16_v17();
+856:  run_e32_reference_v16_v17();
+877:  load_e32_fixture();
+879:  asm volatile("vle32.v v1, (%[vs1_imag])\n"
+880:               "vle32.v v3, (%[vs2_imag])\n"
+886:  run_e32_reference_v16_v17();
+RESULT: PASS
+
+## dedicated-mode evidence cross-check
+docs/v2/evidence/stage6_dedicated_mode_switch_attempt.txt:412:## Dedicated-mode vfcmacc_smoke direct run (timeout 180s)
+docs/v2/evidence/stage6_dedicated_mode_switch_attempt.txt:413:[SUCCESS] Program finished successfully
+docs/v2/evidence/stage6_dedicated_mode_switch_attempt.txt:816:## Dedicated-mode vfcmacc_smoke direct run without trace
+docs/v2/evidence/stage6_dedicated_mode_switch_attempt.txt:817:[SUCCESS] Program finished successfully
+docs/v2/evidence/stage6_dedicated_mode_switch_attempt.txt:828:## Dedicated-mode vfcmacc full direct run without trace (timeout 600s)
+docs/v2/evidence/stage6_dedicated_mode_switch_attempt.txt:829:[SUCCESS] Program finished successfully
+docs/v2/evidence/stage6_dedicated_mode_regression_matrix.txt:396:## Dedicated-mode vfcmacc_illegal direct run
+docs/v2/evidence/stage6_dedicated_mode_regression_matrix.txt:407:[SUCCESS] Program finished successfully
+docs/v2/evidence/stage6_dedicated_mode_regression_matrix.txt:422:## Dedicated-mode vfmacc non-CFMA bypass direct run
+docs/v2/evidence/stage6_dedicated_mode_regression_matrix.txt:430:[SUCCESS] Program finished successfully
+docs/v2/evidence/stage6_dedicated_mode_regression_matrix.txt:436:## Dedicated-mode vfnmsac non-CFMA bypass direct run
+docs/v2/evidence/stage6_dedicated_mode_regression_matrix.txt:444:[SUCCESS] Program finished successfully
+RESULT: PASS
