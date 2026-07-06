@@ -86,3 +86,21 @@
 - 阶段 2 退出标准已在文档第 11 节逐项对照。
 
 结论：阶段 2 设计契约文档退出标准满足；下一步进入阶段 3 六操作数 VRF 分拍读取的 RTL/trace 设计与验证。
+
+## 2026-07-07 阶段 3 准备：六操作数 VRF 分拍读取现状审查
+
+计划提交信息：`[cfma-v2] Document stage 3 VRF read collector audit`
+
+主要内容：
+
+- 新增 `docs/v2/STAGE3_VRF_READ_AUDIT.md`，审查当前 `spatz_vfu.sv` 中 v1 四阶段 phase-offset 和 dedicated operand latch prototype。
+- 明确当前 prototype 与阶段 2 契约的差距：四阶段收集、tag 不完整、mask 未冻结、dynamic format 未实现、writeback 原子性未证明。
+- 定义阶段 3 最小 RTL 切片：新增 dedicated read collector，用 R0/R1 两拍读取六 operand 并形成 frozen request bundle，但不启用 dedicated writeback。
+- 定义阶段 3 directed trace/test 的建议输出格式和验证 gate。
+
+验证/自检：
+
+- `git diff --check`：PASS；
+- placeholder scan (`TBD|TODO|待定|以后补|fill in|implement later`)：PASS。
+
+结论：阶段 3 RTL 改造入口已明确；下一步实现 dedicated read collector 和 directed operand trace/test。
