@@ -249,3 +249,36 @@
 - `cd hw/system/spatz_cluster/sw/build && PATH="/home/wxt/spatz-cfma/.venv/bin:$PATH" ctest -R 'riscvTests-rtl-(vfcmacc|vfmacc|vfnmsac)$' --output-on-failure`：PASS，3/3。
 
 结论：阶段 4 的 dedicated compute 已能在 enable-mode 下直接消费阶段 3 read bundle 并产生正确 FP64 directed result；默认关闭的 v1 fallback 仍通过系统 build 和三条 RTL regression。下一阶段应冻结 result/writeback tag，并验证 real/imag 两拍写回原子性。
+
+## 2026-07-07 阶段 5 小阶段：dedicated real/imag 两拍 writeback
+
+计划提交信息：`[cfma-v2] Verify CFMA dedicated split writeback`
+
+主要内容：
+
+- 新增 `hw/ip/spatz/test/spatz_vfu_cfma_writeback_tb.sv`，在 `CfmaDedicatedReadCollectorEn=1` 且 `CfmaDedicatedWritebackEn=1` 下验证 dedicated result 两拍写回：
+  - real -> `vd`；
+  - imag -> `vd+LMUL`；
+  - `vrf_wvalid_i=0` 时 real beat 保持稳定；
+  - 释放 backpressure 后写 imag，并清空 dedicated pending。
+- 修改 `hw/ip/spatz/src/spatz_vfu.sv`：
+  - enable-mode 下 `cfma_tag_in` 用 `cfma_tag_bundle` 覆盖 `vd_addr/elem_idx/last/cfma_step_last`，使 result tag 与 read bundle 对齐；
+  - enable-mode 下 writeback capture 直接使用 `cfma_read_vd_real_addr/cfma_read_vd_imag_addr`；
+  - dedicated writeback mode 下禁止 regular fpnew lane 对 `VFCMADD` 并行发射，避免 dedicated 写回后又被 v1 fallback 写回污染。
+- 新增 `docs/v2/STAGE5_DEDICATED_WRITEBACK.md`，记录 Stage 5 目标、红灯、修复和验证结果。
+- 新增 `docs/v2/evidence/stage5_vfu_writeback_verification.txt` 保存完整验证转录。
+
+验证命令：
+
+- `git diff --check`：PASS；
+- `/home/wxt/spatz/install/bender/bender script verilator -t spatz -t rtl`：PASS；
+- `install/verilator/bin/verilator_bin --binary --timing ... spatz_vfu_cfma_writeback_tb.sv`：PASS；
+- `build/cfma_v2/obj_vfu_cfma_writeback_verify/Vspatz_vfu_cfma_writeback_tb`：PASS；
+- `install/verilator/bin/verilator_bin --binary --timing ... spatz_vfu_cfma_compute_bundle_tb.sv`：PASS；
+- `build/cfma_v2/obj_vfu_cfma_compute_stage5_verify/Vspatz_vfu_cfma_compute_bundle_tb`：PASS；
+- `install/verilator/bin/verilator_bin --binary --timing ... spatz_vfu_cfma_read_mux_tb.sv`：PASS；
+- `build/cfma_v2/obj_vfu_cfma_read_mux_stage5_verify/Vspatz_vfu_cfma_read_mux_tb`：PASS；
+- `PATH="$PWD/.venv/bin:$PATH" make -C hw/system/spatz_cluster bin/spatz_cluster.vlt`：PASS；
+- `cd hw/system/spatz_cluster/sw/build && PATH="/home/wxt/spatz-cfma/.venv/bin:$PATH" ctest -R 'riscvTests-rtl-(vfcmacc|vfmacc|vfnmsac)$' --output-on-failure`：PASS，3/3。
+
+结论：Stage 5 dedicated writeback microflow 已完成 directed closure；默认关闭系统路径和 v1 fallback regression 未回归。下一阶段需要 dedicated-mode ISA-level regression/默认切换前的 mask-tail-fflags closure。

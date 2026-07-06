@@ -1340,7 +1340,11 @@ module spatz_vfu
       assign fpu_operand3 = (fpu_op == fpnew_pkg::ADD || spatz_req.op_arith.switch_rs1_rd) ? wide_operand1[fpu*ELEN +: ELEN] : wide_operand3[fpu*ELEN +: ELEN];
 
       logic int_fpu_in_valid;
-      assign int_fpu_in_valid = spatz_req_valid && operands_ready && (!spatz_req.op_arith.is_scalar || fpu == 0) && is_fpu_insn;
+      assign int_fpu_in_valid = spatz_req_valid && operands_ready &&
+                                (!spatz_req.op_arith.is_scalar || fpu == 0) &&
+                                is_fpu_insn &&
+                                !(CfmaDedicatedReadCollectorEn &&
+                                  CfmaDedicatedWritebackEn && cfma_insn);
 
       // Generate an FPU pipeline
       elen_t fpu_operand1_q, fpu_operand2_q, fpu_operand3_q;
@@ -1426,6 +1430,7 @@ module spatz_vfu
     logic                      cfma_busy;
     vfu_tag_t                  cfma_tag_in;
     vfu_tag_t                  cfma_tag_out;
+    vfu_tag_t                  cfma_tag_bundle;
     // Dedicated CFMA read collection and result write-back are disabled by
     // default through module parameters.  The existing four-phase FPU path is
     // still the verified architectural path.  The read collector is
@@ -1634,7 +1639,17 @@ module spatz_vfu
                                cfma_read_bundle_valid :
                                (cfma_insn && (cfma_phase_q == Cfma_IR) && word_issued);
     assign cfma_result_ready = CfmaDedicatedWritebackEn ? !cfma_wb_pending_q : 1'b1;
-    assign cfma_tag_in       = input_tag;
+
+    always_comb begin : cfma_tag_bundle_proc
+      cfma_tag_bundle = input_tag;
+      if (CfmaDedicatedReadCollectorEn) begin
+        cfma_tag_bundle.vd_addr        = vfu_rsp_addr_t'(cfma_read_vd_imag_addr);
+        cfma_tag_bundle.elem_idx       = cfma_read_elem_idx;
+        cfma_tag_bundle.last           = cfma_read_last;
+        cfma_tag_bundle.cfma_step_last = cfma_read_last;
+      end
+    end
+    assign cfma_tag_in = cfma_tag_bundle;
 
     // pragma translate_off
     always_ff @(posedge clk_i) begin : cfma_compute_result_trace_proc
@@ -1701,8 +1716,12 @@ module spatz_vfu
       if (CfmaDedicatedWritebackEn && cfma_result_valid && !cfma_wb_pending_q) begin
         cfma_wb_real_d      = cfma_result_real;
         cfma_wb_imag_d      = cfma_result_imag;
-        cfma_wb_imag_addr_d = vrf_addr_t'(cfma_tag_out.vd_addr);
-        cfma_wb_real_addr_d = vrf_addr_t'(cfma_tag_out.vd_addr - cfma_wb_lmul_words);
+        cfma_wb_real_addr_d = CfmaDedicatedReadCollectorEn ?
+                              cfma_read_vd_real_addr :
+                              vrf_addr_t'(cfma_tag_out.vd_addr - cfma_wb_lmul_words);
+        cfma_wb_imag_addr_d = CfmaDedicatedReadCollectorEn ?
+                              cfma_read_vd_imag_addr :
+                              vrf_addr_t'(cfma_tag_out.vd_addr);
         cfma_wb_be_d        = cfma_wb_lane_be &
                               cfma_active_wbe(cfma_tag_out, spatz_req.vl,
                                                spatz_req.op_arith.vm, cfma_mask_q);
