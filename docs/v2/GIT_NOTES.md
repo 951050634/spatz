@@ -329,3 +329,28 @@
 - default-off regression：`ctest -R 'riscvTests-rtl-(vfcmacc|vfmacc|vfnmsac)$' --output-on-failure`：PASS，3/3。
 
 结论：系统层 dedicated-mode build switch 已可用，且 full `vfcmacc` dedicated-mode direct ISA run 通过；默认关闭 v1 fallback regression 未回归。下一步继续 dedicated-mode illegal/mask/tail/fflags 与性能 closure。
+
+## 2026-07-07 阶段 6 小阶段：dedicated-mode ISA regression matrix 扩展
+
+计划提交信息：`[cfma-v2] Extend CFMA dedicated ISA regression matrix`
+
+主要内容：
+
+- 使用 `DEFS=-DCFMA_DEDICATED_V2` 重建 dedicated-mode system Verilator binary。
+- 新增证据 `docs/v2/evidence/stage6_dedicated_mode_regression_matrix.txt`，记录 dedicated-mode direct ISA runs：
+  - `vfcmacc_illegal`：PASS；
+  - `vfmacc`：PASS；
+  - `vfnmsac`：PASS。
+- 更新 `docs/v2/STAGE6_SYSTEM_INTEGRATION.md`，记录 dedicated-mode matrix 扩展和剩余 gap。
+- 更新 `docs/v2/GIT_NOTES.md`。
+
+验证命令：
+
+- `git diff --check`：PASS；
+- `PATH="$PWD/.venv/bin:$PATH" make -C hw/system/spatz_cluster clean.vlt`：PASS；
+- `PATH="$PWD/.venv/bin:$PATH" make -C hw/system/spatz_cluster DEFS=-DCFMA_DEDICATED_V2 bin/spatz_cluster.vlt`：PASS；
+- `timeout 240s hw/system/spatz_cluster/bin/spatz_cluster.vlt hw/system/spatz_cluster/sw/build/riscvTests/test-riscvTests-vfcmacc_illegal`：PASS；
+- `timeout 240s hw/system/spatz_cluster/bin/spatz_cluster.vlt hw/system/spatz_cluster/sw/build/riscvTests/test-riscvTests-vfmacc`：PASS；
+- `timeout 240s hw/system/spatz_cluster/bin/spatz_cluster.vlt hw/system/spatz_cluster/sw/build/riscvTests/test-riscvTests-vfnmsac`：PASS。
+
+结论：dedicated-mode 已通过 illegal 检查和非 CFMA FPU 旁路 regression；后续继续做 mask/tail/fflags、e16/e32 和 benchmark closure。

@@ -137,3 +137,56 @@ full dedicated-mode `vfcmacc` direct run 输出：
 - dedicated-mode `vfmacc/vfnmsac` 非 CFMA regression 旁路确认；
 - benchmark/performance；
 - 默认切换前的文档化决策。
+
+## 6. 小阶段：dedicated-mode ISA regression matrix 扩展
+
+在 `CFMA_DEDICATED_V2` build switch 可用后，本小阶段扩展 dedicated-mode direct ISA regression：
+
+```text
+DEFS=-DCFMA_DEDICATED_V2
+```
+
+覆盖：
+
+- `vfcmacc_illegal`：确认 controller 侧 illegal/layout/vstart/fmode 检查在 dedicated-mode 下仍生效；
+- `vfmacc`：确认非 CFMA FPU 指令旁路不受 dedicated CFMA gating 影响；
+- `vfnmsac`：确认另一条非 CFMA FPU regression 仍通过。
+
+完整证据：
+
+```text
+docs/v2/evidence/stage6_dedicated_mode_regression_matrix.txt
+```
+
+结果：
+
+```text
+git diff --check: PASS
+dedicated-mode system Verilator build: PASS
+vfcmacc_illegal direct run: PASS
+vfmacc direct run: PASS
+vfnmsac direct run: PASS
+```
+
+`vfcmacc_illegal` 输出包括：
+
+```text
+m8 trapped as illegal.
+misaligned m2 vd trapped as illegal.
+out-of-range m4 vd trapped as illegal.
+vd/vs1 overlap trapped as illegal.
+vd/vs2 overlap trapped as illegal.
+unsupported e8 trapped as illegal.
+unsupported alternative fmode trapped as illegal.
+nonzero vstart trapped as illegal.
+reserved vf trapped as illegal.
+```
+
+至此，dedicated-mode 已覆盖：
+
+- `vfcmacc_smoke` direct run；
+- full `vfcmacc` direct run；
+- `vfcmacc_illegal` direct run；
+- non-CFMA `vfmacc/vfnmsac` direct run。
+
+剩余 gap 主要转向：mask/tail/fflags 更细粒度 dedicated-mode closure、e16/e32 packed-lane closure、benchmark/performance 和默认路径切换决策。
