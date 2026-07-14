@@ -4,10 +4,12 @@
 #pragma once
 #include <snrt.h>
 #include <stddef.h>
+#include <stdint.h>
 
 #include "printf.h"
 
 size_t benchmark_get_cycle();
+uint64_t benchmark_get_cycle64();
 
 void start_kernel();
 void stop_kernel();

@@ -88,8 +88,51 @@ add_library(sp-fft sp-fft/kernel/fft.c)
 enable_testing()
 set(SNITCH_TEST_PREFIX spatzBenchmarks-)
 
-add_snitch_test(online-softmax-merge online-softmax-merge/main.c)
-target_link_libraries(test-${SNITCH_TEST_PREFIX}online-softmax-merge benchmark ${SNITCH_RUNTIME})
+set(ONLINE_MERGE_N "1" CACHE STRING
+    "Online merge experiment row count")
+set(ONLINE_MERGE_D "1" CACHE STRING
+    "Online merge experiment vector dimension")
+set(ONLINE_MERGE_SEED "1" CACHE STRING
+    "Online merge experiment input seed")
+set(ONLINE_MERGE_CASE_KIND "main" CACHE STRING
+    "Online merge experiment input class")
+set(ONLINE_MERGE_REPEATS "5" CACHE STRING
+    "Online merge measured repetitions after one warm-up")
+if(NOT PYTHON)
+  find_program(PYTHON python3 REQUIRED)
+endif()
+string(CONCAT ONLINE_MERGE_CASE_SLUG
+    "N${ONLINE_MERGE_N}_D${ONLINE_MERGE_D}_S${ONLINE_MERGE_SEED}"
+    "_${ONLINE_MERGE_CASE_KIND}_R${ONLINE_MERGE_REPEATS}")
+string(CONCAT ONLINE_MERGE_GENERATED_DIR
+    "${CMAKE_CURRENT_BINARY_DIR}/online_merge_generated/"
+    "${ONLINE_MERGE_CASE_SLUG}")
+set(ONLINE_MERGE_CASE_HEADER
+    "${ONLINE_MERGE_GENERATED_DIR}/online_merge_case_data.h")
+add_custom_command(
+  OUTPUT "${ONLINE_MERGE_CASE_HEADER}"
+  COMMAND "${PYTHON}"
+          "${CMAKE_CURRENT_SOURCE_DIR}/online-softmax-merge/generate_case.py"
+          --n ${ONLINE_MERGE_N}
+          --d ${ONLINE_MERGE_D}
+          --seed ${ONLINE_MERGE_SEED}
+          --case-kind ${ONLINE_MERGE_CASE_KIND}
+          --repeats ${ONLINE_MERGE_REPEATS}
+          --output "${ONLINE_MERGE_CASE_HEADER}"
+  DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/online-softmax-merge/generate_case.py"
+  VERBATIM)
+set_source_files_properties("${ONLINE_MERGE_CASE_HEADER}"
+    PROPERTIES GENERATED TRUE)
+add_snitch_test(online-softmax-merge
+    online-softmax-merge/main.c
+    online-softmax-merge/rtl_reference.c
+    ${ONLINE_MERGE_CASE_HEADER})
+target_include_directories(
+    test-${SNITCH_TEST_PREFIX}online-softmax-merge
+    PRIVATE ${ONLINE_MERGE_GENERATED_DIR}
+            ${CMAKE_CURRENT_SOURCE_DIR}/online-softmax-merge)
+target_link_libraries(test-${SNITCH_TEST_PREFIX}online-softmax-merge
+    benchmark ${SNITCH_RUNTIME})
 
 add_snitch_test(attnres-baselines attnres-baselines/main.c)
 target_link_libraries(test-${SNITCH_TEST_PREFIX}attnres-baselines benchmark ${SNITCH_RUNTIME})

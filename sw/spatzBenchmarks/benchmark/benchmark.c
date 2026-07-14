@@ -11,6 +11,22 @@ extern __thread struct snrt_team *_snrt_team_current;
 
 size_t benchmark_get_cycle() { return read_csr(mcycle); }
 
+uint64_t benchmark_get_cycle64() {
+#if __riscv_xlen == 32
+  uint32_t high_before;
+  uint32_t low;
+  uint32_t high_after;
+  do {
+    high_before = read_csr(mcycleh);
+    low = read_csr(mcycle);
+    high_after = read_csr(mcycleh);
+  } while (high_before != high_after);
+  return ((uint64_t)high_before << 32) | low;
+#else
+  return read_csr(mcycle);
+#endif
+}
+
 void start_kernel() {
   uint32_t *bench =
       (uint32_t *)(_snrt_team_current->root->cluster_mem.end +

@@ -1,0 +1,243 @@
+// Copyright 2026 ETH Zurich and University of Bologna.
+// Licensed under the Apache License, Version 2.0, see LICENSE for details.
+// SPDX-License-Identifier: Apache-2.0
+
+#include "rtl_reference.h"
+
+#include <stdint.h>
+
+static const uint32_t exp_lut_q1_23[257] = {
+    0x800000, 0x7c0fd6, 0x783eb0, 0x748b9b, 0x70f5a9, 0x6d7bf5,
+    0x6a1da0, 0x66d9d4, 0x63afbe, 0x609e96, 0x5da595, 0x5ac3fe,
+    0x57f918, 0x554432, 0x52a49c, 0x5019b1, 0x4da2cc, 0x4b3f50,
+    0x48eea5, 0x46b035, 0x448372, 0x4267d0, 0x405cc9, 0x3e61d9,
+    0x3c7682, 0x3a9a49, 0x38ccb6, 0x370d57, 0x355bbc, 0x33b778,
+    0x322022, 0x309554, 0x2f16ac, 0x2da3ca, 0x2c3c51, 0x2adfe8,
+    0x298e36, 0x2846e9, 0x2709ad, 0x25d634, 0x24ac30, 0x238b58,
+    0x227363, 0x21640b, 0x205d0c, 0x1f5e25, 0x1e6715, 0x1d779f,
+    0x1c8f87, 0x1bae94, 0x1ad48c, 0x1a0139, 0x193467, 0x186de2,
+    0x17ad78, 0x16f2fb, 0x163e39, 0x158f08, 0x14e53b, 0x1440a7,
+    0x13a123, 0x130687, 0x1270ae, 0x11df70, 0x1152ab, 0x10ca3a,
+    0x1045fc, 0x0fc5cf, 0x0f4994, 0x0ed12c, 0x0e5c78, 0x0deb5b,
+    0x0d7db9, 0x0d1376, 0x0cac79, 0x0c48a6, 0x0be7e6, 0x0b8a20,
+    0x0b2f3c, 0x0ad725, 0x0a81c3, 0x0a2f02, 0x09decc, 0x09910e,
+    0x0945b5, 0x08fcad, 0x08b5e4, 0x087149, 0x082eca, 0x07ee57,
+    0x07afdf, 0x077354, 0x0738a5, 0x06ffc4, 0x06c8a4, 0x069336,
+    0x065f6c, 0x062d3b, 0x05fc94, 0x05cd6d, 0x059fba, 0x05736e,
+    0x05487f, 0x051ee3, 0x04f68e, 0x04cf76, 0x04a993, 0x0484da,
+    0x046142, 0x043ec3, 0x041d53, 0x03fceb, 0x03dd82, 0x03bf10,
+    0x03a18e, 0x0384f5, 0x03693d, 0x034e5f, 0x033455, 0x031b18,
+    0x0302a1, 0x02eaeb, 0x02d3f0, 0x02bdab, 0x02a814, 0x029328,
+    0x027ee0, 0x026b38, 0x02582b, 0x0245b4, 0x0233ce, 0x022275,
+    0x0211a5, 0x02015a, 0x01f18e, 0x01e23f, 0x01d369, 0x01c508,
+    0x01b717, 0x01a995, 0x019c7d, 0x018fcc, 0x01837f, 0x017793,
+    0x016c05, 0x0160d2, 0x0155f7, 0x014b72, 0x01413f, 0x01375d,
+    0x012dc8, 0x01247f, 0x011b80, 0x0112c7, 0x010a53, 0x010221,
+    0x00fa30, 0x00f27d, 0x00eb07, 0x00e3cc, 0x00dcca, 0x00d5ff,
+    0x00cf6a, 0x00c908, 0x00c2d8, 0x00bcda, 0x00b70a, 0x00b169,
+    0x00abf3, 0x00a6a9, 0x00a188, 0x009c90, 0x0097bf, 0x009314,
+    0x008e8d, 0x008a2b, 0x0085ea, 0x0081cc, 0x007dcd, 0x0079ee,
+    0x00762e, 0x00728b, 0x006f05, 0x006b9b, 0x00684b, 0x006516,
+    0x0061f9, 0x005ef6, 0x005c0a, 0x005935, 0x005676, 0x0053cd,
+    0x005139, 0x004eba, 0x004c4d, 0x0049f4, 0x0047ae, 0x004579,
+    0x004356, 0x004144, 0x003f42, 0x003d50, 0x003b6d, 0x003999,
+    0x0037d3, 0x00361b, 0x003471, 0x0032d4, 0x003144, 0x002fc0,
+    0x002e48, 0x002cdb, 0x002b7a, 0x002a23, 0x0028d8, 0x002796,
+    0x00265e, 0x002530, 0x00240b, 0x0022ef, 0x0021dc, 0x0020d1,
+    0x001fcf, 0x001ed4, 0x001de1, 0x001cf6, 0x001c12, 0x001b35,
+    0x001a5f, 0x00198f, 0x0018c6, 0x001802, 0x001745, 0x00168e,
+    0x0015dc, 0x001530, 0x001489, 0x0013e8, 0x00134b, 0x0012b3,
+    0x001220, 0x001191, 0x001107, 0x001080, 0x000ffe, 0x000f80,
+    0x000f06, 0x000e90, 0x000e1d, 0x000dae, 0x000d42, 0x000cda,
+    0x000c75, 0x000c13, 0x000bb4, 0x000b57, 0x000afe};
+
+static uint32_t float_bits(float value) {
+  union {
+    float f;
+    uint32_t u;
+  } v;
+  v.f = value;
+  return v.u;
+}
+
+static float bits_float(uint32_t value) {
+  union {
+    uint32_t u;
+    float f;
+  } v;
+  v.u = value;
+  return v.f;
+}
+
+static uint64_t fp32_abs_to_uq16_32_bits(uint32_t bits) {
+  if ((bits & 0x7fffffffu) == 0) {
+    return 0;
+  }
+  uint64_t significand = (uint64_t)(0x800000u | (bits & 0x7fffffu));
+  int32_t shift = (int32_t)((bits >> 23) & 0xffu) + 32 - 150;
+  if (shift >= 0) {
+    return (significand << (uint32_t)shift) & 0x0000ffffffffffffull;
+  }
+  return significand >> (uint32_t)(-shift);
+}
+
+static int64_t fp32_to_sq16_32(float value) {
+  uint32_t bits = float_bits(value);
+  uint64_t mag = fp32_abs_to_uq16_32_bits(bits);
+  return (bits >> 31) ? -(int64_t)mag : (int64_t)mag;
+}
+
+static uint32_t uq16_32_to_fp32_bits(uint64_t value) {
+  if (value == 0) {
+    return 0;
+  }
+
+  uint32_t msb = 0;
+  for (uint32_t i = 0; i < 48; i++) {
+    if ((value >> i) & 1ull) {
+      msb = i;
+    }
+  }
+
+  uint32_t exponent = msb - 32 + 127;
+  uint64_t norm = (msb >= 23) ? (value >> (msb - 23)) : (value << (23 - msb));
+  return (exponent << 23) | ((uint32_t)norm & 0x7fffffu);
+}
+
+static float sq16_32_to_fp32(int64_t value) {
+  if (value < 0) {
+    return bits_float(0x80000000u | uq16_32_to_fp32_bits((uint64_t)(-value)));
+  }
+  return bits_float(uq16_32_to_fp32_bits((uint64_t)value));
+}
+
+static uint32_t fp32_abs_to_exp_pos_q8_bits(uint32_t bits) {
+  if (((bits >> 23) & 0xffu) == 0) {
+    return 0;
+  }
+  uint64_t significand = (uint64_t)(0x800000u | (bits & 0x7fffffu));
+  int32_t shift = (int32_t)((bits >> 23) & 0xffu) - 127 + 13;
+  if (shift < 0) {
+    return 0;
+  }
+  if (shift >= 17) {
+    return 65536;
+  }
+  return (uint32_t)((significand << (uint32_t)shift) >> 23);
+}
+
+static uint32_t merge_exp_q1_23(float x) {
+  uint32_t bits = float_bits(x);
+  uint32_t abs_bits = bits & 0x7fffffffu;
+  if (((bits >> 23) & 0xffu) == 0xffu) {
+    return 0;
+  }
+  if (abs_bits == 0) {
+    return 0x800000u;
+  }
+  if ((bits >> 31) == 0) {
+    return 0x800000u;
+  }
+  if (abs_bits > 0x41000000u) {
+    return 0;
+  }
+
+  uint32_t pos_q8 = fp32_abs_to_exp_pos_q8_bits(bits);
+  uint32_t idx = pos_q8 >> 8;
+  uint32_t frac = pos_q8 & 0xffu;
+  uint32_t lo = exp_lut_q1_23[idx];
+  uint32_t hi = (idx == 256) ? exp_lut_q1_23[256] : exp_lut_q1_23[idx + 1];
+  uint32_t step = ((lo - hi) * frac) >> 8;
+  return lo - step;
+}
+
+static uint32_t recip_lut_q1_23(uint32_t idx) {
+  return (uint32_t)(((uint64_t)0x800000u * 256u + (256u + idx) / 2u) /
+                    (256u + idx));
+}
+
+static uint32_t merge_recip_q1_23(float x, int32_t *scale_exp) {
+  uint32_t bits = float_bits(x);
+  uint32_t idx = (bits >> 15) & 0xffu;
+  uint32_t frac = bits & 0x7fffu;
+  uint32_t lo = recip_lut_q1_23(idx);
+  uint32_t hi = (idx == 256) ? recip_lut_q1_23(256) : recip_lut_q1_23(idx + 1);
+  uint32_t step = ((lo - hi) * frac) >> 15;
+  *scale_exp = 127 - (int32_t)((bits >> 23) & 0xffu);
+  return lo - step;
+}
+
+static uint64_t q1_23_mul_uq16_32(uint64_t lhs, uint32_t rhs) {
+  uint64_t lhs_lo = lhs & 0xffffffull;
+  uint64_t lhs_hi = (lhs >> 24) & 0xffffffull;
+  uint64_t shifted = (lhs_hi * (uint64_t)rhs) << 1;
+  shifted += (lhs_lo * (uint64_t)rhs) >> 23;
+  return shifted & 0x0000ffffffffffffull;
+}
+
+static uint64_t q1_23_scaled_mul_uq16_32(uint64_t lhs, uint32_t rhs,
+                                         int32_t scale_exp) {
+  uint64_t scaled = q1_23_mul_uq16_32(lhs, rhs);
+  if (scale_exp > 0) {
+    return (scaled << (uint32_t)scale_exp) & 0x0000ffffffffffffull;
+  }
+  return scaled >> (uint32_t)(-scale_exp);
+}
+
+static int64_t sq16_32_mul_weight(int64_t value, uint64_t weight) {
+  uint64_t mag = (value < 0) ? (uint64_t)(-value) : (uint64_t)value;
+  uint64_t mag_lo = mag & 0xffffffffull;
+  uint64_t mag_hi = (mag >> 32) & 0xffffull;
+  uint64_t weight_lo = weight & 0xffffffffull;
+  uint64_t weight_hi = (weight >> 32) & 0xffffull;
+  uint64_t scaled = (mag_lo * weight_lo) >> 32;
+  scaled += mag_hi * weight_lo;
+  scaled += weight_hi * mag_lo;
+  scaled += (mag_hi * weight_hi) << 32;
+  scaled &= 0x0000ffffffffffffull;
+  return (value < 0) ? -(int64_t)scaled : (int64_t)scaled;
+}
+
+void online_merge_rtl_reference(
+    const float *m_old, const float *l_old, const float *o_old,
+    const float *m_tile, const float *l_tile, const float *o_tile,
+    float *m_out, float *l_out, float *o_out, uint32_t n, uint32_t d,
+    uint32_t stride_bytes) {
+  for (uint32_t i = 0; i < n; i++) {
+    const float *old_row =
+        (const float *)((const uint8_t *)o_old + i * stride_bytes);
+    const float *tile_row =
+        (const float *)((const uint8_t *)o_tile + i * stride_bytes);
+    float *out_row = (float *)((uint8_t *)o_out + i * stride_bytes);
+    float m_new = m_old[i] > m_tile[i] ? m_old[i] : m_tile[i];
+    int64_t old_exp_arg =
+        fp32_to_sq16_32(m_old[i]) - fp32_to_sq16_32(m_new);
+    int64_t tile_exp_arg =
+        fp32_to_sq16_32(m_tile[i]) - fp32_to_sq16_32(m_new);
+    uint32_t old_exp = merge_exp_q1_23(sq16_32_to_fp32(old_exp_arg));
+    uint32_t tile_exp = merge_exp_q1_23(sq16_32_to_fp32(tile_exp_arg));
+    uint64_t old_l = fp32_abs_to_uq16_32_bits(float_bits(l_old[i]));
+    uint64_t tile_l = fp32_abs_to_uq16_32_bits(float_bits(l_tile[i]));
+    uint64_t old_scaled_l = q1_23_mul_uq16_32(old_l, old_exp);
+    uint64_t tile_scaled_l = q1_23_mul_uq16_32(tile_l, tile_exp);
+    uint64_t l_new_fixed =
+        (old_scaled_l + tile_scaled_l) & 0x0000ffffffffffffull;
+    float l_new = bits_float(uq16_32_to_fp32_bits(l_new_fixed));
+    int32_t recip_scale_exp;
+    uint32_t recip_l = merge_recip_q1_23(l_new, &recip_scale_exp);
+    uint64_t old_weight = q1_23_scaled_mul_uq16_32(
+        old_scaled_l, recip_l, recip_scale_exp);
+    uint64_t tile_weight = q1_23_scaled_mul_uq16_32(
+        tile_scaled_l, recip_l, recip_scale_exp);
+
+    m_out[i] = m_new;
+    l_out[i] = l_new;
+    for (uint32_t j = 0; j < d; j++) {
+      int64_t old_term =
+          sq16_32_mul_weight(fp32_to_sq16_32(old_row[j]), old_weight);
+      int64_t tile_term =
+          sq16_32_mul_weight(fp32_to_sq16_32(tile_row[j]), tile_weight);
+      out_row[j] = sq16_32_to_fp32(old_term + tile_term);
+    }
+  }
+}
