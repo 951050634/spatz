@@ -86,6 +86,27 @@ small manifests only.
   `/home/wxt/work-online-merge-stage1-capacity-smoke-20260715-031133` retained
   one synthetic B1 and B3 record for `(N,D)=(1,5732)`, both marked
   `capacity_skip` with `case_class=capacity`; no simulator command ran.
+- Clean committed evidence:
+  `/home/wxt/work-online-merge-stage1-clean-20260715-031637`, UTC window
+  `2026-07-14T19:16:37+00:00` to `19:21:23+00:00`, commit
+  `7a290229abd959de549d60f3dd28972aaa156935`, `git_dirty=false`.  The run
+  retained exactly ten records: B1/B3 repeats 0 through 4, all target and host
+  statuses `pass`, finite correctness metrics, empty `failures.json`, and a
+  simulator return code of zero.  The recorded 64-bit cycles match the target
+  `cycles_hi/lo` fields.  B1 cycles are 2243/2348/2310/2265/2243 and B3 cycles
+  are 1095/1063/1063/1063/1063.  No Illegal Instruction, host timeout, or
+  failure marker is present in the simulator log.
+- Clean evidence artifact identity:
+  - exact ELF SHA256:
+    `878b39541108d7b726cc1dfb24fd8b21cb0a626bff2324836a5217b938f70d7c`;
+  - simulator log SHA256:
+    `2ed6ced86138637367a3790442d10efd5afbed35ac30eef52f1b7667a2719ea7`;
+  - RTL metadata SHA256:
+    `ebe6e7c01a12c6fa5e43b36cd781144cc8bfa04e3b761d05c70123253887ae33`;
+  - hart 0/1 trace SHA256:
+    `9af2b9bfb0c552b5d2f813113fb0f2b6293690eb1c0f476651d06efbc4d556a0`
+    and
+    `099a4e9ccb76362cd0ea9731a11c64dd7b4f2c2ee45fe979ca36f3237bc0af6f`.
 - Stack-fix artifact identity:
   - exact ELF SHA256:
     `878b39541108d7b726cc1dfb24fd8b21cb0a626bff2324836a5217b938f70d7c`;
