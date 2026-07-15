@@ -28,7 +28,7 @@ small manifests only.
 | 1 | Benchmark/result framework | P0 | complete | pre-commit smoke below |
 | 2 | Fair B1/B2-R/B3 baselines and RVV disassembly gate | P0 | complete | Stage 2b clean anchors |
 | 3 | Anchors, RVV tails, mandatory size matrices | P0 | complete | Stage 3n closes both mandatory fixed matrices |
-| 4 | Break-even table and fitted scale model | P0 | in_progress | Stage 4b N=2 batch |
+| 4 | Break-even table and fitted scale model | P0 | in_progress | Stage 4c N=4 batch; direct grid complete |
 | 5 | Full-SMU FSM cycle breakdown and A0/A2 | P0 | pending | pending |
 | 6 | C0/C1/C2/C3 concurrency and 16 bank phases | P0 | pending | pending |
 | 7 | Yosys Slang generic-resource proxy | P0 | pending | pending |
@@ -1466,5 +1466,134 @@ small manifests only.
   `994d71dbec8a5b4cb91bcc13ce06f43ba1f439ca891338043c9838bcd1cf8015`,
   validator-log SHA256 is
   `2c0288051172381ec7b3650fd67bb20b22f6c1cab1396b69574ddcea7d93cc8c`,
+  and return-code-file SHA256 is
+  `9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa`.
+
+### Stage 4c checkpoint: clean break-even N=4 batch
+
+- Objective: collect and independently validate the `N=4`,
+  `D={1,8,16,32}` row of the required break-even matrix using a unique
+  external build and the established 14 explicit fresh-cache definitions.
+  Together with the previously validated `N=1`, `N=2`, and `N=8` rows, this
+  closes all 16 directly measured break-even coordinates without model
+  interpolation.
+- Formal evidence is retained under
+  `/home/wxt/work-online-merge-stage4-break-even-n4-clean-20260715T134404Z`;
+  its unique external build is
+  `/home/wxt/work-online-merge-build-stage4-break-even-n4-clean-20260715T134404Z`.
+  The exact uppercase case file is
+  `/home/wxt/work-online-merge-stage4-break-even-n4-clean-20260715T134404Z.cases.json`,
+  SHA256
+  `681bb6fa1e81b184eb08017274e9fcfd643f9be4da2e376fd8063e7904d529f4`.
+  Provenance is commit `2a406d8c83cf02969a5b0df39423933919c0792a`,
+  `git_dirty=false`, CFG SHA256
+  `120fa0c30199e54e6e9b5c60d8da40913eae8526640992cc5d4f130bef159775`,
+  and simulator SHA256
+  `25a56d98474895d16d7de81f73d9cf8a06ba8eb650af5f9b58a012d15022e69a`.
+  The exact command window was
+  `2026-07-15T13:44:04+00:00..2026-07-15T14:28:51+00:00`, with a
+  1,800-second per-case simulator timeout.
+- Fresh configure, target build, RVV objdump gate, and simulator commands all
+  returned zero for all four cases.  All 36 B1/B2-R/B3 records pass and are
+  finite, all 16 command records pass, `failures.json` is empty, and the
+  runner return code is zero.  Cycle min/median/max values are:
+  - `D=1`: B1 `8014/8210/8407`, B2-R `6666/6739/6773`, and B3
+    `1191/1194/1211`;
+  - `D=8`: B1 `17556/17900/18015`, B2-R `6590/6772/6849`, and B3
+    `1436/1436/1441`;
+  - `D=16`: B1 `28703/28880/28975`, B2-R `6753/6812/6891`, and B3
+    `1646/1655/1676`;
+  - `D=32`: B1 `50049/50206/50268`, B2-R `6778/6867/7044`, and B3
+    `2136/2136/2189`.
+  Median B3 speedups versus B2-R are respectively `5.6441`, `4.7159`,
+  `4.1160`, and `3.2149`; these are direct same-case cycle ratios, not model
+  predictions or physical-performance claims.
+- The largest absolute error is `0.00012874603271484375`, largest relative
+  error is `9.900331497192383e-05`, and largest RMSE is
+  `2.7177340590186426e-05`.  Footprints are 192, 640, 1,152, and 2,176 bytes;
+  allocator-rounded working sets are 256, 768, 1,280, and 2,304 bytes, or at
+  most `0.017578125` of the 128 KiB TCDM.  B1 and B2-R have no congested
+  accesses.  B3 has at most five congested accesses and a maximum measured
+  congestion ratio of `0.005482456140350877`.  The retained CSV/JSON records
+  also contain cycles per element, elements per cycle, TCDM accesses, and
+  congestion ratio.  These are simulator counters and correctness
+  diagnostics, not physical PPA or energy evidence.
+- Independent validation reconstructed all 36 records from raw `OM_RESULT`
+  fields, compared CSV and JSON semantically, reproduced all 12 summary rows,
+  checked the exact case file and normalized manifest, verified all 19 final
+  cache values and 16 command records, reran all four RVV disassembly gates,
+  and rehashed all 38 artifact-manifest entries.  The passing report is
+  `/home/wxt/work-online-merge-stage4-break-even-n4-final-validation-20260715T134500Z/validation.json`,
+  SHA256
+  `1b29de593397d948f257c53685d2f6040ea900c54844e2a6eed6b9c1bda09f5f`;
+  validator SHA256 is
+  `8ccda36a2b4e53cf7156d1217c4055df72a7c9108e649f567fb9d4b060e03302`,
+  validator-log SHA256 is
+  `bb910ff5df6e3b533bd5299e8f4d921fb83d824f6361f401bc57f6c850cba439`,
+  and validator return-code-file SHA256 is
+  `9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa`.
+  Independent RVV rerun-log SHA256 values for `D=1,8,16,32` are respectively
+  `c2048dfed59d0a1a02c68c9deb1771b17d14facb77157ac2460002c0ed83548c`,
+  `8eb3d0988e0ebeb942accf2afebfae78d914731a4ad4c10333c336e19868c0ee`,
+  `a79cb2b6819b55950c6695ee2005c64a7cfcccc0ecfe6cb3569c6d963803893c`,
+  and `9f37ed4fd497fc01085a226e1bf008af461116f3a6f574e4dcdac64cf2462603`.
+- Large hart-0 instruction traces remain outside Git:
+  - `N4_D1_S1_main_R3/logs/trace_hart_00000.dasm`: 163,345,878 bytes,
+    SHA256
+    `a3a6e6c801429e7514606871c029ba041b462b6ec2953fbe565c11272127595c`;
+  - `N4_D8_S1_main_R3/logs/trace_hart_00000.dasm`: 189,533,986 bytes,
+    SHA256
+    `148d4f7c0b7d3e05463bf26a6b1e513105a05541cd431e9ff1ed7fae726cbf3e`;
+  - `N4_D16_S1_main_R3/logs/trace_hart_00000.dasm`: 220,243,603 bytes,
+    SHA256
+    `2b270f84b7d22fd65ab16d04c3d36a7bc1f669fd3ee0e4dc7153bf28a8c03ef6`;
+  - `N4_D32_S1_main_R3/logs/trace_hart_00000.dasm`: 279,876,986 bytes,
+    SHA256
+    `5dab98f91a5b399f01ea1bb456d3c6be1ed61f51228e8d715895ac715d55e226`.
+  Paths are relative to the formal result root above.  No trace, build product,
+  ELF, or simulator log is committed.
+- Formal top-level SHA256 values are:
+  - `run_manifest.json`:
+    `da0fafe47aa5711aee3a31ccaf87ca0eedffb15c5c85be689e9e29015a0ff510`;
+  - `records.json`:
+    `70d2629549d0bf1bb0c11efb13aa8628bffcff8e9a2b5127a9789228b4aa3807`;
+  - `records.csv`:
+    `bb919b90448bcb12645758ff5d0525b31e2c427b94d2687e3e2ef24a0b3e729c`;
+  - `summary.json`:
+    `b04aaf873635ff4b84f96bcdca974f87c418f23b6decb0c6195798393a354783`;
+  - `commands.json`:
+    `1b7b95e402ea46f247440cfeb2b5bde75208becaf6d1658a1ba6c63f816b082f`;
+  - `failures.json`:
+    `37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570`;
+  - `artifact_manifest.json`:
+    `57a32b9e0321dc35730e82522448cb39ba0ecc6adae09728020fd40ae45082ef`;
+  - external runner log:
+    `e324125e469b5cbdd0f3a45b9dc2c27e5dc941f635863f6bf234393e16be33a0`;
+  - external runner return-code file:
+    `9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa`.
+- An independently regenerated compact evidence summary is retained at
+  `/home/wxt/work-online-merge-stage4-break-even-n4-evidence-summary-20260715T143200Z/evidence_summary.json`,
+  SHA256
+  `6a4544c6f40fc6c3d8cd468d26386cc6fd27fc15f63b24ad9ea83be1948334f6`.
+  Its collector SHA256 is
+  `280b96c877499ef9124f91e6e0b61164654102b2168d16527bd1abc82f34469d`.
+- Tool identities remain CMake `3.28.3`, target Clang/objdump `14.0.6`,
+  Verilator `5.034`, and Python `3.12.3`.  Stage 4 remains in progress only
+  for the separately labelled B2-R/B3 fitted models, all residuals, `R²`, and
+  the consolidated 16-point directly measured break-even table.  No unmeasured
+  coordinate will be presented as direct evidence.
+
+- Stage 4c checkpoint validation used `PYTHONDONTWRITEBYTECODE=1`, reran all
+  26 unit tests, `git diff --check`, every fixed-hash evidence check,
+  provenance and exact case-coverage checks, the independent report and
+  compact-summary gates, and the strict single-modified-file status gate.  Its
+  report is
+  `/home/wxt/work-online-merge-stage4c-checkpoint-validation-20260715T143600Z/validation.json`,
+  SHA256
+  `84d73801ae60da57bdb4079f1fd66bd7980f3fa38f12645b9db453aa0c8255ef`;
+  validator SHA256 is
+  `4ea7ccd7b1c70a2358bae9a58fd17bc14fc88347ce7fc7f2df70c8cc7d090e07`,
+  validator-log SHA256 is
+  `f8b4e56d9572e03b2589117aba6eaccc0258857d218f1bca4407c7b61a907fc6`,
   and return-code-file SHA256 is
   `9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa`.
