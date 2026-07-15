@@ -9,8 +9,9 @@ conventions.
 
 ## Prerequisites
 
-Configure the software build once for the selected simulator.  The default
-cluster configuration is:
+Use either a software build already configured for the selected simulator or
+the repeated `--cmake-define` options documented below.  The default cluster
+configuration is:
 
 ```text
 hw/system/spatz_cluster/cfg/spatz_cluster.default.dram.hjson
@@ -67,6 +68,58 @@ and retains every measured repeat.  The default per-case timeout is 30 minutes;
 cases with `N * D >= 1024` use the 60-minute large-case timeout unless the case
 provides an explicit timeout.
 
+## Fresh external build directories
+
+`--cmake-define KEY=VALUE` is repeatable.  The runner appends every definition
+to every configure command and records the ordered key, value, and exact `-D`
+argument in `run_manifest.json`.  This permits a clean external build directory
+without relying on cache state inherited from another experiment.
+
+For `spatz_cluster.default.dram.hjson`, use these fixed CFG-derived values:
+
+```bash
+cmake_defines=(
+  --cmake-define BUILD_TESTS=ON
+  --cmake-define "LLVM_PATH=$PWD/install/llvm"
+  --cmake-define "GCC_PATH=$PWD/install/riscv-gcc"
+  --cmake-define ELEN=64
+  --cmake-define MEM_DRAM_ORIGIN=2147483648
+  --cmake-define MEM_DRAM_SIZE=2147483648
+  --cmake-define SNRT_BASE_HARTID=0
+  --cmake-define SNRT_CLUSTER_CORE_NUM=2
+  --cmake-define SNRT_CLUSTER_OFFSET=0
+  --cmake-define SNRT_NFPU_PER_CORE=4
+  --cmake-define SNRT_TCDM_SIZE=131072
+  --cmake-define SNRT_TCDM_START_ADDR=1048576
+  --cmake-define PLATFORM_SOURCE_FOLDER=src/platforms/standalone
+  --cmake-define SPATZ_CLUSTER_CFG=spatz_cluster.default.dram.hjson
+)
+
+build="$(dirname "$PWD")/work-online-merge-build-fresh"
+results="$(dirname "$PWD")/work-online-merge-fresh"
+python3 util/online_softmax_merge/run_experiments.py \
+  --repo-root "$PWD" \
+  --source-dir "$PWD/hw/system/spatz_cluster/sw" \
+  --build-dir "$build" \
+  --simulator "$PWD/hw/system/spatz_cluster/bin/spatz_cluster.vlt" \
+  --cfg "$PWD/hw/system/spatz_cluster/cfg/\
+spatz_cluster.default.dram.hjson" \
+  --work-dir "$results" \
+  --case 1,1,1,main,1800 \
+  --repeats 3 \
+  --jobs 2 \
+  "${cmake_defines[@]}"
+```
+
+Keys must match `[A-Za-z_][A-Za-z0-9_]*`; values must be nonempty and may
+contain additional `=` characters.  Duplicate keys, CMake typed-key syntax,
+and these case-owned keys are rejected before the result directory is created:
+
+```text
+ONLINE_MERGE_N, ONLINE_MERGE_D, ONLINE_MERGE_SEED,
+ONLINE_MERGE_CASE_KIND, ONLINE_MERGE_REPEATS
+```
+
 Use `--no-configure` or `--no-build` only when the existing build is known to
 match the requested case.  Before execution, the runner copies the exact ELF
 into the case result directory.
@@ -109,8 +162,9 @@ The runner updates small metadata files after every case:
 - `commands.json`: exact argv, time window, return code, status, and log path;
 - `artifact_manifest.json`: path, SHA256, commit, CFG hash, tool version, and
   workload/window for the CFG, simulator, exact ELF, logs, and traces;
-- `run_manifest.json`: fixed context, cases, tool versions, wall-clock window,
-  validation result, limitations, and artifact index.
+- `run_manifest.json`: fixed context, cases, ordered CMake definitions, tool
+  versions, wall-clock window, validation result, limitations, and artifact
+  index.
 
 JSON serialization rejects NaN and infinity.  The runner derives 64-bit cycles
 from `cycles_hi` and `cycles_lo`, computes RMSE from the retained sum of squared

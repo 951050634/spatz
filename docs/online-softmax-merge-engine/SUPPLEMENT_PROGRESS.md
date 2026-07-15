@@ -27,7 +27,7 @@ small manifests only.
 | 0 | Isolate worktree and import governing specification | setup | complete | this checkpoint |
 | 1 | Benchmark/result framework | P0 | complete | pre-commit smoke below |
 | 2 | Fair B1/B2-R/B3 baselines and RVV disassembly gate | P0 | complete | Stage 2b clean anchors |
-| 3 | Anchors, RVV tails, mandatory size matrices | P0 | in_progress | fixed-D N=1/2/4/8/16 clean evidence; N=32 active |
+| 3 | Anchors, RVV tails, mandatory size matrices | P0 | in_progress | fixed-D closed; fresh-build smoke next |
 | 4 | Break-even table and fitted scale model | P0 | pending | pending |
 | 5 | Full-SMU FSM cycle breakdown and A0/A2 | P0 | pending | pending |
 | 6 | C0/C1/C2/C3 concurrency and 16 bank phases | P0 | pending | pending |
@@ -856,3 +856,72 @@ small manifests only.
   `25a56d98474895d16d7de81f73d9cf8a06ba8eb650af5f9b58a012d15022e69a`.
   The next atomic stage is runner support for repeated, conflict-checked
   `--cmake-define KEY=VALUE`, followed by the fixed-`N=8` dimension matrix.
+
+### Stage 3k checkpoint: reproducible fresh-build CMake definitions
+
+- Objective: remove inherited CMake-cache state from later matrix runs by
+  making every non-case configure input explicit, ordered, and auditable.
+- The runner now accepts repeated `--cmake-define KEY=VALUE` options, appends
+  them after the five runner-owned case definitions in every configure argv,
+  and records ordered `key`, `value`, and exact `-D` argument entries in
+  `run_manifest.json`.  Keys must match `[A-Za-z_][A-Za-z0-9_]*`; empty or
+  non-printable values, typed-key syntax, duplicate keys, and the five
+  runner-owned `ONLINE_MERGE_*` keys are rejected before a result directory is
+  created.  Additional `=` characters in values remain unchanged.
+- `util/online_softmax_merge/README.md` records the 14 fixed definitions needed
+  to bootstrap a fresh external build for
+  `spatz_cluster.default.dram.hjson`: toolchain paths, `BUILD_TESTS`, `ELEN`,
+  DRAM origin/size, hart/core/FPU counts, TCDM address/size, platform source,
+  and cluster CFG name.
+- Implementation validation:
+  `PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s`
+  ` util/online_softmax_merge/tests -v` passes all 26 tests.  The added tests
+  cover order, embedded `=`, manifest encoding, invalid/typed keys,
+  non-printable and empty values, duplicate and reserved keys, exact configure
+  ordering, and repeated CLI parsing.  `git diff --check` also passes.  The
+  retained validation log is
+  `/home/wxt/work-online-merge-stage3k-implementation-validation-20260715T101019Z/validation.log`,
+  SHA256
+  `f4551245c9b1a82227825c8a319d46d5a312e8c468e5a4275b828c124d217f29`.
+- Dirty fresh-build diagnostic evidence is retained under
+  `/home/wxt/work-online-merge-cmake-define-dirty-diagnostic-20260715-100056`;
+  its independent build is
+  `/home/wxt/work-online-merge-build-cmake-define-dirty-diagnostic-20260715-100056`.
+  It used commit `13331927aa047d5b2ced8316f33fa553316d095c`,
+  `git_dirty=true`, `(N,D,seed,kind,repeats)=(1,1,1,main,3)`, and an intentional
+  one-second simulator timeout.  Fresh configure, target build, and RVV
+  objdump gate returned zero; the simulator timeout and three synthetic
+  `timeout` records are retained, and runner return code 1 is expected.  This
+  diagnostic proves plumbing only and is not passing benchmark or performance
+  evidence.
+- Independent validation found all 14 definitions in exact argv order, checked
+  their exact `CMakeCache.txt` values, matched the ordered manifest entries,
+  rehashed all 11 artifact-manifest entries, confirmed the RVV gate artifact,
+  and proved that reserved, duplicate, and typed-key probes fail before work
+  directory creation.  Its report is
+  `/home/wxt/work-online-merge-cmake-define-dirty-validation-20260715T100219Z/validation.json`,
+  SHA256
+  `552682669c64435a9fc5e9d19bbcdd76e7ffb63e202ac667596ea9d2a1938403`;
+  validator SHA256 is
+  `e3784989473f8da658072a743fbb00ea1d2d337f285b3048bdf30cdbae491bc8`.
+- Diagnostic top-level SHA256 values are:
+  - `run_manifest.json`:
+    `d0e46758d3e248b3402e07b8fff72b8bc4dea5280057675fee57360acba62304`;
+  - `records.json`:
+    `1ffe53f05e2800d477d9cb9be8ea6d3ce26a404aa9de7071f26ab70218c36015`;
+  - `records.csv`:
+    `5c63364f84fd03c9a3a570010ee13c6264f76040c2d2075436ec541fc07fc70f`;
+  - `summary.json`:
+    `6c0c4878041cf94d3595bb1d6c55e47ca6e3fec27a13942bc5d906dc86288457`;
+  - `commands.json`:
+    `010f7b84a31b73f29342579cc7293598c509600b47a6f73614b909225d9bae37`;
+  - `failures.json`:
+    `37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570`;
+  - `artifact_manifest.json`:
+    `6891d95d4c63ce2b02cb8fa23ab69f3d993c344850eb325011177b81c64271fd`;
+  - external runner log:
+    `1fdb675bf7e4f449852c433b79ab0ac45793ccf0a804f7e428dcf4b4ed2b4c54`.
+- Remaining gate: commit and synchronize this implementation from a clean
+  worktree, then run a clean committed fresh-build smoke with a realistic
+  timeout.  Only that later run may establish formal passing evidence before
+  the fixed-`N=8` dimension matrix.

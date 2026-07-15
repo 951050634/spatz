@@ -339,6 +339,100 @@ class RunExperimentsTest(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "must be positive"):
                 runner.validate_run_options(invalid)
 
+    def test_cmake_defines_preserve_order_and_values(self) -> None:
+        definitions = runner.parse_cmake_defines(
+            ["BUILD_TESTS=ON", "URL=https://example.test/a=b"]
+        )
+        self.assertEqual(
+            definitions,
+            [
+                ("BUILD_TESTS", "ON"),
+                ("URL", "https://example.test/a=b"),
+            ],
+        )
+        self.assertEqual(
+            runner.cmake_define_arguments(definitions),
+            ["-DBUILD_TESTS=ON", "-DURL=https://example.test/a=b"],
+        )
+        self.assertEqual(
+            runner.cmake_define_manifest(definitions),
+            [
+                {
+                    "key": "BUILD_TESTS",
+                    "value": "ON",
+                    "argument": "-DBUILD_TESTS=ON",
+                },
+                {
+                    "key": "URL",
+                    "value": "https://example.test/a=b",
+                    "argument": "-DURL=https://example.test/a=b",
+                },
+            ],
+        )
+
+    def test_cmake_defines_reject_invalid_or_ambiguous_keys(self) -> None:
+        invalid = (
+            "KEY",
+            "=value",
+            "1KEY=value",
+            "KEY:STRING=value",
+            "-DKEY=value",
+            "KEY=",
+            "KEY=line\nbreak",
+            "KEY=tab\tbreak",
+        )
+        for value in invalid:
+            with self.subTest(value=value), self.assertRaises(ValueError):
+                runner.parse_cmake_defines([value])
+
+        with self.assertRaisesRegex(ValueError, "duplicate.*LLVM_PATH"):
+            runner.parse_cmake_defines(
+                ["LLVM_PATH=/first", "LLVM_PATH=/second"]
+            )
+
+    def test_cmake_defines_reject_per_case_settings(self) -> None:
+        for key in runner.RESERVED_CMAKE_DEFINE_KEYS:
+            with self.subTest(key=key), self.assertRaisesRegex(
+                ValueError, "conflicts with per-case settings"
+            ):
+                runner.parse_cmake_defines([f"{key}=override"])
+
+    def test_configure_argv_appends_non_case_definitions(self) -> None:
+        case = runner.Case(8, 32, 7, "main", 3)
+        definitions = runner.parse_cmake_defines(
+            ["BUILD_TESTS=ON", "ELEN=64"]
+        )
+        argv = runner.make_configure_argv(
+            "cmake",
+            Path("/source"),
+            Path("/build"),
+            case,
+            definitions,
+        )
+        self.assertEqual(
+            argv[-7:],
+            [
+                "-DONLINE_MERGE_N=8",
+                "-DONLINE_MERGE_D=32",
+                "-DONLINE_MERGE_SEED=7",
+                "-DONLINE_MERGE_CASE_KIND=main",
+                "-DONLINE_MERGE_REPEATS=3",
+                "-DBUILD_TESTS=ON",
+                "-DELEN=64",
+            ],
+        )
+
+    def test_parse_args_accepts_repeated_cmake_defines(self) -> None:
+        args = runner.parse_args(
+            [
+                "--cmake-define",
+                "BUILD_TESTS=ON",
+                "--cmake-define",
+                "ELEN=64",
+            ]
+        )
+        self.assertEqual(args.cmake_define, ["BUILD_TESTS=ON", "ELEN=64"])
+
     def test_case_mapping_errors_are_clear_value_errors(self) -> None:
         with self.assertRaisesRegex(ValueError, "missing required field.*D"):
             runner.case_from_mapping({"N": 1}, 3)

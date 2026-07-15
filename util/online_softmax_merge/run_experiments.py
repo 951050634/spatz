@@ -107,6 +107,16 @@ DERIVED_FIELDS = (
     "elements_per_cycle",
     "congestion_ratio",
 )
+CMAKE_DEFINE_KEY_PATTERN = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
+RESERVED_CMAKE_DEFINE_KEYS = frozenset(
+    {
+        "ONLINE_MERGE_N",
+        "ONLINE_MERGE_D",
+        "ONLINE_MERGE_SEED",
+        "ONLINE_MERGE_CASE_KIND",
+        "ONLINE_MERGE_REPEATS",
+    }
+)
 
 
 @dataclass(frozen=True)
@@ -216,6 +226,77 @@ def parse_case(value: str, default_repeats: int) -> Case:
     except ValueError as error:
         raise argparse.ArgumentTypeError(str(error)) from error
     return case
+
+
+def parse_cmake_defines(values: Sequence[str]) -> list[tuple[str, str]]:
+    definitions: list[tuple[str, str]] = []
+    seen: set[str] = set()
+    for value in values:
+        key, separator, definition_value = value.partition("=")
+        if not separator:
+            raise ValueError(
+                f"--cmake-define must be KEY=VALUE, got {value!r}"
+            )
+        if CMAKE_DEFINE_KEY_PATTERN.fullmatch(key) is None:
+            raise ValueError(
+                "--cmake-define key must match "
+                f"[A-Za-z_][A-Za-z0-9_]*, got {key!r}"
+            )
+        if not definition_value:
+            raise ValueError(
+                f"--cmake-define value must not be empty for {key}"
+            )
+        if any(not character.isprintable() for character in definition_value):
+            raise ValueError(
+                f"--cmake-define value contains a control character: {key}"
+            )
+        if key in RESERVED_CMAKE_DEFINE_KEYS:
+            raise ValueError(
+                f"--cmake-define {key} conflicts with per-case settings"
+            )
+        if key in seen:
+            raise ValueError(f"duplicate --cmake-define key: {key}")
+        seen.add(key)
+        definitions.append((key, definition_value))
+    return definitions
+
+
+def cmake_define_arguments(
+    definitions: Sequence[tuple[str, str]],
+) -> list[str]:
+    return [f"-D{key}={value}" for key, value in definitions]
+
+
+def cmake_define_manifest(
+    definitions: Sequence[tuple[str, str]],
+) -> list[dict[str, str]]:
+    return [
+        {"key": key, "value": value, "argument": f"-D{key}={value}"}
+        for key, value in definitions
+    ]
+
+
+def make_configure_argv(
+    cmake_command: str,
+    source_dir: Path,
+    build_dir: Path,
+    case: Case,
+    definitions: Sequence[tuple[str, str]],
+) -> list[str]:
+    argv = [
+        cmake_command,
+        "-S",
+        str(source_dir),
+        "-B",
+        str(build_dir),
+        f"-DONLINE_MERGE_N={case.n}",
+        f"-DONLINE_MERGE_D={case.d}",
+        f"-DONLINE_MERGE_SEED={case.seed}",
+        f"-DONLINE_MERGE_CASE_KIND={case.case_kind}",
+        f"-DONLINE_MERGE_REPEATS={case.repeats}",
+    ]
+    argv.extend(cmake_define_arguments(definitions))
+    return argv
 
 
 def float_from_bits(value: int) -> float:
@@ -1085,6 +1166,16 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--build-timeout-seconds", type=int, default=900)
     parser.add_argument("--cmake", default="cmake")
     parser.add_argument(
+        "--cmake-define",
+        action="append",
+        default=[],
+        metavar="KEY=VALUE",
+        help=(
+            "repeatable non-case CMake cache definition; per-case "
+            "ONLINE_MERGE_* keys are reserved"
+        ),
+    )
+    parser.add_argument(
         "--objdump",
         type=Path,
         default=default_root / "install/llvm/bin/llvm-objdump",
@@ -1134,6 +1225,7 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     try:
         cases = load_cases(args)
+        cmake_defines = parse_cmake_defines(args.cmake_define)
         validate_work_dir(work_dir, repo_root)
     except (
         ValueError,
@@ -1238,18 +1330,13 @@ def main(argv: Sequence[str] | None = None) -> int:
         case_status = "pass"
         failure_reason: str | None = None
         if not args.no_configure:
-            configure_argv = [
+            configure_argv = make_configure_argv(
                 args.cmake,
-                "-S",
-                str(source_dir),
-                "-B",
-                str(build_dir),
-                f"-DONLINE_MERGE_N={case.n}",
-                f"-DONLINE_MERGE_D={case.d}",
-                f"-DONLINE_MERGE_SEED={case.seed}",
-                f"-DONLINE_MERGE_CASE_KIND={case.case_kind}",
-                f"-DONLINE_MERGE_REPEATS={case.repeats}",
-            ]
+                source_dir,
+                build_dir,
+                case,
+                cmake_defines,
+            )
             command, _ = run_command(
                 configure_argv,
                 case_dir / "configure.log",
@@ -1465,6 +1552,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             "last_command_end": commands[-1]["end_utc"] if commands else None,
         },
         "cases": [asdict(case) for case in cases],
+        "cmake_definitions": cmake_define_manifest(cmake_defines),
         "capacity_protocol": {
             "tcdm_capacity_bytes": TCDM_CAPACITY_BYTES,
             "working_set_limit_bytes": TCDM_LIMIT_BYTES,
