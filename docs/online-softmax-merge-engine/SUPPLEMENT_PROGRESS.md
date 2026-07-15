@@ -29,7 +29,7 @@ small manifests only.
 | 2 | Fair B1/B2-R/B3 baselines and RVV disassembly gate | P0 | complete | Stage 2b clean anchors |
 | 3 | Anchors, RVV tails, mandatory size matrices | P0 | complete | Stage 3n closes both mandatory fixed matrices |
 | 4 | Break-even table and fitted scale model | P0 | complete | Stage 4e formal fit and direct 16-point table |
-| 5 | Full-SMU FSM cycle breakdown and A0/A2 | P0 | pending | pending |
+| 5 | Full-SMU FSM cycle breakdown and A0/A2 | P0 | in_progress | Stage 5a observer/analyzer ready; formal run pending |
 | 6 | C0/C1/C2/C3 concurrency and 16 bank phases | P0 | pending | pending |
 | 7 | Yosys Slang generic-resource proxy | P0 | pending | pending |
 | 8 | Representative RTL VCD toggle proxy | P0 | pending | pending |
@@ -1846,3 +1846,121 @@ small manifests only.
   published, the model separates fixed, per-row, and per-element terms, and
   all capacity claims continue to use the compact allocator-rounded footprint.
   The next P0 stage is the Full-SMU FSM cycle decomposition and A0/A2.
+
+- Synchronization of the Stage 4e checkpoint itself also retained one transient
+  push failure after successful fetch and pull with rebase.  The clean local
+  commit `c91200cdc6e95ecf25fb80255485a5781459375c` remained ahead by one; no
+  force-push or merge was used.  Failure metadata is
+  `/home/wxt/work-online-merge-stage4e-sync-20260715T154341Z/sync.json`, SHA256
+  `0f3e94a19a1bead532de3b7a11e93be56720d5880b438ec2f02b226887a7549a`;
+  failed push-log SHA256 is
+  `420fc1a2233169e32370cab0bae57b75558322d10a38803d6baf79dbd69dfdb4`.
+  A periodic retry synchronized the same commit; retry metadata is
+  `/home/wxt/work-online-merge-stage4e-push-retry-20260715T154450Z/retry.json`,
+  SHA256
+  `e3d861fe10f75c2765dfeb8b0ed3d209cebbaf8b27f743cc459ca13285e8bac0`,
+  and successful push-log SHA256 is
+  `55514b06b50b2c1024eeea4c1df52b1ab7eaa480603ff7c399d5587952d507fe`.
+
+
+### Stage 5a checkpoint: Full-SMU FSM observer and analyzer
+
+- Objective: add the non-functional observation and deterministic analysis
+  support required by specification section 4 before taking formal A0/A2
+  measurements at `(1,1)`, `(8,32)`, and `(16,64)`.
+- `hw/ip/online_merge/src/online_merge_update_engine.sv` now contains a
+  simulation-only observer inside `translate_off/on`; it changes no port or
+  functional signal and its counters do not feed functional RTL.  Source
+  SHA256 is
+  `58417827163f6351e52003c08ee8cd6fbbf6b75ace609aecf93d951aadb28439`.
+  It emits one `OM_FSM` JSON record at each `DONE` or `ERROR`: invocation zero
+  is the benchmark warm-up and invocations `1..R` map to measured repeats
+  `0..R-1`.  Each record retains `N`, `D`, terminal state, the five state
+  counts, and their busy-cycle sum.
+- The five mutually exclusive busy-state groups are `LOAD_SCALAR`,
+  `COMPUTE_SCALAR`, `COMPUTE_WEIGHT`, `STORE_SCALAR`, and `UPDATE_VECTOR`.
+  Scalar share is the sum of the first four states, vector share is
+  `UPDATE_VECTOR`, and the non-overlapping command/setup/wait/error remainder
+  is `A2_end_to_end_cycles - busy_cycles`.  Completion polling overlaps SMU
+  busy execution and is therefore not added to the FSM-state totals.
+- `util/online_softmax_merge/analyze_fsm.py`, SHA256
+  `cf5ac0414744e0c541a1cd33af1cda8824fe430ba1797f7d74c31f5795dcc18d`,
+  loads runner manifests, records, failures, commands, and simulator logs.  It
+  requires clean and consistent commit/CFG/simulator/window provenance,
+  correctness, repeat order, exact RTL enum/state expression, contiguous
+  invocations, `DONE` terminals, exact state sums, and
+  `busy_cycles <= A2_end_to_end_cycles`.  Complete non-pass records and every
+  `failures.json` entry remain in the report.  Its deterministic external
+  outputs are `analysis.json`, `fsm_observations.csv`, `fsm_breakdown.csv`,
+  `ablation_a0_a2.csv`, and `artifact_manifest.json`.
+- The README documents the observer/runner/analyzer commands, measurement
+  mapping, overlap rule, reconciliation gates, output schemas, and the
+  non-physical interpretation.  Eleven focused analyzer tests bring the
+  complete suite to 46 tests.
+- Final implementation validation ran during
+  `2026-07-15T17:35:56Z..2026-07-15T17:35:57Z` at
+  `/home/wxt/work-online-merge-stage5a-final-validation-20260715T173556Z`.
+  All 46 unit tests, `py_compile`, Python/SystemVerilog line-length checks, and
+  `git diff --check` passed.  `result.json` SHA256 is
+  `ac5715cd29ee220eb683aef8f879c4838c12569dd9ef46252586c9968d762a7c`;
+  unit-test-log SHA256 is
+  `8916dacbb25a30cf06a3f0333c4d63d8569de2a171d951fdbcd9bd05506f6c81`.
+  An earlier validation at
+  `/home/wxt/work-online-merge-stage5a-validation-20260715T172940Z`
+  correctly failed its SystemVerilog 100-column gate; the three pre-existing
+  expressions were subsequently wrapped without functional change and that
+  failed attempt remains preserved.
+- A detached external integration build reused the complete offline Bender
+  database at `/home/wxt/spatz/.bender` and passed the Verilator `verilate`
+  target during `2026-07-15T17:36:39Z..2026-07-15T17:38:48Z`.  Context is
+  `/home/wxt/work-online-merge-stage5a-vlt-final-20260715T173639Z/context.txt`,
+  SHA256
+  `d5807bc39f49241d7a97d7a5ad2cc8aa8c5e50f957ca5ba14f58caf125eca442`;
+  log SHA256 is
+  `82e81e5b383dfec7febccd7a1df5cb7d7bc51d671830ffcc6b9171d2464ed0e0`.
+  Tools were Bender 0.29.1, Verilator 5.034, and
+  `/home/wxt/spatz/.venv/bin/python`; CFG SHA256 remained
+  `120fa0c30199e54e6e9b5c60d8da40913eae8526640992cc5d4f130bef159775`.
+  The generated archive is external at
+  `/home/wxt/work-online-merge-stage5a-vlt-offline-retry4-20260715T172648Z/`
+  `build/Vtestharness__ALL.a`, SHA256
+  `53c6a72e8b99cf2ab41b2d84ec3cbae51965135752c51a319a17d4ca9a34be5b`.
+  This target did not yet link `spatz_cluster.vlt` and is not formal
+  measurement evidence.
+- All unsuccessful integration attempts remain external diagnostic
+  `tool_error` evidence, not measurements:
+  - network dependency fetch failure/interruption:
+    `/home/wxt/work-online-merge-stage5a-vlt-validation-20260715T164938Z`;
+    log SHA256
+    `bbc7c34e6708db2720cf8f24618fc76308aa267e7be36667651ec5d47467af7f`,
+    failure-metadata SHA256
+    `b850bac3667d0f27b61eafc9ef5a6b86d3b109cb79a1f0acf1ba35b9e5d7019e`;
+  - missing generated `bootdata_bootrom.cc`:
+    `/home/wxt/work-online-merge-stage5a-vlt-offline-20260715T171716Z`, log
+    SHA256
+    `9619d9fea36da05bc2c5811b52bbb345b25b3df9106b09909e60b1f107b72036`;
+  - system Python missing `hjson` during cluster generation:
+    `/home/wxt/work-online-merge-stage5a-generated-support-20260715T171934Z`,
+    failure-metadata SHA256
+    `a047d6d961b10ef7e76d8344a7b2a69e818c23b05a91d137b019e80d321e56b4`;
+  - detached source missing the ignored `install` symlink:
+    `/home/wxt/work-online-merge-stage5a-vlt-offline-retry-20260715T172313Z`,
+    log SHA256
+    `6605510ce900f68caadd3612ae2ebb0ffe33a7b581c52f8a8a963f6207d6da38`;
+  - missing `sw/toolchain/riscv-opcodes/encoding.h`:
+    `/home/wxt/work-online-merge-stage5a-vlt-offline-retry2-20260715T172500Z`,
+    log SHA256
+    `7b293815c822c610bf47446489bd0b1d09364b345369217d65d651702c3abb21`;
+  - system Python missing `hjson` during boot-ROM generation:
+    `/home/wxt/work-online-merge-stage5a-vlt-offline-retry3-20260715T172617Z`,
+    log SHA256
+    `2eca06a4239629bbb0ae0b07bf44098a430cb2ee98ab127629e163cbd7a99f9f`.
+  Successful generated support using the project virtual environment is at
+  `/home/wxt/work-online-merge-stage5a-generated-support-20260715T172216Z`.
+- This checkpoint claims only implementation, unit/style validation, and a
+  successful unlinked Verilator integration compile.  It claims no formal
+  A0/A2 cycles, speedup, state shares, or TCDM numbers.  Formal acceptance
+  remains pending until the exact clean checkpoint commit is used to link the
+  simulator, run one warm-up plus at least three measured repeats at all three
+  required coordinates, observe exactly four valid `OM_FSM` records per log,
+  and independently reproduce every analyzer value and output hash.

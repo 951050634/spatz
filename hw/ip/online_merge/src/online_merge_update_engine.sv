@@ -431,10 +431,20 @@ module online_merge_update_engine #(
           if (!req_valid_q && !read_pending_q && (store_idx_q < 2'd2)) begin
             req_valid_q <= 1'b1;
             req_write_q <= 1'b1;
-            req_addr_q <= (store_idx_q == 2'd0) ? scalar_addr(dst_m_i, row_q) : scalar_addr(dst_l_i, row_q);
-            req_wdata_q <= pack_fp32((store_idx_q == 2'd0) ? m_new_q : l_new_q,
-                                     (store_idx_q == 2'd0) ? scalar_addr(dst_m_i, row_q) : scalar_addr(dst_l_i, row_q));
-            req_strb_q <= fp32_strb((store_idx_q == 2'd0) ? scalar_addr(dst_m_i, row_q) : scalar_addr(dst_l_i, row_q));
+            req_addr_q <= (store_idx_q == 2'd0)
+                              ? scalar_addr(dst_m_i, row_q)
+                              : scalar_addr(dst_l_i, row_q);
+            req_wdata_q <= pack_fp32(
+              (store_idx_q == 2'd0) ? m_new_q : l_new_q,
+              (store_idx_q == 2'd0)
+                ? scalar_addr(dst_m_i, row_q)
+                : scalar_addr(dst_l_i, row_q)
+            );
+            req_strb_q <= fp32_strb(
+              (store_idx_q == 2'd0)
+                ? scalar_addr(dst_m_i, row_q)
+                : scalar_addr(dst_l_i, row_q)
+            );
             op_q <= (store_idx_q == 2'd0) ? WR_M_OUT : WR_L_OUT;
           end else if (req_valid_q && tcdm_rsp_i.q_ready) begin
             store_idx_q <= store_idx_q + 2'd1;
@@ -539,5 +549,95 @@ module online_merge_update_engine #(
       endcase
     end
   end
+
+  // Simulation-only, non-intrusive FSM cycle observer.  The counters do not
+  // feed functional logic and are omitted by synthesis.  One structured
+  // record is emitted after each terminal transition; invocation zero is the
+  // benchmark warm-up and later invocations are measured repeats.
+  // pragma translate_off
+  logic [63:0] sim_load_scalar_cycles_q;
+  logic [63:0] sim_compute_scalar_cycles_q;
+  logic [63:0] sim_compute_weight_cycles_q;
+  logic [63:0] sim_store_scalar_cycles_q;
+  logic [63:0] sim_update_vector_cycles_q;
+  logic [63:0] sim_busy_cycles_q;
+  logic [31:0] sim_invocation_q;
+  logic [31:0] sim_n_q, sim_d_q;
+  logic sim_observing_q;
+
+  always_ff @(posedge clk_i or negedge rst_ni) begin
+    if (!rst_ni) begin
+      sim_load_scalar_cycles_q <= '0;
+      sim_compute_scalar_cycles_q <= '0;
+      sim_compute_weight_cycles_q <= '0;
+      sim_store_scalar_cycles_q <= '0;
+      sim_update_vector_cycles_q <= '0;
+      sim_busy_cycles_q <= '0;
+      sim_invocation_q <= '0;
+      sim_n_q <= '0;
+      sim_d_q <= '0;
+      sim_observing_q <= 1'b0;
+    end else if (start_i &&
+                 ((state_q == IDLE) || (state_q == DONE) ||
+                  (state_q == ERROR))) begin
+      sim_load_scalar_cycles_q <= '0;
+      sim_compute_scalar_cycles_q <= '0;
+      sim_compute_weight_cycles_q <= '0;
+      sim_store_scalar_cycles_q <= '0;
+      sim_update_vector_cycles_q <= '0;
+      sim_busy_cycles_q <= '0;
+      sim_n_q <= n_i;
+      sim_d_q <= d_i;
+      sim_observing_q <= 1'b1;
+    end else if (sim_observing_q) begin
+      unique case (state_q)
+        LOAD_SCALAR: begin
+          sim_load_scalar_cycles_q <= sim_load_scalar_cycles_q + 64'd1;
+          sim_busy_cycles_q <= sim_busy_cycles_q + 64'd1;
+        end
+        COMPUTE_SCALAR: begin
+          sim_compute_scalar_cycles_q <= sim_compute_scalar_cycles_q + 64'd1;
+          sim_busy_cycles_q <= sim_busy_cycles_q + 64'd1;
+        end
+        COMPUTE_WEIGHT: begin
+          sim_compute_weight_cycles_q <= sim_compute_weight_cycles_q + 64'd1;
+          sim_busy_cycles_q <= sim_busy_cycles_q + 64'd1;
+        end
+        STORE_SCALAR: begin
+          sim_store_scalar_cycles_q <= sim_store_scalar_cycles_q + 64'd1;
+          sim_busy_cycles_q <= sim_busy_cycles_q + 64'd1;
+        end
+        UPDATE_VECTOR: begin
+          sim_update_vector_cycles_q <= sim_update_vector_cycles_q + 64'd1;
+          sim_busy_cycles_q <= sim_busy_cycles_q + 64'd1;
+        end
+        DONE, ERROR: begin
+          $write("OM_FSM {\"schema_version\":1,");
+          $write("\"invocation\":%0d,\"N\":%0d,\"D\":%0d,",
+                 sim_invocation_q, sim_n_q, sim_d_q);
+          if (state_q == DONE) begin
+            $write("\"terminal_state\":\"DONE\",");
+          end else begin
+            $write("\"terminal_state\":\"ERROR\",");
+          end
+          $write("\"load_scalar_cycles\":%0d,",
+                 sim_load_scalar_cycles_q);
+          $write("\"compute_scalar_cycles\":%0d,",
+                 sim_compute_scalar_cycles_q);
+          $write("\"compute_weight_cycles\":%0d,",
+                 sim_compute_weight_cycles_q);
+          $write("\"store_scalar_cycles\":%0d,",
+                 sim_store_scalar_cycles_q);
+          $write("\"update_vector_cycles\":%0d,",
+                 sim_update_vector_cycles_q);
+          $display("\"busy_cycles\":%0d}", sim_busy_cycles_q);
+          sim_invocation_q <= sim_invocation_q + 32'd1;
+          sim_observing_q <= 1'b0;
+        end
+        default: ;
+      endcase
+    end
+  end
+  // pragma translate_on
 
 endmodule

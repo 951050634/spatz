@@ -222,6 +222,95 @@ The deterministic outputs are:
 - `break_even.csv`: the requested measured `(N,D)` grid;
 - `artifact_manifest.json`: input hashes, analyzer identity, and output hashes.
 
+## Full-SMU FSM decomposition and A0/A2 ablation
+
+`online_merge_update_engine.sv` contains a simulation-only observer between
+`translate_off`/`translate_on` pragmas.  It does not add a functional port or
+feed functional RTL.  For every B3 invocation it emits one line beginning with
+`OM_FSM ` followed by a JSON object.  Invocation zero is the unmeasured B3
+warm-up; invocations one through `repeats` correspond to measured repeats zero
+through `repeats - 1`.  The observer latches `N` and `D` at start and counts one
+of these mutually exclusive `state_q` enum states on every busy cluster cycle:
+
+```text
+LOAD_SCALAR
+COMPUTE_SCALAR
+COMPUTE_WEIGHT
+STORE_SCALAR
+UPDATE_VECTOR
+```
+
+Run the three mandatory cases from one clean commit with a simulator built from
+that same commit.  The build directory, result root, case file, simulator, ELF,
+and logs must remain outside the Git worktree:
+
+```bash
+cat > /home/user/work-online-merge-fsm-cases.json <<'JSON'
+[
+  {"N": 1, "D": 1, "seed": 1, "case_kind": "main",
+   "repeats": 3, "timeout_seconds": 1800},
+  {"N": 8, "D": 32, "seed": 1, "case_kind": "main",
+   "repeats": 3, "timeout_seconds": 1800},
+  {"N": 16, "D": 64, "seed": 1, "case_kind": "main",
+   "repeats": 3, "timeout_seconds": 3600}
+]
+JSON
+
+python3 util/online_softmax_merge/run_experiments.py \
+  --repo-root "$PWD" \
+  --source-dir "$PWD/hw/system/spatz_cluster/sw" \
+  --build-dir /home/user/work-online-merge-fsm-build \
+  --simulator /home/user/work-online-merge-fsm-simulator/\
+spatz_cluster.vlt \
+  --cfg "$PWD/hw/system/spatz_cluster/cfg/\
+spatz_cluster.default.dram.hjson" \
+  --work-dir /home/user/work-online-merge-fsm-results \
+  --case-file /home/user/work-online-merge-fsm-cases.json \
+  --jobs 2 \
+  "${cmake_defines[@]}"
+```
+
+Analyze the preserved runner root into a fresh controlled external directory:
+
+```bash
+python3 util/online_softmax_merge/analyze_fsm.py \
+  --repo-root "$PWD" \
+  --result-root /home/user/work-online-merge-fsm-results \
+  --output-dir /home/user/work-online-merge-fsm-analysis
+```
+
+The analyzer requires at least three contiguous passing B2-R/A0 and B3/A2
+repeats at each mandatory coordinate, one warm-up plus all measured `OM_FSM`
+records, matching clean commit/CFG/simulator provenance, passing simulator
+commands, finite correctness metrics, and a directly confirmed RTL enum/busy
+encoding.  It emits deterministic files:
+
+- `analysis.json`: measurement semantics, provenance, retained non-pass and
+  failure evidence, acceptance gates, raw observations, per-repeat rows, and
+  medians;
+- `fsm_observations.csv`: warm-up and measured FSM observations;
+- `fsm_breakdown.csv`: per-repeat A0/A2, state, busy, control-remainder, TCDM,
+  and correctness data;
+- `ablation_a0_a2.csv`: one median summary per mandatory coordinate;
+- `artifact_manifest.json`: input/log/tool identities and output hashes.
+
+The two exact per-repeat reconciliations are:
+
+```text
+LOAD_SCALAR + COMPUTE_SCALAR + COMPUTE_WEIGHT +
+STORE_SCALAR + UPDATE_VECTOR = busy_cycles
+
+busy_cycles + command_setup_wait_error_nonoverlap_cycles =
+A2_end_to_end_cycles
+```
+
+FSM states do not overlap.  The core's high-frequency completion polling does
+overlap SMU busy and is therefore not added to the FSM totals.  Only the
+measured end-to-end remainder is labeled non-overlapped command/setup/wait/error
+boundary overhead.  These Verilator cycles and TCDM counters are an ablation
+and congestion measurement only; they are not area, Fmax, power, energy, or
+physical-efficiency results.
+
 ## Validation
 
 ```bash
