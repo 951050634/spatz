@@ -28,7 +28,7 @@ small manifests only.
 | 1 | Benchmark/result framework | P0 | complete | pre-commit smoke below |
 | 2 | Fair B1/B2-R/B3 baselines and RVV disassembly gate | P0 | complete | Stage 2b clean anchors |
 | 3 | Anchors, RVV tails, mandatory size matrices | P0 | complete | Stage 3n closes both mandatory fixed matrices |
-| 4 | Break-even table and fitted scale model | P0 | in_progress | Stage 4d analyzer implemented; formal fit pending |
+| 4 | Break-even table and fitted scale model | P0 | complete | Stage 4e formal fit and direct 16-point table |
 | 5 | Full-SMU FSM cycle breakdown and A0/A2 | P0 | pending | pending |
 | 6 | C0/C1/C2/C3 concurrency and 16 bank phases | P0 | pending | pending |
 | 7 | Yosys Slang generic-resource proxy | P0 | pending | pending |
@@ -1697,3 +1697,152 @@ small manifests only.
 - This checkpoint implements and tests the analyzer only.  The formal complete
   23-coordinate-per-model fit and 16-point break-even consolidation must run
   from the clean committed analyzer checkpoint and will be indexed separately.
+
+
+### Stage 4e checkpoint: formal scale model and break-even closure
+
+- Objective: run the committed analyzer on every clean mandatory-matrix and
+  break-even evidence root, retain inherited timeout/failure evidence, publish
+  the independently refitted B2-R/B3 models, and close the directly measured
+  16-point break-even table.
+- Before the formal run, Stage 4d synchronization retained one transient push
+  failure.  Fetch and pull with rebase returned zero, but the first push failed
+  with `gnutls_handshake() failed: The TLS connection was non-properly
+  terminated`.  The local checkpoint remained clean and ahead by one; no
+  force-push or merge was used.  Failure metadata is
+  `/home/wxt/work-online-merge-stage4d-sync-20260715T151245Z/sync.json`,
+  SHA256
+  `445ae6068d630c2da290c831a439210bd7a81bb78bbedbe693e381b4f49acbcd`;
+  failed push-log SHA256 is
+  `420fc1a2233169e32370cab0bae57b75558322d10a38803d6baf79dbd69dfdb4`.
+  A periodic retry succeeded and synchronized commit
+  `821d36b777c90db8394be2d59e1b3de9a51702d3`; retry metadata is
+  `/home/wxt/work-online-merge-stage4d-push-retry-20260715T151348Z/retry.json`,
+  SHA256
+  `214ba2b98236667c0b894e9ab89d4c9349d2c9675b9dd047bc12d4b0088ad0ed`;
+  successful push-log SHA256 is
+  `1094a81ffb4f7863cb50c7c76884c19927e61c315b88b4b6a7c2d5de4c092db2`.
+- Formal analysis ran from that clean synchronized commit and used exactly the
+  following nine roots:
+  - `/home/wxt/work-online-merge-stage3-matrix-d64-clean-20260715-062750`;
+  - `/home/wxt/work-online-merge-stage3-matrix-d64-n8-formal-clean-20260715-080002`;
+  - `/home/wxt/work-online-merge-stage3-matrix-d64-n16-formal-clean-20260715-080049`;
+  - `/home/wxt/work-online-merge-stage3-matrix-d64-n32-formal-clean-20260715-080837`;
+  - `/home/wxt/work-online-merge-stage3-n8-d-small-clean-20260715T103315Z`;
+  - `/home/wxt/work-online-merge-stage3-n8-d128-clean-20260715T112512Z`;
+  - `/home/wxt/work-online-merge-stage4-break-even-n1-clean-20260715T120725Z`;
+  - `/home/wxt/work-online-merge-stage4-break-even-n2-clean-20260715T125242Z`;
+  - `/home/wxt/work-online-merge-stage4-break-even-n4-clean-20260715T134404Z`.
+- The formal result is
+  `/home/wxt/work-online-merge-stage4-scaling-formal-20260715T151558Z`.
+  Analysis command metadata is
+  `/home/wxt/work-online-merge-stage4-scaling-formal-command-20260715T151558Z/`
+  `run.json`, SHA256
+  `e17a9a483d38b037b153c4c3b18e5210a39482d4a47317cacdf1b5329550291f`.
+  The analysis window was
+  `2026-07-15T15:15:58Z..2026-07-15T15:15:58Z`; the underlying measurement
+  roots span `2026-07-15T06:27:50+00:00..2026-07-15T14:28:51+00:00`.
+  CFG SHA256 is
+  `120fa0c30199e54e6e9b5c60d8da40913eae8526640992cc5d4f130bef159775`;
+  simulator SHA256 is
+  `25a56d98474895d16d7de81f73d9cf8a06ba8eb650af5f9b58a012d15022e69a`.
+  Tools remain Python 3.12.3, CMake 3.28.3, target Clang/objdump 14.0.6,
+  Verilator 5.034, and analyzer SHA256
+  `76c54419cf63c95d5f44865a1389c0a19c3e1139d814be40fd6eaa6adcc1a7d5`.
+- All eight formal acceptance gates passed.  The analyzer retained 225 raw
+  records with status counts `pass=216` and `timeout=9`, retained all nine
+  non-pass records and both failure entries, and identified six equivalent
+  duplicate B2-R/B3 repeat records without conflicts.  After exact
+  deduplication, each model has the same 23 unique seed-1/main coordinates and
+  three contiguous repeats per coordinate.  The inherited timeouts and failure
+  entries remain part of the evidence and were not used as passing fit points.
+- Exact rational least-squares parameters, with decimal cycle interpretations,
+  are:
+
+  | Model | `C0` | `Cs` per row | `Cv` per element | `R²` |
+  | --- | ---: | ---: | ---: | ---: |
+  | B2-R | 483.353185 | 1538.126851 | 2.056380 | 0.9997383363 |
+  | B3 | 1058.654226 | 22.029195 | 7.994777 | 0.9999669373 |
+
+  The exact numerators and denominators, SSE, SST, every fitted value, and all
+  46 signed `Cstall` residuals are in `analysis.json` and
+  `model_residuals.csv`.  These terms distinguish fixed startup, scalar
+  per-row, and vector per-element costs; they are simulator-cycle fit terms,
+  not physical latency, power, or energy quantities.
+- The largest absolute B2-R residual is 394.877647 cycles at `(N,D)=(32,64)`;
+  every B2-R fitted point has median `tcdm_congested=0`, so this deviation
+  cannot be attributed to measured TCDM congestion.  The largest absolute B3
+  residual is 51.483707 cycles at `(1,32)`.  B3's largest median congestion is
+  76 accesses with ratio `0.007769372316499694` at `(32,64)`; residual signs
+  do not vary monotonically with congestion, for example `(16,64)` has
+  residual `-41.773` cycles while `(32,64)` has `+22.108` cycles.  Therefore
+  the high `R²` values support a useful compact fit but not a claim of strict
+  linearity or a causal congestion model.  `Cstall` remains explicitly a
+  signed residual rather than a directly measured stall counter.
+- The direct measured break-even table is complete.  Each cell below is
+  `B2-R median cycles / B3 median cycles`; all cells satisfy
+  `C_smu(N,D) <= C_rvv(N,D)`:
+
+  | `N` | `D=1` | `D=8` | `D=16` | `D=32` | minimum measured `D` |
+  | ---: | ---: | ---: | ---: | ---: | ---: |
+  | 1 | 1966 / 1124 | 1968 / 1121 | 1995 / 1203 | 1977 / 1388 | 1 |
+  | 2 | 3387 / 1106 | 3426 / 1228 | 3455 / 1351 | 3504 / 1610 | 1 |
+  | 4 | 6739 / 1194 | 6772 / 1436 | 6812 / 1655 | 6867 / 2136 | 1 |
+  | 8 | 13080 / 1290 | 12885 / 1732 | 13078 / 2281 | 13547 / 3263 | 1 |
+
+  Direct speedup ranges from `1.4243515850144093` at `(1,32)` to
+  `10.13953488372093` at `(8,1)`.  This table makes no monotonicity claim and
+  no claim about unmeasured `D`; model predictions are not mixed into the 16
+  measured rows.  The retained records and residual CSV also report
+  cycles/element, elements/cycle, TCDM accessed/congested/ratio, and speedup
+  for every fitted coordinate.
+- Formal top-level SHA256 values are:
+  - `analysis.json`:
+    `451f3402cfc0aae61437c359edeea0df22ba095ddb53439b8d2a223547fedcb5`;
+  - `model_residuals.csv`:
+    `b3b2cf0911c96d2ded302cad5d567e6b14dfe0780b94553a33d68689c996b3fe`;
+  - `break_even.csv`:
+    `106fd1a0decd6430a8584400bed301ff323b279ecfbd25fe83d40cec65fd984c`;
+  - `artifact_manifest.json`:
+    `fecbee0ac896fbaa645dedb9e3e7353a179830329008220e94c7cca590f28d43`.
+- Independent validation did not import the repository analyzer.  It rehashed
+  every input manifest/record/failure file, reconstructed all status and
+  failure projections, independently deduplicated the six equivalent repeats,
+  rebuilt the exact 23-coordinate medians and rational normal-equation fits,
+  matched all model parameters/residuals and both CSV files, verified the
+  direct 16-cell table and clean provenance, and reran the committed analyzer
+  to a fresh directory.  The deterministic rerun at
+  `/home/wxt/work-online-merge-stage4-scaling-determinism-20260715T152231Z`
+  produced byte-identical files and the same four SHA256 values.  The passing
+  report is
+  `/home/wxt/work-online-merge-stage4-scaling-validation-20260715T152231Z/`
+  `validation.json`, SHA256
+  `d724a6df9de521d9dabb5ed77206f68741f790a01a30f78d0e1ad5ad104ff4b3`;
+  validator SHA256 is
+  `f0511d7acbe5f9c9d7831a50c57f8cc1f20ff662692c93022b2ff4b9441d3426`,
+  validator-log SHA256 is
+  `0839e82e60d9559495fdaa4a727924f9eeed345e163da29fa14678cda4e13038`,
+  and return-code-file SHA256 is
+  `9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa`.
+- The Stage 4e checkpoint validator rechecked the exact single-file status,
+  all formal and independent-validation hashes, acceptance/status/failure and
+  duplicate counts, both 23-point models, all 46 residual rows, all 16 direct
+  break-even rows, the progress-index values, 35/35 unit tests, and
+  `git diff --check`.  Its passing report is
+  `/home/wxt/work-online-merge-stage4e-checkpoint-validation-20260715T154055Z/`
+  `validation.json`, SHA256
+  `65879b9a64fc22720aae5c5b21f3851c5ee90ad4a0731c1afce8fb4c6187f3d8`;
+  validator SHA256 is
+  `77277ca608e5eaab04864126db938f25b29b0901b850015b12a65fbf1ffe9ce8`,
+  unit-test-log SHA256 is
+  `6b87034c8400f1aff10372010a5b608604c231f28ef337746a01cbfb6fbf0b48`,
+  validator-log SHA256 is
+  `81c17617dc4ecd2b02a57800d75bac3506b73eddc6c85cbef72cb7e6f65a43f3`,
+  and return-code-file SHA256 is
+  `9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa`.
+- Stage 4 acceptance is complete: both mandatory matrices have retained status
+  records, capacity/timeout/failure evidence remains preserved, the directly
+  measured break-even table and exact fitted parameters/residuals/`R²` are
+  published, the model separates fixed, per-row, and per-element terms, and
+  all capacity claims continue to use the compact allocator-rounded footprint.
+  The next P0 stage is the Full-SMU FSM cycle decomposition and A0/A2.
