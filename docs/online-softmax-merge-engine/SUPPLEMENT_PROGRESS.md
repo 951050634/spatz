@@ -637,3 +637,62 @@ small manifests only.
   a clean worktree, verify source-relevant inputs remain unchanged, then
   continue the stopped simulators first and runners second.  All later pass,
   timeout, tool-error, or incomplete statuses must be retained unchanged.
+
+### Stage 3h checkpoint: independently built N=16 pass and two active N=32 cases
+
+- Objective: preserve the next bounded checkpoint after the independently built
+  fixed-`D=64`, `N=16` retry completed, while retaining both active `N=32`
+  cases without claiming partial output.
+- Clean evidence:
+  `/home/wxt/work-online-merge-stage3-matrix-d64-n16-formal-clean-20260715-080049`,
+  UTC `2026-07-15T08:00:49+00:00` to `08:57:00+00:00`, commit
+  `ceaa1f8b4ad802edd85f746bed025b09135c3c09`, `git_dirty=false`, seed 1,
+  `main`, three repeats, and a 10,800-second simulator timeout.  Its fresh
+  CMake bootstrap used the fixed CFG-derived cache values recorded in Stage
+  3g and returned zero.
+- Result: all nine B1/B2-R/B3 records passed, all four
+  configure/build/disassembly/simulator commands returned zero, and
+  `failures.json` is empty.  Median cycles are B1 `371610`, B2-R `27532`, and
+  B3 `9556`; the respective min/max ranges are `371057..371875`,
+  `27476..27635`, and `9547..9646`.
+- Independent validation reconstructed all nine 64-bit cycle counts and
+  correctness metrics from raw `OM_RESULT` fields, checked the exact repeat
+  set, finite metrics, correctness limits, B3 busy observation, the RVV
+  disassembly gate, summary statistics, bootstrap inputs, and all four command
+  statuses.  All 11 artifact-manifest entries were independently rehashed and
+  matched.  Key SHA256 values are:
+  - `run_manifest.json`:
+    `88452d022248ea28ad0b82b49d90c1b328ff4a8a2d2c5d083547d3ec865072cc`;
+  - `records.json`:
+    `8054235d4f681c760324a0d8f662fe80c1cd7c8c74db447db0f622bfac4af82a`;
+  - `records.csv`:
+    `c7217c6ddfe0edc3923d3b65b5df838ca4e51b2bf537ef539db41fac1dd6a1d8`;
+  - `summary.json`:
+    `dcc7f0a2072a821597faf7ebac557d2b26de60b1a924627cfc562d7ec34e4ca3`;
+  - `commands.json`:
+    `2e703027e68cb0950cbd5c11efe934b00a049c44c51097f54a82db4e113b6310`;
+  - `artifact_manifest.json`:
+    `027a2f37fcb116cc5846407eb21bcca01ec5ca813f191fa555894cfc9e8f63d2`;
+  - external runner log:
+    `1875f44acad6cdb3441536b153a040f157fa62e809e6b93c2214b6ecc7b938ca`.
+- At `2026-07-15T09:07:45+00:00`, the direct-child simulators were stopped
+  before their Python runners for the initial fixed-`D` `N=32` case and the
+  independently built `N=32` retry.  All four processes were verified in the
+  stopped state.  Neither case has a persisted result record and both remain
+  explicitly unclaimed.  The pause record is
+  `/home/wxt/work-online-merge-stage3-checkpoint-20260715T090745Z/pause.json`,
+  SHA256
+  `5e0de6fb08ed84a88a40566c20cbd9bfbc98be8950fc3edfa0bfc49a4890f0c1`.
+- The initial batch remains at 42 records: 36 passes and the six retained
+  `N=8` timeouts.  The known initial-`N=8` ELF manifest mismatch remains
+  unchanged and restoration is still deferred until that runner exits.
+- Checkpoint validation report:
+  `/home/wxt/work-online-merge-stage3-checkpoint-20260715T090745Z/validation.json`,
+  SHA256
+  `70ba4289a8a96d915da2a7b11f8a76aaae33ed8e6aabbf58597f4e7bb026e04b`.
+  The validation script SHA256 is
+  `84d8075cde1fcd628a23d70247a556dd029a9bfc6cd9e6fa3dc964872cdb2f91`.
+- Resume gate: validate this documentation-only diff, commit and synchronize
+  from a clean worktree, verify source-relevant inputs remain unchanged, then
+  continue each stopped simulator before its runner.  Any later pass, timeout,
+  tool error, or incomplete status must be retained without reinterpretation.
