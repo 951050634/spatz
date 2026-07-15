@@ -27,7 +27,7 @@ small manifests only.
 | 0 | Isolate worktree and import governing specification | setup | complete | this checkpoint |
 | 1 | Benchmark/result framework | P0 | complete | pre-commit smoke below |
 | 2 | Fair B1/B2-R/B3 baselines and RVV disassembly gate | P0 | complete | Stage 2b clean anchors |
-| 3 | Anchors, RVV tails, mandatory size matrices | P0 | in_progress | clean tails complete; fixed-D long run active |
+| 3 | Anchors, RVV tails, mandatory size matrices | P0 | in_progress | fixed-D N=1/2/4/8/16 clean evidence; N=32 active |
 | 4 | Break-even table and fitted scale model | P0 | pending | pending |
 | 5 | Full-SMU FSM cycle breakdown and A0/A2 | P0 | pending | pending |
 | 6 | C0/C1/C2/C3 concurrency and 16 bank phases | P0 | pending | pending |
@@ -551,3 +551,89 @@ small manifests only.
   worktree plus a zero source-relevant diff from the recorded run commit.
   Any later timeout caused or shortened by pause wall time must likewise be
   retained, followed by a separate clean rerun rather than reinterpretation.
+
+### Stage 3g checkpoint: clean N=8 retry, initial N=16, and retained diagnostics
+
+- Objective: preserve the next bounded checkpoint while three simulators remain
+  active, validate only fully persisted cases, and record all unsuccessful
+  independent-build attempts and the ELF-inspection incident without
+  reinterpreting any status.
+- At `2026-07-15T08:24:05+00:00`, the direct-child simulators were stopped
+  before their Python runners for these active partial cases:
+  initial fixed-`D` `N=32`, formal retry `N=16`, and formal retry `N=32`.
+  They remain explicitly unclaimed.  The external pause record is
+  `/home/wxt/work-online-merge-stage3-checkpoint-20260715T082405Z/pause.json`,
+  SHA256
+  `c7357d439740b01306fc3040ac83339992c8708cc72cc6b342888eb794fdb9cc`.
+- The initial six-case batch at
+  `/home/wxt/work-online-merge-stage3-matrix-d64-clean-20260715-062750`
+  completed `N=16` successfully at `2026-07-15T08:16:28+00:00`.
+  Its nine records pass with median cycles B1 `371610`, B2-R `27532`, and
+  B3 `9556`.  Persisted initial-batch state is now 42 records: 36 passes for
+  `N={1,2,4,16}` and the six previously retained `N=8` timeouts.  Both
+  timeout validation failures remain present.  The active `N=32` case has no
+  result record and is not treated as evidence.
+- The clean, independently built `N=8,D=64` retry completed at
+  `2026-07-15T08:18:42+00:00` under
+  `/home/wxt/work-online-merge-stage3-matrix-d64-n8-formal-clean-20260715-080002`.
+  Provenance is commit `ceaa1f8b4ad802edd85f746bed025b09135c3c09`,
+  `git_dirty=false`, with the fixed CFG-derived CMake cache values.  All nine
+  B1/B2-R/B3 records pass, all four commands return zero, and there are no
+  failures.  Median cycles are B1 `183136`, B2-R `14086`, and B3 `5351`.
+  Independent validation reconstructed every 64-bit cycle count, checked
+  exact repeat coverage and finite metrics, rechecked the RVV disassembly
+  gate, and rehashed all 11 artifact-manifest entries plus bootstrap,
+  top-level result, and runner-log sidecars.
+- Four unsuccessful clean-build diagnostics are retained rather than removed:
+  - `/home/wxt/work-online-merge-stage3-matrix-d64-n8-retry-clean-20260715-074512`:
+    three `tool_error` records after a fresh cache selected host `/bin/clang`
+    and rejected the RISC-V ABI/options;
+  - `/home/wxt/work-online-merge-stage3-matrix-d64-n8-retry2-clean-20260715-074833`:
+    bootstrap return code 1 because `BUILD_TESTS` was omitted and the online
+    merge target did not exist;
+  - `/home/wxt/work-online-merge-stage3-matrix-d64-n8-retry3-clean-20260715-075153`
+    and
+    `/home/wxt/work-online-merge-stage3-matrix-d64-n16-retry-clean-20260715-075357`:
+    bootstrap/build succeeded, but omitted CFG-derived runtime cache values
+    produced three `tool_error` records per run and target
+    `online-softmax-merge FAILURE allocation`, simulator return code 255.
+  The checkpoint validation report indexes and hashes every retained file in
+  all four roots.
+- Required independent-build cache inputs are now established as
+  `BUILD_TESTS=ON`, `ELEN=64`, DRAM origin/size
+  `2147483648/2147483648`, two cluster cores, four FPUs per core, TCDM
+  start/size `1048576/131072`, standalone platform source, the default DRAM
+  CFG, and the repository LLVM/GCC paths.  The formal `N=8` bootstrap records
+  and validates those exact inputs.
+- At `2026-07-15T08:04:05+00:00`, a diagnostic
+  `llvm-objcopy --dump-section` invocation omitted a separate output ELF and
+  rewrote the initial and formal `N=8` ELF containers in place.  The incident
+  record is
+  `/home/wxt/work-online-merge-elf-inspection-incident-20260715-080405/incident.json`,
+  SHA256
+  `0accf9f72e701d3b4d660ab8f70ec105ada52286881c8b30bc249d12ff946f81`.
+  Both rewritten copies are preserved.  The formal ELF was restored from the
+  exact same external build and revalidated at its indexed hash
+  `a45f95d793b42589bad54fde7573fed31a8b2a168f1ea21ed38be4644789275a`.
+  The initial ELF remains the one expected manifest mismatch, with current
+  rewritten hash
+  `0c4ce562e4e9e794274730e6ad0cc7cfc5a5bb3242d5a74a197b5401d008ebb9`;
+  after the initial runner exits it must be rebuilt in the original shared
+  build path, match required hash
+  `c919d31ae76a159cdaadb9cb75a3ad567bceb1270fa0adc14a38c3350542e70c`,
+  restored, and the complete initial manifest rehashed.  No claim is made
+  that the in-place rewrite was harmless, and the section-comparison
+  diagnostic is invalidated.
+- Independent checkpoint report:
+  `/home/wxt/work-online-merge-stage3-checkpoint-20260715T082405Z/validation.json`,
+  SHA256
+  `d5a0c9941edc59fb746b70c1819df7679cd38ff6c0e13fc664a875168181087e`.
+  It confirms exact persisted status sets, 41 raw initial markers, nine raw
+  formal markers, finite non-null metrics, command return codes, clean formal
+  provenance, and no benchmark/RTL/runner/CFG diff from the initial run
+  commit.  The sole initial manifest mismatch is the explicitly recorded ELF
+  incident above.
+- Resume gate: commit and synchronize this documentation-only checkpoint from
+  a clean worktree, verify source-relevant inputs remain unchanged, then
+  continue the stopped simulators first and runners second.  All later pass,
+  timeout, tool-error, or incomplete statuses must be retained unchanged.
