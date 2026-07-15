@@ -126,6 +126,7 @@ set_source_files_properties("${ONLINE_MERGE_CASE_HEADER}"
 add_snitch_test(online-softmax-merge
     online-softmax-merge/main.c
     online-softmax-merge/rtl_reference.c
+    online-softmax-merge/rvv_update.c
     ${ONLINE_MERGE_CASE_HEADER})
 target_include_directories(
     test-${SNITCH_TEST_PREFIX}online-softmax-merge

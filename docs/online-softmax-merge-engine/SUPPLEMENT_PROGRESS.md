@@ -26,7 +26,7 @@ small manifests only.
 | ---: | --- | --- | --- | --- |
 | 0 | Isolate worktree and import governing specification | setup | complete | this checkpoint |
 | 1 | Benchmark/result framework | P0 | complete | pre-commit smoke below |
-| 2 | Fair B1/B2-R/B3 baselines and RVV disassembly gate | P0 | pending | pending |
+| 2 | Fair B1/B2-R/B3 baselines and RVV disassembly gate | P0 | implementation_complete | clean committed anchors pending |
 | 3 | Anchors, RVV tails, mandatory size matrices | P0 | pending | pending |
 | 4 | Break-even table and fitted scale model | P0 | pending | pending |
 | 5 | Full-SMU FSM cycle breakdown and A0/A2 | P0 | pending | pending |
@@ -125,3 +125,50 @@ small manifests only.
 - Known limitations: only the framework smoke is claimed.  Fair B1/B2-R/B3
   baseline evidence starts in Stage 2.  A clean committed rerun will be added
   as a separate evidence checkpoint.
+
+### Stage 2a checkpoint: B2-R implementation and RVV gate
+
+- Objective: add the required same-semantics B2-R baseline by reusing the
+  RTL-aligned scalar weight path and moving the `O[D]` update to a VLA RVV
+  load/multiply/FMA/store kernel; reject measurements unless target
+  disassembly proves that kernel is present.
+- Input case: diagnostic `(N,D,seed,kind,repeats) = (1,1,1,main,3)`, with one
+  unmeasured warm-up for B1, B2-R, and B3.
+- Implementation validation:
+  - `python3 -m unittest discover -s util/online_softmax_merge/tests -v`:
+    20 tests passed, including positive and negative RVV disassembly gates;
+  - `cmake --build hw/system/spatz_cluster/sw/build --target`
+    ` test-spatzBenchmarks-online-softmax-merge --parallel 8`: passed;
+  - the saved `online_merge_rvv_update` target symbol contains `vsetvli`, two
+    `vle32.v`, `vfmul.vf`, `vfmacc.vf`, and `vse32.v`, with a strip-mining
+    back-edge;
+  - `check_output` disassembly contains no scalar `fdiv.s`;
+  - `snrt_stack_size` is present with value 13 (8 KiB per core);
+  - `git diff --check`: passed; `ruff` was unavailable and recorded as
+    skipped.
+- Dirty pre-commit diagnostic:
+  `/home/wxt/work-online-merge-stage2-precommit-20260715-100842`, UTC window
+  `2026-07-15T02:08:42+00:00` to `02:13:23+00:00`.  It retained exactly nine
+  finite records, B1/B2-R/B3 repeats 0 through 2, all target and host statuses
+  `pass`, an empty `failures.json`, and a zero simulator return code.  Median
+  cycles were B1 2480, B2-R 1973, and B3 1113.  Because `git_dirty=true`, these
+  values are validation-only and are not formal performance evidence.
+- Diagnostic artifact identity:
+  - exact ELF SHA256:
+    `557ff13d45751efe30cb3356e9752ef6cb0ac1b79b31b4f3a41a4cbad198f95c`;
+  - simulator log SHA256:
+    `6174698b5896a76677118605facdc1aba79480a81e7b9b931bef4e7315eacdd5`;
+  - RVV disassembly snippet SHA256:
+    `0569f0f89bad011819932d99f55155818b33de27d83a40e639ccd6c0ad3e5b76`;
+  - full objdump/gate log SHA256:
+    `df33ddfd4940a1fa56cfcd1ccaf4f571c42c30622150ca5f445b43d4a01700d9`.
+- Fixed identities: run-time Git commit
+  `a494087a3aba5bb74e98f3d26763f55938877bf8` with `git_dirty=true`; CFG
+  SHA256 `120fa0c30199e54e6e9b5c60d8da40913eae8526640992cc5d4f130bef159775`;
+  simulator SHA256
+  `25a56d98474895d16d7de81f73d9cf8a06ba8eb650af5f9b58a012d15022e69a`;
+  LLVM/Clang/objdump 14.0.6; Verilator 5.034; Python 3.12.3.
+- Known limitations: this checkpoint proves implementation and smoke
+  correctness only.  Stage 2 remains incomplete until clean committed anchor
+  evidence is retained; RVV tail and the mandatory scale matrices belong to
+  Stage 3.

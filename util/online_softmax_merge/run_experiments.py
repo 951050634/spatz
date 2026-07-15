@@ -27,7 +27,15 @@ from typing import Any, Iterable, Sequence
 
 RESULT_PREFIX = "OM_RESULT "
 FAILURE_PREFIX = "OM_FAILURE "
-EXPECTED_IMPLEMENTATIONS = ("B1", "B3")
+EXPECTED_IMPLEMENTATIONS = ("B1", "B2-R", "B3")
+RVV_UPDATE_SYMBOL = "online_merge_rvv_update"
+RVV_REQUIRED_MNEMONICS = (
+    "vsetvli",
+    "vle32.v",
+    "vfmul.vf",
+    "vfmacc.vf",
+    "vse32.v",
+)
 VALID_STATUSES = {
     "pass",
     "correctness_fail",
@@ -448,6 +456,83 @@ def run_command(
     return record, output
 
 
+def extract_symbol_disassembly(disassembly: str, symbol: str) -> str | None:
+    lines = disassembly.splitlines()
+    symbol_header = re.compile(r"^[0-9a-fA-F]+ <([^>]+)>:$")
+    start: int | None = None
+    for index, line in enumerate(lines):
+        match = symbol_header.match(line)
+        if match and match.group(1) == symbol:
+            start = index
+            break
+    if start is None:
+        return None
+
+    end = len(lines)
+    for index in range(start + 1, len(lines)):
+        if symbol_header.match(lines[index]):
+            end = index
+            break
+    return "\n".join(lines[start:end]).rstrip() + "\n"
+
+
+def inspect_rvv_disassembly(disassembly: str) -> tuple[str | None, list[str]]:
+    snippet = extract_symbol_disassembly(disassembly, RVV_UPDATE_SYMBOL)
+    if snippet is None:
+        return None, [f"missing symbol {RVV_UPDATE_SYMBOL}"]
+    missing = [
+        mnemonic
+        for mnemonic in RVV_REQUIRED_MNEMONICS
+        if mnemonic not in snippet
+    ]
+    if "<unknown>" in snippet:
+        missing.append("decoded RVV instructions")
+    return snippet, missing
+
+
+def run_rvv_disassembly_gate(
+    objdump: Path,
+    elf: Path,
+    log_path: Path,
+    snippet_path: Path,
+    timeout_seconds: int,
+    cwd: Path,
+) -> tuple[CommandRecord, str | None]:
+    command, output = run_command(
+        [
+            str(objdump),
+            "-d",
+            "--no-show-raw-insn",
+            "--mattr=+v",
+            str(elf),
+        ],
+        log_path,
+        timeout_seconds,
+        cwd,
+    )
+    reason: str | None = None
+    snippet: str | None = None
+    if command.status == "pass":
+        snippet, missing = inspect_rvv_disassembly(output)
+        if missing:
+            command.status = "tool_error"
+            reason = "missing RVV gate evidence: " + ", ".join(missing)
+    else:
+        reason = f"objdump command status={command.status}"
+
+    if snippet is not None:
+        snippet_path.write_text(snippet, encoding="utf-8")
+    gate_status = "pass" if reason is None else "tool_error"
+    gate_summary = (
+        f"\nRVV_DISASSEMBLY_GATE status={gate_status} "
+        f"symbol={RVV_UPDATE_SYMBOL}"
+    )
+    if reason is not None:
+        gate_summary += f" reason={reason}"
+    log_path.write_text(output + gate_summary + "\n", encoding="utf-8")
+    return command, reason
+
+
 def git_output(repo_root: Path, *args: str) -> str:
     return subprocess.check_output(
         ["git", *args], cwd=repo_root, text=True
@@ -511,6 +596,7 @@ def detect_tool_versions(
     simulator: Path,
     build_dir: Path,
     cmake_command: str,
+    objdump: Path | None = None,
 ) -> dict[str, Any]:
     simulator_info: dict[str, Any] = {
         "path": str(simulator),
@@ -535,11 +621,15 @@ def detect_tool_versions(
         if compiler is not None
         else {"status": "missing"}
     )
+    if objdump is None:
+        objdump = repo_root / "install/llvm/bin/llvm-objdump"
+    objdump_info = command_version([str(objdump), "--version"])
     return {
         "simulator": simulator_info,
         "verilator": verilator_info,
         "cmake": command_version([cmake_command, "--version"]),
         "compiler": compiler_info,
+        "objdump": objdump_info,
         "python": {
             "path": os.sys.executable,
             "version": os.sys.version.split()[0],
@@ -957,6 +1047,11 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--build-timeout-seconds", type=int, default=900)
     parser.add_argument("--cmake", default="cmake")
     parser.add_argument(
+        "--objdump",
+        type=Path,
+        default=default_root / "install/llvm/bin/llvm-objdump",
+    )
+    parser.add_argument(
         "--build-target",
         default="test-spatzBenchmarks-online-softmax-merge",
     )
@@ -995,6 +1090,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     source_dir = args.source_dir.resolve()
     build_dir = args.build_dir.resolve()
     simulator = args.simulator.resolve()
+    objdump = args.objdump.resolve()
     cfg = args.cfg.resolve()
     work_dir = args.work_dir.resolve()
 
@@ -1015,7 +1111,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     git_dirty = bool(git_output(repo_root, "status", "--porcelain"))
     cfg_hash = sha256_file(cfg)
     tool_versions = detect_tool_versions(
-        repo_root, simulator, build_dir, args.cmake
+        repo_root, simulator, build_dir, args.cmake, objdump
     )
     tool_version = json.dumps(
         tool_versions, sort_keys=True, separators=(",", ":")
@@ -1195,6 +1291,51 @@ def main(argv: Sequence[str] | None = None) -> int:
                     )
                 )
 
+        if case_status == "pass":
+            disassembly_log = case_dir / "rvv_objdump.log"
+            disassembly_snippet = case_dir / "online_merge_rvv_update.disasm"
+            command, gate_reason = run_rvv_disassembly_gate(
+                objdump,
+                case_elf,
+                disassembly_log,
+                disassembly_snippet,
+                args.build_timeout_seconds,
+                case_dir,
+            )
+            commands.append(asdict(command))
+            artifacts.append(
+                artifact_entry(
+                    disassembly_log,
+                    repo_root,
+                    git_commit,
+                    cfg_hash,
+                    tool_version,
+                    case.slug,
+                    "RVV target disassembly gate and full objdump",
+                )
+            )
+            if disassembly_snippet.is_file():
+                artifacts.append(
+                    artifact_entry(
+                        disassembly_snippet,
+                        repo_root,
+                        git_commit,
+                        cfg_hash,
+                        tool_version,
+                        case.slug,
+                        "online_merge_rvv_update target instruction snippet",
+                    )
+                )
+            if gate_reason is not None:
+                case_status = "tool_error"
+                failure_reason = gate_reason
+                failures.append(
+                    {
+                        "kind": "rvv_disassembly_gate",
+                        "message": gate_reason,
+                    }
+                )
+
         if case_status != "pass":
             case_records = synthetic_records(
                 case,
@@ -1276,8 +1417,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     run_manifest = {
         **metadata,
         "objective": (
-            "compact-buffer B1/B3 timing, correctness, timeout, and "
-            "structured-result framework"
+            "compact-buffer B1/B2-R/B3 timing, correctness, RVV gate, "
+            "timeout, and structured-result framework"
         ),
         "wall_clock_start_end": {
             "first_command_start": (

@@ -20,10 +20,10 @@
 #define ONLINE_MERGE_MAX_POLLS 1000000u
 #define ONLINE_MERGE_ALLOC_ALIGN 256u
 
-// The measured samples and per-repeat correctness state make main's frame
-// larger than the runtime's 1 KiB default.  Keep each core's stack disjoint,
-// including the nonzero core that waits at the benchmark barrier.
-const uint32_t snrt_stack_size = 12u;
+// The three implementations' measured samples and correctness state make
+// main's frame larger than the runtime's 1 KiB default.  Reserve 8 KiB per
+// core so the stacks remain disjoint while the nonzero core waits at barrier.
+const uint32_t snrt_stack_size = 13u;
 
 _Static_assert(ONLINE_MERGE_CASE_REPEATS >= 3u,
                "online merge requires at least three measured repeats");
@@ -382,6 +382,34 @@ static void run_b1(online_merge_buffers_t *buffers,
   }
 }
 
+static void run_b2_r(online_merge_buffers_t *buffers,
+                     online_merge_sample_t *samples,
+                     online_merge_metrics_t *metrics) {
+  clear_output(buffers);
+  online_merge_b2_r(
+      buffers->m_old, buffers->l_old, buffers->o_old, buffers->m_tile,
+      buffers->l_tile, buffers->o_tile, buffers->m_out, buffers->l_out,
+      buffers->o_out, buffers->n, buffers->d, buffers->stride);
+
+  for (uint32_t repeat = 0; repeat < ONLINE_MERGE_CASE_REPEATS; repeat++) {
+    clear_output(buffers);
+    start_tcdm_counters();
+    start_kernel();
+    uint64_t start = benchmark_get_cycle64();
+    online_merge_b2_r(
+        buffers->m_old, buffers->l_old, buffers->o_old, buffers->m_tile,
+        buffers->l_tile, buffers->o_tile, buffers->m_out, buffers->l_out,
+        buffers->o_out, buffers->n, buffers->d, buffers->stride);
+    uint64_t end = benchmark_get_cycle64();
+    stop_kernel();
+    samples[repeat].cycles = end - start;
+    samples[repeat].saw_busy = 0;
+    samples[repeat].status = "pass";
+    stop_tcdm_counters(&samples[repeat]);
+    metrics[repeat] = check_output(buffers);
+  }
+}
+
 static const char *wait_status(online_merge_wait_t wait_result) {
   if (wait_result == ONLINE_MERGE_WAIT_TIMEOUT) {
     return "timeout";
@@ -510,7 +538,7 @@ static void print_result(const char *implementation, int repeat,
 
 static void print_terminal_status(const online_merge_buffers_t *buffers,
                                   const char *status) {
-  const char *implementations[] = {"B1", "B3"};
+  const char *implementations[] = {"B1", "B2-R", "B3"};
   online_merge_sample_t sample = {
       .status = status,
   };
@@ -518,7 +546,7 @@ static void print_terminal_status(const online_merge_buffers_t *buffers,
       .max_rel_denominator = 1.0f,
       .passed = 1,
   };
-  for (uint32_t i = 0; i < 2; i++) {
+  for (uint32_t i = 0; i < 3; i++) {
     print_result(implementations[i], -1, buffers, &sample, &metrics, status);
   }
 }
@@ -577,16 +605,21 @@ int main(void) {
   }
 
   online_merge_sample_t b1_samples[ONLINE_MERGE_MAX_REPEATS] = {0};
+  online_merge_sample_t b2_r_samples[ONLINE_MERGE_MAX_REPEATS] = {0};
   online_merge_sample_t b3_samples[ONLINE_MERGE_MAX_REPEATS] = {0};
   online_merge_metrics_t b1_metrics[ONLINE_MERGE_MAX_REPEATS] = {0};
+  online_merge_metrics_t b2_r_metrics[ONLINE_MERGE_MAX_REPEATS] = {0};
   online_merge_metrics_t b3_metrics[ONLINE_MERGE_MAX_REPEATS] = {0};
 
   run_b1(&buffers, b1_samples, b1_metrics);
+  run_b2_r(&buffers, b2_r_samples, b2_r_metrics);
   int b3_result = run_b3(&buffers, b3_samples, b3_metrics);
 
   for (uint32_t repeat = 0; repeat < ONLINE_MERGE_CASE_REPEATS; repeat++) {
     print_result("B1", (int)repeat, &buffers, &b1_samples[repeat],
                  &b1_metrics[repeat], 0);
+    print_result("B2-R", (int)repeat, &buffers, &b2_r_samples[repeat],
+                 &b2_r_metrics[repeat], 0);
   }
   if (b3_result == 0) {
     for (uint32_t repeat = 0; repeat < ONLINE_MERGE_CASE_REPEATS; repeat++) {
@@ -607,10 +640,11 @@ int main(void) {
   }
 
   print_first_failure("B1", &buffers, b1_metrics);
+  print_first_failure("B2-R", &buffers, b2_r_metrics);
   print_first_failure("B3", &buffers, b3_metrics);
 
-  int result = metrics_pass(b1_metrics) && b3_result == 0 &&
-               metrics_pass(b3_metrics);
+  int result = metrics_pass(b1_metrics) && metrics_pass(b2_r_metrics) &&
+               b3_result == 0 && metrics_pass(b3_metrics);
   PRINTF("online-softmax-merge %s\n", result ? "PASS" : "FAILURE");
   snrt_cluster_hw_barrier();
   return result ? 0 : -1;

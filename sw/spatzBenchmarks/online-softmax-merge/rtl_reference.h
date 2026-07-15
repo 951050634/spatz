@@ -11,3 +11,9 @@ void online_merge_rtl_reference(
     const float *m_tile, const float *l_tile, const float *o_tile,
     float *m_out, float *l_out, float *o_out, uint32_t n, uint32_t d,
     uint32_t stride_bytes);
+
+void online_merge_b2_r(
+    const float *m_old, const float *l_old, const float *o_old,
+    const float *m_tile, const float *l_tile, const float *o_tile,
+    float *m_out, float *l_out, float *o_out, uint32_t n, uint32_t d,
+    uint32_t stride_bytes);

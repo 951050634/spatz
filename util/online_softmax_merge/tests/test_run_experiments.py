@@ -92,7 +92,8 @@ class RunExperimentsTest(unittest.TestCase):
         case = runner.Case(8, 32, 9, "main", 5)
         records = runner.synthetic_records(case, "timeout")
         self.assertEqual(
-            [record["implementation"] for record in records], ["B1", "B3"]
+            [record["implementation"] for record in records],
+            list(runner.EXPECTED_IMPLEMENTATIONS),
         )
         self.assertTrue(
             all(record["status"] == "timeout" for record in records)
@@ -173,7 +174,10 @@ class RunExperimentsTest(unittest.TestCase):
             records, case, {}, command, []
         )
         self.assertEqual(errors, [])
-        self.assertEqual(len(normalized), 6)
+        self.assertEqual(
+            len(normalized),
+            len(runner.EXPECTED_IMPLEMENTATIONS) * case.repeats,
+        )
         self.assertTrue(all(row["status"] == "timeout" for row in normalized))
         self.assertTrue(
             all(row["target_status"] == "pass" for row in normalized)
@@ -206,7 +210,50 @@ class RunExperimentsTest(unittest.TestCase):
             all(row["status"] == "tool_error" for row in normalized)
         )
         self.assertEqual(
-            {row["implementation"] for row in normalized}, {"B1", "B3"}
+            {row["implementation"] for row in normalized},
+            set(runner.EXPECTED_IMPLEMENTATIONS),
+        )
+
+    def test_rvv_disassembly_gate_accepts_required_vla_sequence(self) -> None:
+        disassembly = """\
+80001000 <online_merge_rvv_update>:
+80001000: vsetvli a4, a3, e32, m8, ta, ma
+80001004: vle32.v v8, (a0)
+80001008: vle32.v v16, (a1)
+8000100c: vfmul.vf v8, v8, fa0
+80001010: vfmacc.vf v8, fa1, v16
+80001014: vse32.v v8, (a2)
+80001018: bnez a3, 0x80001000 <online_merge_rvv_update>
+8000101c <next_symbol>:
+8000101c: ret
+"""
+        snippet, missing = runner.inspect_rvv_disassembly(disassembly)
+        self.assertEqual(missing, [])
+        self.assertIsNotNone(snippet)
+        assert snippet is not None
+        self.assertIn("vsetvli", snippet)
+        self.assertNotIn("next_symbol", snippet)
+
+    def test_rvv_disassembly_gate_rejects_unknown_or_missing_sequence(
+        self,
+    ) -> None:
+        disassembly = """\
+80001000 <online_merge_rvv_update>:
+80001000: vsetvli a4, a3, e32, m8, ta, ma
+80001004: <unknown>
+"""
+        snippet, missing = runner.inspect_rvv_disassembly(disassembly)
+        self.assertIsNotNone(snippet)
+        self.assertIn("vle32.v", missing)
+        self.assertIn("decoded RVV instructions", missing)
+
+        snippet, missing = runner.inspect_rvv_disassembly(
+            "80001000 <different_symbol>:\n80001000: ret\n"
+        )
+        self.assertIsNone(snippet)
+        self.assertEqual(
+            missing,
+            [f"missing symbol {runner.RVV_UPDATE_SYMBOL}"],
         )
 
     def test_missing_simulator_version_detection_does_not_hash(self) -> None:

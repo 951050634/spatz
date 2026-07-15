@@ -2,8 +2,10 @@
 
 This runner implements the common measurement and preservation protocol from
 `docs/online-softmax-merge-engine/需要补充的若干实验内容.md`.
-It currently drives the compact-buffer B1/B3 benchmark.  Later experiment
-stages extend the same record and artifact conventions.
+It currently drives the compact-buffer B1/B2-R/B3 benchmark.  B2-R reuses the
+RTL-aligned scalar weight calculation and performs the `O[D]` update with a
+VLA RVV kernel.  Later experiment stages extend the same record and artifact
+conventions.
 
 ## Prerequisites
 
@@ -14,11 +16,11 @@ cluster configuration is:
 hw/system/spatz_cluster/cfg/spatz_cluster.default.dram.hjson
 ```
 
-The target benchmark reserves 4 KiB of stack per core by defining
-`snrt_stack_size = 12`.  Its measured-result arrays make the main frame larger
-than the runtime's 1 KiB default; the larger stack keeps the two cores' frames
-disjoint.  The compact data allocation remains independently limited to 70%
-of the 128 KiB TCDM.
+The target benchmark reserves 8 KiB of stack per core by defining
+`snrt_stack_size = 13`.  Its three implementations' measured-result arrays
+make the main frame larger than the runtime's 1 KiB default; the larger stack
+keeps the two cores' frames disjoint.  The compact data allocation remains
+independently limited to 70% of the 128 KiB TCDM.
 
 ## Run one case
 
@@ -68,6 +70,12 @@ provides an explicit timeout.
 Use `--no-configure` or `--no-build` only when the existing build is known to
 match the requested case.  Before execution, the runner copies the exact ELF
 into the case result directory.
+
+Every runnable case also passes an LLVM `objdump` gate before simulation.  The
+saved `online_merge_rvv_update` disassembly must contain `vsetvli`, two vector
+loads, FP32 vector multiply/FMA, and a vector store.  A missing symbol,
+undecoded instruction, or missing required mnemonic is retained as
+`tool_error`; B2-R results are never accepted without this target-code proof.
 
 ## Capacity and status semantics
 
@@ -135,3 +143,13 @@ install/llvm/bin/llvm-objdump -d --no-show-raw-insn \
 ```
 
 No output from the final command is the expected result.
+
+The runner performs the RVV instruction check automatically.  It can also be
+inspected directly:
+
+```bash
+elf=hw/system/spatz_cluster/sw/build/spatzBenchmarks/\
+test-spatzBenchmarks-online-softmax-merge
+install/llvm/bin/llvm-objdump -d --no-show-raw-insn --mattr=+v "$elf" \
+  | awk '/<online_merge_rvv_update>:/,/^[0-9a-fA-F]+ <.*>:$/'
+```

@@ -4,6 +4,8 @@
 
 #include "rtl_reference.h"
 
+#include "rvv_update.h"
+
 #include <stdint.h>
 
 static const uint32_t exp_lut_q1_23[257] = {
@@ -198,6 +200,40 @@ static int64_t sq16_32_mul_weight(int64_t value, uint64_t weight) {
   return (value < 0) ? -(int64_t)scaled : (int64_t)scaled;
 }
 
+typedef struct {
+  float m_new;
+  float l_new;
+  uint64_t old_weight;
+  uint64_t tile_weight;
+} online_merge_rtl_row_weights_t;
+
+static inline online_merge_rtl_row_weights_t online_merge_rtl_row_weights(
+    float m_old, float l_old, float m_tile, float l_tile) {
+  online_merge_rtl_row_weights_t weights;
+  weights.m_new = m_old > m_tile ? m_old : m_tile;
+  int64_t old_exp_arg =
+      fp32_to_sq16_32(m_old) - fp32_to_sq16_32(weights.m_new);
+  int64_t tile_exp_arg =
+      fp32_to_sq16_32(m_tile) - fp32_to_sq16_32(weights.m_new);
+  uint32_t old_exp = merge_exp_q1_23(sq16_32_to_fp32(old_exp_arg));
+  uint32_t tile_exp = merge_exp_q1_23(sq16_32_to_fp32(tile_exp_arg));
+  uint64_t old_l = fp32_abs_to_uq16_32_bits(float_bits(l_old));
+  uint64_t tile_l = fp32_abs_to_uq16_32_bits(float_bits(l_tile));
+  uint64_t old_scaled_l = q1_23_mul_uq16_32(old_l, old_exp);
+  uint64_t tile_scaled_l = q1_23_mul_uq16_32(tile_l, tile_exp);
+  uint64_t l_new_fixed =
+      (old_scaled_l + tile_scaled_l) & 0x0000ffffffffffffull;
+  weights.l_new = bits_float(uq16_32_to_fp32_bits(l_new_fixed));
+  int32_t recip_scale_exp;
+  uint32_t recip_l =
+      merge_recip_q1_23(weights.l_new, &recip_scale_exp);
+  weights.old_weight = q1_23_scaled_mul_uq16_32(
+      old_scaled_l, recip_l, recip_scale_exp);
+  weights.tile_weight = q1_23_scaled_mul_uq16_32(
+      tile_scaled_l, recip_l, recip_scale_exp);
+  return weights;
+}
+
 void online_merge_rtl_reference(
     const float *m_old, const float *l_old, const float *o_old,
     const float *m_tile, const float *l_tile, const float *o_tile,
@@ -209,35 +245,42 @@ void online_merge_rtl_reference(
     const float *tile_row =
         (const float *)((const uint8_t *)o_tile + i * stride_bytes);
     float *out_row = (float *)((uint8_t *)o_out + i * stride_bytes);
-    float m_new = m_old[i] > m_tile[i] ? m_old[i] : m_tile[i];
-    int64_t old_exp_arg =
-        fp32_to_sq16_32(m_old[i]) - fp32_to_sq16_32(m_new);
-    int64_t tile_exp_arg =
-        fp32_to_sq16_32(m_tile[i]) - fp32_to_sq16_32(m_new);
-    uint32_t old_exp = merge_exp_q1_23(sq16_32_to_fp32(old_exp_arg));
-    uint32_t tile_exp = merge_exp_q1_23(sq16_32_to_fp32(tile_exp_arg));
-    uint64_t old_l = fp32_abs_to_uq16_32_bits(float_bits(l_old[i]));
-    uint64_t tile_l = fp32_abs_to_uq16_32_bits(float_bits(l_tile[i]));
-    uint64_t old_scaled_l = q1_23_mul_uq16_32(old_l, old_exp);
-    uint64_t tile_scaled_l = q1_23_mul_uq16_32(tile_l, tile_exp);
-    uint64_t l_new_fixed =
-        (old_scaled_l + tile_scaled_l) & 0x0000ffffffffffffull;
-    float l_new = bits_float(uq16_32_to_fp32_bits(l_new_fixed));
-    int32_t recip_scale_exp;
-    uint32_t recip_l = merge_recip_q1_23(l_new, &recip_scale_exp);
-    uint64_t old_weight = q1_23_scaled_mul_uq16_32(
-        old_scaled_l, recip_l, recip_scale_exp);
-    uint64_t tile_weight = q1_23_scaled_mul_uq16_32(
-        tile_scaled_l, recip_l, recip_scale_exp);
+    online_merge_rtl_row_weights_t weights = online_merge_rtl_row_weights(
+        m_old[i], l_old[i], m_tile[i], l_tile[i]);
 
-    m_out[i] = m_new;
-    l_out[i] = l_new;
+    m_out[i] = weights.m_new;
+    l_out[i] = weights.l_new;
     for (uint32_t j = 0; j < d; j++) {
-      int64_t old_term =
-          sq16_32_mul_weight(fp32_to_sq16_32(old_row[j]), old_weight);
-      int64_t tile_term =
-          sq16_32_mul_weight(fp32_to_sq16_32(tile_row[j]), tile_weight);
+      int64_t old_term = sq16_32_mul_weight(
+          fp32_to_sq16_32(old_row[j]), weights.old_weight);
+      int64_t tile_term = sq16_32_mul_weight(
+          fp32_to_sq16_32(tile_row[j]), weights.tile_weight);
       out_row[j] = sq16_32_to_fp32(old_term + tile_term);
     }
+  }
+}
+
+void online_merge_b2_r(
+    const float *m_old, const float *l_old, const float *o_old,
+    const float *m_tile, const float *l_tile, const float *o_tile,
+    float *m_out, float *l_out, float *o_out, uint32_t n, uint32_t d,
+    uint32_t stride_bytes) {
+  for (uint32_t i = 0; i < n; i++) {
+    const float *old_row =
+        (const float *)((const uint8_t *)o_old + i * stride_bytes);
+    const float *tile_row =
+        (const float *)((const uint8_t *)o_tile + i * stride_bytes);
+    float *out_row = (float *)((uint8_t *)o_out + i * stride_bytes);
+    online_merge_rtl_row_weights_t weights = online_merge_rtl_row_weights(
+        m_old[i], l_old[i], m_tile[i], l_tile[i]);
+    float old_weight =
+        bits_float(uq16_32_to_fp32_bits(weights.old_weight));
+    float tile_weight =
+        bits_float(uq16_32_to_fp32_bits(weights.tile_weight));
+
+    m_out[i] = weights.m_new;
+    l_out[i] = weights.l_new;
+    online_merge_rvv_update(old_row, tile_row, out_row, d, old_weight,
+                            tile_weight);
   }
 }
