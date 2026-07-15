@@ -318,3 +318,55 @@ small manifests only.
   B2-R output-completion/correctness failure must be diagnosed and fixed before
   remaining tails or performance matrices.  These failed B2-R cycle values
   are diagnostic only and must not be used as performance evidence.
+
+### Stage 3b checkpoint: unsuccessful RVV completion diagnostics
+
+- Objective: determine whether the `D=15` B2-R failure was caused by scalar
+  return before completion or by the selected vector register groups.  These
+  were dirty, single-case diagnostics from commit
+  `7b3180242206d5dcfd6cc085ef11c9afaad1ba7a`; they are retained as failures,
+  not formal timing evidence.
+- Fixed input/provenance: `(N,D,seed,kind,repeats)=(1,15,1,main,3)`, CFG hash
+  `120fa0c30199e54e6e9b5c60d8da40913eae8526640992cc5d4f130bef159775`;
+  CMake 3.28.3, target clang/LLVM 14.0.6, Python 3.12.3, Verilator 5.034, and
+  simulator SHA256
+  `25a56d98474895d16d7de81f73d9cf8a06ba8eb650af5f9b58a012d15022e69a`.
+- CSR dependency diagnostic: added a post-loop `csrr vl` followed by a scalar
+  dependency.  Evidence is
+  `/home/wxt/work-online-merge-stage3-tail-fence-diagnostic-20260715-041550`,
+  UTC `2026-07-15T04:15:50+00:00` to `04:21:01+00:00`;
+  `run_manifest.json` SHA256
+  `90df178a4354eab76850ee3b0e4ff056ee8839ba0befdae89fc2047dca8714a4`
+  and `artifact_manifest.json` SHA256
+  `d35b894654bca6b4db2baec51f7aa82c81c04e4169efd4d44fd1e777f945e9b8`.
+- Register-group diagnostic: changed the LMUL=8 groups from `v8/v16` to the
+  known faxpy-style `v0/v8` groups while retaining the CSR dependency.
+  Evidence is
+  `/home/wxt/work-online-merge-stage3-tail-reggroup-diagnostic-20260715-042755`,
+  UTC `2026-07-15T04:27:55+00:00` to `04:33:07+00:00`;
+  `run_manifest.json` SHA256
+  `e4d05c23190edd299633cdacb5929d69859ab570bb9ba01070da67cc8a597611`
+  and `artifact_manifest.json` SHA256
+  `aa77d3d57a2caa05abdc232906286f10a8ad0c3911107f288ab927742332f378`.
+- Ordered-readback diagnostic: restored `v8/v16`, then loaded the final output
+  word through the vector LSU and consumed it with `vmv.x.s` before return.
+  Evidence is
+  `/home/wxt/work-online-merge-stage3-tail-readback-diagnostic-20260715-043431`,
+  UTC `2026-07-15T04:34:31+00:00` to `04:39:45+00:00`;
+  `run_manifest.json` SHA256
+  `adfb11902a743149cc8b8a1eb807df926f6696312aa15f2e2bd6b9359e8d29aa`
+  and `artifact_manifest.json` SHA256
+  `917b29f265cd2a94d36baadbdf99d3007befc2dde6ee9348f1bf16d3de18639f`.
+- Preserved result: every diagnostic retained nine records.  B1 and B3 passed;
+  B2-R failed all three repeats, each with first failure `O[0][9]`, expected
+  bits `1060333124`, actual bits `1065266780`.  Each runner exited 1 and kept
+  the simulator return 255 as `tool_error` alongside `correctness_fail` target
+  records.  The three identical `failures.json` files have SHA256
+  `087e8b4948f6d413a911b494a875450dfef461f7f0ab606562b32fa505df5b2f`.
+- Validation: all 11 entries in each artifact manifest were independently
+  rehashed successfully.  The three experimental source variants were
+  removed after being disproved; no stronger disassembly gate was added.
+- Decision: neither CSR consumption, register selection, nor a final-word LSU
+  readback fixes the failure.  The next bounded diagnostic reduces LMUL/chunk
+  length because short `D=7` vectors passed while the recurring bad upper
+  lanes resemble earlier source elements.
