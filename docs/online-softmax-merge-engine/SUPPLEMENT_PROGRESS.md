@@ -27,7 +27,7 @@ small manifests only.
 | 0 | Isolate worktree and import governing specification | setup | complete | this checkpoint |
 | 1 | Benchmark/result framework | P0 | complete | pre-commit smoke below |
 | 2 | Fair B1/B2-R/B3 baselines and RVV disassembly gate | P0 | complete | Stage 2b clean anchors |
-| 3 | Anchors, RVV tails, mandatory size matrices | P0 | in_progress | fixed-D closed; fresh-build smoke next |
+| 3 | Anchors, RVV tails, mandatory size matrices | P0 | in_progress | fixed-D and fresh-build smoke closed; N=8 D sweep next |
 | 4 | Break-even table and fitted scale model | P0 | pending | pending |
 | 5 | Full-SMU FSM cycle breakdown and A0/A2 | P0 | pending | pending |
 | 6 | C0/C1/C2/C3 concurrency and 16 bank phases | P0 | pending | pending |
@@ -925,3 +925,84 @@ small manifests only.
   worktree, then run a clean committed fresh-build smoke with a realistic
   timeout.  Only that later run may establish formal passing evidence before
   the fixed-`N=8` dimension matrix.
+
+### Stage 3l checkpoint: clean committed fresh-build smoke
+
+- Objective: establish formal passing evidence that a unique external build can
+  be configured from the 14 recorded definitions without inherited cache
+  state, before starting the dimension and break-even matrices.
+- The Stage 3k implementation was committed as
+  `ef859f48fa5f4474895b6993f37d77b6adb86bd0` and synchronized successfully.
+  The sync record is
+  `/home/wxt/work-online-merge-stage3k-sync-20260715T101207Z/sync.json`,
+  SHA256
+  `4716519239b9a41e643f24d12127328b598e7cd2c770b02e71aca7c4cd09a0e6`.
+- Formal run evidence is retained under
+  `/home/wxt/work-online-merge-cmake-define-clean-smoke-20260715T101634Z`;
+  its unique build directory is
+  `/home/wxt/work-online-merge-build-cmake-define-clean-smoke-20260715T101634Z`.
+  Provenance is commit `ef859f48fa5f4474895b6993f37d77b6adb86bd0`,
+  `git_dirty=false`, CFG SHA256
+  `120fa0c30199e54e6e9b5c60d8da40913eae8526640992cc5d4f130bef159775`,
+  and simulator SHA256
+  `25a56d98474895d16d7de81f73d9cf8a06ba8eb650af5f9b58a012d15022e69a`.
+  The command window was
+  `2026-07-15T10:16:34+00:00..2026-07-15T10:21:32+00:00` with an
+  1,800-second simulator timeout.
+- Fresh configure, target build, RVV objdump gate, and simulator all returned
+  zero.  The exact 14 definitions occur after the five case definitions in the
+  configure argv, their ordered manifest entries match, and all 19 values were
+  independently recovered from the fresh `CMakeCache.txt`.  Runner return code
+  is zero, `failures.json` is empty, and all nine B1/B2-R/B3 records pass.
+- Cycle min/median/max values are B1 `2254/2530/2573`, B2-R
+  `1909/1966/2084`, and B3 `1115/1124/1140`.  The largest absolute and relative
+  error are both `0.0000012516975402832031`; largest RMSE is
+  `0.0000007226679118264997`.  Every output is finite.  This is a plumbing
+  anchor, not a replacement for the mandatory matrix points.
+- Independent validation reconstructed all cycles and correctness metrics from
+  the nine raw `OM_RESULT` markers, compared CSV and JSON semantically,
+  reproduced all three summary rows, reran the RVV objdump gate on the exact
+  ELF, rechecked the fresh cache and command order, and rehashed all 11
+  artifact-manifest entries with their provenance fields.  The final report is
+  `/home/wxt/work-online-merge-cmake-define-clean-final-validation-20260715T102657Z/validation.json`,
+  SHA256
+  `2d521c7818c194e182e064744612411f25ea5467078d8ce5d6b29150b5f32af5`;
+  validator SHA256 is
+  `199f4ab3a6e118749213786754cf9ff862af5bb05c9e05ffe1be8d418a4786b8`,
+  and the independent objdump log SHA256 is
+  `85f44ac5e501528de22aaacebf6450f49b51f9850bdaa2d4b9d7b12d44e35b93`.
+- A failed validator-only attempt is deliberately retained at
+  `/home/wxt/work-online-merge-cmake-define-clean-validation-20260715T102548Z`.
+  All substantive checks passed, but it compared the stored function snippet
+  against a rerun snippet containing one extra trailing blank line.  It did not
+  alter run artifacts.  Its report SHA256 is
+  `9dcf6e13d1df1ddd6a59a8e21b57006f92ac61bf49a723e630fd343beb3452a4`
+  and validator SHA256 is
+  `49396cae3f06fd2817cdd130e7a7d10e07011e7f46a368fc13f49e5c46ab9751`.
+- Formal top-level SHA256 values are:
+  - `run_manifest.json`:
+    `f9cf3dbd928575ada341c7cefdd899360f8d05f655238480c6ad65953c709145`;
+  - `records.json`:
+    `65c54ff1b7133f2767d4742db6c544c0f68f135e629710abd16f655baa261273`;
+  - `records.csv`:
+    `093cb2768008ebaf68e83b890418c9e6a64e1286c7de6390590a3f4cebf3a663`;
+  - `summary.json`:
+    `7225b0909ad71c533e7115ceb8e006ae18fe866a72e6fc6d7d95c77e3d43f46d`;
+  - `commands.json`:
+    `aaa2a3975ae0ffa45ec665c2a54bf4b780f7bde98866ebe3f08d2e5436d56fcd`;
+  - `failures.json`:
+    `37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570`;
+  - `artifact_manifest.json`:
+    `7c70c7f59fa9b0d143348d9934d0e1f5e776b4814d8c7a6aa4fb96269100cc8b`;
+  - external runner log:
+    `79d363ee581f0e4688d42e24ef44f48eada034e911ec2ce2e23b833690c21153`;
+  - external runner return-code file:
+    `9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa`.
+- Tool identities include CMake `3.28.3`, target Clang/objdump `14.0.6`,
+  Verilator `5.034`, and Python `3.12.3`.  The checkpoint-level revalidation
+  log, including all 26 unit tests and referenced-hash checks, is
+  `/home/wxt/work-online-merge-stage3l-checkpoint-validation-20260715T102849Z/validation.log`,
+  SHA256
+  `7d01dc955a1c40af3ced09158398ff4e611d3f3f7574138f2acaa015afb6e9d8`.
+  The next executable P0 item is the fixed-`N=8`,
+  `D={1,8,16,32,64,128}` dimension matrix, followed by the break-even matrix.
