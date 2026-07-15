@@ -27,7 +27,7 @@ small manifests only.
 | 0 | Isolate worktree and import governing specification | setup | complete | this checkpoint |
 | 1 | Benchmark/result framework | P0 | complete | pre-commit smoke below |
 | 2 | Fair B1/B2-R/B3 baselines and RVV disassembly gate | P0 | complete | Stage 2b clean anchors |
-| 3 | Anchors, RVV tails, mandatory size matrices | P0 | in_progress | clean tails complete; matrices pending |
+| 3 | Anchors, RVV tails, mandatory size matrices | P0 | in_progress | clean tails complete; fixed-D long run active |
 | 4 | Break-even table and fitted scale model | P0 | pending | pending |
 | 5 | Full-SMU FSM cycle breakdown and A0/A2 | P0 | pending | pending |
 | 6 | C0/C1/C2/C3 concurrency and 16 bank phases | P0 | pending | pending |
@@ -483,3 +483,34 @@ small manifests only.
   `2026-07-15T14:24:11+08:00` failed with `gnutls_handshake() failed: The TLS connection was
   non-properly terminated`.  Local checkpoint `b769d23dc325f71018527a9420042afa905058be` is retained; no
   reset, merge, or force-push was used, and a periodic retry is required.
+
+
+### Stage 3e checkpoint: controlled fixed-D long-run checkpoint
+
+- Objective: satisfy the bounded checkpoint protocol without changing any
+  benchmark, RTL, runner, CFG, or build input while the inherited six-case
+  fixed-`D=64` clean run remains active.
+- External run:
+  `/home/wxt/work-online-merge-stage3-matrix-d64-clean-20260715-062750`,
+  started at `2026-07-15T06:27:50+00:00` from commit
+  `28b5eaec194e2dda302a36c0a03e4e7a1f34129b`, with
+  `git_dirty=false`.  The requested cases are
+  `N={1,2,4,8,16,32}`, seed 1, `main`, and three measured repeats of
+  B1/B2-R/B3.
+- At `2026-07-15T07:12:03+00:00`, the runner and active `N=8` simulator were
+  deliberately paused with `SIGSTOP`.  The completed `N={1,2,4}` subset has
+  27/27 passing records, no failures, and 12/12 zero-return commands.  The
+  active `N=8` case is explicitly unclaimed until it completes; no partial
+  trace or cycle value is treated as a result.
+- Completed-subset validation independently reconstructed all target
+  `cycles_hi/lo` values, checked finite derived metrics, confirmed exact
+  three-case coverage, and rehashed all 29 indexed artifacts.  Its external
+  report SHA256 is
+  `6f328063e4bd53fca722228b2fecd7645d92c4866ee3899e7891390b6148cecd`.
+  The pause/provenance record SHA256 is
+  `ee6d8de7d04af7b80ef90fd83feb681eaa1620107e5edd270c8dde360abbb783`.
+- Resume gate: the worktree must be clean after this documentation-only
+  checkpoint and Git synchronization, and the benchmark/RTL/runner/CFG trees
+  must have no source-relevant diff from the recorded run commit.  The run
+  remains in progress and all later statuses, including failures or timeouts,
+  must be preserved.
