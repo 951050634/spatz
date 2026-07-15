@@ -29,7 +29,7 @@ small manifests only.
 | 2 | Fair B1/B2-R/B3 baselines and RVV disassembly gate | P0 | complete | Stage 2b clean anchors |
 | 3 | Anchors, RVV tails, mandatory size matrices | P0 | complete | Stage 3n closes both mandatory fixed matrices |
 | 4 | Break-even table and fitted scale model | P0 | complete | Stage 4e formal fit and direct 16-point table |
-| 5 | Full-SMU FSM cycle breakdown and A0/A2 | P0 | in_progress | Stage 5a observer/analyzer ready; formal run pending |
+| 5 | Full-SMU FSM cycle breakdown and A0/A2 | P0 | complete | Stage 5b exact three-point formal closure |
 | 6 | C0/C1/C2/C3 concurrency and 16 bank phases | P0 | pending | pending |
 | 7 | Yosys Slang generic-resource proxy | P0 | pending | pending |
 | 8 | Representative RTL VCD toggle proxy | P0 | pending | pending |
@@ -1964,3 +1964,95 @@ small manifests only.
   simulator, run one warm-up plus at least three measured repeats at all three
   required coordinates, observe exactly four valid `OM_FSM` records per log,
   and independently reproduce every analyzer value and output hash.
+
+### Stage 5b checkpoint: exact three-point FSM/A0-A2 closure
+
+- Formal measurements and analysis use the clean detached source at exact
+  commit `9d812be187fcf07359e80537031850c313ad5954`.  The linked simulator is
+  `/home/wxt/work-online-merge-stage5b-vlt-exact-20260715T175424Z/source/`
+  `hw/system/spatz_cluster/bin/spatz_cluster.vlt`, SHA256
+  `73b9138e49f7d8b095250a0867d03063b9afb494bbf7e9ca300faf70a70e4cc8`.
+  It was built during `2026-07-15T17:54:47Z..2026-07-15T17:57:05Z`
+  with Bender 0.29.1, Verilator 5.034, CFG SHA256
+  `120fa0c30199e54e6e9b5c60d8da40913eae8526640992cc5d4f130bef159775`,
+  and the Stage 5a observer source SHA256 recorded above.
+- Two pre-measurement `tool_error` attempts are retained rather than hidden.
+  Lowercase case keys failed runner preflight before simulation; its index is
+  `/home/wxt/work-online-merge-stage5b-formal-20260715T175943Z/evidence/`
+  `preflight-tool-error-index-20260715T180803Z.json`, SHA256
+  `d4b0f1edb71a606cbb77aacba9ae926ce389ab44445136b9cda427fceae937bd`.
+  A malformed shell retry wrapper never invoked the runner; its record is
+  `parallel-shell-tool-error-r1-20260715T180803Z.json`, SHA256
+  `a300de17a22432421f6892f1d0d17c2ae7353a84ec1f6020ab20a5e6527a062b`.
+  Neither attempt produced or influenced measurements.
+- The corrected formal run spans
+  `2026-07-15T18:10:03Z..2026-07-15T18:32:51Z` and has three clean roots:
+  `/home/wxt/work-online-merge-stage5b-fsm-r2-20260715T180948Z-n1d1`,
+  `...-n8d32`, and `...-n16d64`.  Their `run_manifest.json` SHA256 values are,
+  respectively,
+  `118b71aaf7c923715a97be8560a3f1023bfde693f00209e5cfa10d415ce6f019`,
+  `fd97dc84c1036410513123d8b19d13e71c7651de42ca3b52c9596fd60bc0c6a4`,
+  and `feb7e1024661fced81fabe42ff708fc8f76d2d390421d37fd7b0549088f8e911`.
+  Every root has nine passing B1/B2-R/B3 records, no failure entry, and exactly
+  four parseable `OM_FSM` records: one warm-up and three measured invocations.
+- The medians below are exact measured Verilator cycles.  `Other` is the
+  non-overlapping `A2 end-to-end - busy` remainder.  Scalar/vector percentages
+  divide by busy cycles; `Other %` divides by A2 end-to-end cycles.  TCDM cells
+  show `accessed/congested` and the exact ratio follows in parentheses.
+
+  | `(N,D)` | A0 | A2 | A0/A2 | Scalar | Vector | Busy | Other |
+  | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+  | `(1,1)` | 1966 | 1124 | 1.749110 | 20 | 9 | 29 | 1095 |
+  | `(8,32)` | 13547 | 3263 | 4.151701 | 160 | 2063 | 2223 | 1040 |
+  | `(16,64)` | 27532 | 9556 | 2.881122 | 320 | 8214 | 8534 | 1022 |
+
+  | `(N,D)` | Scalar % | Vector % | Other % | A0 TCDM | A2 TCDM |
+  | --- | ---: | ---: | ---: | ---: | ---: |
+  | `(1,1)` | 68.9655 | 31.0345 | 97.4199 | `129/0` (0) | `321/0` (0) |
+  | `(8,32)` | 7.1975 | 92.8025 | 31.8725 | `825/0` (0) | `1524/11` (0.007218) |
+  | `(16,64)` | 3.7497 | 96.2503 | 10.6949 | `2337/0` (0) | `5036/38` (0.007546) |
+
+  The scalar state medians `(load, compute-scalar, compute-weight, store)` are
+  `(13,1,1,5)`, `(104,8,8,40)`, and `(208,16,16,80)`, respectively.  All A0
+  and A2 correctness checks pass.  Maximum A2 absolute/relative errors are
+  `1.25170e-6/1.25170e-6`, `6.03199e-4/1.47368e-4`, and
+  `2.59399e-4/1.61854e-4` in coordinate order.
+- Final deterministic analysis is at
+  `/home/wxt/work-online-merge-stage5b-fsm-analysis-20260715T183542Z`.
+  All 16 analyzer acceptance gates pass.  Output SHA256 values are:
+  `analysis.json`
+  `e964a64d8afd06df09d3859bc333726687bf5c0facee164da24b5e77111bae76`,
+  `fsm_observations.csv`
+  `7222a66a2874bb81d1ef4cd48aea9d4adf6c4889784f5e942b580896493076ad`,
+  `fsm_breakdown.csv`
+  `f4dd2ecebf81db5e2127029b647553c90f560fa08bf27dd38489adcd83dff1ac`,
+  `ablation_a0_a2.csv`
+  `ca8043fa7f835f6098de58751cc080524be14d8f1b2ce06ff43572461ccc8b6e`,
+  and `artifact_manifest.json`
+  `e10fc57340a950faf4dc195db36def4fe1f926957c1a231c16bc4160a2ca1027`.
+  A fresh rerun at
+  `/home/wxt/work-online-merge-stage5b-fsm-analysis-rerun-20260715T183542Z`
+  produced byte-identical copies of all five files; the `cmp` evidence SHA256
+  is `29c2fb60432f2e1d91c38678b454793bcac50506bcd3571a815ded351a6eab1b`.
+- The independent verifier does not import the repository analyzer.  Its
+  source SHA256 is
+  `7600455578734fb1c28278d3ba60be419d1908b1d3ab10e812909f8798f4a847`.
+  It independently parsed all observer lines, reconstructed state sums,
+  medians, shares, speedups, congestion and correctness, checked every input
+  and artifact-manifest hash, and matched every analyzer value.  All ten
+  independent gates pass in
+  `/home/wxt/work-online-merge-stage5b-independent-final-20260715T183604Z.json`,
+  SHA256
+  `066a199ee81bab1e6b075880fd65782451ab804d214cac13af53a527dadf9841`.
+- Checkpoint validation at
+  `/home/wxt/work-online-merge-stage5b-checkpoint-validation-20260715T183912Z`
+  reran all 46 unit tests, analyzer `py_compile`, `git diff --check`, and status;
+  all passed.  `result.json` SHA256 is
+  `52f750733ae6096e7adfb2bcf3ecaf6364ba9c53e34f5e6431e1a025d17ee8b7`;
+  validation-log SHA256 is
+  `d8e8ead6ba85fa638180239a0bd13a432ca641f5d722a87c8f65edd56b1cd36f`.
+- Completion polling overlaps SMU busy execution and is not added to state
+  cycles.  These are functional-simulation cycle/counter results only; they
+  are not physical area, timing, power, energy, or critical-path evidence.
+  Stage 5 is complete; the next P0 stage is C0-C3 concurrency and all 16
+  relative `addr[6:3]` bank phases.
