@@ -28,7 +28,7 @@ small manifests only.
 | 1 | Benchmark/result framework | P0 | complete | pre-commit smoke below |
 | 2 | Fair B1/B2-R/B3 baselines and RVV disassembly gate | P0 | complete | Stage 2b clean anchors |
 | 3 | Anchors, RVV tails, mandatory size matrices | P0 | complete | Stage 3n closes both mandatory fixed matrices |
-| 4 | Break-even table and fitted scale model | P0 | pending | pending |
+| 4 | Break-even table and fitted scale model | P0 | in_progress | Stage 4a N=1 batch |
 | 5 | Full-SMU FSM cycle breakdown and A0/A2 | P0 | pending | pending |
 | 6 | C0/C1/C2/C3 concurrency and 16 bank phases | P0 | pending | pending |
 | 7 | Yosys Slang generic-resource proxy | P0 | pending | pending |
@@ -1209,3 +1209,132 @@ small manifests only.
 - Both mandatory fixed matrices are now complete.  The next P0 stage is the
   remaining break-even cases `N={1,2,4}`, `D={1,8,16,32}`, followed by the
   measured break-even table and fitted B2-R/B3 scale model.
+
+### Stage 4a checkpoint: clean break-even N=1 batch
+
+- Objective: collect and independently validate the `N=1`,
+  `D={1,8,16,32}` row of the required break-even matrix using a unique
+  external build and the established 14 explicit fresh-cache definitions.
+- A rejected preflight is deliberately retained.  The case file
+  `/home/wxt/work-online-merge-stage4-break-even-n1-clean-20260715T120624Z.cases.json`
+  used lowercase `n`/`d`; its SHA256 is
+  `cad6f86f3f7cfcb6d0c6d80f164c627c7502af859e9cbabcd98d96ea2b0cb407`.
+  The runner rejected entry 0 before creating a result directory with
+  `missing required field(s): N, D`; the log and return-code-file SHA256 values
+  are `91101c8849a4f94ee17ee3a312495a055aeaa8f7fd0abf6aaaa6aad46ad88235`
+  and `4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865`
+  respectively, and the recorded return code is 1.  This failed request is not
+  relabelled as experiment evidence.
+- Formal evidence is retained under
+  `/home/wxt/work-online-merge-stage4-break-even-n1-clean-20260715T120725Z`;
+  its unique build directory is
+  `/home/wxt/work-online-merge-build-stage4-break-even-n1-clean-20260715T120725Z`.
+  The corrected uppercase-key case file has SHA256
+  `a0291fe97ad2f6b9b9afa3ea47a0a9dc2d9ba9c482bcdaf49225e77e4bb22245`.
+  Provenance is commit `0dea6d2a50798e1606104dc31ebcac0b116e0fb9`,
+  `git_dirty=false`, CFG SHA256
+  `120fa0c30199e54e6e9b5c60d8da40913eae8526640992cc5d4f130bef159775`,
+  and simulator SHA256
+  `25a56d98474895d16d7de81f73d9cf8a06ba8eb650af5f9b58a012d15022e69a`.
+  The command window was
+  `2026-07-15T12:07:26+00:00..2026-07-15T12:40:37+00:00`.
+- Inputs are `N=1`, `D={1,8,16,32}`, seed 1, `main`, and three measured
+  repeats after each implementation's unmeasured warm-up.  Every simulator
+  timeout is 1,800 seconds.  All 16 configure/build/objdump/simulator commands
+  returned zero; all 36 B1/B2-R/B3 records pass and are finite;
+  `failures.json` is empty; the runner return code is zero.
+- Measured cycles (min/median/max) are:
+
+  | D | B1 | B2-R | B3 |
+  | ---: | ---: | ---: | ---: |
+  | 1 | 2254/2530/2573 | 1909/1966/2084 | 1115/1124/1140 |
+  | 8 | 4773/4918/4983 | 1918/1968/1976 | 1118/1121/1133 |
+  | 16 | 7444/7467/7587 | 1952/1995/2111 | 1191/1203/1217 |
+  | 32 | 12523/12778/12874 | 1954/1977/2086 | 1377/1388/1391 |
+
+- The largest absolute and relative errors are both
+  `0.0000019073486328125`; the largest RMSE is
+  `0.0000011879880087372511`.  Allocator-rounded working sets are 256, 256,
+  512, and 768 bytes for increasing `D`, or at most `0.005859375` of the
+  128 KiB TCDM.  Every record has `tcdm_congested=0`.  The retained CSV/JSON
+  records also include cycles per element, elements per cycle, TCDM accesses,
+  congestion ratio, and speedup versus B2-R.  These are measured simulator
+  counters and correctness diagnostics, not physical PPA or energy claims.
+- Independent validation reconstructed all 36 records from raw `OM_RESULT`
+  fields, compared CSV and JSON semantically, reproduced all 12 summary rows,
+  checked the exact uppercase case file and normalized manifest, preserved and
+  rehashed the failed lowercase-key preflight, verified all 19 final cache
+  values and 16 command records, reran all four RVV disassembly gates, and
+  rehashed all 38 artifact-manifest entries.  The passing report is
+  `/home/wxt/work-online-merge-stage4-break-even-n1-final-validation-20260715T122556Z/validation.json`,
+  SHA256
+  `9979b6fb0346af5e8f9f0e0fee81b50f818e23d6f5de37ba522b181ba4b50a27`;
+  validator SHA256 is
+  `4f411dd798084ba45399750686854b7d9b1bc3c8e613d2a56fbe2aecaac3c586`,
+  and validator-log SHA256 is
+  `516476eff3c38cbe2772548e04d53a2a103589855fca46bd6fa92e9d41eed512`.
+  Independent RVV rerun-log SHA256 values for `D=1,8,16,32` are respectively
+  `45c116326b3b4cc0046b498f826403d16bc7f1c4bac6d0a9d8d56d0b0f8dabdb`,
+  `2b17ba73f004ac41aadfb17229c44e44c9438357fe289bf2c30735df7acb84b5`,
+  `dee21f0dd7b0ec2e3aac65c55a5f7f76e845768d139e35cf15cc7fb94d583e86`,
+  and `8dcb806fdef923308fb678d157fa1c9587e3760e288254fee6de8e0c25d616ac`.
+- Large hart-0 instruction traces remain outside Git:
+  - `N1_D1_S1_main_R3/logs/trace_hart_00000.dasm`: 144,460,946 bytes,
+    SHA256
+    `f68ab8846ea0427f5b31fc52ccfcb631f12bc294f492558a56835134e97c94a0`;
+  - `N1_D8_S1_main_R3/logs/trace_hart_00000.dasm`: 151,964,955 bytes,
+    SHA256
+    `e63b16a3de7159929f8ff6e6438375dc13cb8dc2595232bf3175526ad54e492e`;
+  - `N1_D16_S1_main_R3/logs/trace_hart_00000.dasm`: 159,639,275 bytes,
+    SHA256
+    `dd456fa4c3755d1d09334fb968dc25cbf30c84008d1f33cd8be22348ea6878ef`;
+  - `N1_D32_S1_main_R3/logs/trace_hart_00000.dasm`: 174,751,522 bytes,
+    SHA256
+    `296f94499648b659873bdcc8b9834f133bd44ec7735ffb9be77981ce4da012bc`.
+  Paths are relative to the formal result root above.  No trace, build product,
+  ELF, or simulator log is committed.
+- Formal top-level SHA256 values are:
+  - `run_manifest.json`:
+    `a327fc8c08e4edd34e667e7df614b64b99cee91733b76becbc040a224b258daa`;
+  - `records.json`:
+    `fe99bb6f83dbf466bd2f248dd8abb0628a472920b8e1728d9f5496b0c6f1afc8`;
+  - `records.csv`:
+    `dfd7c59df599f9fa40677497766436c5e26938ab1e1115f6aa47b9ce6238ab10`;
+  - `summary.json`:
+    `7ee5fa4b4c7f1964016593c97405ef29596426c7da941cc891bf067a6c656d8e`;
+  - `commands.json`:
+    `b14c3d0cb5777d7395035c491ed130b805167fb365f48eb05450cf3a1aab183e`;
+  - `failures.json`:
+    `37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570`;
+  - `artifact_manifest.json`:
+    `68654caf2669a8cf7b3105e5781c4caea55b8e08346546cc1fedb6554ce9223b`;
+  - external runner log:
+    `1f41c89508ef44cf9dd542837a2654872f265059591737f5aab100fa347a2a3d`;
+  - external runner return-code file:
+    `9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa`.
+- A first checkpoint-validator-only attempt is retained at
+  `/home/wxt/work-online-merge-stage4a-checkpoint-validation-20260715T124659Z`.
+  All evidence checks and all 26 unit tests passed, but Python bytecode from
+  the test import created the task-owned untracked directory
+  `sw/spatzBenchmarks/online-softmax-merge/__pycache__/`, so the strict
+  only-progress-file status check failed.  The cache was inspected and
+  removed directly without `git clean`; no result artifact was modified.
+  The failed report, validator, and log SHA256 values are respectively
+  `5f64b5b17a9a0ab5cc31a8da85747b1ec8bbcb106e30b5416259aa3cd1fac4d1`,
+  `3177204fd48dde19523d1c3096baef99818a325aedb882aed0ed06a5e77c9586`,
+  and `9b078cd2c467dc5209e4c7fbc004cfe06684cdd0c496e00a7b68427665938a23`.
+- Final checkpoint validation used `PYTHONDONTWRITEBYTECODE=1`, reran all 26
+  unit tests, `git diff --check`, every fixed-hash evidence check, and the
+  strict single-modified-file status gate.  Its report is
+  `/home/wxt/work-online-merge-stage4a-checkpoint-final-validation-20260715T124809Z/validation.json`,
+  SHA256
+  `3ddc7ac2a1b769ea565d55225767aa28a697525bb3e22e1294404273a27eb9d3`;
+  validator SHA256 is
+  `3177204fd48dde19523d1c3096baef99818a325aedb882aed0ed06a5e77c9586`,
+  and log SHA256 is
+  `911a5921fd2d6ce71330c2a8760b9380beb24012a2b592ac7becfcf8ab572577`.
+- Tool identities remain CMake `3.28.3`, target Clang/objdump `14.0.6`,
+  Verilator `5.034`, and Python `3.12.3`.  Stage 4 remains in progress: the
+  next executable batches are the independent `N=2` and `N=4` rows, followed
+  by the measured break-even table and separately labelled fitted predictions,
+  residuals, and R² for B2-R and B3.
