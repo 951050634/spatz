@@ -514,3 +514,40 @@ small manifests only.
   must have no source-relevant diff from the recorded run commit.  The run
   remains in progress and all later statuses, including failures or timeouts,
   must be preserved.
+
+### Stage 3f checkpoint: preserve fixed-D timeout and active N=16 case
+
+- Objective: preserve the first mandatory-matrix timeout exactly as observed
+  and perform the next bounded Git checkpoint without claiming the active
+  case.
+- The inherited fixed-`D=64` run remains at
+  `/home/wxt/work-online-merge-stage3-matrix-d64-clean-20260715-062750`.
+  Its clean run provenance is unchanged: commit
+  `28b5eaec194e2dda302a36c0a03e4e7a1f34129b`, `git_dirty=false`, seed 1,
+  `main`, and three repeats.
+- The `N=8` simulator reached its 1,800-second host wall-clock timeout at
+  `2026-07-15T07:34:17+00:00`.  This status is retained rather than deleted or
+  relabelled.  The log contains five complete target-pass records: all three
+  B1 repeats and B2-R repeats 0 and 1.  The runner correctly marks those five
+  final statuses as `timeout`, adds one synthetic B3 timeout record, and keeps
+  the two validation failures `incomplete_repeat_set` and
+  `missing_implementation`.  The earlier controlled pause counted against the
+  wall-clock timeout, so this case must be rerun in a separate clean batch
+  with a larger timeout before it can provide complete performance evidence.
+- At `2026-07-15T07:37:24+00:00`, the runner and direct-child active `N=16`
+  simulator were paused with `SIGSTOP`.  Persisted evidence then comprised
+  33 records: 27 passes for `N={1,2,4}` and six explicit timeouts for `N=8`.
+  The `N=16` partial execution is unclaimed.
+- Checkpoint validation reconstructed all 32 raw target cycle values from
+  `cycles_hi/lo`, checked every non-null metric for finiteness, confirmed the
+  exact persisted record/status sets and timeout metadata, found no
+  source-relevant diff from the run commit, and independently rehashed all 38
+  current artifact-manifest entries.  The external validation report is
+  `checkpoint-20260715T073724Z-validation.json`, SHA256
+  `0cf578f5a2fca1a2b29046b2ca00608e428151b35c9224fd0df8166d7d95b050`.
+  The pause/provenance record is `checkpoint-20260715T073724Z.json`, SHA256
+  `65eded469ad341438bc407ae86488216ece109b5bfd8d6c0136550127725a931`.
+- Resume gate remains documentation-only synchronization from a clean
+  worktree plus a zero source-relevant diff from the recorded run commit.
+  Any later timeout caused or shortened by pause wall time must likewise be
+  retained, followed by a separate clean rerun rather than reinterpretation.
