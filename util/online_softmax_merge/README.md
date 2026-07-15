@@ -368,6 +368,77 @@ The capture files report Verilator same-configuration runtime proxies only.
 They do not support physical area, frequency, power, energy, or critical-path
 claims.
 
+## Core--SMU concurrency analysis
+
+`analyze_concurrency.py` consumes one or more complete runner result roots.
+Run it from a clean checkout at the same commit recorded by every input root.
+The output directory must be a new external directory whose basename starts
+with `work-online-merge-`:
+
+```bash
+python3 util/online_softmax_merge/analyze_concurrency.py \
+  --repo-root "$PWD" \
+  --result-root /home/user/work-online-merge-concurrency-results \
+  --output-dir /home/user/work-online-merge-concurrency-analysis \
+  --required-case 16,64
+```
+
+Repeat `--result-root` to combine independent passing runs.  Repeat
+`--required-case N,D` when more than one coordinate is mandatory.  Result
+roots are ordered canonically, so reversing otherwise identical command-line
+input order does not change output bytes.  A non-passing-only root still
+produces retained structured output, but the command exits nonzero because the
+required-case gate is unsatisfied.
+
+Every concurrent target record is paired with the exact `OM_FSM` invocation
+named by its `smu_invocation` field.  Baselines are selected per measured
+repeat:
+
+- C1 uses `C0_SMU` and `C0_REG` from the same repeat;
+- C2 uses `C0_SMU` and `C0_STREAM` from the same repeat;
+- C3 uses `C0_SMU` from the same repeat and `C3_CORE` from the same phase and
+  repeat.
+
+The analyzer reports all component windows rather than only a speedup:
+
+```text
+overlap_saved_cycles = T_smu + T_core - T_concurrent
+eta_overlap = overlap_saved_cycles / min(T_smu, T_core)
+slowdown_smu = T_smu_concurrent / T_smu
+slowdown_core = T_core_concurrent / T_core
+congestion_ratio = tcdm_congested / tcdm_accessed
+core_bytes_per_cycle = core_bytes / T_core_concurrent
+smu_elements_per_cycle = (N * D) / T_smu_concurrent
+```
+
+Ratio decimals are accompanied by exact numerator and denominator fields.
+Negative overlap is retained without clamping.  Warm-up rows use `repeat=-1`
+and remain in `concurrency_observations.csv`, but only repeats `0..R-1`
+contribute to medians.
+
+C3 summaries include all 16 relative offsets.  Best and worst phases minimize
+and maximize median `T_concurrent`.  The representative median phase is the
+observed phase closest to the median of the 16 phase medians; ties choose the
+lower `T_concurrent`, then the lower byte offset.  This is a relative
+`addr[6:3]` phase comparison, not a claim that two streaming workloads occupy
+disjoint banks.
+
+The deterministic outputs are:
+
+- `analysis.json`: metrics, exact ratios, summaries, gates, complete retained
+  records/metadata/failures/commands/artifacts, and input provenance;
+- `concurrency_observations.csv`: warm-up and measured C1/C2/C3 rows;
+- `concurrency_summary.csv`: measured-only C1/C2/C3 medians;
+- `bank_phase_summary.csv`: measured-only summaries for all 16 C3 phases;
+- `retained_status_records.csv`: every raw target record, including terminal
+  capacity, unsupported, timeout, correctness, and tool-error states;
+- `artifact_manifest.json`: hashes of every analysis output and every input
+  evidence root.
+
+All metrics remain same-configuration RTL-simulation cycle, counter, and
+throughput proxies.  They are not physical area, frequency/Fmax, power,
+energy, critical-path, or physical-efficiency results.
+
 ## Validation
 
 ```bash

@@ -2225,3 +2225,124 @@ small manifests only.
   best/worst/median summaries, and full retention of negative/non-pass data.
   The prior exact traced smoke remains a reproducible 900-second timeout; no
   physical area, timing, power, energy, or critical-path claim is made.
+
+### Stage 6c checkpoint: deterministic concurrency metrics analyzer
+
+- Objective: complete the deterministic C0/C1/C2/C3 metric and bank-phase
+  analysis layer while preserving the Stage 6 formal-run timeout as a blocker.
+  The analyzer is complete, but Stage 6 measured performance evidence remains
+  `in_progress` until a clean, reproducible simulator run finishes.
+- `util/online_softmax_merge/analyze_concurrency.py`, source SHA256
+  `9b55037b886cb0c0acd278f9571f171947034ae3dd9fdf331da6b8dc23921ffe`,
+  consumes one or more complete Stage 6b roots in canonical order.  It rejects
+  duplicate roots and strictly validates passing manifests, provenance,
+  command success, metadata, schedule completeness, correctness, FSM sums,
+  and the exact target/FSM invocation bijection.  Terminal non-pass roots,
+  complete records, failures, commands, metadata, and artifact identities are
+  retained rather than discarded.
+- Baselines are selected without cross-repeat or cross-phase substitution:
+  C1 uses same-repeat `C0_SMU` and `C0_REG`; C2 uses same-repeat `C0_SMU` and
+  `C0_STREAM`; C3 uses same-repeat `C0_SMU` and same-phase/same-repeat
+  `C3_CORE`.  For each observation it reports `T_smu`, `T_core`,
+  `T_concurrent`, `T_smu_concurrent`, and `T_core_concurrent`, followed by
+  `T_smu + T_core - T_concurrent`, raw overlap efficiency divided by
+  `min(T_smu,T_core)`, both component slowdowns, TCDM congestion, core
+  bytes/cycle, concurrent SMU elements/cycle, and standalone SMU
+  elements/cycle.
+- Every ratio has an exact numerator/denominator and a decimal rendering.
+  Summary medians are computed directly from exact rational values rather than
+  float round trips.  Negative overlap is retained without clamping.  Warm-up
+  rows remain in the observation table but do not contribute to measured
+  medians.  Component windows larger than their total windows are rejected.
+- C3 summaries retain all 16 relative bank phases.  Best and worst minimize
+  and maximize measured median `T_concurrent`.  The representative median is
+  the observed phase closest to the median of the 16 phase medians; ties use
+  lower `T_concurrent` and then the lower phase.  Output files are
+  `analysis.json`, `concurrency_observations.csv`,
+  `concurrency_summary.csv`, `bank_phase_summary.csv`,
+  `retained_status_records.csv`, and `artifact_manifest.json`.
+- Eleven focused analyzer tests bring the complete utility suite to 70 tests.
+  They cover exact known metrics and medians, C3 baseline selection, negative
+  overlap, warm-up exclusion, all phases and deterministic phase selection,
+  repeat-count generalization, malformed/impossible records, missing or
+  duplicate pairings, terminal-state retention, multiple-root ordering,
+  byte-deterministic outputs, provenance failures, and controlled external
+  output directories.  All 70 tests pass, and all five utility modules plus
+  the new analyzer test compile with Python 3.12.3.
+- Final synthetic CLI validation is retained at
+  `/home/wxt/work-online-merge-stage6c-synthetic-r2-20260715T202622Z`.
+  A fresh temporary Git repository at clean commit
+  `e0cdee23b6a4cc088c4225ce5e4320d1c8214ee3` generated the full synthetic
+  148-target/76-FSM schedule, ran the real analyzer twice, and compared all six
+  outputs byte-for-byte.  It contains 72 observations, 54 measured rows, all
+  16 phase summaries, and 67 deliberately negative-overlap observations.
+  Synthetic `performance_evidence` is explicitly `false`.
+- Final output SHA256 values are: `analysis.json`
+  `fd40aa797b909ba1672be609540dd05f0823d5c771ff27a8656d94df7ce2da33`,
+  `concurrency_observations.csv`
+  `001692b67a1459ebf1dbfaa74d1e1822744e7d290610712fb717d3a652a46768`,
+  `concurrency_summary.csv`
+  `a4ede791c628322bb17319889a7f3fe8ee85bd4636e86c33e3be7ed0a0aaf542`,
+  `bank_phase_summary.csv`
+  `0af0cbff183262b473f6a4222074906becd333be2cfa1a48ec9c5b990833d51b`,
+  `retained_status_records.csv`
+  `8ff7fede6354f2a0ee3a8c9209e47d9d9a8c775bb648fa19dbac0594a9585e97`,
+  and `artifact_manifest.json`
+  `75a1cf1b1f5c70e42b4c2d8a05d8a30489918b3c5cbc6e47174255142d90233e`.
+- An independent standard-library verifier imports no repository analyzer code.
+  It reconstructs the full schedule and target/FSM pairing, all component
+  windows and exact ratios, measured medians, every phase summary and selected
+  phase, warm-up and negative-overlap handling, CSV values, input/output/tool
+  hashes, and duplicate-run byte identity.  All 11 independent gates pass.
+  Verifier-source SHA256 is
+  `37a60b47bd483c89ba1e44108fcbf5b1c25fed85a2f0dbe3cf3cc5facbaf7cd4`;
+  verification-result SHA256 is
+  `db7dc53305c97e6b1a45a622a30e1b1e07918681c6a68eff4c4406de5dabe164`;
+  byte-comparison-log SHA256 is
+  `41e8ef5909ac60d57befecade4f00a84dd31df57397b1712ce516d5cfd22a1ce`;
+  and the verified checksum-index SHA256 is
+  `ad0511c4a5377c29f0741dcda121ec183e7345490645574ca37166321b088d51`.
+- The earlier successful synthetic evidence at
+  `/home/wxt/work-online-merge-stage6c-synthetic-20260715T202056Z` is retained
+  but superseded because it predates exact median numerator/denominator
+  columns in the summary CSV files.  Its `analysis.json` and
+  `artifact_manifest.json` SHA256 values are
+  `738d9ae05010d0dcbb2c405716c174f11b01802dc37fa6d350e92493191213f3`
+  and `a1f4bf30873e4385a0168f0c680f845fcb18b7de9e96a9e278f8813fe10fa9d5`.
+- The first checkpoint-validation attempt at
+  `/home/wxt/work-online-merge-stage6c-checkpoint-validation-20260715T203049Z`
+  is retained as `tool_error`: all 70 tests, compilation, line-length, and
+  diff checks completed, but the embedded result reporter had a parenthesis
+  syntax error.  Failure-record and stderr SHA256 values are
+  `7c8c7739ebf1d7a96fd0fab2f254d00688e861637b7e95787b4447990ce182a2`
+  and `3f3b12d4a412a88dd185e6015bacee4a404b377dbf888865cf2cbb134d6de39d`.
+- The second attempt at
+  `/home/wxt/work-online-merge-stage6c-checkpoint-validation-r2-20260715T203223Z`
+  passed every validation gate, but its outer checksum command used the wrong
+  working directory and left an empty index.  It is retained as `tool_error`;
+  failure-record and checksum-failure-note SHA256 values are
+  `33babc2f25f5ea757b30ea2f22407e1e95755ee2b6acf5a99441a8d5861b8724`
+  and `ee700f8e4afa876d4160175856a75755c213df6c52b330a89a51a1c3e5b50479`.
+- Corrected checkpoint validation at
+  `/home/wxt/work-online-merge-stage6c-checkpoint-validation-r3-20260715T203303Z`
+  reran all 70 tests, compiled all five utility modules and the analyzer test,
+  checked changed-file line lengths and `git diff --check`, retained the full
+  diff/status context, and verified its checksum index.  Result, test-log,
+  diff-context, checksum-index, and validator SHA256 values are
+  `b1351e45c1c3860f9be72c9e657ece6bce301e6452ed9797a726ba98188c6346`,
+  `1b2c62e36dc2ce505d8a135b0991e971830fbbcf2a5d8f76be55b3c1fb38d183`,
+  `09615e4ac2171a8511506440dbc0804ae7a1c8b21a7ef106ffee7289c9d5ad3f`,
+  `9e2872c6612684b49c693b35738f4015697cc55dfb405170365269e3ed7cfbeb`,
+  and `e9f8131e9a5f1b64c319ff3b4fc15245ccd5a62ae8b77b6da500dea354154759`.
+- The formal traced run remains the reproducible Stage 6a blocker at
+  `/home/wxt/work-online-merge-stage6a-smoke-20260715T190019Z`: 900 seconds at
+  `(N,D,R)=(16,64,3)` produced only 9 target and 4 FSM records while the
+  always-on per-instruction DASM trace grew to 539 MiB.  No incomplete record
+  is promoted to a pass.  A lower-trace simulator must be committed, explicit,
+  hashed, reproducible, and compared with traced behavior; trace gating remains
+  a P1 item after the remaining P0 proxy stages.
+- These analyzer and synthetic-validation results are host-framework evidence,
+  not measured concurrency performance.  They make no physical area, Fmax,
+  frequency, power, energy, critical-path, or physical-efficiency claim.  Next
+  P0 work is the engineering-grade Yosys Slang generic-resource proxy, while
+  the formal Stage 6 run remains explicitly blocked by traced-simulator cost.
