@@ -780,3 +780,79 @@ small manifests only.
   from a clean worktree, then continue the stopped simulator before its runner.
   The fixed-`D` matrix remains open pending the independently built `N=32`
   result; the inherited `N=8` and `N=32` timeouts remain permanent evidence.
+
+### Stage 3j checkpoint: independently built N=32 pass and fixed-D closure
+
+- Objective: finish and independently validate the last clean fixed-`D=64`
+  anchor before changing the experiment runner or benchmark sources.
+- The formal `N=32,D=64,seed=1,main` run completed at
+  `2026-07-15T09:46:24+00:00` under
+  `/home/wxt/work-online-merge-stage3-matrix-d64-n32-formal-clean-20260715-080837`;
+  its independent build directory is
+  `/home/wxt/work-online-merge-build-stage3-d64-n32-formal-20260715-080837`.
+  Provenance is commit `ceaa1f8b4ad802edd85f746bed025b09135c3c09`,
+  `git_dirty=false`, CFG SHA256
+  `120fa0c30199e54e6e9b5c60d8da40913eae8526640992cc5d4f130bef159775`.
+  The measured simulator window was
+  `2026-07-15T08:08:41+00:00..09:46:24+00:00`, with a 21,600-second host
+  cap, one excluded warm-up, and three retained measured repeats.
+- All nine B1/B2-R/B3 records pass, all four configure/build/objdump/simulator
+  commands return zero, and `failures.json` is empty.  Cycle
+  min/median/max values are B1 `729981/730218/730593`, B2-R
+  `53247/53520/53640`, and B3 `18141/18159/18159`.  The largest observed
+  absolute error is `0.0008955001831054688`, largest relative error is
+  `0.00016185392734602858`, largest RMSE is
+  `0.00002819735176430857`, and every record has zero nonfinite outputs.
+  B3 records retain `75..76` congested accesses and assert `saw_busy`; the
+  software baselines do not assert it.
+- The mandatory fixed-`D=64`, `N={1,2,4,8,16,32}` anchor matrix now has a
+  clean passing result for every point.  Median B1/B2-R/B3 cycles by `N` are:
+  `1: 23704/2048/1603`, `2: 46111/3683/2112`,
+  `4: 92976/7246/3174`, `8: 183136/14086/5351`,
+  `16: 371610/27532/9556`, and `32: 730218/53520/18159`.
+  The inherited `N=8` and `N=32` timeout records remain unchanged in their
+  original batch; the clean retries are separate evidence and do not replace
+  or relabel those failures.
+- Independent validation reconstructed all nine 64-bit cycle counts and
+  correctness metrics from raw `OM_RESULT` fields, checked exact repeat and
+  command coverage, compared CSV and JSON semantically, reproduced all three
+  summary rows, reran the RVV disassembly gate, checked the fixed CFG-derived
+  bootstrap inputs and self-hashes, and independently rehashed all 11
+  artifact-manifest entries.  It also verified that the previously accepted
+  N=16 and inherited-batch validations remain byte-identical and passing.
+  The final report is
+  `/home/wxt/work-online-merge-stage3-n32-final-validation-20260715T095001Z/validation_final.json`,
+  SHA256
+  `b337655da4a3b9f44dcbda05a92801007bb0e49ad4d541c6b46c3015a9d439d3`;
+  validator SHA256 is
+  `586ac2ceba96619088820d74efc094afb4bdf6c48841fcbe17cc646ed7af437b`.
+- A failed validator-only attempt is deliberately retained in the same
+  directory.  It incorrectly imposed earlier observed N=16 accuracy maxima,
+  treated Python CSV formatting as canonical JSON formatting, and expected a
+  shell-only `runner_rc` line inside the `tee` output.  It did not modify any
+  run artifact.  Its report SHA256 is
+  `3aa32090228096be369fcaad365bbacb15f037758f83d400d678e45343a1a229`
+  and validator SHA256 is
+  `c586817a988533febad6190fab3e26aacb4e9d2bab82b3c6a4648a4abdf83e42`.
+- Final N=32 top-level SHA256 values are:
+  - `run_manifest.json`:
+    `08fe331d437d00f8c132ec9c33c4e98ca967bfbf8238130a50aaa3a870e72c7a`;
+  - `records.json`:
+    `97cb16fd6750350313129d2332f0b95c65279a40a4eececdeb96e4965fe7f64d`;
+  - `records.csv`:
+    `c3b7ef7072dd0fac8837c52c8879bdb435036f08777e51bbb15be952ba227be4`;
+  - `summary.json`:
+    `f8b3c4c561b108dcd5e1f2ad65c468b49cb0bd898de720af643d73c7de9a6678`;
+  - `commands.json`:
+    `279c0966cfa1dedc519d8b4e95df2a3c5321c9252a72d69d4daff9f9bba2c582`;
+  - `failures.json`:
+    `37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570`;
+  - `artifact_manifest.json`:
+    `96f12f0d9d2b99c72906527fb47d6768341a33e1021be7af28f775db22444dbb`;
+  - external runner log:
+    `83743d77039d748bc7d498951e41985b58e946b3824ab827c5c4c32d0e3340fe`.
+- Tool identities recorded by the run include CMake `3.28.3`, target Clang
+  `14.0.6`, Verilator `5.034`, and simulator SHA256
+  `25a56d98474895d16d7de81f73d9cf8a06ba8eb650af5f9b58a012d15022e69a`.
+  The next atomic stage is runner support for repeated, conflict-checked
+  `--cmake-define KEY=VALUE`, followed by the fixed-`N=8` dimension matrix.
