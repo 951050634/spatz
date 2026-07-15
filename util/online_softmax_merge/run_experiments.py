@@ -516,7 +516,11 @@ def run_command(
         if process is not None:
             terminate_process_group(process)
             returncode = process.returncode
-            remainder = process.stdout.read() if process.stdout else b""
+            if process.stdout is not None:
+                remainder = process.stdout.read()
+                process.stdout.close()
+            else:
+                remainder = b""
             output += remainder.decode("utf-8", errors="replace")
         output += f"\nHOST_TIMEOUT seconds={timeout_seconds}\n"
     except OSError as error:

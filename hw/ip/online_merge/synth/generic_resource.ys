@@ -1,0 +1,28 @@
+# Copyright 2026 ETH Zurich and University of Bologna.
+# Solderpad Hardware License, Version 0.51, see LICENSE for details.
+# SPDX-License-Identifier: SHL-0.51
+#
+# Versioned Yosys pass sequence for the Online Softmax Merge Engine generic
+# resource proxy.  The runner selects a fixed synthesis-only top before this
+# script executes and uses a fresh external directory as the working directory.
+# No liberty, technology mapping, timing constraint, or physical model is used.
+
+proc
+opt
+memory_collect
+opt_clean
+check
+
+tee -q -o pre-stat.json stat -json
+tee -o pre-stat.txt stat -width
+write_json pre-netlist.json
+
+flatten
+techmap
+opt
+clean
+check
+
+tee -q -o post-stat.json stat -json
+tee -o post-stat.txt stat -width
+write_json post-netlist.json

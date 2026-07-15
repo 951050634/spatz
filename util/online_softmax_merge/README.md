@@ -439,6 +439,57 @@ All metrics remain same-configuration RTL-simulation cycle, counter, and
 throughput proxies.  They are not physical area, frequency/Fmax, power,
 energy, critical-path, or physical-efficiency results.
 
+## Yosys Slang generic-resource proxy capture
+
+`run_resource_proxy.py` drives the versioned fixed-type synthesis tops in
+`hw/ip/online_merge/synth/online_merge_resource_wrapper.sv` through the pass
+sequence in `hw/ip/online_merge/synth/generic_resource.ys`.  The fixed full-SMU
+top matches the default cluster's 17-bit 128 KiB TCDM byte address, 64-bit data,
+eight-bit strobe, and four-bit packed TCDM user payload.  It is synthesis-only
+and does not replace the functional cluster integration.
+
+Use a fresh external result directory.  A formal capture requires a clean
+checkout and defaults to independent `exp`, `reciprocal`, `vector`, and `full`
+scopes:
+
+```bash
+python3 util/online_softmax_merge/run_resource_proxy.py \
+  --repo-root "$PWD" \
+  --work-dir \
+    /home/user/work-online-merge-resource-proxy-$(date -u +%Y%m%dT%H%M%SZ) \
+  --yosys /path/to/oss-cad-suite/bin/yosys \
+  --timeout-seconds 600 \
+  --require-clean
+```
+
+The `exp`, `reciprocal`, and `full` scopes are the acceptance-required set.
+The standalone `vector` scope repeats the exact vector merge expression as a
+structural decomposition aid.  Every scope is synthesized independently and
+therefore its total is explicitly non-additive; independent optimization makes
+subtraction an invalid way to manufacture a scalar/FSM/control residual.
+
+The runner first records `yosys -V` and a `read_slang` plugin probe.  For every
+scope it preserves the merged Yosys log, pre-techmap and post-techmap `stat`
+JSON/text, and raw Yosys JSON netlists.  Incremental structured records are:
+
+- `run_manifest.json`: Git cleanliness, tool identity, wrapper/script/config
+  hashes, fixed type parameters, requested scopes, and claim boundary;
+- `input_manifest.json`: every RTL, wrapper, pass script, and configuration
+  reference with SHA256 and source commit;
+- `scope_results.{csv,json}`: terminal status and top-level pre/post cell count
+  for every requested scope;
+- `failures.json`: every timeout, tool failure, missing output, and partial
+  output set;
+- `commands.json` and `artifact_manifest.json`: exact commands, timestamps,
+  external paths, sizes, SHA256 values, source commit, tool version, and scope.
+
+Raw JSON netlists can be tens of MiB and must remain in the external
+`work-online-merge-*` directory.  A dirty capture is retained as validation but
+sets `resource_proxy_evidence=false`.  The output is a version-specific generic
+logic complexity proxy only.  No liberty, PDK, physical constraint, timing, or
+power model is used, so these files must never be relabeled as ASIC area,
+frequency/Fmax, critical path, power, energy, or physical efficiency.
+
 ## Validation
 
 ```bash

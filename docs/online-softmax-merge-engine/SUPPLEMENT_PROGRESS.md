@@ -31,7 +31,7 @@ small manifests only.
 | 4 | Break-even table and fitted scale model | P0 | complete | Stage 4e formal fit and direct 16-point table |
 | 5 | Full-SMU FSM cycle breakdown and A0/A2 | P0 | complete | Stage 5b exact three-point formal closure |
 | 6 | C0/C1/C2/C3 concurrency and 16 bank phases | P0 | in_progress | Stage 6b target schedule and host runner; analysis/formal run pending |
-| 7 | Yosys Slang generic-resource proxy | P0 | pending | pending |
+| 7 | Yosys Slang generic-resource proxy | P0 | in_progress | Stage 7a fixed wrapper/script and capture runner complete; analyzer and clean run pending |
 | 8 | Representative RTL VCD toggle proxy | P0 | pending | pending |
 | 9 | Target `expf` B0/B2-F | P1 | pending | pending |
 | 10 | Scalar-only A1 | P1 | pending | pending |
@@ -2346,3 +2346,89 @@ small manifests only.
   frequency, power, energy, critical-path, or physical-efficiency claim.  Next
   P0 work is the engineering-grade Yosys Slang generic-resource proxy, while
   the formal Stage 6 run remains explicitly blocked by traced-simulator cost.
+
+
+### Stage 7a checkpoint: versioned Slang wrapper and capture runner
+
+- Objective: replace the external-only Yosys prototype with a repository-owned,
+  fixed-type Slang top, versioned pre/post-techmap pass sequence, controlled
+  external runner, structured terminal records, timeouts, and complete input and
+  raw-artifact provenance.  This checkpoint implements capture only; the
+  deterministic resource parser and clean formal evidence are Stage 7b.
+- The synthesis-only wrapper fixes the default cluster integration at 17 TCDM
+  byte-address bits for 128 KiB, 64 data bits, eight strobe bits, and the exact
+  four-bit packed user payload for two cores plus four outstanding Spatz loads.
+  A minimal `reqrsp_pkg` preserves the exact four-bit AMO encoding without
+  importing the unrelated AXI package graph.  The wrapper exposes independent
+  `exp`, `reciprocal`, `vector`, and `full` tops.  The vector top repeats the
+  exact `compute_vector_merge` expression, but all independent scope totals are
+  explicitly non-additive because Yosys may optimize them differently.
+- `generic_resource.ys` performs `proc/opt/memory_collect`, records `stat -json`
+  and `stat -width`, and writes the raw pre-techmap netlist before
+  `flatten/techmap/opt/clean`, then records equivalent post-techmap artifacts.
+  It supplies no liberty, PDK, technology mapping, timing constraint, or power
+  model.  Wrapper and pass-script SHA256 values in the final validation capture
+  are `c4c1604ace7cbdac378171530668ee8910dd77249719903ec23baebfdc2597d7`
+  and `ca81bc659aff8e5c082a0699da2853fea605bf89cf27b206597ac6751a692e60`.
+- `run_resource_proxy.py` records `yosys -V`, probes `read_slang`, hashes the
+  runner, wrapper, script, all four RTL inputs, and the fixed CFG reference,
+  preserves every scope's log and raw pre/post files outside Git, validates
+  structured `stat` output, and incrementally writes run/input/scope/failure/
+  command/artifact manifests.  A dirty run is retained but cannot set
+  `resource_proxy_evidence=true`; selecting fewer than all acceptance-required
+  `exp`, `reciprocal`, and `full` scopes also cannot produce evidence.  Timeout,
+  nonzero-tool, missing-output, duplicate-scope, unsafe-path, and existing-root
+  cases have explicit tests.  The shared command helper now closes its timeout
+  pipe after preserving all remaining output, eliminating the observed resource
+  leak without changing target-record semantics.
+- The first integrated runner attempt is retained at
+  `/home/wxt/work-online-merge-stage7a-runner-smoke-20260715T205832Z` as
+  `tool_error`: Yosys treats double quotes passed inside a `read_slang` command
+  as literal filename bytes, so all four scopes failed before producing raw
+  outputs.  The runner was corrected to accept only unambiguous Yosys path
+  tokens and pass them without embedded quotes.  Failure-manifest, command-log,
+  and first-scope-log SHA256 values are
+  `121b38d37f8e56fdc112df91812ae761368fed5638656613db0393fc196bdc4e`,
+  `1d6ca6850b9b566918789ce2dfcac30d31db5952a505af0c6f4d581de50f5c21`,
+  and `5206e9fd06889360b131d5cf37aad85d56eb8a8cd4797122c952d0c649dc02d1`.
+  No failed scope was promoted to a pass.
+- Corrected dirty smoke at
+  `/home/wxt/work-online-merge-stage7a-runner-smoke-r2-20260715T205909Z`
+  synthesized all four scopes in about 28 seconds.  It is validation-only
+  because source commit `d07d516da56f639f24ff8974cee4a1a33c9af007` was dirty.
+  Its run-manifest, scope-results, and artifact-manifest SHA256 values are
+  `af92eb2e771dd2c2a929890f8fc572219e75a23f214d257e6b156226e3829d3a`,
+  `e2eb7dd8fcbdb03ffe3b57d86238b9118bbaa585a794b8f555ab5b3faf9b3304`,
+  and `a4c591bf6be54b547254f138fd637d5db08bc5a81156a8068a0a44401ba9cc04`.
+- Final checkpoint validation at
+  `/home/wxt/work-online-merge-stage7a-checkpoint-validation-20260715T210432Z`
+  ran all 80 utility tests, compiled the changed Python modules, checked Python,
+  Markdown, Yosys-script, and SystemVerilog line limits, ran real
+  `Yosys 0.66+4 (git sha1 8125af88d, clang++ 18.1.8 -fPIC -O3)` synthesis for
+  all four scopes, independently rehashed every input and raw artifact without
+  importing runner code, verified top/stat/command/pass-order/claim gates, and
+  passed `git diff --check` plus a self-verified checksum index.  Validation,
+  independent-verifier, checksum-index, unit-test-log, and capture-artifact-
+  manifest SHA256 values are
+  `813500d06329f7c4058848c778feba1e9c7379f610ea9a565500d84c8690fc2f`,
+  `644057d82e1442c31a94cb9bfafffda117bf06d93c14bfb350d7601eae76c7d8`,
+  `bf2969677e217319fd684fa30591eba27e35b2d860fff6954de6ead5a651a980`,
+  `33228e9bc6b8ec9814d3225fe8c0e23f27c6fe38128d921978f410eae56f72f1`,
+  and `76d0a92634f73d98715108381f3cbffabf9543d8923bdd59ae1a12900392e162`.
+- The validation-only top totals were pre/post 38/4,235 cells for `exp`,
+  24/4,629 for `reciprocal`, 156/33,070 for `vector`, and 938/94,713 for
+  `full`.  These numbers are retained only as version-specific generic-logic
+  smoke proxies.  The artifact manifest records every raw netlist/stat path,
+  size, SHA256, source commit, CFG reference SHA256
+  `120fa0c30199e54e6e9b5c60d8da40913eae8526640992cc5d4f130bef159775`,
+  tool version, and synthesis scope; the largest full post-techmap JSON is
+  61,340,728 bytes with SHA256
+  `1bd7558b08624d0971cefd245c3178a2bedb37e599e0af3a9c883d13ec01ef52`.
+  None of these raw generated files is tracked by Git.
+- No ASIC area, frequency/Fmax, critical path, timing closure, power, energy,
+  or physical-efficiency claim is made.  P2 remains `blocked_external` on the
+  PDK, liberty/LEF, PVT, clock/IO/load/floorplan/routing constraints, and
+  physical synthesis/P&R/timing/power tools listed in the fixed context.  Next
+  work is Stage 7b's deterministic per-resource/per-source parser, clean
+  committed `exp`/`reciprocal`/`full` capture, independent verification, and
+  explicit structured `blocked_external` PPA record.
