@@ -27,7 +27,7 @@ small manifests only.
 | 0 | Isolate worktree and import governing specification | setup | complete | this checkpoint |
 | 1 | Benchmark/result framework | P0 | complete | pre-commit smoke below |
 | 2 | Fair B1/B2-R/B3 baselines and RVV disassembly gate | P0 | complete | Stage 2b clean anchors |
-| 3 | Anchors, RVV tails, mandatory size matrices | P0 | in_progress | fixed-D and N=8 small-D points closed; D=128 next |
+| 3 | Anchors, RVV tails, mandatory size matrices | P0 | complete | Stage 3n closes both mandatory fixed matrices |
 | 4 | Break-even table and fitted scale model | P0 | pending | pending |
 | 5 | Full-SMU FSM cycle breakdown and A0/A2 | P0 | pending | pending |
 | 6 | C0/C1/C2/C3 concurrency and 16 bank phases | P0 | pending | pending |
@@ -1101,3 +1101,111 @@ small manifests only.
   point supplies `N=8,D=64`; the remaining fixed-`N=8` mandatory point is
   `D=128`, which must use a separate fresh build and remain distinct from any
   timeout or failed diagnostic.
+
+### Stage 3n checkpoint: fixed-N D=128 point and matrix closure
+
+- Objective: execute the last mandatory fixed-`N=8` point and close the full
+  `D={1,8,16,32,64,128}` matrix without replacing any earlier failed or
+  timeout diagnostic.
+- Formal `N=8,D=128,seed=1,main,repeats=3` evidence is retained under
+  `/home/wxt/work-online-merge-stage3-n8-d128-clean-20260715T112512Z`;
+  its unique external build is
+  `/home/wxt/work-online-merge-build-stage3-n8-d128-clean-20260715T112512Z`.
+  Provenance is commit `a80be50b1fca6bbd1e4b02a174c4a55b51ec2f5a`,
+  `git_dirty=false`, CFG SHA256
+  `120fa0c30199e54e6e9b5c60d8da40913eae8526640992cc5d4f130bef159775`,
+  and simulator SHA256
+  `25a56d98474895d16d7de81f73d9cf8a06ba8eb650af5f9b58a012d15022e69a`.
+  The exact command window was
+  `2026-07-15T11:25:12+00:00..2026-07-15T11:56:37+00:00`, with a
+  5,400-second simulator timeout.
+- Fresh configure, target build, RVV objdump gate, and simulator all returned
+  zero.  All nine B1/B2-R/B3 records pass and are finite, `failures.json` is
+  empty, and the runner return code is zero.  Cycle min/median/max values are
+  B1 `356471/356978/357049`, B2-R `15017/15194/15199`, and B3
+  `9410/9419/9457`.  The largest absolute error is
+  `0.0007348060607910156`, largest relative error is
+  `0.00012778052198633453`, and largest RMSE is
+  `0.00003153156172533741`.
+- The large raw hart-0 trace remains outside Git at
+  `/home/wxt/work-online-merge-stage3-n8-d128-clean-20260715T112512Z/N8_D128_S1_main_R3/logs/trace_hart_00000.dasm`;
+  it is 1,133,010,045 bytes with SHA256
+  `6824484f0cbaa7820585de78f1fd4b7d9a4b394d1f4b621be31b42f148c16afa`.
+  No trace, build product, ELF, or simulator log is committed.
+- Independent single-point validation reconstructed all nine raw results,
+  compared CSV and JSON semantically, reproduced the three summary rows,
+  checked the exact 19 cache values and four command argv/status records,
+  reran the RVV gate, and rehashed all 11 artifact-manifest entries.  Its
+  report is
+  `/home/wxt/work-online-merge-stage3-n8-d128-final-validation-20260715T112825Z/validation.json`,
+  SHA256
+  `2eaaa6925a9f182efa8e443f9948b0042b336997b33047527ff98c67ccca6324`;
+  validator SHA256 is
+  `d946c7ddc645899502513efa813ab86ec2fe1350f36ae59a1a791eff19581f2b`,
+  validator-log SHA256 is
+  `dd5600f8754458caba89b8ae668be0937c0b60baa670557550e6382a24d4cb0b`,
+  and the independent RVV rerun-log SHA256 is
+  `17ee1f94e7b7432cfe5a32b1ef210584e515dec926ea7fc7c09817c1918e1caa`.
+- Formal `D=128` top-level SHA256 values are:
+  - `run_manifest.json`:
+    `f4c54daabdec2a79634646db3d79e944daba9828c55e6cdd2f333737867a719b`;
+  - `records.json`:
+    `c5ef980e1539eda0d7d5079db4e37e0bfd8ac89190ddc328fa261fb2c301b341`;
+  - `records.csv`:
+    `93d5f2c7332ec2b23c86bb4b9af331042ca66b6652b1eed61222dd22d07d080c`;
+  - `summary.json`:
+    `47f9f437e084c3d2eba9cd7d6febf449264e4454f94cd43f733ff79f60a20512`;
+  - `commands.json`:
+    `4609bad97c9135c4eaa4c4b08943c9118dd1389f27a1293765f1c8c8e815b3ce`;
+  - `failures.json`:
+    `37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570`;
+  - `artifact_manifest.json`:
+    `ff71a5961c3302e30ef2bf2d24536e1a9e6b8a78fa5f32667f2d59df5ab441f4`;
+  - external runner log:
+    `2f6e74821e7288b93f7035e79fc06df46a62a287eb557c9911cf14a238f668da`;
+  - external runner return-code file:
+    `9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa`.
+- The complete fixed-`N=8` matrix contains exactly 54 unique passing records.
+  Measured cycle min/median/max values are:
+
+  | D | B1 | B2-R | B3 |
+  | ---: | ---: | ---: | ---: |
+  | 1 | 15624/15896/15997 | 12857/13080/13127 | 1290/1290/1320 |
+  | 8 | 34411/35166/35399 | 12837/12885/13101 | 1732/1732/1751 |
+  | 16 | 55988/56049/56525 | 12754/13078/13263 | 2281/2281/2302 |
+  | 32 | 99772/99794/100169 | 13455/13547/13761 | 3254/3263/3328 |
+  | 64 | 182936/183136/183196 | 13847/14086/14317 | 5339/5351/5361 |
+  | 128 | 356471/356978/357049 | 15017/15194/15199 | 9410/9419/9457 |
+
+- The closure validator independently rehashed all 60 indexed artifacts from
+  the small-D, D=64, and D=128 roots; verified all three prior independent
+  reports at their fixed hashes; confirmed exact case/repeat/status coverage;
+  and checked the real compact allocation at every point.  Rounded allocation
+  ratios range from `0.00390625` at `D=1` to `0.126953125` at `D=128`, so all
+  points satisfy both `N*D <= 2048` and the 70% TCDM gate.  A Git path diff
+  also proves that benchmark and integration inputs did not change between the
+  older validated D=64 commit and the D=128 commit; intervening changes are
+  runner/tests/documentation only.
+- The passing closure report is
+  `/home/wxt/work-online-merge-stage3-fixed-n8-closure-validation-20260715T115938Z/validation.json`,
+  SHA256
+  `866682c5650a8d3289beb80fe5685ba41a24314d54a3013d6f95dd1c542a2f14`;
+  validator SHA256 is
+  `f30d3e3250d955d19696a91ded572be630d20d5d0c2936fdff5fc135705c2018`,
+  and log SHA256 is
+  `fca7eccef867562fdb716c3b32d8231e226b72e993e683a7c615285dead24353`.
+  Tool identities remain CMake `3.28.3`, target Clang/objdump `14.0.6`,
+  Verilator `5.034`, and Python `3.12.3`.
+- Checkpoint validation reran all 26 runner unit tests, `git diff --check`,
+  fixed-hash evidence checks, single-point validation gates, and exact closure
+  coverage.  Its report is
+  `/home/wxt/work-online-merge-stage3n-checkpoint-validation-20260715T120205Z/validation.json`,
+  SHA256
+  `095fde754fbde9e81d31841cbe7c7c775360eec3d1a797fda22207204847081e`;
+  validator SHA256 is
+  `6eeb29ef84cd40d902e76affe4ab8a1cd47e3435b2e9c33128b0df757a730635`,
+  and log SHA256 is
+  `6008fd028fe97bc3b602a61e807ad2749817782d00c6bd2f92a76975c5e36c59`.
+- Both mandatory fixed matrices are now complete.  The next P0 stage is the
+  remaining break-even cases `N={1,2,4}`, `D={1,8,16,32}`, followed by the
+  measured break-even table and fitted B2-R/B3 scale model.
