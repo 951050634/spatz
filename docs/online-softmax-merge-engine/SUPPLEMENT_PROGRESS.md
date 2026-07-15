@@ -263,3 +263,58 @@ small manifests only.
 - Known limitation: these are same-CFG Verilator cycle/runtime proxies.  They
   are not physical PPA, frequency, power, energy, or critical-path evidence;
   Stage 3 must still complete the RVV tails and mandatory size matrices.
+
+### Stage 3a checkpoint: retained RVV tail failure
+
+- Objective: exercise the first nontrivial VLA/tail dimensions at `N=1`,
+  seed 1, `main`, with one warm-up and three measured repeats per
+  implementation.
+- External evidence:
+  `/home/wxt/work-online-merge-stage3-tail-a-clean-20260715-114400`
+  (approximately 636 MiB, retained outside Git).
+- UTC window: `2026-07-15T03:45:29+00:00` through
+  `2026-07-15T04:05:56+00:00`.
+- Run identity: commit
+  `ea1eaeca2c5db5bf8868f0f8752491f62039977f`, `git_dirty=false`; the CFG,
+  simulator, and tool identities are unchanged from Stage 2b.
+- Inputs: `D={7,15,17,31}`; the retained `cases.json` and `commands.json`
+  contain every exact case, command, timeout, return code, and timestamp.
+- Preserved result: 36 records were retained.  B1 and B3 passed every repeat;
+  B2-R passed all repeats at `D=7` and `D=17`, failed all three repeats at
+  `D=15`, and failed repeat 1 at `D=31`.  The runner exited 1 and retained two
+  first-failure records:
+  - `D=15`, repeat 0, `O[0][9]`: expected bits `1060333124`, actual bits
+    `1065266780`;
+  - `D=31`, repeat 1, `O[0][17]`: expected bits `3176287040`, actual bits
+    `3205216679`.
+- The failing simulator commands returned 255 and are retained as
+  `tool_error` commands; the corresponding target/result records remain
+  `correctness_fail`.  Passing cases returned zero.  No failure, command, or
+  repeat was removed or relabelled as a pass.
+- Top-level evidence SHA256:
+  - `cases.json`:
+    `70dd44a34aeecddd2068c4e6288866a86fc2a3bf4c3c5b1179c1e27edfd81894`;
+  - `runner.log`:
+    `85d9d7b10f398c6387a9285ce2f8aed82b235711c140b967cda0b6b44d517179`;
+  - `run_manifest.json`:
+    `20634357be1e2c9a266435648e62a278faeb72cf384a38d1773474dd172fbe88`;
+  - `records.json`:
+    `5c2fe9c17b65a424fed3d646ed65f3abbe2875037abc3476c87a3699bef46840`;
+  - `records.csv`:
+    `0218889101d45b99648a9d10827e35220c6fca9e7a3a1a9313ce8673322781fd`;
+  - `summary.json`:
+    `3549c849fdba191f4da33e563af4ed32334daeaf3896bc591bf28dc1ee5395d8`;
+  - `failures.json`:
+    `9f74e4d19af99bea139faec83129a429654f44de7bc811c83a1fa3c2ddf00c99`;
+  - `commands.json`:
+    `9b9f1341da330b36534880a35efff2eadf53f4019b9171b8925f32f3b83c7fef`;
+  - `artifact_manifest.json`:
+    `1c226142d99f055e4936ad5344b68571100098cf3806e0bd1db8bc2625359609`.
+- Validation: all 38 artifact-manifest entries rehashed successfully; all
+  records and derived metrics are finite; every parsed cycle count matches the
+  raw target `cycles_hi/lo`; `failures.json` exactly identifies the two failed
+  workloads above.
+- Gate decision: Stage 3 is not accepted.  The intermittent/shape-sensitive
+  B2-R output-completion/correctness failure must be diagnosed and fixed before
+  remaining tails or performance matrices.  These failed B2-R cycle values
+  are diagnostic only and must not be used as performance evidence.
