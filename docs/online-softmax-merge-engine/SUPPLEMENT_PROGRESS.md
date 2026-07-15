@@ -26,8 +26,8 @@ small manifests only.
 | ---: | --- | --- | --- | --- |
 | 0 | Isolate worktree and import governing specification | setup | complete | this checkpoint |
 | 1 | Benchmark/result framework | P0 | complete | pre-commit smoke below |
-| 2 | Fair B1/B2-R/B3 baselines and RVV disassembly gate | P0 | implementation_complete | clean committed anchors pending |
-| 3 | Anchors, RVV tails, mandatory size matrices | P0 | pending | pending |
+| 2 | Fair B1/B2-R/B3 baselines and RVV disassembly gate | P0 | complete | Stage 2b clean anchors |
+| 3 | Anchors, RVV tails, mandatory size matrices | P0 | in_progress | anchors complete; tails/matrices pending |
 | 4 | Break-even table and fitted scale model | P0 | pending | pending |
 | 5 | Full-SMU FSM cycle breakdown and A0/A2 | P0 | pending | pending |
 | 6 | C0/C1/C2/C3 concurrency and 16 bank phases | P0 | pending | pending |
@@ -172,3 +172,94 @@ small manifests only.
   correctness only.  Stage 2 remains incomplete until clean committed anchor
   evidence is retained; RVV tail and the mandatory scale matrices belong to
   Stage 3.
+
+### Stage 2b checkpoint: clean committed anchor evidence
+
+- Objective: establish formal, clean-commit B1/B2-R/B3 anchor evidence after
+  the Stage 2a implementation gate.
+- External evidence:
+  `/home/wxt/work-online-merge-stage2-clean-20260715-103300` (approximately
+  1.7 GiB, retained outside Git because the simulator emits large `.dasm`
+  traces).
+- UTC measurement window: `2026-07-15T02:33:01+00:00` through
+  `2026-07-15T03:29:07+00:00`.
+- Run identity: commit
+  `ded4a6720334d5473dcef0ab889dfe601968e07e`, `git_dirty=false`; CFG
+  `hw/system/spatz_cluster/cfg/spatz_cluster.default.dram.hjson`, SHA256
+  `120fa0c30199e54e6e9b5c60d8da40913eae8526640992cc5d4f130bef159775`;
+  simulator SHA256
+  `25a56d98474895d16d7de81f73d9cf8a06ba8eb650af5f9b58a012d15022e69a`.
+- Tool identity: LLVM/Clang/objdump 14.0.6, Verilator 5.034, Python 3.12.3,
+  and CMake 3.28.3.
+- Inputs: seed 1, `main`, three measured repeats after one unmeasured warm-up
+  for each implementation at `(N,D)=(1,1),(8,32),(16,64)`.  The exact
+  per-command argv, timeout, return code, and timestamp are in
+  `commands.json`; the top-level runner used the retained `cases.json`.
+- Result: exactly 27 records (`3 cases * 3 implementations * 3 repeats`).
+  Every target and host status is `pass`, every simulator command returned
+  zero, every correctness and derived metric is finite, `failures.json` is
+  empty, and each parsed 64-bit cycle value equals its target `cycles_hi/lo`
+  reconstruction.  No Illegal Instruction, timeout, correctness failure, or
+  failure marker was found.
+- Measured cycles (median/min/max):
+
+  | N | D | Implementation | Median | Min | Max |
+  | ---: | ---: | --- | ---: | ---: | ---: |
+  | 1 | 1 | B1 | 2480 | 2354 | 2481 |
+  | 1 | 1 | B2-R | 1973 | 1934 | 1990 |
+  | 1 | 1 | B3 | 1113 | 1113 | 1162 |
+  | 8 | 32 | B1 | 99840 | 99740 | 99940 |
+  | 8 | 32 | B2-R | 13155 | 12937 | 13304 |
+  | 8 | 32 | B3 | 3268 | 3265 | 3279 |
+  | 16 | 64 | B1 | 370559 | 369758 | 371684 |
+  | 16 | 64 | B2-R | 25406 | 25291 | 25550 |
+  | 16 | 64 | B3 | 9565 | 9556 | 9664 |
+
+- Top-level evidence SHA256:
+  - `cases.json`:
+    `792bf71a5ecb3eb2266eba78520aa76057e9d3a77b3115196e9f8a1ff07d0f94`;
+  - `runner.log`:
+    `fee9823a7dc776f283e8237773cf0042459fe7215ebc0440cd201c5ed23e9dea`;
+  - `run_manifest.json`:
+    `edd7e9b5357c7d754cace42902e845e7f465f8d2c6da4356f250b5dcaeec609f`;
+  - `records.json`:
+    `71d8bf77fe949b11979ef761925144dc470b17a25dcee2fe24979a1351ba3a1d`;
+  - `records.csv`:
+    `ee971a4fa76420f71a56feb840ef5c1819023b5a36816cab79f0623844de3059`;
+  - `summary.json`:
+    `c5cf7226725da45596b8b673bab0b5aa237f3ed95b59f104e940ce184d92a8c6`;
+  - `failures.json`:
+    `37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570`;
+  - `commands.json`:
+    `6f9852925bc059fd6c926bdd40ada7f9cd35e3adafc435fdcbe771a41f54880f`;
+  - `artifact_manifest.json`:
+    `8d8e3c245f46d42729d903a778dd272876db616724672e7229161e00bf242f7b`.
+- Per-case ELF, simulator-log, and RVV-snippet SHA256 respectively:
+  - `(1,1)`:
+    `d85a702f69a6a258b4ae769013c16754bd265ca72e12c5b98feb37f6ddaacbc0`,
+    `6174698b5896a76677118605facdc1aba79480a81e7b9b931bef4e7315eacdd5`,
+    `0569f0f89bad011819932d99f55155818b33de27d83a40e639ccd6c0ad3e5b76`;
+  - `(8,32)`:
+    `8953e074f748b4e6a885d2f5103eb06947203393742f482ba6a0a5abeaf40407`,
+    `db31aa5a43ecd713fae0f64fcff28c538ee1fe32988f126d4d30f6a2d127ded4`,
+    `28790a32ff033c575ae9afdfd9d3eb0efdde41002b1679474f6187186973a808`;
+  - `(16,64)`:
+    `d3675aaa946fb6bfb4e506ef24e0d360784fd92f3e27a1008cef84b187af1ef5`,
+    `abc3b631ef8069d2d27dd49bd2b6f5ccd48a54fb16239cb08a64915fd5db7a47`,
+    `a8986ee68f72dd350da6e6bd1b7d6d7a68070f59f2a3700e685ec9c007deea57`.
+- Validation:
+  - `PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s`
+    ` util/online_softmax_merge/tests -v`: 20 tests passed;
+  - `cmake --build hw/system/spatz_cluster/sw/build --target`
+    ` test-spatzBenchmarks-online-softmax-merge --parallel 8`: passed;
+  - `llvm-objdump -d --no-show-raw-insn --mattr=+v <elf>` proves the required
+    VLA RVV instructions and strip-mining back-edge in every retained ELF;
+  - `check_output` contains no scalar `fdiv.s`, and the raw
+    `snrt_stack_size` object value is 13 (8 KiB/core);
+  - all 29 artifact-manifest entries were independently rehashed successfully;
+  - record/status/finiteness/cycle reconstruction and failure-marker gates
+    passed; `git diff --check` passed; `ruff` was unavailable and remains
+    `skipped_unavailable`.
+- Known limitation: these are same-CFG Verilator cycle/runtime proxies.  They
+  are not physical PPA, frequency, power, energy, or critical-path evidence;
+  Stage 3 must still complete the RVV tails and mandatory size matrices.
