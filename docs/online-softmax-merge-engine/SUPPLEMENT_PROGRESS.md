@@ -479,3 +479,7 @@ small manifests only.
 - Limitation: these tail points are correctness evidence, not the mandatory
   performance matrices.  Stage 3 remains open until both fixed-`D` and
   fixed-`N` matrices preserve all statuses and pass the same validation.
+- Git sync note: the first clean-worktree `git fetch origin` attempt at
+  `2026-07-15T14:24:11+08:00` failed with `gnutls_handshake() failed: The TLS connection was
+  non-properly terminated`.  Local checkpoint `b769d23dc325f71018527a9420042afa905058be` is retained; no
+  reset, merge, or force-push was used, and a periodic retry is required.
