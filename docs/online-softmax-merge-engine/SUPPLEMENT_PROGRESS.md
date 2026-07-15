@@ -30,7 +30,7 @@ small manifests only.
 | 3 | Anchors, RVV tails, mandatory size matrices | P0 | complete | Stage 3n closes both mandatory fixed matrices |
 | 4 | Break-even table and fitted scale model | P0 | complete | Stage 4e formal fit and direct 16-point table |
 | 5 | Full-SMU FSM cycle breakdown and A0/A2 | P0 | complete | Stage 5b exact three-point formal closure |
-| 6 | C0/C1/C2/C3 concurrency and 16 bank phases | P0 | in_progress | Stage 6a target schedule; formal runner pending |
+| 6 | C0/C1/C2/C3 concurrency and 16 bank phases | P0 | in_progress | Stage 6b target schedule and host runner; analysis/formal run pending |
 | 7 | Yosys Slang generic-resource proxy | P0 | pending | pending |
 | 8 | Representative RTL VCD toggle proxy | P0 | pending | pending |
 | 9 | Target `expf` B0/B2-F | P1 | pending | pending |
@@ -2153,3 +2153,75 @@ small manifests only.
   configuration; any low-perturbation trace gate used next must be explicit and
   independently validated.  No physical PPA, power, energy, Fmax, or
   critical-path claim is made.
+
+### Stage 6b checkpoint: concurrency host runner and retained terminal states
+
+- Objective: make the Stage 6a target schedule reproducibly buildable,
+  executable, disassembly-gated, validated, and preservable from one host
+  command.  Stage 6 remains `in_progress`; metric analysis and a clean formal
+  run are still pending.
+- `util/online_softmax_merge/run_concurrency.py` defaults to the representative
+  `(N,D,R)=(16,64,3)` point and requires a fresh external
+  `work-online-merge-*` result directory.  Configure, build, disassembly, and
+  simulator commands have separate timeouts.  Repeated CMake definitions,
+  exact ELF copying/hashing, CFG and simulator identities, source Git context,
+  tool versions, command windows, generated trace identities, and measurement
+  semantics are retained in JSON manifests.
+- The runner requires exactly 148 C0/C1/C2/C3 target records, 76 `OM_FSM`
+  invocations, one metadata record, every `(scenario,phase,repeat)` key, all 16
+  phases, an exact target/FSM invocation bijection, and the PASS banner.  It
+  validates stream length/tail, allocation metadata, bank-phase arithmetic,
+  correctness counts, sparse post-work polling, zero reads inside the core
+  window, FSM state sums, and the `[0.8,1.2]` C0 register/SMU calibration gate.
+  GNU/LLVM-aware disassembly gates prove the register loop has no memory or
+  stack access and prove the stream loop has `vsetvli`, `vle32.v`, `vse32.v`,
+  and a local back-edge.
+- Every parsed partial target/FSM record is retained on timeout or error.
+  Malformed numeric/JSON fields become structured validation failures rather
+  than escaping as tracebacks.  Target-emitted whole-run `capacity_skip` and
+  `unsupported` records use a dedicated terminal validator instead of
+  accumulating false full-schedule failures.  Early setup/build/disassembly
+  terminal states now also create matching `failures.json` entries, and an
+  objdump wall-clock timeout remains `timeout` rather than being relabeled as
+  a generic tool error.
+- Structured outputs are `concurrency_records.{csv,json}`,
+  `concurrency_metadata.json`, `fsm_records.{csv,json}`, `failures.json`,
+  `commands.json`, `artifact_manifest.json`, and `run_manifest.json`.
+  `util/online_softmax_merge/README.md` documents the controlled invocation,
+  gates, outputs, and the non-physical scope of these runtime proxies.
+- End-to-end synthetic CLI evidence is retained at
+  `/home/wxt/work-online-merge-stage6b-cli-20260715T194941Z`.  The harness ran
+  the real runner entry point through capacity, unsupported, missing-simulator
+  tool error, and one-second simulator timeout paths.  Expected/observed exit
+  codes were `0/0`, `0/0`, `1/1`, and `1/1`; each output manifest retained only
+  the corresponding explicit status.  The timeout command window was
+  `2026-07-15T19:49:41Z` to `2026-07-15T19:49:42Z`, retained malformed output,
+  and produced seven validation failures plus a terminal timeout record.  This
+  uses clearly labeled fake objdump/simulator scripts solely to validate host
+  status plumbing; it is not performance evidence.
+- The synthetic run used source parent
+  `9e4c35d2623a83701b1547d3ab4712cbdf5c8779` with `git_dirty=true`, CFG SHA256
+  `120fa0c30199e54e6e9b5c60d8da40913eae8526640992cc5d4f130bef159775`,
+  Python 3.12.3, CMake 3.28.3, Verilator 5.034, and the configured Clang 14.0.6.
+  Harness, validation-summary, and complete checksum-index SHA256 values are
+  `2b3eaa23a7ad9d0ac3153ccefb63da2605c3f680b53eaaf544cecfdc912ff8fe`,
+  `6f0100f7002e4ea7b1b340b9f0ba409ba855ea5f382c80aaf68d3d6bc432b535`,
+  and `8409de42999ecd64bf44a1b692eb51a1de7accb68ba2d81b3e8b76bff96d62cb`.
+- The first checkpoint harness at
+  `/home/wxt/work-online-merge-stage6b-validation-20260715T195258Z` is retained
+  as `tool_error`: all 59 tests and Python compilation passed, but its new
+  whole-progress-file 100-column gate rediscovered 13 pre-existing long lines
+  and stopped before `git diff --check`.  Validation-log SHA256 is
+  `20c240507a6e38f5713a2c5c1c44fda584ffb03eee2dcd254b754fad17a4e0d7`.
+- Corrected checkpoint validation at
+  `/home/wxt/work-online-merge-stage6b-validation-r2-20260715T195434Z`
+  reran all 59 utility unit tests, compiled all four runner/analyzer Python
+  modules, checked changed-file line lengths and `git diff --check`, and
+  inspected status/diff.  Validation-log and context SHA256 values are
+  `d2007e63553a6e3d26edae67d6ca7a7da19b4b3a1a3a0d0f4d6816dee6fb31c1` and
+  `846ea7c8fcd66f0fb0fbbf3d871c31939f1c54fd4f2b0ef954145010f0a0e11c`.
+- Next: implement deterministic concurrency analysis with exact per-invocation
+  pairing, warm-up exclusion, raw unclamped overlap/slowdown metrics, C3 phase
+  best/worst/median summaries, and full retention of negative/non-pass data.
+  The prior exact traced smoke remains a reproducible 900-second timeout; no
+  physical area, timing, power, energy, or critical-path claim is made.

@@ -311,6 +311,63 @@ boundary overhead.  These Verilator cycles and TCDM counters are an ablation
 and congestion measurement only; they are not area, Fmax, power, energy, or
 physical-efficiency results.
 
+## Core--SMU concurrency capture
+
+`run_concurrency.py` builds and validates the dedicated C0/C1/C2/C3
+microbenchmark.  Its default point is `(N,D)=(16,64)` with one warm-up and
+three measured repeats.  C3 scans relative byte offsets
+`{0,8,...,120}`, covering all 16 `addr[6:3]` bank phases.  The complete target
+schedule has 148 records and 76 SMU invocations; every SMU record is paired by
+invocation number with one simulation-only `OM_FSM` record.
+
+Use fresh external build and result directories.  The simulator source path
+identifies the checkout from which the exact simulator was built; a formal run
+can require both source checkouts to be clean:
+
+```bash
+python3 util/online_softmax_merge/run_concurrency.py \
+  --repo-root "$PWD" \
+  --source-dir "$PWD/hw/system/spatz_cluster/sw" \
+  --build-dir /home/user/work-online-merge-concurrency-build \
+  --simulator /home/user/work-online-merge-concurrency-simulator/\
+spatz_cluster.vlt \
+  --simulator-source-dir \
+    /home/user/work-online-merge-concurrency-simulator-source \
+  --cfg "$PWD/hw/system/spatz_cluster/cfg/\
+spatz_cluster.default.dram.hjson" \
+  --work-dir /home/user/work-online-merge-concurrency-results \
+  --n 16 --d 64 --repeats 3 --jobs 2 \
+  --require-clean \
+  "${cmake_defines[@]}"
+```
+
+The register-only loop must have a local back-edge and no load, store, stack
+reference, or undecoded instruction.  The streaming loop must contain
+`vsetvli`, `vle32.v`, `vse32.v`, a local back-edge, and no undecoded
+instruction.  GNU objdump is preferred because the pinned LLVM objdump may
+not decode every target RVV opcode.
+
+The runner enforces the exact schedule, phase arithmetic, RVV tail, correctness
+counts, sparse post-work polling, zero status/counter reads inside the core
+window, and a C0 register/SMU calibration ratio in `[0.8,1.2]`.  Configure,
+build, disassembly, and simulation have independent timeouts.  Partial target
+and FSM records are retained on timeout or error.  Capacity, unsupported,
+timeout, correctness, and tool failures remain explicit structured statuses.
+
+Deterministic structured outputs include:
+
+- `concurrency_records.{csv,json}`: raw target timing, correctness, TCDM, bank
+  phase, and terminal records;
+- `fsm_records.{csv,json}`: per-invocation state and busy-cycle observations;
+- `concurrency_metadata.json`: target allocation and protocol metadata;
+- `failures.json`: parse, validation, command, and early-terminal evidence;
+- `commands.json`, `artifact_manifest.json`, and `run_manifest.json`:
+  commands, hashes, Git/CFG/tool provenance, and measurement semantics.
+
+The capture files report Verilator same-configuration runtime proxies only.
+They do not support physical area, frequency, power, energy, or critical-path
+claims.
+
 ## Validation
 
 ```bash
