@@ -696,3 +696,87 @@ small manifests only.
   from a clean worktree, verify source-relevant inputs remain unchanged, then
   continue each stopped simulator before its runner.  Any later pass, timeout,
   tool error, or incomplete status must be retained without reinterpretation.
+
+### Stage 3i checkpoint: final inherited timeout and exact ELF restoration
+
+- Objective: close the inherited six-case runner without deleting its final
+  timeout, restore the incident-affected retained ELF exactly, and validate the
+  complete artifact set before changing experiment code.
+- The initial fixed-`D=64` batch at
+  `/home/wxt/work-online-merge-stage3-matrix-d64-clean-20260715-062750`
+  completed with runner return code 1.  Its `N=32` simulator reached the
+  3,600-second host wall-clock timeout at
+  `2026-07-15T09:19:58+00:00` without emitting an `OM_RESULT` marker.  The
+  retained result therefore contains one synthetic timeout record for each of
+  B1, B2-R, and B3, all with `repeat=-1` and null cycle/correctness metrics.
+  This timeout was not relabelled or replaced.
+- Final inherited-batch state is 45 records: 36 passes for
+  `N={1,2,4,16}`, six retained `N=8` timeouts, and three retained `N=32`
+  timeouts.  The 24 recorded commands comprise 22 zero-return passes and two
+  host timeouts whose recorded subprocess return code is zero.  The only two
+  validation failures remain the `N=8` `incomplete_repeat_set` and
+  `missing_implementation` records.  The runner's nonzero result is preserved
+  as an incomplete mandatory matrix, not interpreted as a performance result.
+- After that runner exited, the original shared build path was reconfigured
+  for `N=8,D=64,seed=1,main,repeats=3` and rebuilt.  The resulting target hash
+  was exactly the required
+  `c919d31ae76a159cdaadb9cb75a3ad567bceb1270fa0adc14a38c3350542e70c`.
+  It was copied to a temporary sibling, verified, and atomically renamed over
+  the incident-affected retained ELF.  No `objcopy` command was used.  The
+  restoration record is
+  `/home/wxt/work-online-merge-elf-restoration-20260715T092707Z/restoration.json`,
+  SHA256
+  `67864137bb028f1d73bf5e3edd9c105501531b1108ea600471c32b38eff759bf`.
+- Independent final validation reconstructed all 41 raw target markers,
+  checked the exact 45-record status/key set, all non-null metrics, both
+  retained failure kinds, all 24 command statuses, all 18 summary rows, and
+  the RVV disassembly gate for all six cases.  After restoration, every one of
+  the complete 56 artifact-manifest entries rehashed successfully.  The
+  report is
+  `/home/wxt/work-online-merge-stage3-initial-final-validation-20260715T092915Z/validation.json`,
+  SHA256
+  `37f48a508dfda3b8eeb1c10714e943889f47b188bfe33b463c1092b66d2a10bd`;
+  its validation script SHA256 is
+  `185fe18254785ecfb4d336a10d3bef296dfc0a15d89f8175c20ae289379420d8`.
+- The first independent-validation attempt is retained at the same root as
+  `validation_attempt1.json`, SHA256
+  `29cca48c364df38ae0630c2ff63af3e86204bbef9dc46c39bf9fcda968d86d16`.
+  It failed only because the validation script incorrectly expected summary
+  statistics to include timeout records that retain target cycles; the runner
+  intentionally summarizes final pass records only.  The corrected validator
+  preserves the timeout cycles in `records.json` while confirming their
+  exclusion from `summary.json`.
+- Final top-level SHA256 values for the inherited batch are:
+  - `run_manifest.json`:
+    `d2a7772970d60b72d81066d0c5c26eeae21391479efcf098163abc78b700f69a`;
+  - `records.json`:
+    `2250247ab85af717448dedb61894622f8da99b837ff1ee86780fed13311f4f8c`;
+  - `records.csv`:
+    `e616227594ca7c3620c573d7ff124f4496f7b37379dc607e40e0efe255d0acb1`;
+  - `summary.json`:
+    `bd171796b3b74a69d3294b05cd2d6143fe6fadd4fc8b717f9a5b3315893a7aa2`;
+  - `commands.json`:
+    `9ddaad386c145a05a7da265fc830255709fb65bff8c64da5df088148c3b0bb54`;
+  - `failures.json`:
+    `20b4d7a7e6680169e53c01e5fd06f8cc8701f85dbbfcd988631ce6cd690a87ce`;
+  - `artifact_manifest.json`:
+    `1f92cd38f954b1076653863ebdbda6156b95d70d24b2a6462a7f2e28ec9047c3`;
+  - external runner log:
+    `0c766fedf995d58306c335828c5d62e132d0e02dda29d47845e8dd128c28114a`.
+- The Stage 3h synchronization first failed at `git fetch origin` with
+  `gnutls_handshake() failed: The TLS connection was non-properly terminated`.
+  The local checkpoint was retained; a retry at
+  `2026-07-15T09:16:19+00:00` succeeded, followed by a clean rebase and push at
+  `09:18:51+00:00`.  The external sync record SHA256 is
+  `c65778ba2ccc19ad5866a829f2ed4b337b0a741ae857ab5a2d57eb3e2c8bc732`;
+  no force-push or merge commit was used.
+- At `2026-07-15T09:33:39+00:00`, the remaining independently built `N=32`
+  simulator was stopped before its runner and remains explicitly unclaimed.
+  The pause record is
+  `/home/wxt/work-online-merge-stage3-checkpoint-20260715T093339Z/pause.json`,
+  SHA256
+  `afd5bc1f6e8a435fe648b285067ec2330da17d854adf25e2125737325848174a`.
+- Resume gate: validate this documentation-only diff, commit and synchronize
+  from a clean worktree, then continue the stopped simulator before its runner.
+  The fixed-`D` matrix remains open pending the independently built `N=32`
+  result; the inherited `N=8` and `N=32` timeouts remain permanent evidence.
