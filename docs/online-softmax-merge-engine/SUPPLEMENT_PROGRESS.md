@@ -30,7 +30,7 @@ small manifests only.
 | 3 | Anchors, RVV tails, mandatory size matrices | P0 | complete | Stage 3n closes both mandatory fixed matrices |
 | 4 | Break-even table and fitted scale model | P0 | complete | Stage 4e formal fit and direct 16-point table |
 | 5 | Full-SMU FSM cycle breakdown and A0/A2 | P0 | complete | Stage 5b exact three-point formal closure |
-| 6 | C0/C1/C2/C3 concurrency and 16 bank phases | P0 | pending | pending |
+| 6 | C0/C1/C2/C3 concurrency and 16 bank phases | P0 | in_progress | Stage 6a target schedule; formal runner pending |
 | 7 | Yosys Slang generic-resource proxy | P0 | pending | pending |
 | 8 | Representative RTL VCD toggle proxy | P0 | pending | pending |
 | 9 | Target `expf` B0/B2-F | P1 | pending | pending |
@@ -2056,3 +2056,100 @@ small manifests only.
   are not physical area, timing, power, energy, or critical-path evidence.
   Stage 5 is complete; the next P0 stage is C0-C3 concurrency and all 16
   relative `addr[6:3]` bank phases.
+
+### Stage 6a checkpoint: concurrency microbenchmark and low-polling schedule
+
+- Objective: establish the target-side C0/C1/C2/C3 schedule required by
+  specification section 8 before adding the formal host runner and analysis.
+  Stage 6 is `in_progress`, not complete.
+- The new
+  `test-spatzBenchmarks-online-softmax-merge-concurrency` target uses the
+  compact generated merge case and allocates one separate streaming workspace.
+  For `R=3` it emits one `OM_CONCURRENCY_META` record and 148 structured
+  `OM_CONCURRENCY` records: C0 SMU/register/stream baselines, C1 register-only
+  overlap, C2 RVV-stream overlap, and paired standalone/concurrent C3 samples
+  at all relative offsets `{0,8,...,120}` bytes.  There are 76 SMU invocations
+  for exact pairing with the simulation-only `OM_FSM` observer.
+- C1 is a runtime-calibrated, register-only integer loop.  Its target symbol
+  has a loop back-edge and zero load/store instructions.  The polling fallback
+  uses the same register-only body for 64 iterations between status reads; the
+  first status read occurs only after the core workload.  Every record declares
+  zero status reads during the core window and zero counter reads inside the
+  measured window.
+- C2/C3 use a fixed 2,049-element RVV e32,m8 copy with AVL capped at 8.  Each
+  workload transfers 16,392 bytes, its 1-element tail is explicit, and source
+  to destination spacing is the same 8,320 bytes at every phase.  Both source
+  and destination actual relative `addr[6:3]` phases are checked against the
+  requested phase.  SMU output is checked against the generated golden result,
+  stream output is bit-exact, and register output is deterministic; terminal
+  timeout/error/capacity/unsupported statuses remain structured records.
+- Dirty compile evidence is
+  `/home/wxt/work-online-merge-stage6a-compile-dirty-20260715T185530Z` with
+  external build directory
+  `/home/wxt/work-online-merge-stage6a-build-dirty-20260715T185530Z`.
+  Configure and target compile/link returned zero.  `result.json` SHA256 is
+  `9847490bfead5b84780a259f83ebc8fca6fc8564ac2540ffda38dbd3e52008b5`;
+  build-log SHA256 is
+  `3f4e10e5293b85540e20d4960ca9781263305639055931f438445f7b70029ae8`.
+  The exact ELF SHA256 is
+  `e7d06ef5c8d1f2ffd19aeaf8bd8e0623ee6f4448184e9f74d6b814b79b49c681`.
+- Disassembly evidence is
+  `/home/wxt/work-online-merge-stage6a-disassembly-20260715T185837Z`.
+  `/usr/bin/riscv64-unknown-elf-objdump` proves the register loop has no
+  load/store or spill and proves the stream symbol contains `vsetvli`,
+  `vle32.v`, `vse32.v`, and a strip-mining back-edge; gate-file SHA256 is
+  `769b850c2b3a03d02c6401ec2b05e70ea3cc8305ebc22db39bbfa93728e08ee7`.
+  The first pinned LLVM objdump could not decode these vector opcodes and its
+  failed gates are retained in the same directory rather than discarded.
+- The exact-simulator smoke is retained at
+  `/home/wxt/work-online-merge-stage6a-smoke-20260715T190019Z`, UTC window
+  `2026-07-15T19:00:19Z` to `2026-07-15T19:15:20Z`.  It used simulator SHA256
+  `73b9138e49f7d8b095250a0867d03063b9afb494bbf7e9ca300faf70a70e4cc8`
+  from source commit `9d812be187fcf07359e80537031850c313ad5954`, CFG SHA256
+  `120fa0c30199e54e6e9b5c60d8da40913eae8526640992cc5d4f130bef159775`,
+  Verilator 5.034, and the exact ELF above.  The traced simulator reached the
+  900-second host limit and remains return code 124/`timeout`, not a passing
+  full-schedule result.  Before timeout it emitted one valid metadata record,
+  nine parseable records (all correctness/status checks passing), and four
+  complete `OM_FSM` records.  The four C0-SMU samples used exactly 13 sparse
+  status reads each, or about 656 busy cycles per read.  Median C0 SMU and
+  register cycles were 10,048 and 10,059, giving calibration ratio 1.001095.
+  Completeness gates correctly reject the missing C1/C2/C3 schedule and PASS
+  banner; validation JSON SHA256 is
+  `eb21ff932226fa0662c593de7d1606ac3800f5133af8a61358425bbfa1106d6a`.
+  The validator's first partial-evidence path exposed a `None` handling bug;
+  that tool-error traceback is retained with SHA256
+  `b5c67b23e2edc40aa52e213170ec683a5ec81bcaeb376f7c2597111f4c229569`
+  before the validator was fixed and rerun.
+- Smoke stdout/stderr SHA256 values are
+  `411e5c0c483c40e72e57f65be4a404d496e843a9461fd8dcca4a069e030c1c87`
+  and `38c65c68c47a77a22db4626675de1b0c7750accb811d9a0c9eb835fba8135545`.
+  The large 539 MiB/248 KiB hart traces remain only under the external run
+  directory; hart-0/hart-1 SHA256 values are
+  `5e3292a2df2f78a8e6468b4b084217eb5a558b9b767ad2472f89377247348a6f`
+  and `53fbbf28aa5a63867deb47aa63c566f80c212d824cacf19bff4b340684900731`.
+- Source identities for this dirty pre-checkpoint smoke are parent commit
+  `50903a5458c9812280621249673a3d350c6a8bcb`; `concurrency.c`,
+  `concurrency_workloads.S`, and `concurrency_workloads.h` SHA256 values are
+  `b4dba9dec2f1223c659fab299a13a9c7a313cf903f09abe05374b4e6fc83bcd7`,
+  `e7e42f9cd2c1aa8efcbf3cb1c6a1ed314fdbcb61d516aba217894bce93462389`,
+  and `e9cf9ae266e79a649d761f901ff6734042cad023959bf01e0217e148b3d6940c`.
+- The first checkpoint-validation harness at
+  `/home/wxt/work-online-merge-stage6a-checkpoint-validation-20260715T191835Z`
+  had an incorrect static string assertion and lacked fail-fast propagation, so
+  its misleading zero exit is retained as `tool_error`; validation-log SHA256 is
+  `9863beae029700b7521f328344f155a3086aaafe04ad63cd6604b0684afaddda`.
+  The corrected fail-fast rerun at
+  `/home/wxt/work-online-merge-stage6a-checkpoint-validation-r2-20260715T191957Z`
+  passed with return code zero; validation-log and context SHA256 values are
+  `8363d352a654cb94ba838b5823a0ef50a6ec32e567ea52e9ad248c6603a9eb6b`
+  and `4c4409678b55c88a0b7884645dc888040309273af218da5844586b6de5ba7493`.
+- Remaining Stage 6 work: add the external-work-dir host runner, synthetic
+  timeout/tool-error/capacity/unsupported retention tests, exact `OM_FSM`
+  pairing, CSV/JSON analysis of `T_smu`, `T_core`, `T_concurrent`, unclamped
+  overlap efficiency, both slowdowns, congestion, throughput, and best/worst/
+  median phase, followed by a clean committed formal run.  The retained timeout
+  shows that always-on per-instruction traces are not a practical formal-run
+  configuration; any low-perturbation trace gate used next must be explicit and
+  independently validated.  No physical PPA, power, energy, Fmax, or
+  critical-path claim is made.

@@ -135,6 +135,18 @@ target_include_directories(
 target_link_libraries(test-${SNITCH_TEST_PREFIX}online-softmax-merge
     benchmark ${SNITCH_RUNTIME})
 
+add_snitch_test(online-softmax-merge-concurrency
+    online-softmax-merge/concurrency.c
+    online-softmax-merge/concurrency_workloads.S
+    ${ONLINE_MERGE_CASE_HEADER})
+target_include_directories(
+    test-${SNITCH_TEST_PREFIX}online-softmax-merge-concurrency
+    PRIVATE ${ONLINE_MERGE_GENERATED_DIR}
+            ${CMAKE_CURRENT_SOURCE_DIR}/online-softmax-merge)
+target_link_libraries(
+    test-${SNITCH_TEST_PREFIX}online-softmax-merge-concurrency
+    benchmark ${SNITCH_RUNTIME})
+
 add_snitch_test(attnres-baselines attnres-baselines/main.c)
 target_link_libraries(test-${SNITCH_TEST_PREFIX}attnres-baselines benchmark ${SNITCH_RUNTIME})
 
