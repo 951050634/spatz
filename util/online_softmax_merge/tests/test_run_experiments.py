@@ -234,6 +234,36 @@ class RunExperimentsTest(unittest.TestCase):
         self.assertIn("vsetvli", snippet)
         self.assertNotIn("next_symbol", snippet)
 
+    def test_rvv_disassembly_gate_requires_two_loads_and_backedge(
+        self,
+    ) -> None:
+        one_load = """\
+80001000 <online_merge_rvv_update>:
+80001000: vsetvli a4, a3, e32, m8, ta, ma
+80001004: vle32.v v8, (a0)
+80001008: vfmul.vf v8, v8, fa0
+8000100c: vfmacc.vf v8, fa1, v16
+80001010: vse32.v v8, (a2)
+80001014: bnez a3, 0x80001000 <online_merge_rvv_update>
+"""
+        _, missing = runner.inspect_rvv_disassembly(one_load)
+        self.assertIn("2 vle32.v instructions", missing)
+        self.assertNotIn("strip-mining back-edge", missing)
+
+        no_backedge = """\
+80001000 <online_merge_rvv_update>:
+80001000: vsetvli a4, a3, e32, m8, ta, ma
+80001004: vle32.v v8, (a0)
+80001008: vle32.v v16, (a1)
+8000100c: vfmul.vf v8, v8, fa0
+80001010: vfmacc.vf v8, fa1, v16
+80001014: vse32.v v8, (a2)
+80001018: ret
+"""
+        _, missing = runner.inspect_rvv_disassembly(no_backedge)
+        self.assertIn("strip-mining back-edge", missing)
+        self.assertNotIn("2 vle32.v instructions", missing)
+
     def test_rvv_disassembly_gate_rejects_unknown_or_missing_sequence(
         self,
     ) -> None:

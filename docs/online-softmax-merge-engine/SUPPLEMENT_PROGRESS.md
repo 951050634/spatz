@@ -27,7 +27,7 @@ small manifests only.
 | 0 | Isolate worktree and import governing specification | setup | complete | this checkpoint |
 | 1 | Benchmark/result framework | P0 | complete | pre-commit smoke below |
 | 2 | Fair B1/B2-R/B3 baselines and RVV disassembly gate | P0 | complete | Stage 2b clean anchors |
-| 3 | Anchors, RVV tails, mandatory size matrices | P0 | in_progress | anchors complete; tails/matrices pending |
+| 3 | Anchors, RVV tails, mandatory size matrices | P0 | in_progress | bounded-AVL fix ready; clean tails/matrices pending |
 | 4 | Break-even table and fitted scale model | P0 | pending | pending |
 | 5 | Full-SMU FSM cycle breakdown and A0/A2 | P0 | pending | pending |
 | 6 | C0/C1/C2/C3 concurrency and 16 bank phases | P0 | pending | pending |
@@ -370,3 +370,72 @@ small manifests only.
   readback fixes the failure.  The next bounded diagnostic reduces LMUL/chunk
   length because short `D=7` vectors passed while the recurring bad upper
   lanes resemble earlier source elements.
+
+### Stage 3c checkpoint: bounded-AVL RVV compatibility fix
+
+- Objective: restore B2-R correctness for the retained shape-sensitive
+  `D=15`/`D=31` failures without weakening VLA semantics or moving any
+  workaround overhead outside the measured window.
+- Bounded diagnostics used commit
+  `e5d03284aa0ba422786ba6274efa4f6006fab17b` with `git_dirty=true`, CFG
+  SHA256 `120fa0c30199e54e6e9b5c60d8da40913eae8526640992cc5d4f130bef159775`,
+  the fixed simulator SHA256
+  `25a56d98474895d16d7de81f73d9cf8a06ba8eb650af5f9b58a012d15022e69a`,
+  CMake 3.28.3, target LLVM/Clang 14.0.6, Python 3.12.3, and Verilator
+  5.034.  Each diagnostic used the runner command below, with the shown
+  external directory and `D` substituted:
+
+  ```bash
+  repo=/home/wxt/work-online-merge-supplement
+  PYTHONDONTWRITEBYTECODE=1 python3 \
+    util/online_softmax_merge/run_experiments.py \
+    --repo-root "$repo" \
+    --source-dir "$repo/hw/system/spatz_cluster/sw" \
+    --build-dir "$repo/hw/system/spatz_cluster/sw/build" \
+    --simulator /home/wxt/spatz/hw/system/spatz_cluster/bin/spatz_cluster.vlt \
+    --cfg "$repo/hw/system/spatz_cluster/cfg/spatz_cluster.default.dram.hjson" \
+    --work-dir <external-directory> --case 1,<D>,1,main,1800 \
+    --repeats 3 --jobs 8
+  ```
+
+- Reducing only LMUL from `e32,m8` to `e32,m4` did not reduce the actual
+  `VL` for `D=15` on the fixed 512-bit VLEN configuration and did not fix the
+  failure.  Evidence:
+  `/home/wxt/work-online-merge-stage3-tail-lmul4-diagnostic-20260715-050014`,
+  UTC `2026-07-15T05:00:26+00:00` to `05:05:40+00:00`.  B1/B3 passed;
+  B2-R failed all three repeats at `O[0][9]` with the same expected bits
+  `1060333124` and actual bits `1065266780`.  `run_manifest.json` SHA256 is
+  `27f7a2233eba6539a62aac2bb655667dc0f07907bac4332470407078f93b41f4`
+  and `artifact_manifest.json` SHA256 is
+  `39f087791e102994f6bd0c293e3e2856d39e1309b8cc0ead350ef2a04588238b`.
+- Bounding each `e32,m8` AVL request to at most eight elements retained a
+  generic VLA strip-mining loop and fixed both retained failing shapes.  The
+  loop/configuration cost remains inside every B2-R measurement:
+  - `D=15` evidence:
+    `/home/wxt/work-online-merge-stage3-tail-cap8-diagnostic-20260715-050647`,
+    UTC `2026-07-15T05:07:30+00:00` to `05:12:32+00:00`; all nine records
+    passed, `run_manifest.json` SHA256
+    `8a3985765e373566bce9dd0c7628b902446fb8be1ac72e8557ca857baf8d8625`,
+    and `artifact_manifest.json` SHA256
+    `343bad67296a701d97156095b3bbaef765fada12d655da31853acffb925f4c34`;
+  - `D=31` evidence:
+    `/home/wxt/work-online-merge-stage3-tail-cap8-d31-diagnostic-20260715-051424`,
+    UTC `2026-07-15T05:14:24+00:00` to `05:19:18+00:00`; all nine records
+    passed, `run_manifest.json` SHA256
+    `f3c89e4fa2c8806375072d10dd08a3b9025565694a03419deeaa5db0e6f9157e`,
+    `artifact_manifest.json` SHA256
+    `9d9af1dac975486bc4ac89502484378a9126989cd50424320858c47299a13f48`,
+    and runner log SHA256
+    `79bf9b81d18921d86f1f1b2ca4449d72d991a163ec4bc670c3507b31d83e5665`.
+- Validation: all 11 entries in each of the three artifact manifests were
+  independently rehashed successfully.  The implementation unit suite passed
+  21 tests.  The target build passed, and the actual target symbol contains
+  two `vle32.v` instructions, `vfmul.vf`, `vfmacc.vf`, `vse32.v`, bounded-AVL
+  selection, and a local strip-mining back-edge.  The strengthened gate now
+  rejects a missing second load or missing back-edge.  `git diff --check`
+  passed.
+- Decision and limitation: retain the AVL cap as an explicitly documented
+  compatibility workaround for this fixed RTL/Verilator environment; the
+  evidence establishes a workaround, not an RTL root cause.  Diagnostic cycle
+  values are not formal performance evidence.  Stage 3 remains open until the
+  complete clean-commit tail set and both mandatory scale matrices pass.

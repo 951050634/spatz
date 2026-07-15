@@ -36,6 +36,7 @@ RVV_REQUIRED_MNEMONICS = (
     "vfmacc.vf",
     "vse32.v",
 )
+RVV_REQUIRED_COUNTS = {"vle32.v": 2}
 VALID_STATUSES = {
     "pass",
     "correctness_fail",
@@ -476,6 +477,38 @@ def extract_symbol_disassembly(disassembly: str, symbol: str) -> str | None:
     return "\n".join(lines[start:end]).rstrip() + "\n"
 
 
+def has_local_backedge(disassembly: str) -> bool:
+    instruction = re.compile(
+        r"^\s*([0-9a-fA-F]+):\s+([a-zA-Z0-9_.]+)(?:\s+(.*))?$"
+    )
+    parsed: list[tuple[int, str, str]] = []
+    for line in disassembly.splitlines():
+        match = instruction.match(line)
+        if match:
+            parsed.append(
+                (
+                    int(match.group(1), 16),
+                    match.group(2),
+                    match.group(3) or "",
+                )
+            )
+    if not parsed:
+        return False
+
+    first_address = min(address for address, _, _ in parsed)
+    last_address = max(address for address, _, _ in parsed)
+    for address, mnemonic, operands in parsed:
+        if not (mnemonic.startswith("b") or mnemonic.startswith("j")):
+            continue
+        targets = re.findall(r"0x([0-9a-fA-F]+)", operands)
+        if any(
+            first_address <= int(target, 16) < address <= last_address
+            for target in targets
+        ):
+            return True
+    return False
+
+
 def inspect_rvv_disassembly(disassembly: str) -> tuple[str | None, list[str]]:
     snippet = extract_symbol_disassembly(disassembly, RVV_UPDATE_SYMBOL)
     if snippet is None:
@@ -485,6 +518,11 @@ def inspect_rvv_disassembly(disassembly: str) -> tuple[str | None, list[str]]:
         for mnemonic in RVV_REQUIRED_MNEMONICS
         if mnemonic not in snippet
     ]
+    for mnemonic, required_count in RVV_REQUIRED_COUNTS.items():
+        if snippet.count(mnemonic) < required_count:
+            missing.append(f"{required_count} {mnemonic} instructions")
+    if not has_local_backedge(snippet):
+        missing.append("strip-mining back-edge")
     if "<unknown>" in snippet:
         missing.append("decoded RVV instructions")
     return snippet, missing
