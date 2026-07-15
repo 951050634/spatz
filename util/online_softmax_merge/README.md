@@ -175,6 +175,53 @@ must stay in the external `work-online-merge-*` directory.  Do not add them to
 Git.  A run with `git_dirty=true` is diagnostic validation only; formal evidence
 must be rerun from a clean committed worktree.
 
+## Scaling and measured break-even analysis
+
+After clean result batches have completed, pass every preserved result root to
+`analyze_scaling.py` with a repeated `--result-root` option.  The output must be
+a fresh external directory whose basename starts with `work-online-merge-`:
+
+```bash
+out="$(dirname "$PWD")/work-online-merge-scaling-analysis"
+python3 util/online_softmax_merge/analyze_scaling.py \
+  --repo-root "$PWD" \
+  --result-root /home/user/work-online-merge-matrix-a \
+  --result-root /home/user/work-online-merge-matrix-b \
+  --output-dir "$out" \
+  --break-even-n 1,2,4,8 \
+  --break-even-d 1,8,16,32
+```
+
+Each input root must contain `run_manifest.json`, `records.json`, and
+`failures.json`.  Formal analysis requires clean Git provenance, one consistent
+CFG and simulator identity, and recorded validation and measurement windows.
+Equivalent repeated records are deduplicated, while conflicting evidence is
+rejected.  Every non-pass record and every `failures.json` entry is retained in
+`analysis.json`; timeouts and other failures must not be dropped to improve the
+fit.
+
+The analyzer fits B2-R and B3 independently with exact rational least squares:
+
+```text
+C(N,D) = C0 + Cs*N + Cv*N*D + Cstall
+```
+
+`Cstall` is the signed residual at a measured coordinate, not a physical stall
+counter.  The report includes exact numerator/denominator values, decimals,
+SSE, SST, `R²`, cycles per element, elements per cycle, congestion, and speedup
+versus B2-R.  Fitted values and residuals remain separate from the direct
+break-even decision.  `break_even.csv` uses only measured median cycles and the
+definition `C_smu(N,D) <= C_rvv(N,D)`; a missing cell remains missing rather
+than being filled by a model prediction.
+
+The deterministic outputs are:
+
+- `analysis.json`: provenance, retained evidence, fit parameters, residuals,
+  acceptance gates, and the directly measured break-even table;
+- `model_residuals.csv`: one measured coordinate per fitted implementation;
+- `break_even.csv`: the requested measured `(N,D)` grid;
+- `artifact_manifest.json`: input hashes, analyzer identity, and output hashes.
+
 ## Validation
 
 ```bash

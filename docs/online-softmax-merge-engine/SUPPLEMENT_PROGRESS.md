@@ -28,7 +28,7 @@ small manifests only.
 | 1 | Benchmark/result framework | P0 | complete | pre-commit smoke below |
 | 2 | Fair B1/B2-R/B3 baselines and RVV disassembly gate | P0 | complete | Stage 2b clean anchors |
 | 3 | Anchors, RVV tails, mandatory size matrices | P0 | complete | Stage 3n closes both mandatory fixed matrices |
-| 4 | Break-even table and fitted scale model | P0 | in_progress | Stage 4c N=4 batch; direct grid complete |
+| 4 | Break-even table and fitted scale model | P0 | in_progress | Stage 4d analyzer implemented; formal fit pending |
 | 5 | Full-SMU FSM cycle breakdown and A0/A2 | P0 | pending | pending |
 | 6 | C0/C1/C2/C3 concurrency and 16 bank phases | P0 | pending | pending |
 | 7 | Yosys Slang generic-resource proxy | P0 | pending | pending |
@@ -1597,3 +1597,103 @@ small manifests only.
   `f8b4e56d9572e03b2589117aba6eaccc0258857d218f1bca4407c7b61a907fc6`,
   and return-code-file SHA256 is
   `9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa`.
+
+
+### Stage 4d checkpoint: deterministic scaling analyzer implementation
+
+- Objective: implement the separately labelled B2-R/B3 scale-model fit,
+  residual table, and consolidated directly measured break-even analysis before
+  running it against the complete clean evidence set.
+- The analyzer is
+  `util/online_softmax_merge/analyze_scaling.py`, SHA256
+  `76c54419cf63c95d5f44865a1389c0a19c3e1139d814be40fd6eaa6adcc1a7d5`.
+  It uses standard-library exact rational least squares for
+  `C(N,D) = C0 + Cs*N + Cv*N*D + Cstall`, fits B2-R and B3 independently,
+  emits exact and decimal parameters, every fitted value and signed residual,
+  SSE/SST and `R²`, and reports cycles/element, elements/cycle, congestion, and
+  speedup versus B2-R.  Here `Cstall` is explicitly a fitted residual, not a
+  physical stall counter.
+- The directly measured break-even table uses only retained medians and the
+  definition `C_smu(N,D) <= C_rvv(N,D)`.  Model fits and measured decisions
+  remain separate; missing cells remain missing and cannot be populated by an
+  extrapolation.  The analyzer requires a complete requested grid before
+  accepting formal output.
+- Input controls reject duplicate roots, conflicting duplicate records, dirty
+  input provenance, inconsistent CFG or simulator identities, and missing
+  measurement/validation metadata.  Equivalent repeats may differ only in
+  their source root and Git commit provenance.  All non-pass records and all
+  `failures.json` entries are copied into the analysis rather than filtered
+  out.  Outputs are deterministic `analysis.json`, `model_residuals.csv`,
+  `break_even.csv`, and `artifact_manifest.json` under a fresh external
+  `work-online-merge-*` directory.
+- The external reviewed source is
+  `/home/wxt/work-online-merge-stage4-analysis-review-20260715T141000Z/`
+  `analyze_scaling.py`, with the same SHA256 as the repository analyzer.  Its
+  enhanced diagnostic smoke is
+  `/home/wxt/work-online-merge-stage4-analysis-review-smoke-20260715T141500Z`.
+  Before the N=4 batch was added, that smoke accepted all provenance gates,
+  fit 19 unique coordinates per model, retained 180 pass and nine timeout raw
+  records, retained nine non-pass records and two failure entries, and
+  identified six equivalent B2-R/B3 duplicate repeat records.  Diagnostic
+  `R²` values were `0.9997413491369759` for B2-R and
+  `0.9999730794879631` for B3.  These are implementation smoke values, not the
+  final complete-model evidence.  Its top-level SHA256 values are:
+  - `analysis.json`:
+    `7cc83f5dfd55af3ed3abbc30f4b02415415ba4ee1b599a1023601e847c320a02`;
+  - `model_residuals.csv`:
+    `f367497b6b1c3968071d4a4177d17cf025fe4d29cdd66c52db47a609b0e9c30c`;
+  - `break_even.csv`:
+    `af52bca8375400df574b9ff814dfe6c52d15de22edfbd6e7e3896016bf67fcbe`;
+  - `artifact_manifest.json`:
+    `b85bf4129e687d2f55e6210d21112a7ae1a343e09191db6105eef3bee1f164e1`.
+- The initial repository test invocation correctly preserved an integration
+  failure: the copied test searched its own `tests/` directory rather than the
+  analyzer's parent directory and raised
+  `ModuleNotFoundError: No module named 'analyze_scaling'`.  Evidence is
+  `/home/wxt/work-online-merge-stage4-analysis-import-failure-20260715T144400Z/`
+  `test.log`, SHA256
+  `9ede141e36716941df2cfdadf08d05a146787a4c8f4ae9945d35cb6aa3734187`;
+  return-code-file SHA256 is
+  `4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865`.
+  The module path was then made repository-relative without hard-coded
+  workspace paths.
+- Validation at commit base
+  `4f968841fd7738ffb757270888c0d625537fc23a` covered exact synthetic-model
+  recovery, nonzero residuals and `R²`, direct minimum-D selection,
+  provenance-only deduplication, conflicting-evidence rejection, retained
+  non-pass/failure evidence, duplicate-root rejection, deterministic outputs,
+  and external output-directory enforcement.  The analyzer-specific 9/9 tests
+  and the full 35/35 discovery both passed with bytecode disabled.  Logs are in
+  `/home/wxt/work-online-merge-stage4-analysis-tests-20260715T145559Z`; the
+  analyzer-test log SHA256 is
+  `f4384cf68cf890c1c46094f0f88a78e8e6025d0cde85f68cad67ab0309cb496c`,
+  the full-discovery log SHA256 is
+  `dfbfec029bb12d5ff9fda92226623cfb964d5003e486e31a5cdaf3cc7b4c6b1f`,
+  and both return-code files have SHA256
+  `9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa`.
+  The UTC validation window was
+  `2026-07-15T14:55:59Z..2026-07-15T14:55:59Z`; Python was 3.12.3.
+- The clean Stage 4c synchronization immediately preceding this implementation
+  is retained at
+  `/home/wxt/work-online-merge-stage4c-sync-20260715T143847Z/sync.json`,
+  SHA256
+  `063f997202bea1a8748cbf66d4c14f582f37bd1634a117b4446dd57a228532c3`.
+  Fetch, pull with rebase, and push all returned zero and left synchronized
+  HEAD `4f968841fd7738ffb757270888c0d625537fc23a` clean.
+- The Stage 4d checkpoint validator rechecked the exact four-file status,
+  analyzer/reviewed-source identity, executable mode, Python syntax, 9/9
+  analyzer tests, 35/35 full tests, CLI help, tracked and untracked diff
+  whitespace, README protocol, retained import failure, and all reviewed-smoke
+  hashes.  Its passing report is
+  `/home/wxt/work-online-merge-stage4d-checkpoint-validation-20260715T151019Z/`
+  `validation.json`, SHA256
+  `b0659e11a8a78da5c279918fa27e6bb7218819c03fe080a56d7b4786f183f457`;
+  validator SHA256 is
+  `c2f8af733ddc7b0605bdd06f997ca4e9680df04984fdec4d0fac58c88146b55a`,
+  validator-log SHA256 is
+  `145ca887f0ff16a524cc85f73797774e9ce046a4780d1b6642918060b363d338`,
+  and return-code-file SHA256 is
+  `9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa`.
+- This checkpoint implements and tests the analyzer only.  The formal complete
+  23-coordinate-per-model fit and 16-point break-even consolidation must run
+  from the clean committed analyzer checkpoint and will be indexed separately.
