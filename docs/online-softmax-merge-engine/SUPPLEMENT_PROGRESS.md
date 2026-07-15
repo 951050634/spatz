@@ -27,7 +27,7 @@ small manifests only.
 | 0 | Isolate worktree and import governing specification | setup | complete | this checkpoint |
 | 1 | Benchmark/result framework | P0 | complete | pre-commit smoke below |
 | 2 | Fair B1/B2-R/B3 baselines and RVV disassembly gate | P0 | complete | Stage 2b clean anchors |
-| 3 | Anchors, RVV tails, mandatory size matrices | P0 | in_progress | fixed-D and fresh-build smoke closed; N=8 D sweep next |
+| 3 | Anchors, RVV tails, mandatory size matrices | P0 | in_progress | fixed-D and N=8 small-D points closed; D=128 next |
 | 4 | Break-even table and fitted scale model | P0 | pending | pending |
 | 5 | Full-SMU FSM cycle breakdown and A0/A2 | P0 | pending | pending |
 | 6 | C0/C1/C2/C3 concurrency and 16 bank phases | P0 | pending | pending |
@@ -1006,3 +1006,98 @@ small manifests only.
   `7d01dc955a1c40af3ced09158398ff4e611d3f3f7574138f2acaa015afb6e9d8`.
   The next executable P0 item is the fixed-`N=8`,
   `D={1,8,16,32,64,128}` dimension matrix, followed by the break-even matrix.
+
+### Stage 3m checkpoint: clean fixed-N small-D matrix batch
+
+- Objective: collect and independently validate the small-dimension portion of
+  the mandatory fixed-`N=8` matrix with a unique external build and the 14
+  explicit fresh-cache definitions established in Stage 3k.
+- Formal evidence is retained under
+  `/home/wxt/work-online-merge-stage3-n8-d-small-clean-20260715T103315Z`;
+  its build directory is
+  `/home/wxt/work-online-merge-build-stage3-n8-d-small-clean-20260715T103315Z`.
+  Provenance is commit `892c44ddb11f7cf87a139a46eed865b01039d7c7`,
+  `git_dirty=false`, CFG SHA256
+  `120fa0c30199e54e6e9b5c60d8da40913eae8526640992cc5d4f130bef159775`,
+  and simulator SHA256
+  `25a56d98474895d16d7de81f73d9cf8a06ba8eb650af5f9b58a012d15022e69a`.
+  The command window was
+  `2026-07-15T10:33:15+00:00..2026-07-15T11:09:07+00:00`.
+- Inputs are `N=8`, `D={1,8,16,32}`, seed 1, `main`, and three measured
+  repeats after each implementation's unmeasured warm-up.  Per-case simulator
+  timeouts are 1,800, 1,800, 2,700, and 3,600 seconds respectively.  All 16
+  configure/build/objdump/simulator commands return zero; all 36 B1/B2-R/B3
+  records pass and are finite; `failures.json` is empty; the runner return code
+  is zero.
+- Measured cycles (min/median/max) are:
+
+  | D | B1 | B2-R | B3 |
+  | ---: | ---: | ---: | ---: |
+  | 1 | 15624/15896/15997 | 12857/13080/13127 | 1290/1290/1320 |
+  | 8 | 34411/35166/35399 | 12837/12885/13101 | 1732/1732/1751 |
+  | 16 | 55988/56049/56525 | 12754/13078/13263 | 2281/2281/2302 |
+  | 32 | 99772/99794/100169 | 13455/13547/13761 | 3254/3263/3328 |
+
+- Across all 36 records, the largest absolute error is
+  `0.0012054443359375`, largest relative error is
+  `0.00014736815617622854`, and largest RMSE is
+  `0.00010590818264455575`.  These are correctness diagnostics under the
+  RTL-aligned approximation, not physical-quality or energy claims.
+- Independent validation reconstructed all 36 records from raw `OM_RESULT`
+  fields, compared CSV and JSON semantically, reproduced all 12 summary rows,
+  verified the exact case manifest and configure argv, checked all 19 final
+  cache values, reran all four RVV disassembly gates, and rehashed all 38
+  artifact-manifest entries.  The passing report is
+  `/home/wxt/work-online-merge-stage3-n8-d-small-final-validation-20260715T111505Z/validation.json`,
+  SHA256
+  `54f007a0321aaf1650753ba7821858e9ec6e5f0c25dfce156c4b91fb3f97921e`;
+  validator SHA256 is
+  `b4339a2bcb58834204382d02b52955b3da063ff1df4e731dd2b4402072477758`.
+  The validator log SHA256 is
+  `4762d03207059f01ba806e3c6897cc143248f23ea52133a68d480d66264b5295`.
+- Independent RVV rerun-log SHA256 values for `D=1,8,16,32` are respectively
+  `56bb8e09527c64bad604e4ab05c6803304340307eb8bb5e58fe8178d9a6559ac`,
+  `f056aa1f401ae21ce728aef713969348be15eff32db896a9706130a416cdd5fe`,
+  `70eedd3933de008c1c6c36cddaf1ce3c1787bd189723e40e3d89c2d53a90b924`,
+  and `c3fde0ecb0f00b699edf554efacc4eb53fb7cf0a7b3b8e097205717abdb1b3dc`.
+- A failed validator-only attempt is deliberately retained at
+  `/home/wxt/work-online-merge-stage3-n8-d-small-validation-20260715T111103Z`.
+  All substantive checks and RVV reruns completed, but JSON serialization
+  rejected tuple keys in the report-only `raw_sources` dictionary.  It did not
+  modify run artifacts.  Its validator and log SHA256 values are
+  `90cecacb06730b1150a27f81c6e19e098569e9631e7a63fe2fcd9544f2c084a2`
+  and `10d0e440515b47652b401d62bad3a3871435b9ae634d6633ac44a8f6fadf18ea`.
+- Formal top-level SHA256 values are:
+  - `run_manifest.json`:
+    `b029deeb02e863f2e5b0b74129e4c68400e218322b27147277807b4b3a36da16`;
+  - `records.json`:
+    `ec24a04a347df0fed86842591e51ad89271769214f5026d21c8f18d30ed4fc2e`;
+  - `records.csv`:
+    `7468577204fd8056241cbeaae15fbd9a57c14b8ca8b7858cc91e69010a3e3329`;
+  - `summary.json`:
+    `2997ec6cd388318547b6a139eb80be32e4a46e14c3efff8f54fb4eafa6aa851e`;
+  - `commands.json`:
+    `2bb29e1f7681c943e229805f44ed569de21884e75c057297f67fafb6c6d3f68a`;
+  - `failures.json`:
+    `37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570`;
+  - `artifact_manifest.json`:
+    `8f96f24770e611ae48e8ac7495d96110bb2008b9ca69391a216fedfac8a552bc`;
+  - external runner log:
+    `901f3095d8fe15d5f32cfb34094a264db85baa8c05e3eef81db424a6c79b0dde`;
+  - external runner return-code file:
+    `9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa`.
+- Checkpoint validation reran all 26 runner unit tests, `git diff --check`,
+  all referenced-hash checks, provenance and case coverage checks, and the
+  independent-report gates.  Its report is
+  `/home/wxt/work-online-merge-stage3m-checkpoint-validation-20260715T112110Z/validation.json`,
+  SHA256
+  `89987cc4ae42bbfe54ce5c822b34c3d54359cd693a55560da7518b2c41cdb3aa`;
+  validator SHA256 is
+  `2c205d7aca3d5cc12fb306ab9a75564f58d7b4d4e3d0446b0937b5745539130b`,
+  and log SHA256 is
+  `90bb1e9e45059d6534f05173c82cdaf801c7efec08826f0f66056bec60d0b467`.
+- Tool identities include CMake `3.28.3`, target Clang/objdump `14.0.6`,
+  Verilator `5.034`, and Python `3.12.3`.  The already validated fixed-`D=64`
+  point supplies `N=8,D=64`; the remaining fixed-`N=8` mandatory point is
+  `D=128`, which must use a separate fresh build and remain distinct from any
+  timeout or failed diagnostic.
