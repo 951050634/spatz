@@ -27,7 +27,7 @@ small manifests only.
 | 0 | Isolate worktree and import governing specification | setup | complete | this checkpoint |
 | 1 | Benchmark/result framework | P0 | complete | pre-commit smoke below |
 | 2 | Fair B1/B2-R/B3 baselines and RVV disassembly gate | P0 | complete | Stage 2b clean anchors |
-| 3 | Anchors, RVV tails, mandatory size matrices | P0 | in_progress | bounded-AVL fix ready; clean tails/matrices pending |
+| 3 | Anchors, RVV tails, mandatory size matrices | P0 | in_progress | clean tails complete; matrices pending |
 | 4 | Break-even table and fitted scale model | P0 | pending | pending |
 | 5 | Full-SMU FSM cycle breakdown and A0/A2 | P0 | pending | pending |
 | 6 | C0/C1/C2/C3 concurrency and 16 bank phases | P0 | pending | pending |
@@ -439,3 +439,43 @@ small manifests only.
   evidence establishes a workaround, not an RTL root cause.  Diagnostic cycle
   values are not formal performance evidence.  Stage 3 remains open until the
   complete clean-commit tail set and both mandatory scale matrices pass.
+
+### Stage 3d checkpoint: clean full RVV tail gate
+
+- Objective: execute the complete correctness-only RVV tail set from the
+  committed bounded-AVL implementation before accepting any scale result.
+- Exact input was `(N,seed,kind,repeats)=(1,1,main,3)` with
+  `D={1,7,15,17,31,33,63,65,127}` and a 1,800-second timeout per case.  The
+  Stage 3c runner command was used with one `--case 1,<D>,1,main,1800`
+  argument for each listed `D`.
+- Clean evidence:
+  `/home/wxt/work-online-merge-stage3-tail-full-clean-20260715-052827`, UTC
+  `2026-07-15T05:28:27+00:00` to `06:17:36+00:00`, commit
+  `c9b5ecb2a36bace2a5b62cbdb5156aa6242544cc`, `git_dirty=false`, fixed CFG
+  and simulator identities from Stage 3c.  The runner returned zero and all
+  36 configure/build/disassembly/simulator commands returned zero.
+- Result: all 81 B1/B2-R/B3 records passed; `failures.json` is empty.  Every
+  enriched cycle count was matched to the raw target `cycles_hi/lo` fields,
+  all derived metrics are finite, maximum absolute and relative error are
+  both `1.9073486328125e-06`, and maximum RMSE is
+  `1.1614586872361443e-06`.  This closes the RVV correctness gate, including
+  the previously failing `D=15` and `D=31` shapes.
+- Validation: all 83 artifact-manifest entries independently rehashed
+  successfully.  Top-level SHA256 values are:
+  - `run_manifest.json`:
+    `5fbc95c37552ac5ef95bea3766f220710ccb692643e81ddb2c7fc42284d402a1`;
+  - `records.json`:
+    `15cbc1c5ad041cf95cfba73c4833536387e3f3ace816e28d66e46f07417e7a02`;
+  - `records.csv`:
+    `3633d4aa1091e35370bd46c9541c0bc9dbb9acb108c114e0611eac13f593cff7`;
+  - `summary.json`:
+    `636aa334fb730725109235c52a4bf0c2a6f017ad80c8ed72d7e9a2236187e387`;
+  - `commands.json`:
+    `bfb63e9b7dba2d3882e6ef3cdbf92cda90b832c2c6660732a14afd0242801ff3`;
+  - `artifact_manifest.json`:
+    `9bab5c7b999fbcedae2040ad3a18ea861ffef294c7b26f73f12ee88d21a83cd1`;
+  - external runner log:
+    `1d454ba4d771a57b83fc3a1342086d2508a9ace34d097f06d6d7b31264745fd0`.
+- Limitation: these tail points are correctness evidence, not the mandatory
+  performance matrices.  Stage 3 remains open until both fixed-`D` and
+  fixed-`N` matrices preserve all statuses and pass the same validation.
