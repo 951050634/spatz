@@ -35,6 +35,11 @@ int Sim::run() {
     target.init(sim_thread_main, this);
 
     int exit_code = htif_t::run();
+    // HTIF completion does not necessarily execute an RTL $finish.  Wake the
+    // simulation context after setting its finish flag so the target loop can
+    // return instead of leaving process teardown blocked on a live context.
+    Verilated::gotFinish(true);
+    target.switch_to();
     if (exit_code > 0)
       fprintf(stderr, "[FAILURE] Finished with exit code %2d\n", exit_code);
     else

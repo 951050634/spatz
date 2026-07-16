@@ -30,6 +30,14 @@ class TraceProxyGatingTest(unittest.TestCase):
         )
         self.assertIn("SNITCH_TRACE_WINDOW index=%u event=%s", text)
 
+    def test_htif_completion_stops_the_simulation_context(self) -> None:
+        text = self.read("hw/ip/snitch_test/src/verilator_lib.cc")
+        run_start = text.index("int Sim::run()")
+        run_end = text.index("void Sim::main()", run_start)
+        run = text[run_start:run_end]
+        self.assertIn("Verilated::gotFinish(true);", run)
+        self.assertIn("target.switch_to();", run)
+
     def test_target_marks_only_two_representative_windows(self) -> None:
         text = self.read(
             "sw/spatzBenchmarks/online-softmax-merge/main.c"

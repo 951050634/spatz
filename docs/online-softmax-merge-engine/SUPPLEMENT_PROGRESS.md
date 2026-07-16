@@ -30,7 +30,7 @@ small manifests only.
 | 3 | Anchors, RVV tails, mandatory size matrices | P0 | complete | Stage 3n closes both mandatory fixed matrices |
 | 4 | Break-even table and fitted scale model | P0 | complete | Stage 4e formal fit and direct 16-point table |
 | 5 | Full-SMU FSM cycle breakdown and A0/A2 | P0 | complete | Stage 5b exact three-point formal closure |
-| 6 | C0/C1/C2/C3 concurrency and 16 bank phases | P0 | in_progress | Stage 6g phase-sharded capture/analyzer implemented; clean shards pending |
+| 6 | C0/C1/C2/C3 concurrency and 16 bank phases | P0 | in_progress | Stage 6h HTIF/context exit root cause fixed; clean rerun pending |
 | 7 | Yosys Slang generic-resource proxy | P0 | complete | Stage 7c clean capture and deterministic analysis closure |
 | 8 | Representative RTL VCD toggle proxy | P0 | complete | Stage 8d formal three-point toggle analysis and independent reconstruction |
 | 9 | Target `expf` B0/B2-F | P1 | pending | pending |
@@ -2494,6 +2494,38 @@ small manifests only.
   simulator from that clean commit, run one short baseline/phase smoke, then
   launch five bounded clean roots only if the smoke exits naturally.  Formal
   analysis and an independent reconstruction remain required before closure.
+
+### Stage 6h checkpoint: HTIF completion/context-exit root cause
+
+- The first clean phase-only smoke used committed source `099cdde`, the exact
+  low-perturbation simulator SHA256
+  `70c021ced118617eb9fe25da53e052d2f6327296af81a44d5e064a355551f419`,
+  and external root
+  `/home/wxt/work-online-merge-stage6g-smoke-clean-20260716T171700Z`.
+  It selected `(N,D)=(1,1)`, no baselines, and only phase zero, under a
+  900-second process-group timeout.
+- The target completed: simulator output contains `[SUCCESS] Program finished
+  successfully`, all four expected `OM_FSM` records terminate in `DONE`, and
+  seven of eight target records were flushed.  Nevertheless the host process
+  did not exit before 900 seconds.  The runner correctly retained `timeout`,
+  four completeness failures, and a synthetic terminal row; it is not pass
+  evidence.
+- This isolates the user-reported non-exiting simulation.  `htif_t::run()` can
+  return successfully without an RTL `$finish`; `Sim::main()` then remains in
+  its `while (!Verilated::gotFinish())` loop.  Process termination withheld the
+  buffered final target record and PASS banner even though the fourth FSM
+  invocation had completed.
+- The Verilator harness now sets `Verilated::gotFinish(true)` immediately after
+  HTIF returns and switches back to the simulation context.  The target loop
+  can observe the flag, return through the context wrapper, and let normal
+  process teardown flush stdout.  Existing RTL `$finish`, trace-window, and
+  whole-run trace behavior are otherwise unchanged.
+- Validation: all 106 utility tests pass and every utility Python module
+  compiles.  A structural regression test confines the finish flag and context
+  wake-up to `Sim::run()` after HTIF completion.
+- Remaining Stage 6 work: commit the harness fix, rebuild the clean simulator,
+  repeat the same bounded one-phase smoke, and require a natural zero exit plus
+  all 8/4 records and PASS banner before any formal shard is started.
 
 
 ### Stage 7a checkpoint: versioned Slang wrapper and capture runner
