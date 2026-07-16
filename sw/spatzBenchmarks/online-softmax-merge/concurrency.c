@@ -341,6 +341,23 @@ static void record_correctness(correctness_t *result, uint32_t index,
   }
 }
 
+static void record_bit_correctness(correctness_t *result, uint32_t index,
+                                   float actual, float expected) {
+  result->checked++;
+  uint32_t actual_bits = float_bits(actual);
+  uint32_t expected_bits = float_bits(expected);
+  if (actual_bits == expected_bits) {
+    return;
+  }
+  result->mismatches++;
+  result->passed = 0u;
+  if (result->mismatches == 1u) {
+    result->failure_index = index;
+    result->expected_bits = expected_bits;
+    result->actual_bits = actual_bits;
+  }
+}
+
 static correctness_t check_merge_output(const merge_buffers_t *merge) {
   correctness_t result = correctness_init();
   uint32_t flat_index = 0u;
@@ -363,7 +380,7 @@ static correctness_t check_stream_output(const stream_workspace_t *stream,
                                          const float *destination) {
   correctness_t result = correctness_init();
   for (uint32_t index = 0; index < stream->elements; index++) {
-    record_correctness(&result, index, destination[index], source[index], 1u);
+    record_bit_correctness(&result, index, destination[index], source[index]);
   }
   return result;
 }

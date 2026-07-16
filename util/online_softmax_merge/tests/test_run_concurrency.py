@@ -206,6 +206,17 @@ def full_schedule(
 
 
 class RunConcurrencyTest(unittest.TestCase):
+    def test_stream_correctness_uses_the_bit_exact_fast_path(self) -> None:
+        source = (
+            MODULE_DIR.parents[1]
+            / "sw/spatzBenchmarks/online-softmax-merge/concurrency.c"
+        ).read_text(encoding="utf-8")
+        start = source.index("static correctness_t check_stream_output")
+        end = source.index("static void smu_start", start)
+        check = source[start:end]
+        self.assertIn("record_bit_correctness", check)
+        self.assertNotIn("record_correctness(&result", check)
+
     def setUp(self) -> None:
         self.case = common.Case(8, 32, 1, "main", 3, 30)
 
