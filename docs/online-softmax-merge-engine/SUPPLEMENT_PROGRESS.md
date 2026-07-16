@@ -32,7 +32,7 @@ small manifests only.
 | 5 | Full-SMU FSM cycle breakdown and A0/A2 | P0 | complete | Stage 5b exact three-point formal closure |
 | 6 | C0/C1/C2/C3 concurrency and 16 bank phases | P0 | in_progress | Stage 6e bounded clean timeout diagnosed; tuned simulator validation pending |
 | 7 | Yosys Slang generic-resource proxy | P0 | complete | Stage 7c clean capture and deterministic analysis closure |
-| 8 | Representative RTL VCD toggle proxy | P0 | in_progress | Stage 8b controlled runner/parser validated; clean formal points pending |
+| 8 | Representative RTL VCD toggle proxy | P0 | in_progress | Stage 8c three clean captures pass; formal analysis pending |
 | 9 | Target `expf` B0/B2-F | P1 | pending | pending |
 | 10 | Scalar-only A1 | P1 | pending | pending |
 | 11 | Trace gating / low-perturbation counter | P1 | in_progress | Stage 8a probe-gated VCD implementation passes dirty smoke |
@@ -2732,3 +2732,42 @@ small manifests only.
   identify a clean trace-capable simulator at that commit, execute the three
   bounded captures, run deterministic analysis plus an independent
   reconstruction, and only then mark Stage 8 complete.
+
+### Stage 8c checkpoint: three clean bounded captures
+
+- A clean single-thread trace-capable, DASM-disabled simulator was built from
+  `8f2de6826185015a3b7289f3d69a34de036876d2` at
+  `/home/wxt/work-online-merge-stage8c-single-simulator-clean-20260716T144500Z`.
+  The 51,391,760-byte binary SHA256 is
+  `06185ec84ce7ba634dd1583b9c097986142916d0e813832978d3ca85057006fc`;
+  its generated model declares `traceCapable=true` and `threads()=1`, contains
+  `OM_SIM_CONFIG`/`OM_FSM`, and excludes the DASM filename string.
+- The three mandatory points ran concurrently in independent external build
+  and result roots, each with its own process-group timeout.  All configure,
+  build, RVV disassembly, and simulator commands returned zero; every point
+  has nine passing target records, exactly two ordered windows, and an empty
+  `failures.json`.  All simulator commands ended naturally before their
+  900/1,800/3,600-second bounds; no simulator process remained.
+- Clean capture identities are:
+
+  | `(N,D)` | Simulator UTC window | VCD bytes | VCD SHA256 |
+  | --- | --- | ---: | --- |
+  | `(1,1)` | `14:51:46`--`14:59:32` | 79,418,518 | `e22941328e8fda1b7549599f23d221b8947710edb14b18d75aff17bcbb99ce69` |
+  | `(8,32)` | `14:51:46`--`15:07:17` | 282,877,039 | `c88651b4568c7a4ed8d11b3665145c400d64bea563a3b535beb15cea0a921a0a` |
+  | `(16,64)` | `14:51:46`--`15:35:51` | 685,762,235 | `e6e8ee46da1451d7b5e6e44ff2a94b99f47127a2b3c7021c7be91f4235f28898` |
+
+- Each independently bounded point root correctly records
+  `toggle_proxy_evidence=false` because it is only a subset.  The analyzer now
+  accepts repeated roots only when their clean union contains every mandatory
+  coordinate exactly once and commit, CFG, simulator SHA256, CMake definitions,
+  trace protocol, and claim boundary are identical.  Duplicate coordinates,
+  failures, non-pass commands, dirty roots, and mixed simulator identities are
+  rejected.
+- A clean post-capture analysis commit is permitted only when the capture
+  commit is its ancestor and the intervening paths are limited to the versioned
+  toggle analyzer, its tests, README, and checkpoint progress.  Any RTL,
+  target, runner, build, or configuration change rejects formal analysis.
+- Validation: all 101 utility tests pass and all utility Python modules compile.
+  Remaining Stage 8 work: commit the multi-root analyzer gate, run the three
+  VCD parses, independently reconstruct totals and hashes, record the formal
+  tables, and then close Stage 8.

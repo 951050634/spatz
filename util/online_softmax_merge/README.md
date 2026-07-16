@@ -624,6 +624,18 @@ python3 util/online_softmax_merge/analyze_toggle_proxy.py \
   --output-dir /home/user/work-online-merge-toggle-analysis
 ```
 
+For independently bounded point captures, repeat `--result-root`.  The union
+must contain each mandatory coordinate exactly once.  Every root must be clean,
+passing, failure-free, and identical in capture commit, CFG, simulator SHA256,
+CMake definitions, trace protocol, and claim boundary.  A partial root
+correctly keeps `toggle_proxy_evidence=false`; only the validated union becomes
+formal analysis evidence.
+
+The analysis normally runs at the capture commit.  A clean descendant is
+accepted only when `git diff` from the capture commit contains the versioned
+toggle analyzer, its tests, this README, and the progress checkpoint.  Any RTL,
+target, runner, build, or configuration drift is rejected.
+
 The parser counts known `0/1` Hamming-distance bit changes once per unique VCD
 identifier.  The first value in each gated window initializes the signal and
 is not a toggle; transitions involving `x/z` are retained separately.  It

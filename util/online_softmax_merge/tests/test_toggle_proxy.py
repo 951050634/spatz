@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+import json
 import sys
 import tempfile
 import unittest
@@ -44,6 +45,39 @@ SNITCH_TRACE_WINDOW index=1 event=end time=24
 
 
 class ToggleAnalyzerTest(unittest.TestCase):
+    def make_partial_root(
+        self, parent: Path, n: int, d: int, simulator: str = "sim"
+    ) -> Path:
+        root = parent / f"work-online-merge-N{n}-D{d}"
+        root.mkdir()
+        manifest = {
+            "git_commit": "commit",
+            "git_dirty": False,
+            "cfg_hash": "cfg",
+            "tool_versions": {"simulator": {"sha256": simulator}},
+            "cmake_definitions": [{"key": "TRACE", "value": "1"}],
+            "capture_protocol": {"windows": ["B2-R", "B3"]},
+            "claim_boundary": "RTL toggle proxy",
+            "toggle_proxy_evidence": False,
+            "validation_result": {
+                "statuses": ["pass"],
+                "capture_count": 1,
+                "failure_count": 0,
+            },
+        }
+        values = {
+            "run_manifest.json": manifest,
+            "capture_records.json": [{"N": n, "D": d, "status": "pass"}],
+            "failures.json": [],
+            "commands.json": [{"status": "pass", "returncode": 0}],
+            "artifact_manifest.json": [],
+        }
+        for name, value in values.items():
+            (root / name).write_text(
+                json.dumps(value) + "\n", encoding="utf-8"
+            )
+        return root
+
     def test_streaming_vcd_counts_known_bit_toggles(self) -> None:
         vcd = """$version synthetic $end
 $timescale 1ps $end
@@ -134,6 +168,37 @@ b11 #
         self.assertEqual(
             analyzer.classify_signal(aliases), "global_clock_reset"
         )
+
+    def test_combines_clean_partial_roots_with_one_simulator(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            parent = Path(temporary)
+            roots = [
+                self.make_partial_root(parent, n, d)
+                for n, d in runner.MANDATORY_CASES
+            ]
+            consistency, captures, provenance = (
+                analyzer.combine_capture_roots(reversed(roots))
+            )
+        self.assertEqual(consistency["simulator_sha256"], "sim")
+        self.assertEqual(len(captures), 3)
+        self.assertEqual(len(provenance), 3)
+
+    def test_rejects_inconsistent_partial_root_simulator(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            parent = Path(temporary)
+            roots = [
+                self.make_partial_root(
+                    parent,
+                    n,
+                    d,
+                    "other" if (n, d) == (16, 64) else "sim",
+                )
+                for n, d in runner.MANDATORY_CASES
+            ]
+            with self.assertRaisesRegex(
+                analyzer.AnalysisError, "inconsistent provenance"
+            ):
+                analyzer.combine_capture_roots(roots)
 
 
 if __name__ == "__main__":

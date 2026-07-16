@@ -11,6 +11,7 @@ import argparse
 import csv
 import json
 import re
+import subprocess
 from collections import defaultdict
 from pathlib import Path
 from typing import Any, Iterable, Sequence
@@ -26,6 +27,14 @@ CATEGORIES = (
     "core_or_rvv_baseline",
     "global_clock_reset",
     "other_cluster",
+)
+POST_CAPTURE_ALLOWED_PATHS = frozenset(
+    {
+        "docs/online-softmax-merge-engine/SUPPLEMENT_PROGRESS.md",
+        "util/online_softmax_merge/README.md",
+        "util/online_softmax_merge/analyze_toggle_proxy.py",
+        "util/online_softmax_merge/tests/test_toggle_proxy.py",
+    }
 )
 KNOWN_BITS = frozenset("01")
 UNKNOWN_BITS = frozenset("xz")
@@ -353,19 +362,103 @@ def validate_capture_root(
     manifest = load_json(root / "run_manifest.json", dict)
     captures = load_json(root / "capture_records.json", list)
     failures = load_json(root / "failures.json", list)
+    commands = load_json(root / "commands.json", list)
     if failures:
         raise AnalysisError("formal capture contains retained failures")
-    if manifest.get("toggle_proxy_evidence") is not True:
-        raise AnalysisError("capture manifest is not formal toggle evidence")
+    if manifest.get("git_dirty") is not False:
+        raise AnalysisError("formal capture source is dirty")
     if any(
         not isinstance(row, dict) or row.get("status") != "pass"
         for row in captures
     ):
         raise AnalysisError("capture records are incomplete or non-passing")
+    if not captures:
+        raise AnalysisError("capture root contains no capture records")
+    if any(
+        not isinstance(command, dict)
+        or command.get("status") != "pass"
+        or command.get("returncode") != 0
+        for command in commands
+    ):
+        raise AnalysisError("capture root contains a non-passing command")
     coordinates = {(row.get("N"), row.get("D")) for row in captures}
-    if coordinates != set(runner.MANDATORY_CASES):
-        raise AnalysisError("capture does not contain the mandatory case set")
+    if len(coordinates) != len(captures):
+        raise AnalysisError("capture root contains duplicate coordinates")
+    if not coordinates <= set(runner.MANDATORY_CASES):
+        raise AnalysisError("capture contains a non-mandatory coordinate")
+    validation = manifest.get("validation_result")
+    expected_validation = {
+        "statuses": ["pass"],
+        "capture_count": len(captures),
+        "failure_count": 0,
+    }
+    if validation != expected_validation:
+        raise AnalysisError("capture manifest validation result is incomplete")
+    expected_evidence = coordinates == set(runner.MANDATORY_CASES)
+    if manifest.get("toggle_proxy_evidence") is not expected_evidence:
+        raise AnalysisError("capture evidence flag does not match its case set")
     return manifest, captures
+
+
+def combine_capture_roots(
+    roots: Sequence[Path],
+) -> tuple[dict[str, Any], list[dict[str, Any]], list[dict[str, Any]]]:
+    if not roots:
+        raise AnalysisError("at least one capture root is required")
+    resolved = [root.resolve() for root in roots]
+    if len(set(resolved)) != len(resolved):
+        raise AnalysisError("duplicate capture roots are not allowed")
+    captures = []
+    provenance = []
+    consistency: dict[str, Any] | None = None
+    seen: set[tuple[int, int]] = set()
+    for root in sorted(resolved, key=str):
+        manifest, root_captures = validate_capture_root(root)
+        simulator = manifest.get("tool_versions", {}).get("simulator", {})
+        current = {
+            "git_commit": manifest.get("git_commit"),
+            "cfg_hash": manifest.get("cfg_hash"),
+            "simulator_sha256": simulator.get("sha256"),
+            "cmake_definitions": manifest.get("cmake_definitions"),
+            "capture_protocol": manifest.get("capture_protocol"),
+            "claim_boundary": manifest.get("claim_boundary"),
+        }
+        if consistency is None:
+            consistency = current
+        elif current != consistency:
+            raise AnalysisError("capture roots have inconsistent provenance")
+        coordinates = {
+            (int(capture["N"]), int(capture["D"]))
+            for capture in root_captures
+        }
+        duplicate = seen & coordinates
+        if duplicate:
+            raise AnalysisError(f"duplicate capture coordinates: {duplicate}")
+        seen.update(coordinates)
+        captures.extend(root_captures)
+        provenance.append(
+            {
+                "root": str(root),
+                "git_commit": manifest.get("git_commit"),
+                "cfg_hash": manifest.get("cfg_hash"),
+                "simulator_sha256": simulator.get("sha256"),
+                "files": {
+                    name: common.sha256_file(root / name)
+                    for name in (
+                        "run_manifest.json",
+                        "capture_records.json",
+                        "failures.json",
+                        "commands.json",
+                        "artifact_manifest.json",
+                    )
+                },
+            }
+        )
+    if seen != set(runner.MANDATORY_CASES):
+        missing = sorted(set(runner.MANDATORY_CASES) - seen)
+        raise AnalysisError(f"combined capture roots are missing {missing}")
+    assert consistency is not None
+    return consistency, captures, provenance
 
 
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
@@ -373,7 +466,9 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     root = script.parents[2]
     parser = argparse.ArgumentParser()
     parser.add_argument("--repo-root", type=Path, default=root)
-    parser.add_argument("--result-root", type=Path, required=True)
+    parser.add_argument(
+        "--result-root", type=Path, action="append", required=True
+    )
     parser.add_argument("--output-dir", type=Path, required=True)
     return parser.parse_args(argv)
 
@@ -381,16 +476,37 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
 def main(argv: Sequence[str] | None = None) -> int:
     args = parse_args(argv)
     repo_root = args.repo_root.resolve()
-    result_root = args.result_root.resolve()
+    result_roots = [root.resolve() for root in args.result_root]
     output_dir = args.output_dir.resolve()
     common.validate_work_dir(output_dir, repo_root)
     if output_dir.exists():
         raise SystemExit(f"output directory already exists: {output_dir}")
-    manifest, captures = validate_capture_root(result_root)
+    consistency, captures, provenance = combine_capture_roots(result_roots)
     commit = common.git_output(repo_root, "rev-parse", "HEAD")
     dirty = bool(common.git_output(repo_root, "status", "--porcelain"))
-    if dirty or commit != manifest.get("git_commit"):
-        raise SystemExit("analysis requires the clean captured source commit")
+    capture_commit = str(consistency.get("git_commit"))
+    if dirty:
+        raise SystemExit("analysis requires a clean worktree")
+    if commit != capture_commit:
+        ancestor = subprocess.run(
+            ["git", "merge-base", "--is-ancestor", capture_commit, commit],
+            cwd=repo_root,
+            check=False,
+        )
+        changed = set(
+            common.git_output(
+                repo_root,
+                "diff",
+                "--name-only",
+                f"{capture_commit}..{commit}",
+            ).splitlines()
+        )
+        if ancestor.returncode != 0 or not changed <= POST_CAPTURE_ALLOWED_PATHS:
+            unexpected = sorted(changed - POST_CAPTURE_ALLOWED_PATHS)
+            raise SystemExit(
+                "post-capture source drift is not analyzer-only: "
+                f"{unexpected}"
+            )
     output_dir.mkdir(parents=True)
 
     summaries: list[dict[str, Any]] = []
@@ -441,19 +557,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     analysis = {
         "schema_version": 1,
         "objective": "representative zero-delay RTL bit-toggle proxy",
-        "git_commit": commit,
-        "cfg_hash": manifest.get("cfg_hash"),
-        "capture_root": str(result_root),
-        "capture_files": {
-            name: common.sha256_file(result_root / name)
-            for name in (
-                "run_manifest.json",
-                "capture_records.json",
-                "failures.json",
-                "commands.json",
-                "artifact_manifest.json",
-            )
-        },
+        "capture_git_commit": capture_commit,
+        "analysis_git_commit": commit,
+        "cfg_hash": consistency.get("cfg_hash"),
+        "simulator_sha256": consistency.get("simulator_sha256"),
+        "capture_roots": provenance,
         "measurement_semantics": {
             "metric": "known 0/1 Hamming-distance bit toggles",
             "initial_value_policy": (
@@ -463,6 +571,11 @@ def main(argv: Sequence[str] | None = None) -> int:
             "unknown_policy": "x/z-involving transitions retained separately",
             "alias_policy": "each VCD identifier counted once",
             "window_policy": "inclusive indexed probe-gated marker times",
+            "post_capture_policy": (
+                "capture commit must be an ancestor; only the versioned "
+                "toggle analyzer, its tests, and checkpoint documentation "
+                "may differ at the clean analysis commit"
+            ),
         },
         "acceptance_gates": {
             "mandatory_cases": [list(case) for case in runner.MANDATORY_CASES],
@@ -471,7 +584,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             "capture_evidence": True,
             "physical_power_energy_supported": False,
         },
-        "claim_boundary": manifest.get("claim_boundary"),
+        "claim_boundary": consistency.get("claim_boundary"),
         "captures": analyses,
     }
     common.write_json(output_dir / "analysis.json", analysis)
@@ -488,7 +601,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 "path": name,
                 "sha256": common.sha256_file(output_dir / name),
                 "git_commit": commit,
-                "cfg_hash": manifest.get("cfg_hash"),
+                "cfg_hash": consistency.get("cfg_hash"),
             }
             for name in output_files
         ],
