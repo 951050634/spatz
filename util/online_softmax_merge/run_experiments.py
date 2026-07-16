@@ -23,7 +23,7 @@ import subprocess
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Iterable, Sequence
+from typing import Any, Iterable, Mapping, Sequence
 
 RESULT_PREFIX = "OM_RESULT "
 FAILURE_PREFIX = "OM_FAILURE "
@@ -486,6 +486,7 @@ def run_command(
     log_path: Path,
     timeout_seconds: int,
     cwd: Path,
+    environment: Mapping[str, str] | None = None,
 ) -> tuple[CommandRecord, str]:
     start = utc_now()
     status = "pass"
@@ -496,6 +497,11 @@ def run_command(
         process = subprocess.Popen(
             list(argv),
             cwd=cwd,
+            env=(
+                {**os.environ, **environment}
+                if environment is not None
+                else None
+            ),
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             start_new_session=True,

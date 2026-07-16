@@ -574,6 +574,55 @@ hart traces, simulator objects, ELFs, and logs stay outside Git.  Marker spans
 and target `mcycle` values remain separate because the marker includes boundary
 instructions around the target's internal cycle interval.
 
+Use `run_toggle_proxy.py` for controlled captures.  It defaults to the three
+mandatory `(N,D)` points `(1,1)`, `(8,32)`, and `(16,64)`, forces three target
+repeats and `ONLINE_MERGE_TRACE_PROXY=1`, and runs the simulator without the
+unnecessary per-instruction `--trace` option.  Configure, build, disassembly,
+and simulation commands have independent process-group timeouts.  A timeout
+sends `TERM` and then `KILL`, while retaining partial logs and structured
+failure state.
+
+```bash
+python3 util/online_softmax_merge/run_toggle_proxy.py \
+  --repo-root "$PWD" \
+  --source-dir "$PWD/hw/system/spatz_cluster/sw" \
+  --build-dir /home/user/work-online-merge-toggle-build \
+  --simulator /home/user/work-online-merge-toggle-simulator/\
+spatz_cluster.vlt \
+  --simulator-source-dir "$PWD" \
+  --work-dir /home/user/work-online-merge-toggle-capture \
+  --timeout-seconds 900 --jobs 2 --require-clean \
+  "${cmake_defines[@]}"
+```
+
+The capture gate requires nine passing target records, exactly two ordered
+trace windows, a nonempty VCD header, matching clean source/simulator commits,
+and the complete mandatory coordinate set.  It preserves capture records,
+failures, commands, input/output hashes, exact ELFs, and VCD identities.  Raw
+VCD files remain external.
+
+Analyze the clean capture with the streaming standard-library parser:
+
+```bash
+python3 util/online_softmax_merge/analyze_toggle_proxy.py \
+  --repo-root "$PWD" \
+  --result-root /home/user/work-online-merge-toggle-capture \
+  --output-dir /home/user/work-online-merge-toggle-analysis
+```
+
+The parser counts known `0/1` Hamming-distance bit changes once per unique VCD
+identifier.  The first value in each gated window initializes the signal and
+is not a toggle; transitions involving `x/z` are retained separately.  It
+emits `toggle_summary.csv`, `hierarchy_toggle_summary.csv`,
+`signal_toggle_summary.csv`, `analysis.json`, and an output checksum index.
+The hierarchy rows are exhaustive and non-overlapping: SMU scalar/exp/
+reciprocal, SMU vector data path, SMU control/FSM, TCDM-facing request/response,
+core or RVV baseline, global clock/reset, and other cluster logic.
+
+These outputs are zero-delay RTL activity proxies.  They contain no glitch,
+cell-internal, parasitic, clock-tree, leakage, voltage, or physical power
+model and cannot be converted to mW or pJ.
+
 ## Validation
 
 ```bash

@@ -32,7 +32,7 @@ small manifests only.
 | 5 | Full-SMU FSM cycle breakdown and A0/A2 | P0 | complete | Stage 5b exact three-point formal closure |
 | 6 | C0/C1/C2/C3 concurrency and 16 bank phases | P0 | in_progress | Stage 6d low-perturbation simulator gate; clean formal run pending |
 | 7 | Yosys Slang generic-resource proxy | P0 | complete | Stage 7c clean capture and deterministic analysis closure |
-| 8 | Representative RTL VCD toggle proxy | P0 | in_progress | Stage 8a gated simulator and two-window smoke pass; parser/formal points pending |
+| 8 | Representative RTL VCD toggle proxy | P0 | in_progress | Stage 8b controlled runner/parser validated; clean formal points pending |
 | 9 | Target `expf` B0/B2-F | P1 | pending | pending |
 | 10 | Scalar-only A1 | P1 | pending | pending |
 | 11 | Trace gating / low-perturbation counter | P1 | in_progress | Stage 8a probe-gated VCD implementation passes dirty smoke |
@@ -2643,3 +2643,56 @@ small manifests only.
   then run clean `(1,1)`, `(8,32)`, and `(16,64)` captures and report bit-toggle
   totals, toggle/cycle, toggle/element, and hierarchy breakdown.  These remain
   RTL activity proxies and cannot be converted to mW or pJ.
+
+### Stage 8b checkpoint: controlled capture and streaming VCD analysis
+
+- Objective: turn the Stage 8a implementation smoke into a bounded,
+  provenance-gated capture and deterministic analysis flow before starting the
+  three formal simulations.  Stage 8 remains `in_progress` until all mandatory
+  clean captures and their independent verification complete.
+- `run_toggle_proxy.py` defaults to `(1,1)`, `(8,32)`, and `(16,64)`, fixes
+  seed one and three repeats, owns `ONLINE_MERGE_TRACE_PROXY=1`, and requires
+  exactly nine passing target records plus two ordered B2-R/B3 repeat-zero
+  windows per point.  It runs the trace-capable simulator without the
+  unnecessary per-instruction `--trace` option, so the VCD is preserved while
+  the 144 MiB DASM behavior seen in the dirty smoke is not requested.
+- Configure, target build, disassembly, and simulation commands have explicit
+  independent wall-clock limits.  The shared command helper accepts recorded
+  environment overrides while retaining its separate-process-group `TERM`
+  then `KILL` timeout handling.  Partial logs, VCD identity, terminal command
+  status, and structured failures survive every timeout or tool error.
+- Formal capture requires matching clean repository and simulator-source
+  commits, a fresh external result root, the exact trace definition, complete
+  mandatory coordinates, VCD headers, hashes for the CFG/simulator/ELFs/VCDs/
+  logs, and no retained failure.  A partial or dirty capture can validate the
+  implementation but cannot set `toggle_proxy_evidence=true`.
+- `analyze_toggle_proxy.py` streams each external VCD and counts known `0/1`
+  Hamming-distance bit changes once per unique VCD identifier.  The first
+  value per signal in each gated window initializes state and is not counted;
+  `x/z`-involving transitions are retained separately.  Identifier aliases
+  are not double counted.
+- The exhaustive hierarchy partition is SMU scalar/exp/reciprocal, SMU vector
+  data path, SMU control/FSM, TCDM-facing request/response, core or RVV
+  baseline, global clock/reset, and other cluster logic.  Deterministic outputs
+  are `analysis.json`, `toggle_summary.csv`,
+  `hierarchy_toggle_summary.csv`, `signal_toggle_summary.csv`, and a checksum
+  index.
+- Direct streaming validation against the retained 84,031,468-byte Stage 8a
+  dirty VCD completed in 9.2 seconds under an external 120-second process
+  timeout.  It parsed 81,639 unique identifiers and 1,620,684 declared bits.
+  The B2-R and B3 windows produced 2,560,517 and 1,289,705 known bit toggles,
+  respectively, with zero unknown transitions.  These values validate parser
+  behavior only: the source was dirty, `(1,1)` was a smoke, and the result is
+  not promoted to formal evidence.
+- Validation: all 98 utility tests pass, every utility Python module compiles,
+  changed-file 80-column checks and `git diff --check` pass.  The synthetic VCD
+  tests cover exact window ordering, per-window initialization, known bit
+  changes, unknown transitions, aliases, and hierarchy classification.
+- Claim boundary: this is a zero-delay RTL activity proxy.  It models no
+  glitches, cell-internal power, interconnect parasitics/load, clock tree,
+  leakage, voltage, process, or physical power/energy.  It cannot produce mW,
+  pJ, ASIC efficiency, or signoff claims.
+- Remaining Stage 8 work: commit this runner/analyzer checkpoint, build or
+  identify a clean trace-capable simulator at that commit, execute the three
+  bounded captures, run deterministic analysis plus an independent
+  reconstruction, and only then mark Stage 8 complete.
