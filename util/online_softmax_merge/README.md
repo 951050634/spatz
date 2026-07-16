@@ -338,6 +338,20 @@ make -C hw/system/spatz_cluster \
   "$sim_root/spatz_cluster.vlt"
 ```
 
+For unusually long full-cluster runs, the build also has explicit opt-in
+Verilator runtime tuning knobs.  `VLT_THREADS` defaults to one and
+`VLT_MODEL_CFLAGS` defaults to empty, preserving the established simulator.
+Any tuned formal binary must record both values and be checked against the
+single-thread profile before it replaces that profile:
+
+```bash
+make -C hw/system/spatz_cluster \
+  SPATZ_DASM_TRACE=0 VLT_THREADS=4 VLT_MODEL_CFLAGS=-O3 \
+  VLT_BIN="$sim_root/spatz_cluster.vlt" \
+  VLT_BUILDDIR="$sim_root/work-vlt" \
+  "$sim_root/spatz_cluster.vlt"
+```
+
 The simulator emits one `OM_SIM_CONFIG` record.  The runner accepts formal
 capture only when that record proves `dasm_trace_enabled=false` and
 `fsm_observer_enabled=true`; the default traced profile is rejected.

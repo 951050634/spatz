@@ -30,7 +30,7 @@ small manifests only.
 | 3 | Anchors, RVV tails, mandatory size matrices | P0 | complete | Stage 3n closes both mandatory fixed matrices |
 | 4 | Break-even table and fitted scale model | P0 | complete | Stage 4e formal fit and direct 16-point table |
 | 5 | Full-SMU FSM cycle breakdown and A0/A2 | P0 | complete | Stage 5b exact three-point formal closure |
-| 6 | C0/C1/C2/C3 concurrency and 16 bank phases | P0 | in_progress | Stage 6d low-perturbation simulator gate; clean formal run pending |
+| 6 | C0/C1/C2/C3 concurrency and 16 bank phases | P0 | in_progress | Stage 6e bounded clean timeout diagnosed; tuned simulator validation pending |
 | 7 | Yosys Slang generic-resource proxy | P0 | complete | Stage 7c clean capture and deterministic analysis closure |
 | 8 | Representative RTL VCD toggle proxy | P0 | in_progress | Stage 8b controlled runner/parser validated; clean formal points pending |
 | 9 | Target `expf` B0/B2-F | P1 | pending | pending |
@@ -2391,6 +2391,42 @@ small manifests only.
   Next: create the atomic commit, rebuild the same profile from that clean
   commit, run all 148 target/76 FSM records, and execute the deterministic
   analyzer plus an independent reconstruction before Stage 6 completion.
+
+### Stage 6e checkpoint: bounded clean timeout and runtime tuning gate
+
+- The low-perturbation implementation was committed as `928ec7e`.  Its clean
+  simulator build is retained at
+  `/home/wxt/work-online-merge-stage6-formal-simulator-clean-20260716T033109Z`.
+  The exact 17,998,528-byte binary SHA256 is
+  `70c021ced118617eb9fe25da53e052d2f6327296af81a44d5e064a355551f419`;
+  it contains the required `OM_SIM_CONFIG`/`OM_FSM` strings and excludes the
+  DASM filename string.
+- The clean formal attempt is retained at
+  `/home/wxt/work-online-merge-stage6-formal-capture-clean-20260716T033500Z`.
+  It ran under the runner's separate-process-group 3,600-second timeout and
+  was terminated without leaving a simulator process.  It is preserved as a
+  timeout, not promoted to passing evidence.
+- At timeout the run had produced 29 of 148 scheduled target records and 16 of
+  76 FSM records.  Every observed target workload and FSM invocation passed,
+  but only phase zero and the phase-eight standalone-core warm-up had been
+  reached.  The PASS banner was absent.  This proves the issue is insufficient
+  whole-system Verilator throughput, not a completed target waiting for host
+  exit; extrapolating the incomplete record rate would require several hours.
+- The retained output also exposed an independent runner bug: non-stream C0/C1
+  target records intentionally encode `phase_bytes=UINT32_MAX`, while the host
+  validator and analyzer expected zero.  Expected schedule keys, raw-record
+  validation, baseline lookup, and synthetic tests now use `UINT32_MAX` for
+  non-stream records and zero only for C0-stream/C2.
+- `util/Makefrag` now exposes opt-in `VLT_THREADS` and
+  `VLT_MODEL_CFLAGS` knobs.  Both preserve the established build by default
+  (`1` and empty).  A tuned binary such as four threads plus `-O3` must be
+  explicitly recorded and compared with the single-thread profile before
+  formal use; no speedup is assumed in advance.
+- Validation: all 98 utility tests pass after the phase-sentinel repair.  Next:
+  commit the repair/tuning gate, build a clean tuned simulator, run a short
+  bounded throughput comparison, and choose between the tuned single capture
+  and a versioned phase-sharded flow.  No additional hour-long run starts
+  before that diagnostic gate passes.
 
 
 ### Stage 7a checkpoint: versioned Slang wrapper and capture runner

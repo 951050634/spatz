@@ -463,10 +463,17 @@ def build_observation(
     indexed: dict[str, Any], scenario: str, phase: int, repeat: int
 ) -> dict[str, Any]:
     records = indexed["records"]
-    concurrent = records[(scenario, phase, repeat)]
-    smu_alone = records[("C0_SMU", 0, repeat)]
+    concurrent_phase = runner.UINT32_MAX if scenario == "C1" else phase
+    concurrent = records[(scenario, concurrent_phase, repeat)]
+    smu_alone = records[("C0_SMU", runner.UINT32_MAX, repeat)]
     core_scenario = BASELINE_CORE[scenario]
-    core_phase = phase if scenario == "C3" else 0
+    core_phase = (
+        phase
+        if scenario == "C3"
+        else runner.UINT32_MAX
+        if scenario == "C1"
+        else 0
+    )
     core_alone = records[(core_scenario, core_phase, repeat)]
     concurrent_fsm = fsm_for(indexed, concurrent)
     standalone_fsm = fsm_for(indexed, smu_alone)

@@ -292,7 +292,12 @@ def expected_scenario_counts(repeats: int) -> dict[str, int]:
 def expected_record_keys(repeats: int) -> set[tuple[str, int, int]]:
     repeats_with_warmup = range(-1, repeats)
     keys: set[tuple[str, int, int]] = set()
-    for scenario in ("C0_SMU", "C0_REG", "C0_STREAM", "C1", "C2"):
+    for scenario in ("C0_SMU", "C0_REG", "C1"):
+        keys.update(
+            (scenario, UINT32_MAX, repeat)
+            for repeat in repeats_with_warmup
+        )
+    for scenario in ("C0_STREAM", "C2"):
         keys.update((scenario, 0, repeat) for repeat in repeats_with_warmup)
     for phase in PHASES:
         for scenario in ("C3_CORE", "C3"):
@@ -585,11 +590,19 @@ def validate_record(
             errors.append(
                 _error("invalid_phase", f"unexpected C3 phase: {phase}")
             )
-    elif phase != 0:
+    elif scenario in {"C0_STREAM", "C2"} and phase != 0:
         errors.append(
             _error(
                 "invalid_phase",
-                f"non-C3 scenario has phase {phase}, expected 0",
+                f"stream baseline has phase {phase}, expected 0",
+            )
+        )
+    elif scenario not in {"C0_STREAM", "C2"} and phase != UINT32_MAX:
+        errors.append(
+            _error(
+                "invalid_phase",
+                f"non-stream scenario has phase {phase}, "
+                f"expected {UINT32_MAX}",
             )
         )
 

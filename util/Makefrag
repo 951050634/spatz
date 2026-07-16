@@ -59,6 +59,14 @@ VLT_FLAGS    += -Wno-PINMISSING
 VLT_FLAGS    += -Wno-fatal
 VLT_FLAGS    += --unroll-count 1024
 VLT_FLAGS    += --timing
+VLT_THREADS  ?= 1
+ifneq ($(VLT_THREADS),1)
+VLT_FLAGS    += --threads $(VLT_THREADS)
+endif
+VLT_MODEL_CFLAGS ?=
+ifneq ($(strip $(VLT_MODEL_CFLAGS)),)
+VLT_FLAGS    += -CFLAGS "$(VLT_MODEL_CFLAGS)"
+endif
 ifneq ($(findstring -DVCD_DUMP,$(DEFS)),)
 VLT_FLAGS    += --trace
 endif

@@ -166,13 +166,18 @@ def full_schedule(
     records: list[dict[str, object]] = []
     invocation = 0
     for scenario in ("C0_SMU", "C0_REG", "C0_STREAM", "C1", "C2"):
+        phase = (
+            0
+            if scenario in {"C0_STREAM", "C2"}
+            else runner.UINT32_MAX
+        )
         for repeat in range(-1, case.repeats):
             is_smu = scenario in runner.SMU_SCENARIOS
             records.append(
                 raw_record(
                     case,
                     scenario,
-                    0,
+                    phase,
                     repeat,
                     invocation if is_smu else -1,
                 )

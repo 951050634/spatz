@@ -69,6 +69,13 @@ class TraceProxyGatingTest(unittest.TestCase):
         self.assertIn('"OM_SIM_CONFIG {', engine)
         self.assertIn('"\\\"fsm_observer_enabled\\\":true}"', engine)
 
+    def test_verilator_runtime_tuning_is_explicit(self) -> None:
+        text = self.read("util/Makefrag")
+        self.assertIn("VLT_THREADS  ?= 1", text)
+        self.assertIn("VLT_FLAGS    += --threads $(VLT_THREADS)", text)
+        self.assertIn("VLT_MODEL_CFLAGS ?=", text)
+        self.assertIn('-CFLAGS "$(VLT_MODEL_CFLAGS)"', text)
+
 
 if __name__ == "__main__":
     unittest.main()
