@@ -32,10 +32,10 @@ small manifests only.
 | 5 | Full-SMU FSM cycle breakdown and A0/A2 | P0 | complete | Stage 5b exact three-point formal closure |
 | 6 | C0/C1/C2/C3 concurrency and 16 bank phases | P0 | in_progress | Stage 6b target schedule and host runner; analysis/formal run pending |
 | 7 | Yosys Slang generic-resource proxy | P0 | complete | Stage 7c clean capture and deterministic analysis closure |
-| 8 | Representative RTL VCD toggle proxy | P0 | pending | pending |
+| 8 | Representative RTL VCD toggle proxy | P0 | in_progress | Stage 8a gated simulator and two-window smoke pass; parser/formal points pending |
 | 9 | Target `expf` B0/B2-F | P1 | pending | pending |
 | 10 | Scalar-only A1 | P1 | pending | pending |
-| 11 | Trace gating / low-perturbation counter | P1 | pending | pending |
+| 11 | Trace gating / low-perturbation counter | P1 | in_progress | Stage 8a probe-gated VCD implementation passes dirty smoke |
 | 12 | Capacity probes and expanded numerical coverage | P1 | pending | pending |
 | 13 | ASIC PPA and physical energy | P2 | blocked_external | see fixed context |
 
@@ -2530,3 +2530,71 @@ small manifests only.
   critical path, physical power, energy, or efficiency.  P2 remains
   `blocked_external` on the exact technology and signoff inputs in the fixed
   context.
+
+### Stage 8a checkpoint: probe-gated VCD implementation and smoke
+
+- Objective: make representative RTL VCD capture practical without tracing
+  benchmark initialization, correctness checking, printing, B1, warm-ups, or
+  all measured repeats.
+- The Verilator top now exposes the existing `cluster_probe`, and the C++
+  harness accepts `SNITCH_TRACE_GATE=1`.  It dumps while the probe is high and
+  once on the falling edge, and emits an indexed start/end record for every
+  window.  With gating disabled, existing whole-run trace behavior is
+  unchanged.
+- `ONLINE_MERGE_TRACE_PROXY=1` is an explicit CMake definition.  It marks only
+  B2-R repeat zero and B3 repeat zero; the benchmark still executes and checks
+  the required three measured repeats of B1/B2-R/B3.  This supplies identical
+  input/case and marker semantics for the RVV and SMU activity windows while
+  keeping the VCD bounded.
+- `VLT_BIN` allows the trace-capable simulator executable to remain in an
+  external `work-online-merge-*` directory instead of overwriting the existing
+  `bin` symlink.  All Verilated objects used by this smoke likewise remained
+  under an external `VLT_BUILDDIR`.
+- Dirty implementation smoke used `(N,D,seed,repeats)=(1,1,1,3)`.  The target
+  ELF SHA256 is
+  `3e28aba96c07d7243ad21ef45309daea41732ba14776059becf31f886d1f0a20`;
+  the trace-capable simulator SHA256 is
+  `6773b6cffb3ee261450aa44648eecb3d6420dd0d601c1b2c23ae6ae78127f51f`.
+  Its generated header reports `traceCapable=true` and a one-bit
+  `cluster_probe_o` output.
+- Smoke evidence is retained at
+  `/home/wxt/work-online-merge-stage8-trace-smoke-dirty-20260716T023543Z`.
+  Simulator return code is zero, all nine target records pass, all four FSM
+  observations terminate in `DONE`, and the target prints its PASS banner.
+  The exact two trace windows are:
+
+  | Index | Implementation | Start time | End time | Marker span |
+  | ---: | --- | ---: | ---: | ---: |
+  | 0 | B2-R repeat 0 | 46152 | 50052 | 3900 half cycles |
+  | 1 | B3 repeat 0 | 71954 | 74292 | 2338 half cycles |
+
+  Target cycle records for those repeats are 1887 and 1115 respectively.  The
+  marker span includes observable boundary instructions around the target's
+  internal `mcycle` interval and is therefore retained separately.
+- The gated VCD is 84,031,468 bytes with SHA256
+  `674af544bdfb282a0356fcbe3efc5a31f382ec96ebbb4a96cac84cad04adeeff`.
+  It and the 144 MiB hart trace remain outside Git.  Simulator stdout/stderr
+  SHA256 values are
+  `06015789af90803de1c5b836c9162ce3ccb7dbe629614362604a1f160d3e3f1c`
+  and
+  `a8a5319c8e4a69ab22b5ff63af55ab8a7f8f2ad88f9c0c5d842565ba7b65eaa9`.
+- Preserved setup failures: two Bender HTTPS fetches failed with truncated TLS
+  packets and a missing locked iDMA object; the exact locked object was then
+  fetched from the read-only local `/home/wxt/spatz/.bender` cache and Bender
+  completed with `--local`.  A subsequent build attempt failed because system
+  Python lacked `hjson`; the existing project virtual environment reports
+  hjson 3.1.0 and completed the build.  No failed attempt is promoted to
+  measurement evidence.
+- The first Make invocation rebuilt tracked `test/bootrom.elf` because the
+  Makefile timestamp changed.  The worktree was clean at task start and this
+  binary change was created by that invocation, so only that known generated
+  change was restored to HEAD before continuing.  The validated simulator and
+  all later artifacts remained external; no unrelated user change was touched.
+- Validation: all 90 utility tests pass, all utility Python files compile,
+  target CMake/build passes with the actual trace definition, RVV and stack
+  symbols are present, Verilator trace elaboration and link pass, the two-window
+  simulator smoke passes, and `git diff --check` passes.
+- Remaining Stage 8 work: commit this atomic gate, add the capture/VCD parser,
+  then run clean `(1,1)`, `(8,32)`, and `(16,64)` captures and report bit-toggle
+  totals, toggle/cycle, toggle/element, and hierarchy breakdown.  These remain
+  RTL activity proxies and cannot be converted to mW or pJ.

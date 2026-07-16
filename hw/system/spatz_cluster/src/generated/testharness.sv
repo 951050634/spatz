@@ -10,7 +10,8 @@
 
 module testharness (
     input logic clk_i,
-    input logic rst_ni
+    input logic rst_ni,
+    output logic cluster_probe_o
   );
 
   import spatz_cluster_pkg::*;
@@ -53,6 +54,8 @@ module testharness (
     .axi_in_resp_o   (axi_to_cluster_resp  ),
     .cluster_probe_o (cluster_probe        )
   );
+
+  assign cluster_probe_o = cluster_probe;
 /**************
  *  VCD Dump  *
  **************/

@@ -523,6 +523,39 @@ The flow therefore records scalar/FSM/control-only decomposition as
 independently optimized scopes.  ASIC PPA remains `blocked_external` without
 the required PDK, liberty/LEF, constraints, and physical signoff flow.
 
+## Probe-gated RTL VCD capture
+
+Build trace-capable Verilator objects and the simulator entirely outside the
+worktree.  `VLT_BIN` prevents replacement of an existing `bin` symlink:
+
+```bash
+sim_root=/home/user/work-online-merge-toggle-simulator
+touch hw/system/spatz_cluster/src/generated/bootrom.sv
+make -C hw/system/spatz_cluster \
+  VLT_BIN="$sim_root/spatz_cluster.vlt" \
+  VLT_BUILDDIR="$sim_root/work-vlt" \
+  DEFS=-DVCD_DUMP \
+  "$sim_root/spatz_cluster.vlt"
+```
+
+Configure the online-merge target with `ONLINE_MERGE_TRACE_PROXY=1`.  The
+benchmark continues to execute three measured B1/B2-R/B3 repeats, but drives
+`SPATZ_STATUS` only for B2-R repeat zero and B3 repeat zero.  Run the trace
+simulator with both controls enabled:
+
+```bash
+SNITCH_TRACE_FILE=/home/user/work-online-merge-toggle/trace.vcd \
+SNITCH_TRACE_GATE=1 \
+  "$sim_root/spatz_cluster.vlt" --trace /path/to/online-merge.elf
+```
+
+The C++ harness logs indexed `SNITCH_TRACE_WINDOW` start/end records and dumps
+only while the top-level `cluster_probe_o` is active, plus its falling edge.
+The first window is B2-R repeat zero and the second is B3 repeat zero.  Raw VCD,
+hart traces, simulator objects, ELFs, and logs stay outside Git.  Marker spans
+and target `mcycle` values remain separate because the marker includes boundary
+instructions around the target's internal cycle interval.
+
 ## Validation
 
 ```bash

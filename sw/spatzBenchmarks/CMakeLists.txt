@@ -98,6 +98,8 @@ set(ONLINE_MERGE_CASE_KIND "main" CACHE STRING
     "Online merge experiment input class")
 set(ONLINE_MERGE_REPEATS "5" CACHE STRING
     "Online merge measured repetitions after one warm-up")
+set(ONLINE_MERGE_TRACE_PROXY "0" CACHE STRING
+    "Gate trace markers to B2-R/B3 repeat zero")
 if(NOT PYTHON)
   find_program(PYTHON python3 REQUIRED)
 endif()
@@ -132,6 +134,9 @@ target_include_directories(
     test-${SNITCH_TEST_PREFIX}online-softmax-merge
     PRIVATE ${ONLINE_MERGE_GENERATED_DIR}
             ${CMAKE_CURRENT_SOURCE_DIR}/online-softmax-merge)
+target_compile_definitions(
+    test-${SNITCH_TEST_PREFIX}online-softmax-merge
+    PRIVATE ONLINE_MERGE_TRACE_PROXY=${ONLINE_MERGE_TRACE_PROXY})
 target_link_libraries(test-${SNITCH_TEST_PREFIX}online-softmax-merge
     benchmark ${SNITCH_RUNTIME})
 

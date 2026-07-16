@@ -20,6 +20,14 @@
 #define ONLINE_MERGE_MAX_POLLS 1000000u
 #define ONLINE_MERGE_ALLOC_ALIGN 256u
 
+#ifndef ONLINE_MERGE_TRACE_PROXY
+#define ONLINE_MERGE_TRACE_PROXY 0
+#endif
+
+#define ONLINE_MERGE_IMPLEMENTATION_B1 1u
+#define ONLINE_MERGE_IMPLEMENTATION_B2_R 2u
+#define ONLINE_MERGE_IMPLEMENTATION_B3 3u
+
 // The three implementations' measured samples and correctness state make
 // main's frame larger than the runtime's 1 KiB default.  Reserve 8 KiB per
 // core so the stacks remain disjoint while the nonzero core waits at barrier.
@@ -280,6 +288,30 @@ static void stop_tcdm_counters(online_merge_sample_t *sample) {
   sample->tcdm_congested = snrt_get_perf_counter(SNRT_PERF_CNT1);
 }
 
+static int trace_marker_enabled(uint32_t implementation, uint32_t repeat) {
+#if ONLINE_MERGE_TRACE_PROXY
+  return repeat == 0u &&
+         (implementation == ONLINE_MERGE_IMPLEMENTATION_B2_R ||
+          implementation == ONLINE_MERGE_IMPLEMENTATION_B3);
+#else
+  (void)implementation;
+  (void)repeat;
+  return 1;
+#endif
+}
+
+static void trace_marker_start(uint32_t implementation, uint32_t repeat) {
+  if (trace_marker_enabled(implementation, repeat)) {
+    start_kernel();
+  }
+}
+
+static void trace_marker_stop(uint32_t implementation, uint32_t repeat) {
+  if (trace_marker_enabled(implementation, repeat)) {
+    stop_kernel();
+  }
+}
+
 static void record_failure(online_merge_metrics_t *metrics,
                            uint32_t component, uint32_t row, uint32_t col,
                            float actual, float expected) {
@@ -366,14 +398,14 @@ static void run_b1(online_merge_buffers_t *buffers,
   for (uint32_t repeat = 0; repeat < ONLINE_MERGE_CASE_REPEATS; repeat++) {
     clear_output(buffers);
     start_tcdm_counters();
-    start_kernel();
+    trace_marker_start(ONLINE_MERGE_IMPLEMENTATION_B1, repeat);
     uint64_t start = benchmark_get_cycle64();
     online_merge_rtl_reference(
         buffers->m_old, buffers->l_old, buffers->o_old, buffers->m_tile,
         buffers->l_tile, buffers->o_tile, buffers->m_out, buffers->l_out,
         buffers->o_out, buffers->n, buffers->d, buffers->stride);
     uint64_t end = benchmark_get_cycle64();
-    stop_kernel();
+    trace_marker_stop(ONLINE_MERGE_IMPLEMENTATION_B1, repeat);
     samples[repeat].cycles = end - start;
     samples[repeat].saw_busy = 0;
     samples[repeat].status = "pass";
@@ -394,14 +426,14 @@ static void run_b2_r(online_merge_buffers_t *buffers,
   for (uint32_t repeat = 0; repeat < ONLINE_MERGE_CASE_REPEATS; repeat++) {
     clear_output(buffers);
     start_tcdm_counters();
-    start_kernel();
+    trace_marker_start(ONLINE_MERGE_IMPLEMENTATION_B2_R, repeat);
     uint64_t start = benchmark_get_cycle64();
     online_merge_b2_r(
         buffers->m_old, buffers->l_old, buffers->o_old, buffers->m_tile,
         buffers->l_tile, buffers->o_tile, buffers->m_out, buffers->l_out,
         buffers->o_out, buffers->n, buffers->d, buffers->stride);
     uint64_t end = benchmark_get_cycle64();
-    stop_kernel();
+    trace_marker_stop(ONLINE_MERGE_IMPLEMENTATION_B2_R, repeat);
     samples[repeat].cycles = end - start;
     samples[repeat].saw_busy = 0;
     samples[repeat].status = "pass";
@@ -437,13 +469,13 @@ static int run_b3(online_merge_buffers_t *buffers,
   for (uint32_t repeat = 0; repeat < ONLINE_MERGE_CASE_REPEATS; repeat++) {
     clear_output(buffers);
     start_tcdm_counters();
-    start_kernel();
+    trace_marker_start(ONLINE_MERGE_IMPLEMENTATION_B3, repeat);
     uint64_t start = benchmark_get_cycle64();
     smu_start(buffers);
     int saw_busy;
     online_merge_wait_t wait_result = smu_wait(&saw_busy);
     uint64_t end = benchmark_get_cycle64();
-    stop_kernel();
+    trace_marker_stop(ONLINE_MERGE_IMPLEMENTATION_B3, repeat);
     samples[repeat].cycles = end - start;
     samples[repeat].saw_busy = saw_busy;
     samples[repeat].status = wait_status(wait_result);

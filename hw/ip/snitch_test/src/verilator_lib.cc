@@ -55,6 +55,9 @@ void Sim::main() {
 
     const char* trace_env = std::getenv("SNITCH_TRACE");
     const bool trace_enabled = trace_env && trace_env[0] != '\0' && trace_env[0] != '0';
+    const char* trace_gate_env = std::getenv("SNITCH_TRACE_GATE");
+    const bool trace_gate_enabled =
+        trace_gate_env && trace_gate_env[0] != '\0' && trace_gate_env[0] != '0';
     if (trace_enabled) {
         const char* trace_file_env = std::getenv("SNITCH_TRACE_FILE");
         const char* trace_file =
@@ -65,6 +68,8 @@ void Sim::main() {
     }
 
     bool clk_i = 0, rst_ni = 0;
+    bool trace_gate_was_active = false;
+    unsigned int trace_window = 0;
 
     while (!Verilated::gotFinish()) {
         clk_i = !clk_i;
@@ -73,9 +78,21 @@ void Sim::main() {
         top->rst_ni = rst_ni;
         // Evaluate the DUT.
         top->eval();
-        if (trace) {
+        const bool trace_gate_active = top->cluster_probe_o;
+        if (trace &&
+            (!trace_gate_enabled || trace_gate_active || trace_gate_was_active)) {
             trace->dump(TIME);
         }
+        if (trace && trace_gate_enabled &&
+            trace_gate_active != trace_gate_was_active) {
+            fprintf(stderr,
+                    "SNITCH_TRACE_WINDOW index=%u event=%s time=%d\n",
+                    trace_window, trace_gate_active ? "start" : "end", TIME);
+            if (!trace_gate_active) {
+                trace_window++;
+            }
+        }
+        trace_gate_was_active = trace_gate_active;
         // Increase global time.
         TIME++;
         // Switch to the HTIF interface in regular intervals.

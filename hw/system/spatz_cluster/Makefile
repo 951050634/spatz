@@ -67,6 +67,7 @@ VLOG_FLAGS += -64
 # Verilated and compiled Spatz system
 VLT_ROOT = ${VERILATOR_INSTALL_DIR}/share/verilator
 VLT_AR   = ${VLT_BUILDDIR}/Vtestharness__ALL.a
+VLT_BIN ?= bin/spatz_cluster.vlt
 
 all:
 
@@ -136,7 +137,7 @@ $(VLT_BUILDDIR)/test/uartdpi/uartdpi.o: test/uartdpi/uartdpi.c
 	$(CC) $(CXXFLAGS) $(VLT_CFLAGS) -c $< -o $@
 
 # Link verilated archive wich $(VLT_COBJ)
-bin/spatz_cluster.vlt: $(VLT_AR) $(VLT_COBJ) ${VLT_BUILDDIR}/lib/libfesvr.a
+${VLT_BIN}: $(VLT_AR) $(VLT_COBJ) ${VLT_BUILDDIR}/lib/libfesvr.a
 	mkdir -p $(dir $@)
 	$(CXX) $(LDFLAGS) -L ${VLT_BUILDDIR}/lib -o $@ $(VLT_COBJ) $(VLT_AR) -lpthread -lfesvr -lutil -latomic
 
