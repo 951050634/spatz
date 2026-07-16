@@ -30,7 +30,7 @@ small manifests only.
 | 3 | Anchors, RVV tails, mandatory size matrices | P0 | complete | Stage 3n closes both mandatory fixed matrices |
 | 4 | Break-even table and fitted scale model | P0 | complete | Stage 4e formal fit and direct 16-point table |
 | 5 | Full-SMU FSM cycle breakdown and A0/A2 | P0 | complete | Stage 5b exact three-point formal closure |
-| 6 | C0/C1/C2/C3 concurrency and 16 bank phases | P0 | in_progress | Stage 6h HTIF/context exit root cause fixed; clean rerun pending |
+| 6 | C0/C1/C2/C3 concurrency and 16 bank phases | P0 | in_progress | Stage 6i context lifecycle fixed; bounded formal capture pending |
 | 7 | Yosys Slang generic-resource proxy | P0 | complete | Stage 7c clean capture and deterministic analysis closure |
 | 8 | Representative RTL VCD toggle proxy | P0 | complete | Stage 8d formal three-point toggle analysis and independent reconstruction |
 | 9 | Target `expf` B0/B2-F | P1 | pending | pending |
@@ -2504,17 +2504,19 @@ small manifests only.
   `/home/wxt/work-online-merge-stage6g-smoke-clean-20260716T171700Z`.
   It selected `(N,D)=(1,1)`, no baselines, and only phase zero, under a
   900-second process-group timeout.
-- The target completed: simulator output contains `[SUCCESS] Program finished
-  successfully`, all four expected `OM_FSM` records terminate in `DONE`, and
-  seven of eight target records were flushed.  Nevertheless the host process
-  did not exit before 900 seconds.  The runner correctly retained `timeout`,
-  four completeness failures, and a synthetic terminal row; it is not pass
-  evidence.
-- This isolates the user-reported non-exiting simulation.  `htif_t::run()` can
-  return successfully without an RTL `$finish`; `Sim::main()` then remains in
-  its `while (!Verilated::gotFinish())` loop.  Process termination withheld the
-  buffered final target record and PASS banner even though the fourth FSM
-  invocation had completed.
+- The target initially appeared to complete: simulator output contains
+  `[SUCCESS] Program finished successfully`, all four expected `OM_FSM`
+  records terminate in `DONE`, and seven of eight target records were flushed.
+  Nevertheless the host process did not exit before 900 seconds.  The runner
+  correctly retained `timeout`, four completeness failures, and a synthetic
+  terminal row; it is not pass evidence.  Stage 6i later proves that the
+  success string can be emitted during timeout shutdown and therefore cannot
+  establish target completion by itself.
+- This reproduced the user-reported non-exiting simulation but did not yet
+  isolate its cause.  The working hypothesis was that `htif_t::run()` returned
+  successfully without an RTL `$finish`, leaving `Sim::main()` in its
+  `while (!Verilated::gotFinish())` loop.  The first harness fix tested that
+  hypothesis by setting the finish flag and waking the simulation context.
 - The Verilator harness now sets `Verilated::gotFinish(true)` immediately after
   HTIF returns and switches back to the simulation context.  The target loop
   can observe the flag, return through the context wrapper, and let normal
@@ -2526,6 +2528,53 @@ small manifests only.
 - Remaining Stage 6 work: commit the harness fix, rebuild the clean simulator,
   repeat the same bounded one-phase smoke, and require a natural zero exit plus
   all 8/4 records and PASS banner before any formal shard is started.
+
+### Stage 6i checkpoint: context lifecycle closure and bounded throughput gate
+
+- The first-fix clean rerun is retained at
+  `/home/wxt/work-online-merge-stage6h-smoke-clean-20260716T175300Z`.  It used
+  committed source `79af5ee`, simulator SHA256
+  `66888ae35bda793b8aa619700ae383d27e4884f37c9efa348aaf114e5442bdd5`,
+  `(N,D)=(1,1)`, no baselines, phase zero only, and a 900-second process-group
+  limit.  It retained six real target records, three FSM records, the timeout
+  terminal row, and five validation failures.  The process group was removed.
+- At shutdown the log emitted `[SUCCESS] Program finished successfully` and
+  then failed `context_t::~context_t(): Assertion 'this != cur'`.  A separate
+  300-second bounded diagnostic also emitted `[SUCCESS]` with an incomplete
+  schedule.  Thus timeout-induced Verilator shutdown can make `htif_t::run()`
+  return zero; only a natural return code zero together with the exact record,
+  FSM, and PASS-banner gates is completion evidence.
+- fesvr's ucontext wrapper links back to its creator but does not update its
+  thread-local current-context pointer when the target function returns.  The
+  harness now explicitly calls `host->switch_to()` after the simulation loop
+  and trace cleanup.  This updates the pointer through the supported context
+  switch and leaves the target context parked for safe host-side destruction.
+- A DASM-disabled single-thread simulator built from clean commit `dfadc77` is
+  retained at
+  `/home/wxt/work-online-merge-stage6i-simulator-clean-20260716T181500Z` with
+  SHA256
+  `91a2adf0b2840ca5229ef448e46ed40d6a72b9fccfaf48257cd3cad7723b5b30`.
+  A bounded `test-snRuntime-simple` lifecycle smoke returned naturally in
+  1.12 seconds with return code zero and `[SUCCESS]`, with neither assertion
+  nor residual simulator process.  This validates the generic HTIF completion
+  and context teardown path without another long concurrency run.
+- Stream correctness remains bit-exact for all 2,049 elements of every warm-up
+  and measured repeat, but now uses a dedicated integer bit-comparison path
+  instead of executing unused floating finite/absolute/tolerance work first.
+  The change does not alter any measured window, sample count, byte count,
+  phase, tail, mismatch count, or first-failure evidence.  All 107 utility
+  tests pass and the cross-compiled concurrency target links successfully.
+- A clearly diagnostic-only 300-second run combined the `dfadc77` simulator
+  with the content-equivalent target rebuilt from commit `6ef6803`; it is not
+  formal mixed-provenance evidence.  It retained three complete phase-zero
+  records before timeout, versus one target record in the earlier tuned-profile
+  diagnostic.  The improvement is insufficient to justify launching a
+  four-phase formal shard under the old bounds.
+- Stage 6 remains `in_progress`.  Next work must preserve exact clean source/
+  simulator provenance and the fixed 2,049-element, three-repeat, 16-phase
+  protocol, while selecting smaller independently bounded capture units or a
+  further semantics-preserving runtime reduction.  No unbounded or multi-hour
+  simulator is launched from this checkpoint.
 
 
 ### Stage 7a checkpoint: versioned Slang wrapper and capture runner
