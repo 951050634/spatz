@@ -30,7 +30,7 @@ small manifests only.
 | 3 | Anchors, RVV tails, mandatory size matrices | P0 | complete | Stage 3n closes both mandatory fixed matrices |
 | 4 | Break-even table and fitted scale model | P0 | complete | Stage 4e formal fit and direct 16-point table |
 | 5 | Full-SMU FSM cycle breakdown and A0/A2 | P0 | complete | Stage 5b exact three-point formal closure |
-| 6 | C0/C1/C2/C3 concurrency and 16 bank phases | P0 | in_progress | Stage 6i context lifecycle fixed; bounded formal capture pending |
+| 6 | C0/C1/C2/C3 concurrency and 16 bank phases | P0 | complete | Stage 6j clean 17-root formal union and independent reconstruction |
 | 7 | Yosys Slang generic-resource proxy | P0 | complete | Stage 7c clean capture and deterministic analysis closure |
 | 8 | Representative RTL VCD toggle proxy | P0 | complete | Stage 8d formal three-point toggle analysis and independent reconstruction |
 | 9 | Target `expf` B0/B2-F | P1 | pending | pending |
@@ -2575,6 +2575,65 @@ small manifests only.
   protocol, while selecting smaller independently bounded capture units or a
   further semantics-preserving runtime reduction.  No unbounded or multi-hour
   simulator is launched from this checkpoint.
+
+### Stage 6j checkpoint: clean formal concurrency closure
+
+- Stage 6 is complete.  The formal capture uses clean commit `2ef215b`, CFG
+  SHA256 `120fa0c30199e54e6e9b5c60d8da40913eae8526640992cc5d4f130bef159775`,
+  and one DASM-disabled single-thread simulator at
+  `/home/wxt/work-online-merge-stage6j-simulator-clean-20260716T184500Z` with
+  SHA256
+  `91a2adf0b2840ca5229ef448e46ed40d6a72b9fccfaf48257cd3cad7723b5b30`.
+  Source, simulator source, and analysis commits match and are clean.
+- The exact `(N,D,R)=(16,64,3)` schedule is split into one baseline-only root
+  and 16 single-phase roots.  Every root returned naturally with return code
+  zero before its independent 1,800-second phase or 2,400-second baseline
+  process-group limit.  All 148 target records and 76 FSM records pass, all
+  target/FSM pairings are exact, and every correctness/mismatch/status gate is
+  clean.  The aggregate UTC command window is `2026-07-16T18:49:41Z` through
+  `2026-07-16T20:40:07Z`; no simulator process remains.
+- Formal analysis is retained at
+  `/home/wxt/work-online-merge-stage6j-analysis-clean-20260716T204000Z`.
+  It contains 72 observations, of which 54 are measured and 18 are retained
+  warm-ups.  All 14 analyzer acceptance gates pass, including the exact
+  non-overlapping 16-phase union, clean input identity, raw unclamped overlap,
+  zero reads inside core windows, and complete input evidence.
+- Measured medians are: C1 `T_concurrent=11327`, overlap efficiency
+  `7376/8529=0.864814`, SMU slowdown `8528/8529=0.999883`, and core slowdown
+  `5097/5087=1.001966`; C2 `T_concurrent=10264`, overlap efficiency
+  `1399/3134=0.446394`, SMU slowdown `4267/4264=1.000704`, core slowdown
+  `3169/3134=1.011168`, and TCDM congestion `4/339=0.011799`; C3 across all
+  phase/repeat observations has `T_concurrent=10226`, overlap efficiency
+  `2893/6288=0.460083`, SMU slowdown `8533/8529=1.000469`, core slowdown
+  `3163/3144=1.006043`, and TCDM congestion `73/5765=0.012663`.
+- C3 best/representative-median/worst phases by median `T_concurrent` are
+  respectively 0/16/72 bytes: `(10184,0.476597)`, `(10226,0.461465)`, and
+  `(10235,0.457379)` for `(T_concurrent, overlap efficiency)`.  Selection is
+  from observed phase medians with the documented deterministic tie-breaks;
+  no interpolation or clamping is used.
+- Output SHA256 values are: `analysis.json`
+  `3ba5f3353f94ba27a78e1482de904a142cc27d2255ef8289663e84bbf7b9fcaf`,
+  `concurrency_observations.csv`
+  `eca9a59d460d2c3c1cb37c20cf9c360245802eec83ad3f30a4bec1ecdaed2d36`,
+  `concurrency_summary.csv`
+  `4d9499ffec64c975825756fdeef0794b9c6c69be9c22a81cad8cce21c921475a`,
+  `bank_phase_summary.csv`
+  `8f184efac713d5973feab9d712870362e1e4c4625756869439b221a68169aa4c`,
+  `retained_status_records.csv`
+  `af219c453b03ac0b79a3a4b8dcebd5ce51b3aaf6e21fe3f91d45a6ffee5f7750`,
+  and `artifact_manifest.json`
+  `96eef038288d697a41cf06dbb798b84c02eb18985d9dfa37dae0dbd3d535d95c`.
+- An external standard-library verifier imports no repository analyzer code.
+  It independently rehashes all 17 roots, remaps shard-local invocations,
+  reconstructs the exact 148/76 union and all 72 observations and fractions,
+  recomputes all 16 phase medians and best/median/worst selection, and checks
+  the CSV counts plus output/tool hashes.  All nine gates pass.  Verifier and
+  result SHA256 values are
+  `253ef0a04de2c72b506d8cfa28335ecac3c07dd148d5f0dcb01b192052e34d97`
+  and `57d0ab6f136bc94fab93eb138619e786583b1de87eeac46eea87b6aea44c2981`.
+- These are same-configuration functional-simulation cycle, overlap,
+  congestion, and throughput proxies.  They make no physical area, Fmax,
+  timing, power, energy, or critical-path claim.
 
 
 ### Stage 7a checkpoint: versioned Slang wrapper and capture runner
