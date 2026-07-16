@@ -32,7 +32,7 @@ small manifests only.
 | 5 | Full-SMU FSM cycle breakdown and A0/A2 | P0 | complete | Stage 5b exact three-point formal closure |
 | 6 | C0/C1/C2/C3 concurrency and 16 bank phases | P0 | in_progress | Stage 6e bounded clean timeout diagnosed; tuned simulator validation pending |
 | 7 | Yosys Slang generic-resource proxy | P0 | complete | Stage 7c clean capture and deterministic analysis closure |
-| 8 | Representative RTL VCD toggle proxy | P0 | in_progress | Stage 8c three clean captures pass; formal analysis pending |
+| 8 | Representative RTL VCD toggle proxy | P0 | complete | Stage 8d formal three-point toggle analysis and independent reconstruction |
 | 9 | Target `expf` B0/B2-F | P1 | pending | pending |
 | 10 | Scalar-only A1 | P1 | pending | pending |
 | 11 | Trace gating / low-perturbation counter | P1 | in_progress | Stage 8a probe-gated VCD implementation passes dirty smoke |
@@ -2428,6 +2428,30 @@ small manifests only.
   and a versioned phase-sharded flow.  No additional hour-long run starts
   before that diagnostic gate passes.
 
+### Stage 6f checkpoint: tuned profile rejected by bounded diagnostic
+
+- The repair/tuning gate was committed as `8f2de68`.  A clean four-thread,
+  `-O3`, trace-capable, DASM-disabled diagnostic binary is retained at
+  `/home/wxt/work-online-merge-stage6e-tuned-simulator-clean-20260716T132500Z`.
+  It is 40,497,920 bytes with SHA256
+  `f22edc39f6043c99a8b29cbec91a2bbbca82ebc1a3f4f3545780f23253ab4f87`;
+  its model reports `threads()=4` and `traceCapable=true`, emits the required
+  low-perturbation configuration/FSM records, and excludes the DASM filename.
+- The fresh tuned build passed but took 868 seconds.  A separately bounded
+  300-second throughput run against the exact prior concurrency ELF emitted
+  only one complete target record and two FSM records before the host timeout.
+  The process group terminated cleanly and no partial output was promoted.
+- This does not improve on the clean single-thread attempt's retained rate and
+  is therefore rejected for Stage 6 formal execution.  No multi-hour run is
+  started with the tuned binary.  The build remains diagnostic evidence only.
+- The remaining Stage 6 route is a versioned phase-sharded capture: preserve
+  one common C0/C1/C2 baseline shard, partition the 16 C3 phases into bounded
+  independent shards, keep invocation/provenance identities unambiguous, and
+  have the analyzer require the exact non-overlapping union.  Each shard must
+  keep process-group timeouts and partial terminal records.  Stage 6 remains
+  `in_progress` until that implementation, clean captures, deterministic
+  analysis, and independent reconstruction pass.
+
 
 ### Stage 7a checkpoint: versioned Slang wrapper and capture runner
 
@@ -2771,3 +2795,61 @@ small manifests only.
   Remaining Stage 8 work: commit the multi-root analyzer gate, run the three
   VCD parses, independently reconstruct totals and hashes, record the formal
   tables, and then close Stage 8.
+
+### Stage 8d checkpoint: formal toggle-proxy closure
+
+- The committed multi-root analyzer at `35e2758` consumed the three Stage 8c
+  roots into
+  `/home/wxt/work-online-merge-stage8c-analysis-clean-20260716T154500Z`.
+  Capture commit is `8f2de68`, analysis commit is `35e2758`, CFG SHA256 is
+  `120fa0c30199e54e6e9b5c60d8da40913eae8526640992cc5d4f130bef159775`,
+  and the common simulator SHA256 is
+  `06185ec84ce7ba634dd1583b9c097986142916d0e813832978d3ca85057006fc`.
+  All mandatory-case, clean-source, command, failure, simulator-identity, and
+  post-capture source-drift gates pass.
+- Formal summary:
+
+  | `(N,D)` | Implementation | Target cycles | Bit toggles | Toggles/cycle | Toggles/element |
+  | --- | --- | ---: | ---: | ---: | ---: |
+  | `(1,1)` | B2-R | 1,887 | 2,504,416 | 1,327.1945 | 2,504,416.0000 |
+  | `(1,1)` | B3 | 1,115 | 1,256,923 | 1,127.2852 | 1,256,923.0000 |
+  | `(8,32)` | B2-R | 13,341 | 17,158,022 | 1,286.1121 | 67,023.5234 |
+  | `(8,32)` | B3 | 3,254 | 3,983,619 | 1,224.2222 | 15,561.0117 |
+  | `(16,64)` | B2-R | 27,447 | 41,479,210 | 1,511.2475 | 40,507.0410 |
+  | `(16,64)` | B3 | 9,571 | 12,465,919 | 1,302.4678 | 12,173.7490 |
+
+- B3 total-bit-toggle ratios relative to B2-R are 0.5019, 0.2322, and
+  0.3005 at the three points, corresponding to proxy reductions of 49.81%,
+  76.78%, and 69.95%.  Toggles/cycle ratios are 0.8494, 0.9519, and 0.8618.
+  These are direct zero-delay RTL activity ratios for the bounded windows, not
+  power or energy reductions.
+- All six windows contain zero `x/z`-involving transitions.  B2-R correctly
+  has zero SMU scalar/vector/control toggles.  At `(16,64)`, B3 hierarchy
+  totals are 10,923 scalar/exp/reciprocal, 61,572 vector-data-path, 97,064
+  control/FSM, 5,266,192 TCDM-facing, 4,324,618 core/baseline, 53,896 global
+  clock/reset, and 2,651,654 other-cluster bit toggles; their sum is the exact
+  12,465,919 total.  Complete rows for all points remain in the external CSV.
+- Formal output SHA256 values are:
+  - `analysis.json`:
+    `ae79056cfefb71f45d398245b856f3b5a9c0c8b58a76f01f04fcd1ce985675d9`;
+  - `toggle_summary.csv`:
+    `af4db4701f9ecca3da28fbe4d7cb9ec3d9ff80da6c50c1b8fa8268dee4f06ae5`;
+  - `hierarchy_toggle_summary.csv`:
+    `153fbaeefa0e07211ab96adccbb40f139e7a4a978bb61a03ea568b2f906e5e6b`;
+  - `signal_toggle_summary.csv`:
+    `7d52e0bef9cfa30d39575656bf1a9a9b7b9e44555300fd1729ef0bac202fcf7b`;
+  - `artifact_manifest.json`:
+    `ee7702b45187549cfa26488c232455bfb13cfff21a36d9024348b7b36db0f76a`.
+- An independent standard-library verifier imported no analyzer code.  It
+  rehashed all three raw VCDs and four indexed analysis outputs, streamed the
+  VCDs again, reconstructed all six bit-toggle and unknown-transition totals,
+  checked hierarchy sums and exact derived ratios, and confirmed the common
+  simulator identity and clean command gates.  Verifier and result SHA256 are
+  `33c8a15455dc2ffd661b46bce39e4cce76a97c67c43275afa5f9da1cb5f34ef7`
+  and
+  `232b9651adbd51e085cf2c0a9e06dd1b62822ede8f6a3ebb0f9975fa3d076864`.
+- Stage 8 is complete at the RTL toggle-proxy boundary.  It makes no claim
+  about glitch activity, cell/internal or interconnect power, parasitics,
+  clock tree, leakage, voltage/process corners, mW, pJ, or physical energy.
+  Real power/energy remains `blocked_external` on gate-level/post-layout
+  artifacts and a characterized technology power flow.
