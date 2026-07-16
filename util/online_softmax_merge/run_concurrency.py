@@ -25,6 +25,7 @@ import run_experiments as common
 RECORD_PREFIX = "OM_CONCURRENCY "
 META_PREFIX = "OM_CONCURRENCY_META "
 FSM_PREFIX = "OM_FSM "
+SIM_CONFIG_PREFIX = "OM_SIM_CONFIG "
 PASS_BANNER = "online-softmax-merge-concurrency PASS"
 TARGET_NAME = "test-spatzBenchmarks-online-softmax-merge-concurrency"
 REGISTER_SYMBOL = "online_merge_register_workload"
@@ -136,6 +137,12 @@ REQUIRED_FSM_FIELDS = {
     "update_vector_cycles",
     "busy_cycles",
 }
+REQUIRED_SIM_CONFIG_FIELDS = {
+    "schema_version",
+    "profile",
+    "dasm_trace_enabled",
+    "fsm_observer_enabled",
+}
 FSM_STATE_FIELDS = (
     "load_scalar_cycles",
     "compute_scalar_cycles",
@@ -159,6 +166,84 @@ def integer_or(value: Any, default: int) -> int:
         return int(value)
     except (TypeError, ValueError, OverflowError):
         return default
+
+
+def parse_simulator_configuration(
+    output: str,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """Parse and gate the simulator's low-perturbation profile record."""
+    records: list[dict[str, Any]] = []
+    errors: list[dict[str, Any]] = []
+    for line_number, line in enumerate(output.splitlines(), start=1):
+        if not line.startswith(SIM_CONFIG_PREFIX):
+            continue
+        try:
+            value = json.loads(line[len(SIM_CONFIG_PREFIX) :])
+        except json.JSONDecodeError as error:
+            errors.append(
+                _error(
+                    "malformed_simulator_configuration",
+                    f"line {line_number}: {error}",
+                )
+            )
+            continue
+        if not isinstance(value, dict):
+            errors.append(
+                _error(
+                    "malformed_simulator_configuration",
+                    f"line {line_number}: record is not an object",
+                )
+            )
+            continue
+        records.append(value)
+
+    if len(records) != 1:
+        errors.append(
+            _error(
+                "simulator_configuration_count",
+                f"expected 1 OM_SIM_CONFIG record, observed {len(records)}",
+            )
+        )
+        return records, errors
+
+    record = records[0]
+    missing = sorted(REQUIRED_SIM_CONFIG_FIELDS - set(record))
+    if missing:
+        errors.append(
+            _error(
+                "simulator_configuration_fields",
+                f"missing fields: {missing}",
+            )
+        )
+    if record.get("schema_version") != 1:
+        errors.append(
+            _error(
+                "simulator_configuration_schema",
+                "schema_version must be 1",
+            )
+        )
+    if record.get("profile") != "low_perturbation":
+        errors.append(
+            _error(
+                "simulator_configuration_profile",
+                "profile must be low_perturbation",
+            )
+        )
+    if record.get("dasm_trace_enabled") is not False:
+        errors.append(
+            _error(
+                "simulator_dasm_gate",
+                "formal concurrency capture requires DASM tracing disabled",
+            )
+        )
+    if record.get("fsm_observer_enabled") is not True:
+        errors.append(
+            _error(
+                "simulator_fsm_gate",
+                "formal concurrency capture requires the OM_FSM observer",
+            )
+        )
+    return records, errors
 
 
 def align_up(value: int, alignment: int) -> int:
@@ -1423,6 +1508,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     records: list[dict[str, Any]] = []
     target_metadata: list[dict[str, Any]] = []
     fsm_records: list[dict[str, Any]] = []
+    simulator_configuration: list[dict[str, Any]] = []
     failures: list[dict[str, Any]] = []
     commands: list[dict[str, Any]] = []
     artifacts: list[dict[str, Any]] = []
@@ -1635,6 +1721,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         raw_records, raw_meta, raw_fsm, parse_errors = parse_prefixed_json(
             output
         )
+        simulator_configuration, simulator_config_errors = (
+            parse_simulator_configuration(output)
+        )
+        parse_errors.extend(simulator_config_errors)
         records, target_metadata, fsm_records, validation_errors = normalize_run(
             raw_records,
             raw_meta,
@@ -1681,6 +1771,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         "cmake_definitions": common.cmake_define_manifest(cmake_defines),
         "simulator_arguments": list(args.simulator_arg),
         "simulator_source": simulator_context,
+        "simulator_configuration": simulator_configuration,
         "tool_versions": tool_versions,
         "wall_clock_start_end": {
             "first_command_start": commands[0]["start_utc"] if commands else None,
@@ -1706,8 +1797,14 @@ def main(argv: Sequence[str] | None = None) -> int:
         "known_limitations": [
             "Verilator cycles are a same-configuration runtime proxy.",
             "OM_FSM counters are simulation-only and do not feed functional RTL.",
-            "No physical area, frequency, power, energy, or critical-path claim is made.",
-            "Always-on per-instruction DASM tracing may dominate host wall-clock time.",
+            (
+                "The formal profile disables simulation-only per-instruction "
+                "DASM output."
+            ),
+            (
+                "No physical area, frequency, power, energy, or "
+                "critical-path claim is made."
+            ),
         ],
         "artifact_index": "artifact_manifest.json",
         "exact_commands": "commands.json",

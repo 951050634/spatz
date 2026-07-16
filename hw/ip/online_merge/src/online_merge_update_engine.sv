@@ -565,6 +565,19 @@ module online_merge_update_engine #(
   logic [31:0] sim_n_q, sim_d_q;
   logic sim_observing_q;
 
+  initial begin
+`ifdef SPATZ_DISABLE_DASM
+    $write("OM_SIM_CONFIG {\"schema_version\":1,");
+    $write("\"profile\":\"low_perturbation\",");
+    $write("\"dasm_trace_enabled\":false,");
+`else
+    $write("OM_SIM_CONFIG {\"schema_version\":1,");
+    $write("\"profile\":\"default\",");
+    $write("\"dasm_trace_enabled\":true,");
+`endif
+    $display("\"fsm_observer_enabled\":true}");
+  end
+
   always_ff @(posedge clk_i or negedge rst_ni) begin
     if (!rst_ni) begin
       sim_load_scalar_cycles_q <= '0;

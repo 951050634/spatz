@@ -42,6 +42,13 @@ ifeq ($(BUF_FPU),1)
 	DEFS += -DBUF_FPU
 endif
 
+# Formal long-running experiments can disable the simulation-only per-
+# instruction DASM formatter while retaining other observers such as OM_FSM.
+SPATZ_DASM_TRACE ?= 1
+ifeq ($(SPATZ_DASM_TRACE),0)
+	DEFS += -DSPATZ_DISABLE_DASM
+endif
+
 # Include Makefrag
 include $(ROOT)/util/Makefrag
 

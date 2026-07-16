@@ -209,6 +209,34 @@ class RunConcurrencyTest(unittest.TestCase):
         self.assertEqual(layout["stream_allocation_bytes"], 16772)
         self.assertEqual(layout["combined_allocation_bytes"], 21124)
 
+    def test_low_perturbation_simulator_configuration_passes(self) -> None:
+        configuration = {
+            "schema_version": 1,
+            "profile": "low_perturbation",
+            "dasm_trace_enabled": False,
+            "fsm_observer_enabled": True,
+        }
+        records, errors = runner.parse_simulator_configuration(
+            runner.SIM_CONFIG_PREFIX + json.dumps(configuration)
+        )
+        self.assertEqual(records, [configuration])
+        self.assertEqual(errors, [])
+
+    def test_default_simulator_configuration_is_rejected(self) -> None:
+        configuration = {
+            "schema_version": 1,
+            "profile": "default",
+            "dasm_trace_enabled": True,
+            "fsm_observer_enabled": True,
+        }
+        _, errors = runner.parse_simulator_configuration(
+            runner.SIM_CONFIG_PREFIX + json.dumps(configuration)
+        )
+        self.assertEqual(
+            {error["kind"] for error in errors},
+            {"simulator_configuration_profile", "simulator_dasm_gate"},
+        )
+
     def test_parse_three_structured_record_types_and_malformed(self) -> None:
         record = raw_record(self.case, "C0_SMU", 0, -1, 0)
         meta = raw_meta(self.case)

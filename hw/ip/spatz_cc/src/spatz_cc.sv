@@ -475,6 +475,7 @@ module spatz_cc
   // --------------------------
   // Tracer
   // --------------------------
+`ifndef SPATZ_DISABLE_DASM
   // pragma translate_off
   int           f;
   string        fn;
@@ -576,6 +577,7 @@ module spatz_cc
   end
   // verilog_lint: waive-stop always-ff-non-blocking
   // pragma translate_on
+`endif
 
   `ASSERT_INIT(BootAddrAligned, BootAddr[1:0] == 2'b00)
 

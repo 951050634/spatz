@@ -56,6 +56,19 @@ class TraceProxyGatingTest(unittest.TestCase):
         self.assertIn("VLT_BIN ?= bin/spatz_cluster.vlt", text)
         self.assertIn("${VLT_BIN}: $(VLT_AR)", text)
 
+    def test_makefile_has_explicit_low_perturbation_profile(self) -> None:
+        text = self.read("hw/system/spatz_cluster/Makefile")
+        self.assertIn("SPATZ_DASM_TRACE ?= 1", text)
+        self.assertIn("DEFS += -DSPATZ_DISABLE_DASM", text)
+
+        core = self.read("hw/ip/spatz_cc/src/spatz_cc.sv")
+        self.assertIn("`ifndef SPATZ_DISABLE_DASM", core)
+        engine = self.read(
+            "hw/ip/online_merge/src/online_merge_update_engine.sv"
+        )
+        self.assertIn('"OM_SIM_CONFIG {', engine)
+        self.assertIn('"\\\"fsm_observer_enabled\\\":true}"', engine)
+
 
 if __name__ == "__main__":
     unittest.main()

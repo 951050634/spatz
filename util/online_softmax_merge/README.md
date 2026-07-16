@@ -324,6 +324,24 @@ Use fresh external build and result directories.  The simulator source path
 identifies the checkout from which the exact simulator was built; a formal run
 can require both source checkouts to be clean:
 
+Build the dedicated low-perturbation simulator with per-instruction DASM
+formatting disabled.  This compile-time profile does not disable the structured
+`OM_FSM` busy-cycle observer:
+
+```bash
+sim_root=/home/user/work-online-merge-concurrency-simulator
+touch hw/system/spatz_cluster/src/generated/bootrom.sv
+make -C hw/system/spatz_cluster \
+  SPATZ_DASM_TRACE=0 \
+  VLT_BIN="$sim_root/spatz_cluster.vlt" \
+  VLT_BUILDDIR="$sim_root/work-vlt" \
+  "$sim_root/spatz_cluster.vlt"
+```
+
+The simulator emits one `OM_SIM_CONFIG` record.  The runner accepts formal
+capture only when that record proves `dasm_trace_enabled=false` and
+`fsm_observer_enabled=true`; the default traced profile is rejected.
+
 ```bash
 python3 util/online_softmax_merge/run_concurrency.py \
   --repo-root "$PWD" \

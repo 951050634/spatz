@@ -30,7 +30,7 @@ small manifests only.
 | 3 | Anchors, RVV tails, mandatory size matrices | P0 | complete | Stage 3n closes both mandatory fixed matrices |
 | 4 | Break-even table and fitted scale model | P0 | complete | Stage 4e formal fit and direct 16-point table |
 | 5 | Full-SMU FSM cycle breakdown and A0/A2 | P0 | complete | Stage 5b exact three-point formal closure |
-| 6 | C0/C1/C2/C3 concurrency and 16 bank phases | P0 | in_progress | Stage 6b target schedule and host runner; analysis/formal run pending |
+| 6 | C0/C1/C2/C3 concurrency and 16 bank phases | P0 | in_progress | Stage 6d low-perturbation simulator gate; clean formal run pending |
 | 7 | Yosys Slang generic-resource proxy | P0 | complete | Stage 7c clean capture and deterministic analysis closure |
 | 8 | Representative RTL VCD toggle proxy | P0 | in_progress | Stage 8a gated simulator and two-window smoke pass; parser/formal points pending |
 | 9 | Target `expf` B0/B2-F | P1 | pending | pending |
@@ -2346,6 +2346,51 @@ small manifests only.
   frequency, power, energy, critical-path, or physical-efficiency claim.  Next
   P0 work is the engineering-grade Yosys Slang generic-resource proxy, while
   the formal Stage 6 run remains explicitly blocked by traced-simulator cost.
+
+### Stage 6d checkpoint: low-perturbation simulator profile
+
+- Objective: remove the reproducible Stage 6a per-instruction DASM bottleneck
+  without removing the simulation-only `OM_FSM` busy-cycle observer or
+  weakening the formal runner gates.  Stage 6 remains `in_progress` until the
+  clean formal schedule and deterministic analysis complete.
+- `SPATZ_DASM_TRACE=0` adds the compile-time `SPATZ_DISABLE_DASM` definition.
+  It omits only the `spatz_cc` per-instruction string formatting and `.dasm`
+  writer.  The online-merge observer remains present and emits one machine-
+  readable `OM_SIM_CONFIG` record declaring the low-perturbation profile,
+  `dasm_trace_enabled=false`, and `fsm_observer_enabled=true`.
+- The concurrency runner now rejects missing, duplicated, malformed, default,
+  DASM-enabled, or FSM-disabled simulator configuration records.  The exact
+  accepted record is retained in `run_manifest.json`; any gate failure becomes
+  a structured `tool_error` while preserving all partial target/FSM records.
+- Dirty integration build is retained at
+  `/home/wxt/work-online-merge-stage6d-low-trace-build-dirty-20260716T032333Z`.
+  The exact external simulator is 18 MiB with SHA256
+  `70c021ced118617eb9fe25da53e052d2f6327296af81a44d5e064a355551f419`;
+  build-log SHA256 is
+  `fbb5982f4838187fb2b7a1865a7b93b432abc0e61d9fd50f5c9833abcd937e64`.
+  The generated Verilator file list contains `SPATZ_DISABLE_DASM`, the linked
+  binary contains `OM_SIM_CONFIG` and `OM_FSM`, and an independent binary
+  string gate confirms `trace_hart_%05x.dasm` is absent.
+- This integration build used source parent
+  `1a0ebc9b2c330879e2edd4b091c53590ccc069cc` with `git_dirty=true`, fixed CFG
+  SHA256
+  `120fa0c30199e54e6e9b5c60d8da40913eae8526640992cc5d4f130bef159775`,
+  Bender 0.29.1, Verilator 5.034, and Python 3.12.3.  The modified `spatz_cc`,
+  online-merge observer, Makefile, and runner source SHA256 values are
+  `cb9d152ace32f5210ff147b526b8f30b18f8758d8ea201fa0a03a78405b5c3a7`,
+  `fe52fe2dbffcb3d800314972c3d4da863a6ab7633cd3675ebacb530ba7ef10d3`,
+  `1a1468dbe6c628e9b0606c39b5dc5850c12ae5a6a6d0ae092ad8114a0b30105a`,
+  and
+  `277399fa1f77a5213f984c32eeda3eb29dadb0d55930bce25ebe4a31d71323d4`.
+- Validation: all 93 utility tests pass, all utility Python modules compile,
+  the external Verilator elaboration/link returns zero, changed-file style and
+  `git diff --check` pass.  The Makefile-triggered `test/bootrom.elf` rebuild
+  was known to originate in this validation and was restored exactly to HEAD;
+  no unrelated path was changed.
+- This dirty build proves implementation only and is not performance evidence.
+  Next: create the atomic commit, rebuild the same profile from that clean
+  commit, run all 148 target/76 FSM records, and execute the deterministic
+  analyzer plus an independent reconstruction before Stage 6 completion.
 
 
 ### Stage 7a checkpoint: versioned Slang wrapper and capture runner
