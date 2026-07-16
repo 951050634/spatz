@@ -31,7 +31,7 @@ small manifests only.
 | 4 | Break-even table and fitted scale model | P0 | complete | Stage 4e formal fit and direct 16-point table |
 | 5 | Full-SMU FSM cycle breakdown and A0/A2 | P0 | complete | Stage 5b exact three-point formal closure |
 | 6 | C0/C1/C2/C3 concurrency and 16 bank phases | P0 | in_progress | Stage 6b target schedule and host runner; analysis/formal run pending |
-| 7 | Yosys Slang generic-resource proxy | P0 | in_progress | Stage 7b analyzer and clean capture complete; clean committed analysis pending |
+| 7 | Yosys Slang generic-resource proxy | P0 | complete | Stage 7c clean capture and deterministic analysis closure |
 | 8 | Representative RTL VCD toggle proxy | P0 | pending | pending |
 | 9 | Target `expf` B0/B2-F | P1 | pending | pending |
 | 10 | Scalar-only A1 | P1 | pending | pending |
@@ -2476,3 +2476,57 @@ small manifests only.
 - Remaining Stage 7 gate: commit this analyzer from a clean worktree, run it on
   the retained clean capture, independently rehash its outputs, and record the
   formal analysis identity before marking Stage 7 complete.
+
+### Stage 7c checkpoint: formal generic-resource proxy closure
+
+- Objective: run the committed analyzer from a clean checkout, independently
+  validate every output and input artifact, and close the current-environment
+  acceptance boundary for specification section 6.
+- Analyzer implementation commit
+  `b8be96af5f012eb2700bfdc35ea6fc89ec27436a` was fetched, checked with
+  `git pull --rebase`, and pushed successfully before measurement.  The formal
+  analysis is retained at
+  `/home/wxt/work-online-merge-stage7b-resource-analysis-clean-20260716T015813Z`.
+- Every acceptance gate passes: clean capture and analysis provenance, required
+  exp/reciprocal/full scopes, all requested scopes, empty capture failures,
+  passing commands, current source-input hashes, all 30 captured artifact
+  hashes, and indexed pre/post stat and netlist files.
+- Formal generic-resource table:
+
+  | Scope | Pre cells | Post generic cells | `$mul` | Register bits | Memory-like cells |
+  | --- | ---: | ---: | ---: | ---: | ---: |
+  | exp | 38 | 4235 | 1 | 0 | 0 |
+  | reciprocal | 24 | 4629 | 1 | 0 | 0 |
+  | vector | 156 | 33070 | 2 | 0 | 0 |
+  | full | 938 | 94713 | 10 | 620 | 0 |
+
+  The independent scopes remain non-additive.  Multiplier widths and complete
+  pre/post cell-type rows are retained in the external structured outputs.
+- Formal output SHA256 values are:
+  - `analysis.json`:
+    `f0176d2a59cd517f82eba894a38f0d89c19e76b4c10abeb7b953ef6c423e81aa`;
+  - `resource_summary.csv`:
+    `e54bb260b16c119681b2fe73e4ac93a6b6eb95302734d469e2d3aa985168da08`;
+  - `multiplier_widths.csv`:
+    `7203eee4a0c29217bcdafc40dfa5223bf368a7404d5e813d1f93e594939beea4`;
+  - `cell_types.csv`:
+    `72528b94e52dd3559e96315be5cb97a13e8a928834c12f4998c063261fc53983`;
+  - `module_resources.csv`:
+    `cbaefdbbcaf00a5327d800253bb78d59357bf36ba8b3cb65a4df47b9ed330399`;
+  - `artifact_manifest.json`:
+    `a78514d28551d5395ceede5239eed2458b1497dd6798e8e917c6c7ebac9f4d4d`.
+- An independent standard-library verifier imported no analyzer code.  It
+  rehashed all 30 capture artifacts and all five manifest-indexed analysis
+  outputs, checked all gates and proxy/PPA booleans, reproduced the four scope
+  totals, confirmed 14 multiplier rows including ten full-SMU rows, and
+  confirmed the structured `blocked_external` physical-PPA record.
+- Validation command:
+  `PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s`
+  ` util/online_softmax_merge/tests -v` passed all 85 tests before the formal
+  run; the analyzer command and independent verifier both returned zero, and
+  `git diff --check` passed.
+- Completion boundary: Stage 7 delivers only the specified Yosys/Slang generic
+  resource and logic-complexity proxies.  It reports no ASIC area, Fmax,
+  critical path, physical power, energy, or efficiency.  P2 remains
+  `blocked_external` on the exact technology and signoff inputs in the fixed
+  context.
