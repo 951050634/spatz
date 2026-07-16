@@ -110,6 +110,12 @@ void Sim::main() {
         trace->flush();
         trace->close();
     }
+
+    // Do not return from the fesvr target context.  Its ucontext link resumes
+    // the host without updating context_t's current-context pointer, which
+    // makes destruction assert that the target is still current.  Switching
+    // explicitly updates that pointer and leaves this context safely parked.
+    host->switch_to();
 }
 }  // namespace sim
 

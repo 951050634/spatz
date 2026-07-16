@@ -38,6 +38,13 @@ class TraceProxyGatingTest(unittest.TestCase):
         self.assertIn("Verilated::gotFinish(true);", run)
         self.assertIn("target.switch_to();", run)
 
+        main_start = run_end
+        main_end = text.index("}  // namespace sim", main_start)
+        main = text[main_start:main_end]
+        trace_close = main.index("trace->close();")
+        host_switch = main.index("host->switch_to();", trace_close)
+        self.assertGreater(host_switch, trace_close)
+
     def test_target_marks_only_two_representative_windows(self) -> None:
         text = self.read(
             "sw/spatzBenchmarks/online-softmax-merge/main.c"
