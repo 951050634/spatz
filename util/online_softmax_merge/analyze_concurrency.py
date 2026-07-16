@@ -14,7 +14,7 @@ import json
 import math
 import subprocess
 import sys
-from collections import Counter
+from collections import Counter, defaultdict
 from fractions import Fraction
 from pathlib import Path
 from typing import Any, Iterable, Sequence
@@ -277,6 +277,28 @@ def validate_provenance(
             raise AnalysisError(f"{label} {field} does not match manifest")
 
 
+def shard_from_manifest(
+    manifest: dict[str, Any],
+) -> tuple[bool, int, tuple[int, ...]]:
+    shard = manifest.get("shard")
+    if not isinstance(shard, dict):
+        return True, 0, runner.PHASES
+    include_baselines = shard.get("include_baselines")
+    if not isinstance(include_baselines, bool):
+        raise AnalysisError("shard include_baselines must be boolean")
+    phase_start = require_int(shard, "phase_start", minimum=0)
+    phase_count = require_int(shard, "phase_count", minimum=0)
+    try:
+        phases = runner.selected_phases(phase_start, phase_count)
+    except ValueError as error:
+        raise AnalysisError(str(error)) from error
+    if shard.get("phases_bytes") != list(phases):
+        raise AnalysisError("shard phases_bytes does not match its range")
+    if not include_baselines and not phases:
+        raise AnalysisError("empty phase-only shard is not allowed")
+    return include_baselines, phase_start, phases
+
+
 def validate_passing_manifest(
     bundle: dict[str, Any], n: int, d: int, repeats: int
 ) -> None:
@@ -288,17 +310,28 @@ def validate_passing_manifest(
         if command.get("status") != "pass" or command.get("returncode") != 0:
             raise AnalysisError(f"passing command {index} is not successful")
 
+    include_baselines, phase_start, phases = shard_from_manifest(
+        bundle["manifest"]
+    )
     expected = bundle["manifest"].get("expected_schedule")
     if not isinstance(expected, dict):
         raise AnalysisError("passing manifest lacks expected_schedule")
     expected_schedule = {
-        "scenario_counts": runner.expected_scenario_counts(repeats),
-        "record_count": len(runner.expected_record_keys(repeats)),
-        "smu_invocation_count": runner.expected_smu_invocations(repeats),
-        "phases_bytes": list(runner.PHASES),
+        "scenario_counts": runner.expected_scenario_counts(
+            repeats, include_baselines, phases
+        ),
+        "record_count": len(
+            runner.expected_record_keys(repeats, include_baselines, phases)
+        ),
+        "smu_invocation_count": runner.expected_smu_invocations(
+            repeats, include_baselines, phases
+        ),
+        "phases_bytes": list(phases),
     }
     if expected != expected_schedule:
-        raise AnalysisError("manifest expected_schedule does not match the case")
+        raise AnalysisError(
+            "manifest expected_schedule does not match the case"
+        )
 
     validation = bundle["manifest"].get("validation_result")
     expected_validation = {
@@ -316,6 +349,17 @@ def validate_passing_manifest(
     for field, value in (("N", n), ("D", d), ("repeats", repeats)):
         if require_int(metadata, field, minimum=1) != value:
             raise AnalysisError(f"metadata {field} does not match manifest")
+    if isinstance(bundle["manifest"].get("shard"), dict):
+        expected_meta = {
+            "include_baselines": int(include_baselines),
+            "phase_start": phase_start,
+            "phase_count": len(phases),
+        }
+        for field, value in expected_meta.items():
+            if require_int(metadata, field, minimum=0) != value:
+                raise AnalysisError(
+                    f"metadata {field} does not match shard"
+                )
 
 
 def validate_pass_record(
@@ -374,13 +418,18 @@ def validate_fsm_record(record: dict[str, Any], n: int, d: int) -> int:
 
 def index_passing_bundle(bundle: dict[str, Any]) -> dict[str, Any]:
     n, d, repeats = case_from_manifest(bundle["manifest"])
+    include_baselines, phase_start, phases = shard_from_manifest(
+        bundle["manifest"]
+    )
     records = bundle["records"]
     if len(bundle["metadata"]) != 1:
         raise AnalysisError(
             f"{bundle['root']} needs exactly one concurrency metadata record"
         )
     validate_passing_manifest(bundle, n, d, repeats)
-    expected_keys = runner.expected_record_keys(repeats)
+    expected_keys = runner.expected_record_keys(
+        repeats, include_baselines, phases
+    )
     by_key: dict[tuple[str, int, int], dict[str, Any]] = {}
     for record_index, record in enumerate(records):
         validate_pass_record(record, n, d, repeats)
@@ -417,7 +466,13 @@ def index_passing_bundle(bundle: dict[str, Any]) -> dict[str, Any]:
         if invocation in fsm_by_invocation:
             raise AnalysisError(f"duplicate FSM invocation {invocation}")
         fsm_by_invocation[invocation] = record
-    expected_invocations = set(range(runner.expected_smu_invocations(repeats)))
+    expected_invocations = set(
+        range(
+            runner.expected_smu_invocations(
+                repeats, include_baselines, phases
+            )
+        )
+    )
     if set(fsm_by_invocation) != expected_invocations:
         raise AnalysisError(
             "FSM invocation set mismatch: "
@@ -445,9 +500,91 @@ def index_passing_bundle(bundle: dict[str, Any]) -> dict[str, Any]:
         "n": n,
         "d": d,
         "repeats": repeats,
+        "include_baselines": include_baselines,
+        "phase_start": phase_start,
+        "phases": phases,
         "records": by_key,
         "fsm": fsm_by_invocation,
         "metadata": bundle["metadata"][0],
+    }
+
+
+def merge_indexed_shards(
+    shards: Sequence[dict[str, Any]],
+) -> dict[str, Any]:
+    if not shards:
+        raise AnalysisError("cannot merge an empty shard set")
+    ordered = sorted(shards, key=lambda shard: str(shard["root"]))
+    identity = {
+        (shard["n"], shard["d"], shard["repeats"])
+        for shard in ordered
+    }
+    if len(identity) != 1:
+        raise AnalysisError("shards do not have one case/repeat identity")
+    baseline_shards = [
+        shard for shard in ordered if shard["include_baselines"]
+    ]
+    if len(baseline_shards) != 1:
+        raise AnalysisError(
+            "each coordinate needs exactly one baseline-providing shard"
+        )
+    phase_owners: Counter[int] = Counter(
+        phase for shard in ordered for phase in shard["phases"]
+    )
+    if phase_owners != Counter(runner.PHASES):
+        missing = sorted(set(runner.PHASES) - set(phase_owners))
+        duplicate = sorted(
+            phase for phase, count in phase_owners.items() if count > 1
+        )
+        raise AnalysisError(
+            f"phase shard union mismatch: missing={missing} "
+            f"duplicate={duplicate}"
+        )
+
+    records: dict[tuple[str, int, int], dict[str, Any]] = {}
+    fsm: dict[int, dict[str, Any]] = {}
+    invocation_offset = 0
+    for shard in ordered:
+        invocation_map = {
+            old: invocation_offset + index
+            for index, old in enumerate(sorted(shard["fsm"]))
+        }
+        for old, record in shard["fsm"].items():
+            copied = dict(record)
+            copied["invocation"] = invocation_map[old]
+            fsm[copied["invocation"]] = copied
+        for key, record in shard["records"].items():
+            if key in records:
+                raise AnalysisError(f"duplicate shard target key {key}")
+            copied = dict(record)
+            if copied.get("scenario") in runner.SMU_SCENARIOS:
+                old = require_int(copied, "smu_invocation", minimum=0)
+                copied["smu_invocation"] = invocation_map[old]
+            records[key] = copied
+        invocation_offset += len(shard["fsm"])
+
+    n, d, repeats = next(iter(identity))
+    expected_keys = runner.expected_record_keys(repeats)
+    if set(records) != expected_keys:
+        raise AnalysisError(
+            "merged shards do not form the full target schedule"
+        )
+    if len(fsm) != runner.expected_smu_invocations(repeats):
+        raise AnalysisError("merged shards do not form the full FSM schedule")
+    baseline = baseline_shards[0]
+    return {
+        "root": tuple(shard["root"] for shard in ordered),
+        "component_roots": [str(shard["root"]) for shard in ordered],
+        "manifest": baseline["manifest"],
+        "n": n,
+        "d": d,
+        "repeats": repeats,
+        "include_baselines": True,
+        "phase_start": 0,
+        "phases": runner.PHASES,
+        "records": records,
+        "fsm": fsm,
+        "metadata": baseline["metadata"],
     }
 
 
@@ -807,6 +944,9 @@ def analyze(
     analyzed_runs = []
     skipped_runs = []
     coordinates_seen: Counter[tuple[int, int]] = Counter()
+    passing_by_coordinate: dict[
+        tuple[int, int], list[dict[str, Any]]
+    ] = defaultdict(list)
 
     for bundle in evidence["bundles"]:
         statuses = statuses_for(bundle)
@@ -834,19 +974,38 @@ def analyze(
                 "reason": "coordinate not requested",
             })
             continue
-        rows = build_bundle_rows(indexed)
-        observations.extend(rows)
-        coordinates_seen[coordinate] += 1
-        analyzed_runs.append({
-            "source_root": str(bundle["root"]),
-            "N": indexed["n"],
-            "D": indexed["d"],
-            "repeats": indexed["repeats"],
-            "observation_count": len(rows),
-            "warmup_count": sum(not row["measured"] for row in rows),
-            "measured_count": sum(row["measured"] for row in rows),
-            "target_fsm_pairs": len(indexed["fsm"]),
-        })
+        passing_by_coordinate[coordinate].append(indexed)
+
+    for coordinate in required_cases:
+        shards = passing_by_coordinate.get(coordinate, [])
+        if not shards:
+            continue
+        full_runs = [
+            shard
+            for shard in shards
+            if shard["include_baselines"]
+            and shard["phases"] == runner.PHASES
+        ]
+        partial_shards = [shard for shard in shards if shard not in full_runs]
+        groups = [[run] for run in full_runs]
+        if partial_shards:
+            groups.append(partial_shards)
+        for group in groups:
+            indexed = merge_indexed_shards(group)
+            rows = build_bundle_rows(indexed)
+            observations.extend(rows)
+            coordinates_seen[coordinate] += 1
+            analyzed_runs.append({
+                "source_roots": indexed["component_roots"],
+                "N": indexed["n"],
+                "D": indexed["d"],
+                "repeats": indexed["repeats"],
+                "shard_count": len(indexed["component_roots"]),
+                "observation_count": len(rows),
+                "warmup_count": sum(not row["measured"] for row in rows),
+                "measured_count": sum(row["measured"] for row in rows),
+                "target_fsm_pairs": len(indexed["fsm"]),
+            })
 
     missing_cases = [
         list(case) for case in required_cases if coordinates_seen[case] == 0

@@ -157,18 +157,35 @@ def manifest_for(
     metadata_count: int = 1,
     fsm_count: int | None = None,
     failure_count: int = 0,
+    include_baselines: bool = True,
+    phase_start: int = 0,
+    phases: tuple[int, ...] = runner.PHASES,
 ) -> dict[str, object]:
-    expected_records = len(runner.expected_record_keys(case.repeats))
-    expected_fsm = runner.expected_smu_invocations(case.repeats)
+    expected_records = len(
+        runner.expected_record_keys(
+            case.repeats, include_baselines, phases
+        )
+    )
+    expected_fsm = runner.expected_smu_invocations(
+        case.repeats, include_baselines, phases
+    )
     return {
         "schema_version": 1,
         **metadata,
         "case": asdict(case),
+        "shard": {
+            "include_baselines": include_baselines,
+            "phase_start": phase_start,
+            "phase_count": len(phases),
+            "phases_bytes": list(phases),
+        },
         "expected_schedule": {
-            "scenario_counts": runner.expected_scenario_counts(case.repeats),
+            "scenario_counts": runner.expected_scenario_counts(
+                case.repeats, include_baselines, phases
+            ),
             "record_count": expected_records,
             "smu_invocation_count": expected_fsm,
-            "phases_bytes": list(runner.PHASES),
+            "phases_bytes": list(phases),
         },
         "tool_versions": {
             "simulator": {
@@ -193,7 +210,9 @@ def manifest_for(
                 expected_records if record_count is None else record_count
             ),
             "metadata_count": metadata_count,
-            "fsm_record_count": expected_fsm if fsm_count is None else fsm_count,
+            "fsm_record_count": (
+                expected_fsm if fsm_count is None else fsm_count
+            ),
             "failure_count": failure_count,
         },
     }
@@ -254,6 +273,95 @@ def make_passing_root(
         records,
         metadata,
         fsm_records,
+        [],
+        [asdict(command)],
+    )
+
+
+def make_shard_root(
+    parent: Path,
+    name: str,
+    *,
+    include_baselines: bool,
+    phase_start: int,
+    phase_count: int,
+) -> Path:
+    case = common.Case(16, 64, 1, "main", 3, 30)
+    phases = runner.selected_phases(phase_start, phase_count)
+    raw_records, raw_fsm = configure_schedule(case)
+    baseline_scenarios = {"C0_SMU", "C0_REG", "C0_STREAM", "C1", "C2"}
+    selected = []
+    for record in raw_records:
+        scenario = record["scenario"]
+        if scenario in baseline_scenarios and include_baselines:
+            selected.append(dict(record))
+        elif scenario in {"C3_CORE", "C3"} and record["phase_bytes"] in phases:
+            selected.append(dict(record))
+    old_invocations = sorted(
+        int(record["smu_invocation"])
+        for record in selected
+        if record["scenario"] in runner.SMU_SCENARIOS
+    )
+    invocation_map = {
+        old: new for new, old in enumerate(old_invocations)
+    }
+    for record in selected:
+        if record["scenario"] in runner.SMU_SCENARIOS:
+            record["smu_invocation"] = invocation_map[
+                int(record["smu_invocation"])
+            ]
+    selected_fsm = []
+    for record in raw_fsm:
+        old = int(record["invocation"])
+        if old in invocation_map:
+            copied = dict(record)
+            copied["invocation"] = invocation_map[old]
+            selected_fsm.append(copied)
+    raw_metadata = capture_fixture.raw_meta(case)
+    raw_metadata.update(
+        {
+            "include_baselines": int(include_baselines),
+            "phase_start": phase_start,
+            "phase_count": phase_count,
+            "register_iterations": (
+                raw_metadata["register_iterations"]
+                if include_baselines
+                else 0
+            ),
+        }
+    )
+    command = capture_fixture.command()
+    records, metadata, fsms, failures = runner.normalize_run(
+        selected,
+        [raw_metadata],
+        selected_fsm,
+        case,
+        command,
+        runner.PASS_BANNER,
+        [],
+        include_baselines,
+        phase_start,
+        phases,
+    )
+    if failures:
+        raise AssertionError(f"synthetic shard fixture failed: {failures}")
+    provenance = common_metadata(git_head())
+    runner.add_metadata(records, provenance)
+    runner.add_metadata(metadata, provenance)
+    runner.add_metadata(fsms, provenance)
+    manifest = manifest_for(
+        case,
+        provenance,
+        include_baselines=include_baselines,
+        phase_start=phase_start,
+        phases=phases,
+    )
+    return write_root_files(
+        parent / name,
+        manifest,
+        records,
+        metadata,
+        fsms,
         [],
         [asdict(command)],
     )
@@ -327,6 +435,60 @@ class AnalyzeConcurrencyTest(unittest.TestCase):
                 [(16, 64)],
                 MODULE_DIR / "analyze_concurrency.py",
             )
+
+    def analyze_roots(self, roots: list[Path]) -> dict[str, object]:
+        with mock.patch.object(
+            analysis, "git_context", return_value=clean_git_context()
+        ):
+            return analysis.analyze(
+                REPO_ROOT,
+                roots,
+                [(16, 64)],
+                MODULE_DIR / "analyze_concurrency.py",
+            )
+
+    def test_baseline_and_phase_shards_form_one_full_run(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            parent = Path(temporary)
+            roots = [
+                make_shard_root(
+                    parent,
+                    "work-online-merge-baseline",
+                    include_baselines=True,
+                    phase_start=0,
+                    phase_count=0,
+                )
+            ]
+            roots.extend(
+                make_shard_root(
+                    parent,
+                    f"work-online-merge-phase-{start}",
+                    include_baselines=False,
+                    phase_start=start,
+                    phase_count=4,
+                )
+                for start in (0, 4, 8, 12)
+            )
+            report = self.analyze_roots(list(reversed(roots)))
+        self.assertTrue(report["all_acceptance_gates_pass"])
+        self.assertEqual(report["analyzed_runs"][0]["shard_count"], 5)
+        self.assertEqual(len(report["observations"]), 72)
+        self.assertEqual(
+            report["analyzed_runs"][0]["target_fsm_pairs"], 76
+        )
+
+    def test_legacy_complete_root_without_shard_fields_passes(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = make_passing_root(Path(temporary))
+            manifest = read_json(root / "run_manifest.json")
+            manifest.pop("shard")
+            write_json(root / "run_manifest.json", manifest)
+            metadata = read_json(root / "concurrency_metadata.json")
+            metadata[0].pop("include_baselines")
+            metadata[0].pop("phase_start")
+            write_json(root / "concurrency_metadata.json", metadata)
+            report = self.analyze_root(root)
+        self.assertTrue(report["all_acceptance_gates_pass"])
 
     def test_known_c1_and_c2_raw_metrics(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

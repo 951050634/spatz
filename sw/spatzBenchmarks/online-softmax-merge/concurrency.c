@@ -28,6 +28,16 @@
 #define ONLINE_MERGE_REGISTER_CALIBRATION_STEPS 3u
 #define ONLINE_MERGE_REGISTER_MAX_ITERATIONS 10000000u
 
+#ifndef ONLINE_MERGE_CONCURRENCY_INCLUDE_BASELINES
+#define ONLINE_MERGE_CONCURRENCY_INCLUDE_BASELINES 1u
+#endif
+#ifndef ONLINE_MERGE_CONCURRENCY_PHASE_START
+#define ONLINE_MERGE_CONCURRENCY_PHASE_START 0u
+#endif
+#ifndef ONLINE_MERGE_CONCURRENCY_PHASE_COUNT
+#define ONLINE_MERGE_CONCURRENCY_PHASE_COUNT ONLINE_MERGE_PHASE_COUNT
+#endif
+
 const uint32_t snrt_stack_size = 13u;
 
 _Static_assert(ONLINE_MERGE_CASE_REPEATS >= 3u,
@@ -36,6 +46,15 @@ _Static_assert(ONLINE_MERGE_CASE_REPEATS <= ONLINE_MERGE_MAX_REPEATS,
                "concurrency repeat count exceeds supported maximum");
 _Static_assert(ONLINE_MERGE_STREAM_ELEMENTS % ONLINE_MERGE_STREAM_AVL_CAP != 0u,
                "stream workload must exercise an RVV tail");
+_Static_assert(ONLINE_MERGE_CONCURRENCY_INCLUDE_BASELINES <= 1u,
+               "include-baselines must be zero or one");
+_Static_assert(ONLINE_MERGE_CONCURRENCY_PHASE_START <=
+                   ONLINE_MERGE_PHASE_COUNT,
+               "phase start exceeds the phase table");
+_Static_assert(ONLINE_MERGE_CONCURRENCY_PHASE_COUNT <=
+                   ONLINE_MERGE_PHASE_COUNT -
+                       ONLINE_MERGE_CONCURRENCY_PHASE_START,
+               "phase shard exceeds the phase table");
 
 #ifndef SNRT_TCDM_SIZE
 #define SNRT_TCDM_SIZE (128u * 1024u)
@@ -544,7 +563,12 @@ static void print_meta(const merge_buffers_t *merge,
   PRINTF("\"schema_version\":1,\"N\":%u,\"D\":%u,", merge->n,
          merge->d);
   PRINTF("\"repeats\":%u,\"phase_count\":%u,",
-         ONLINE_MERGE_CASE_REPEATS, ONLINE_MERGE_PHASE_COUNT);
+         ONLINE_MERGE_CASE_REPEATS,
+         ONLINE_MERGE_CONCURRENCY_PHASE_COUNT);
+  PRINTF("\"include_baselines\":%u,",
+         ONLINE_MERGE_CONCURRENCY_INCLUDE_BASELINES);
+  PRINTF("\"phase_start\":%u,",
+         ONLINE_MERGE_CONCURRENCY_PHASE_START);
   PRINTF("\"phase_step_bytes\":%u,\"phase_period_bytes\":%u,",
          ONLINE_MERGE_PHASE_STEP_BYTES, ONLINE_MERGE_PHASE_PERIOD_BYTES);
   PRINTF("\"smu_phase_base_offset\":%u,", tcdm_offset(merge->o_old));
@@ -778,94 +802,106 @@ int main(void) {
     return 0;
   }
 
-  float *phase_zero_source = stream_source(&merge, &stream, 0u);
-  float *phase_zero_destination =
-      stream_destination(&stream, phase_zero_source);
-  initialize_stream(&stream, phase_zero_source, phase_zero_destination);
+  if (ONLINE_MERGE_CONCURRENCY_INCLUDE_BASELINES) {
+    float *phase_zero_source = stream_source(&merge, &stream, 0u);
+    float *phase_zero_destination =
+        stream_destination(&stream, phase_zero_source);
+    initialize_stream(&stream, phase_zero_source, phase_zero_destination);
 
-  concurrency_sample_t c0_warmup;
-  if (run_smu_sample("C0_SMU", -1, &merge, &stream, 0, 0, UINT32_MAX,
-                     0u, 0u, CORE_WORK_NONE, &c0_warmup)) {
-    goto finish;
-  }
-  uint32_t register_iterations =
-      calibrate_register_iterations(c0_warmup.total_cycles);
-  uint32_t register_expected = online_merge_register_workload(
-      register_iterations, register_seed(-1));
-  uint32_t backoff_checksum;
-  uint64_t backoff_cycles = measure_register_cycles(
-      ONLINE_MERGE_POLL_BACKOFF_ITERATIONS, 1u, &backoff_checksum);
-  print_meta(&merge, &stream, register_iterations,
-             c0_warmup.total_cycles, backoff_cycles);
-
-  for (uint32_t repeat = 0; repeat < ONLINE_MERGE_CASE_REPEATS; repeat++) {
-    concurrency_sample_t sample;
-    if (run_smu_sample("C0_SMU", (int32_t)repeat, &merge, &stream, 0, 0,
-                       UINT32_MAX, 0u, 0u, CORE_WORK_NONE, &sample)) {
+    concurrency_sample_t c0_warmup;
+    if (run_smu_sample("C0_SMU", -1, &merge, &stream, 0, 0,
+                       UINT32_MAX, 0u, 0u, CORE_WORK_NONE, &c0_warmup)) {
       goto finish;
     }
-  }
-
-  run_core_sample("C0_REG", -1, &merge, &stream, 0, 0, UINT32_MAX,
-                  register_iterations, register_expected,
-                  CORE_WORK_REGISTER);
-  for (uint32_t repeat = 0; repeat < ONLINE_MERGE_CASE_REPEATS; repeat++) {
-    uint32_t expected = online_merge_register_workload(
-        register_iterations, register_seed((int32_t)repeat));
-    run_core_sample("C0_REG", (int32_t)repeat, &merge, &stream, 0, 0,
-                    UINT32_MAX, register_iterations, expected,
-                    CORE_WORK_REGISTER);
-  }
-
-  initialize_stream(&stream, phase_zero_source, phase_zero_destination);
-  run_core_sample("C0_STREAM", -1, &merge, &stream, phase_zero_source,
-                  phase_zero_destination, 0u, 0u, 0u, CORE_WORK_STREAM);
-  for (uint32_t repeat = 0; repeat < ONLINE_MERGE_CASE_REPEATS; repeat++) {
-    run_core_sample("C0_STREAM", (int32_t)repeat, &merge, &stream,
-                    phase_zero_source, phase_zero_destination, 0u, 0u, 0u,
-                    CORE_WORK_STREAM);
-  }
-
-  {
-    uint32_t expected = online_merge_register_workload(
+    uint32_t register_iterations =
+        calibrate_register_iterations(c0_warmup.total_cycles);
+    uint32_t register_expected = online_merge_register_workload(
         register_iterations, register_seed(-1));
-    concurrency_sample_t sample;
-    if (run_smu_sample("C1", -1, &merge, &stream, 0, 0, UINT32_MAX,
-                       register_iterations, expected,
-                       CORE_WORK_REGISTER, &sample)) {
-      goto finish;
+    uint32_t backoff_checksum;
+    uint64_t backoff_cycles = measure_register_cycles(
+        ONLINE_MERGE_POLL_BACKOFF_ITERATIONS, 1u, &backoff_checksum);
+    print_meta(&merge, &stream, register_iterations,
+               c0_warmup.total_cycles, backoff_cycles);
+
+    for (uint32_t repeat = 0; repeat < ONLINE_MERGE_CASE_REPEATS;
+         repeat++) {
+      concurrency_sample_t sample;
+      if (run_smu_sample("C0_SMU", (int32_t)repeat, &merge, &stream, 0,
+                         0, UINT32_MAX, 0u, 0u, CORE_WORK_NONE, &sample)) {
+        goto finish;
+      }
     }
-  }
-  for (uint32_t repeat = 0; repeat < ONLINE_MERGE_CASE_REPEATS; repeat++) {
-    uint32_t expected = online_merge_register_workload(
-        register_iterations, register_seed((int32_t)repeat));
-    concurrency_sample_t sample;
-    if (run_smu_sample("C1", (int32_t)repeat, &merge, &stream, 0, 0,
-                       UINT32_MAX, register_iterations, expected,
-                       CORE_WORK_REGISTER, &sample)) {
-      goto finish;
+
+    run_core_sample("C0_REG", -1, &merge, &stream, 0, 0, UINT32_MAX,
+                    register_iterations, register_expected,
+                    CORE_WORK_REGISTER);
+    for (uint32_t repeat = 0; repeat < ONLINE_MERGE_CASE_REPEATS;
+         repeat++) {
+      uint32_t expected = online_merge_register_workload(
+          register_iterations, register_seed((int32_t)repeat));
+      run_core_sample("C0_REG", (int32_t)repeat, &merge, &stream, 0, 0,
+                      UINT32_MAX, register_iterations, expected,
+                      CORE_WORK_REGISTER);
     }
+
+    initialize_stream(&stream, phase_zero_source, phase_zero_destination);
+    run_core_sample("C0_STREAM", -1, &merge, &stream, phase_zero_source,
+                    phase_zero_destination, 0u, 0u, 0u, CORE_WORK_STREAM);
+    for (uint32_t repeat = 0; repeat < ONLINE_MERGE_CASE_REPEATS;
+         repeat++) {
+      run_core_sample("C0_STREAM", (int32_t)repeat, &merge, &stream,
+                      phase_zero_source, phase_zero_destination, 0u, 0u,
+                      0u, CORE_WORK_STREAM);
+    }
+
+    {
+      uint32_t expected = online_merge_register_workload(
+          register_iterations, register_seed(-1));
+      concurrency_sample_t sample;
+      if (run_smu_sample("C1", -1, &merge, &stream, 0, 0, UINT32_MAX,
+                         register_iterations, expected,
+                         CORE_WORK_REGISTER, &sample)) {
+        goto finish;
+      }
+    }
+    for (uint32_t repeat = 0; repeat < ONLINE_MERGE_CASE_REPEATS;
+         repeat++) {
+      uint32_t expected = online_merge_register_workload(
+          register_iterations, register_seed((int32_t)repeat));
+      concurrency_sample_t sample;
+      if (run_smu_sample("C1", (int32_t)repeat, &merge, &stream, 0, 0,
+                         UINT32_MAX, register_iterations, expected,
+                         CORE_WORK_REGISTER, &sample)) {
+        goto finish;
+      }
+    }
+
+    initialize_stream(&stream, phase_zero_source, phase_zero_destination);
+    {
+      concurrency_sample_t sample;
+      if (run_smu_sample("C2", -1, &merge, &stream, phase_zero_source,
+                         phase_zero_destination, 0u, 0u, 0u,
+                         CORE_WORK_STREAM, &sample)) {
+        goto finish;
+      }
+    }
+    for (uint32_t repeat = 0; repeat < ONLINE_MERGE_CASE_REPEATS;
+         repeat++) {
+      concurrency_sample_t sample;
+      if (run_smu_sample("C2", (int32_t)repeat, &merge, &stream,
+                         phase_zero_source, phase_zero_destination, 0u,
+                         0u, 0u, CORE_WORK_STREAM, &sample)) {
+        goto finish;
+      }
+    }
+  } else {
+    print_meta(&merge, &stream, 0u, 0u, 0u);
   }
 
-  initialize_stream(&stream, phase_zero_source, phase_zero_destination);
-  {
-    concurrency_sample_t sample;
-    if (run_smu_sample("C2", -1, &merge, &stream, phase_zero_source,
-                       phase_zero_destination, 0u, 0u, 0u,
-                       CORE_WORK_STREAM, &sample)) {
-      goto finish;
-    }
-  }
-  for (uint32_t repeat = 0; repeat < ONLINE_MERGE_CASE_REPEATS; repeat++) {
-    concurrency_sample_t sample;
-    if (run_smu_sample("C2", (int32_t)repeat, &merge, &stream,
-                       phase_zero_source, phase_zero_destination, 0u, 0u, 0u,
-                       CORE_WORK_STREAM, &sample)) {
-      goto finish;
-    }
-  }
-
-  for (uint32_t phase = 0; phase < ONLINE_MERGE_PHASE_COUNT; phase++) {
+  uint32_t phase_end = ONLINE_MERGE_CONCURRENCY_PHASE_START +
+                       ONLINE_MERGE_CONCURRENCY_PHASE_COUNT;
+  for (uint32_t phase = ONLINE_MERGE_CONCURRENCY_PHASE_START;
+       phase < phase_end; phase++) {
     uint32_t phase_bytes = phase * ONLINE_MERGE_PHASE_STEP_BYTES;
     float *source = stream_source(&merge, &stream, phase_bytes);
     float *destination = stream_destination(&stream, source);

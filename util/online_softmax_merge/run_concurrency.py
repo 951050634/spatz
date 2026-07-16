@@ -102,6 +102,8 @@ REQUIRED_META_FIELDS = {
     "N",
     "D",
     "repeats",
+    "include_baselines",
+    "phase_start",
     "phase_count",
     "phase_step_bytes",
     "phase_period_bytes",
@@ -276,30 +278,54 @@ def capacity_fits(case: common.Case) -> bool:
     )
 
 
-def expected_scenario_counts(repeats: int) -> dict[str, int]:
+def selected_phases(
+    phase_start: int = 0, phase_count: int = 16
+) -> tuple[int, ...]:
+    if phase_start < 0 or phase_count < 0:
+        raise ValueError("phase start/count must be non-negative")
+    if phase_start + phase_count > len(PHASES):
+        raise ValueError("phase shard exceeds the 16-phase table")
+    return PHASES[phase_start : phase_start + phase_count]
+
+
+def expected_scenario_counts(
+    repeats: int,
+    include_baselines: bool = True,
+    phases: Sequence[int] = PHASES,
+) -> dict[str, int]:
     per_series = repeats + 1
-    return {
-        "C0_SMU": per_series,
-        "C0_REG": per_series,
-        "C0_STREAM": per_series,
-        "C1": per_series,
-        "C2": per_series,
-        "C3_CORE": len(PHASES) * per_series,
-        "C3": len(PHASES) * per_series,
+    counts = {
+        "C3_CORE": len(phases) * per_series,
+        "C3": len(phases) * per_series,
     }
+    if include_baselines:
+        counts = {
+            "C0_SMU": per_series,
+            "C0_REG": per_series,
+            "C0_STREAM": per_series,
+            "C1": per_series,
+            "C2": per_series,
+            **counts,
+        }
+    return counts
 
 
-def expected_record_keys(repeats: int) -> set[tuple[str, int, int]]:
+def expected_record_keys(
+    repeats: int,
+    include_baselines: bool = True,
+    phases: Sequence[int] = PHASES,
+) -> set[tuple[str, int, int]]:
     repeats_with_warmup = range(-1, repeats)
     keys: set[tuple[str, int, int]] = set()
-    for scenario in ("C0_SMU", "C0_REG", "C1"):
-        keys.update(
-            (scenario, UINT32_MAX, repeat)
-            for repeat in repeats_with_warmup
-        )
-    for scenario in ("C0_STREAM", "C2"):
-        keys.update((scenario, 0, repeat) for repeat in repeats_with_warmup)
-    for phase in PHASES:
+    if include_baselines:
+        for scenario in ("C0_SMU", "C0_REG", "C1"):
+            keys.update(
+                (scenario, UINT32_MAX, repeat)
+                for repeat in repeats_with_warmup
+            )
+        for scenario in ("C0_STREAM", "C2"):
+            keys.update((scenario, 0, repeat) for repeat in repeats_with_warmup)
+    for phase in phases:
         for scenario in ("C3_CORE", "C3"):
             keys.update(
                 (scenario, phase, repeat)
@@ -308,8 +334,13 @@ def expected_record_keys(repeats: int) -> set[tuple[str, int, int]]:
     return keys
 
 
-def expected_smu_invocations(repeats: int) -> int:
-    return (3 + len(PHASES)) * (repeats + 1)
+def expected_smu_invocations(
+    repeats: int,
+    include_baselines: bool = True,
+    phases: Sequence[int] = PHASES,
+) -> int:
+    baseline_series = 3 if include_baselines else 0
+    return (baseline_series + len(phases)) * (repeats + 1)
 
 
 def parse_prefixed_json(
@@ -456,7 +487,13 @@ def _error(kind: str, message: str, **values: Any) -> dict[str, Any]:
     return {"kind": kind, "message": message, **values}
 
 
-def validate_meta(meta: dict[str, Any], case: common.Case) -> list[dict[str, Any]]:
+def validate_meta(
+    meta: dict[str, Any],
+    case: common.Case,
+    include_baselines: bool = True,
+    phase_start: int = 0,
+    phases: Sequence[int] = PHASES,
+) -> list[dict[str, Any]]:
     errors: list[dict[str, Any]] = []
     missing = sorted(REQUIRED_META_FIELDS - meta.keys())
     if missing:
@@ -469,7 +506,9 @@ def validate_meta(meta: dict[str, Any], case: common.Case) -> list[dict[str, Any
         "N": case.n,
         "D": case.d,
         "repeats": case.repeats,
-        "phase_count": len(PHASES),
+        "include_baselines": int(include_baselines),
+        "phase_start": phase_start,
+        "phase_count": len(phases),
         "phase_step_bytes": 8,
         "phase_period_bytes": 128,
         "stream_elements": STREAM_ELEMENTS,
@@ -502,7 +541,10 @@ def validate_meta(meta: dict[str, Any], case: common.Case) -> list[dict[str, Any
                     field=key,
                 )
             )
-    for field in ("register_iterations", "max_status_reads"):
+    positive_fields = ["max_status_reads"]
+    if include_baselines:
+        positive_fields.append("register_iterations")
+    for field in positive_fields:
         try:
             value = int(meta[field])
         except (TypeError, ValueError, OverflowError):
@@ -825,6 +867,9 @@ def validate_complete_schedule(
     fsm_records: Sequence[dict[str, Any]],
     case: common.Case,
     output: str,
+    include_baselines: bool = True,
+    phase_start: int = 0,
+    phases: Sequence[int] = PHASES,
 ) -> list[dict[str, Any]]:
     errors: list[dict[str, Any]] = []
     if len(metadata) != 1:
@@ -835,7 +880,11 @@ def validate_complete_schedule(
             )
         )
     else:
-        errors.extend(validate_meta(metadata[0], case))
+        errors.extend(
+            validate_meta(
+                metadata[0], case, include_baselines, phase_start, phases
+            )
+        )
 
     keys: set[tuple[str, int, int]] = set()
     for index, record in enumerate(records):
@@ -857,7 +906,9 @@ def validate_complete_schedule(
                 _error("duplicate_target_record", f"duplicate key {key!r}")
             )
         keys.add(key)
-    expected_keys = expected_record_keys(case.repeats)
+    expected_keys = expected_record_keys(
+        case.repeats, include_baselines, phases
+    )
     if keys != expected_keys:
         errors.append(
             _error(
@@ -870,7 +921,11 @@ def validate_complete_schedule(
     nonterminal_records = [
         record for record in records if record.get("scenario") != "ALL"
     ]
-    expected_count = sum(expected_scenario_counts(case.repeats).values())
+    expected_count = sum(
+        expected_scenario_counts(
+            case.repeats, include_baselines, phases
+        ).values()
+    )
     if len(nonterminal_records) != expected_count:
         errors.append(
             _error(
@@ -901,7 +956,13 @@ def validate_complete_schedule(
                 )
             )
         invocations[invocation] = fsm
-    expected_invocations = set(range(expected_smu_invocations(case.repeats)))
+    expected_invocations = set(
+        range(
+            expected_smu_invocations(
+                case.repeats, include_baselines, phases
+            )
+        )
+    )
     if set(invocations) != expected_invocations:
         errors.append(
             _error(
@@ -1018,6 +1079,9 @@ def normalize_run(
     command: common.CommandRecord,
     output: str,
     parse_errors: list[dict[str, Any]],
+    include_baselines: bool = True,
+    phase_start: int = 0,
+    phases: Sequence[int] = PHASES,
 ) -> tuple[
     list[dict[str, Any]],
     list[dict[str, Any]],
@@ -1045,7 +1109,14 @@ def normalize_run(
     else:
         errors.extend(
             validate_complete_schedule(
-                raw_records, raw_metadata, raw_fsm, case, output
+                raw_records,
+                raw_metadata,
+                raw_fsm,
+                case,
+                output,
+                include_baselines,
+                phase_start,
+                phases,
             )
         )
 
@@ -1441,6 +1512,19 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--seed", type=int, default=1)
     parser.add_argument("--case-kind", default="main")
     parser.add_argument("--repeats", type=int, default=3)
+    parser.add_argument(
+        "--include-baselines",
+        dest="include_baselines",
+        action="store_true",
+        default=True,
+    )
+    parser.add_argument(
+        "--no-baselines",
+        dest="include_baselines",
+        action="store_false",
+    )
+    parser.add_argument("--phase-start", type=int, default=0)
+    parser.add_argument("--phase-count", type=int, default=16)
     parser.add_argument("--timeout-seconds", type=int, default=3600)
     parser.add_argument("--configure-timeout-seconds", type=int, default=900)
     parser.add_argument("--build-timeout-seconds", type=int, default=900)
@@ -1471,6 +1555,9 @@ def validate_options(args: argparse.Namespace) -> None:
     ):
         if int(getattr(args, field)) <= 0:
             raise ValueError(f"{field.replace('_', '-')} must be positive")
+    selected_phases(args.phase_start, args.phase_count)
+    if not args.include_baselines and args.phase_count == 0:
+        raise ValueError("a shard must include baselines or at least one phase")
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -1491,6 +1578,22 @@ def main(argv: Sequence[str] | None = None) -> int:
         validate_options(args)
         case = make_case(args)
         cmake_defines = common.parse_cmake_defines(args.cmake_define)
+        owned_definitions = {
+            "ONLINE_MERGE_CONCURRENCY_INCLUDE_BASELINES": (
+                "1" if args.include_baselines else "0"
+            ),
+            "ONLINE_MERGE_CONCURRENCY_PHASE_START": str(args.phase_start),
+            "ONLINE_MERGE_CONCURRENCY_PHASE_COUNT": str(args.phase_count),
+        }
+        conflicts = sorted(
+            key for key, _ in cmake_defines if key in owned_definitions
+        )
+        if conflicts:
+            raise ValueError(
+                "runner-owned CMake definitions were supplied: "
+                f"{conflicts}"
+            )
+        cmake_defines.extend(owned_definitions.items())
         validate_output_root(work_dir, repo_root)
     except (ValueError, argparse.ArgumentTypeError) as error:
         raise SystemExit(f"invalid concurrency request: {error}") from error
@@ -1517,6 +1620,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         "tool_version": tool_version,
     }
     simulator_context = git_context(simulator_source)
+    phases = selected_phases(args.phase_start, args.phase_count)
 
     records: list[dict[str, Any]] = []
     target_metadata: list[dict[str, Any]] = []
@@ -1746,6 +1850,9 @@ def main(argv: Sequence[str] | None = None) -> int:
             command,
             output,
             parse_errors,
+            args.include_baselines,
+            args.phase_start,
+            phases,
         )
         failures.extend(validation_errors)
 
@@ -1768,18 +1875,30 @@ def main(argv: Sequence[str] | None = None) -> int:
         "schema_version": 1,
         **common_metadata,
         "objective": (
-            "C0/C1/C2/C3 core--SMU overlap, TCDM contention, and all "
-            "16 relative addr[6:3] phases"
+            "bounded C0/C1/C2 baseline and/or C3 relative addr[6:3] "
+            "phase-shard capture"
         ),
         "case": asdict(case),
+        "shard": {
+            "include_baselines": args.include_baselines,
+            "phase_start": args.phase_start,
+            "phase_count": args.phase_count,
+            "phases_bytes": list(phases),
+        },
         "layout": layout,
         "expected_schedule": {
-            "scenario_counts": expected_scenario_counts(case.repeats),
-            "record_count": sum(
-                expected_scenario_counts(case.repeats).values()
+            "scenario_counts": expected_scenario_counts(
+                case.repeats, args.include_baselines, phases
             ),
-            "smu_invocation_count": expected_smu_invocations(case.repeats),
-            "phases_bytes": list(PHASES),
+            "record_count": sum(
+                expected_scenario_counts(
+                    case.repeats, args.include_baselines, phases
+                ).values()
+            ),
+            "smu_invocation_count": expected_smu_invocations(
+                case.repeats, args.include_baselines, phases
+            ),
+            "phases_bytes": list(phases),
         },
         "cmake_definitions": common.cmake_define_manifest(cmake_defines),
         "simulator_arguments": list(args.simulator_arg),

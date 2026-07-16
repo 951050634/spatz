@@ -30,7 +30,7 @@ small manifests only.
 | 3 | Anchors, RVV tails, mandatory size matrices | P0 | complete | Stage 3n closes both mandatory fixed matrices |
 | 4 | Break-even table and fitted scale model | P0 | complete | Stage 4e formal fit and direct 16-point table |
 | 5 | Full-SMU FSM cycle breakdown and A0/A2 | P0 | complete | Stage 5b exact three-point formal closure |
-| 6 | C0/C1/C2/C3 concurrency and 16 bank phases | P0 | in_progress | Stage 6e bounded clean timeout diagnosed; tuned simulator validation pending |
+| 6 | C0/C1/C2/C3 concurrency and 16 bank phases | P0 | in_progress | Stage 6g phase-sharded capture/analyzer implemented; clean shards pending |
 | 7 | Yosys Slang generic-resource proxy | P0 | complete | Stage 7c clean capture and deterministic analysis closure |
 | 8 | Representative RTL VCD toggle proxy | P0 | complete | Stage 8d formal three-point toggle analysis and independent reconstruction |
 | 9 | Target `expf` B0/B2-F | P1 | pending | pending |
@@ -2451,6 +2451,49 @@ small manifests only.
   keep process-group timeouts and partial terminal records.  Stage 6 remains
   `in_progress` until that implementation, clean captures, deterministic
   analysis, and independent reconstruction pass.
+
+### Stage 6g checkpoint: phase-sharded capture and union gate
+
+- Objective: preserve the exact 148-target/76-FSM evidence definition while
+  replacing one unacceptably long target execution with independently bounded
+  baseline and phase shards.  Stage 6 remains `in_progress`; this checkpoint
+  implements and validates the flow but is not measured performance evidence.
+- The target now has three explicit compile definitions: include or omit the
+  C0/C1/C2 baselines, select the first C3 phase-table index, and select a
+  contiguous phase count.  Defaults remain the original baseline plus all 16
+  phases.  Static assertions reject a non-Boolean baseline flag or a range
+  outside the fixed `{0,8,...,120}` byte-phase table.
+- A baseline-only shard emits all 20 C0/C1/C2 records, 12 paired FSM records,
+  one shard-aware metadata record, and no C3 record.  A four-phase-only shard
+  emits 32 C3/C3_CORE records and 16 paired FSM records.  Phase-only metadata
+  explicitly records zero register calibration rather than fabricating a
+  baseline measurement.
+- `run_concurrency.py` owns the three CMake definitions through
+  `--include-baselines`/`--no-baselines`, `--phase-start`, and `--phase-count`.
+  It rejects user-supplied conflicting definitions, validates only the exact
+  local schedule, records shard identity and selected byte phases, and retains
+  the existing configure/build/disassembly/simulation process-group timeouts.
+- `analyze_concurrency.py` validates every shard independently, then requires
+  exactly one baseline provider and an exact non-overlapping union of all 16
+  phases per coordinate.  It rejects missing/duplicate phases and baseline
+  providers.  Shard-local SMU/FSM invocation IDs are remapped only in the
+  internal analysis view; raw retained records and provenance remain unchanged.
+  Existing complete roots and multiple independent complete repetitions remain
+  supported.
+- Dirty target compile validation is retained at
+  `/home/wxt/work-online-merge-stage6g-shard-build-dirty-20260716T163000Z` for
+  a phase-only `(phase_start,phase_count)=(4,3)` shard at `(N,D)=(16,64)`.
+  CMake configure and target compile/link returned zero.  No simulation was
+  started in this dirty implementation checkpoint.
+- Validation: all 105 utility tests pass and every utility Python module
+  compiles.  Synthetic gates cover baseline-only plus four four-phase roots,
+  exact 148/76 reconstruction, local invocation pairing, reversed input order,
+  phase-only metadata, out-of-range requests, and legacy complete roots without
+  shard metadata fields.
+- Remaining Stage 6 work: commit this checkpoint, rebuild the DASM-disabled
+  simulator from that clean commit, run one short baseline/phase smoke, then
+  launch five bounded clean roots only if the smoke exits naturally.  Formal
+  analysis and an independent reconstruction remain required before closure.
 
 
 ### Stage 7a checkpoint: versioned Slang wrapper and capture runner

@@ -373,6 +373,28 @@ spatz_cluster.default.dram.hjson" \
   "${cmake_defines[@]}"
 ```
 
+The default remains the complete baseline-plus-16-phase schedule.  On a host
+where that target exceeds a practical wall-clock bound, capture one
+baseline-only shard and a non-overlapping union of phase-only shards.  Every
+shard needs its own external CMake build directory because the schedule is a
+target compile definition:
+
+```bash
+# One C0/C1/C2 baseline root, no C3 phases.
+python3 util/online_softmax_merge/run_concurrency.py \
+  ... --include-baselines --phase-start 0 --phase-count 0
+
+# Four independent phase roots; use starts 0, 4, 8, and 12.
+python3 util/online_softmax_merge/run_concurrency.py \
+  ... --no-baselines --phase-start 0 --phase-count 4
+```
+
+`phase-start` and `phase-count` index the ordered byte-phase table
+`{0,8,...,120}`.  The runner owns and records the three corresponding CMake
+definitions.  Each root validates only its declared schedule, uses local
+contiguous SMU/FSM invocation numbers, and retains the full runner's timeout
+and partial-terminal semantics.
+
 The register-only loop must have a local back-edge and no load, store, stack
 reference, or undecoded instruction.  The streaming loop must contain
 `vsetvli`, `vle32.v`, `vse32.v`, a local back-edge, and no undecoded
@@ -421,6 +443,13 @@ roots are ordered canonically, so reversing otherwise identical command-line
 input order does not change output bytes.  A non-passing-only root still
 produces retained structured output, but the command exits nonzero because the
 required-case gate is unsatisfied.
+
+For a sharded coordinate, repeat `--result-root` for the baseline and phase
+roots.  The analyzer requires exactly one baseline provider and exactly one
+owner for each of the 16 phases, then remaps shard-local invocation IDs only
+inside the analysis view.  Missing or overlapping phases, multiple baseline
+providers, incomplete local schedules, or inconsistent commit/CFG/simulator
+provenance are rejected.  Raw retained records are never rewritten.
 
 Every concurrent target record is paired with the exact `OM_FSM` invocation
 named by its `smu_invocation` field.  Baselines are selected per measured

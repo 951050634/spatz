@@ -43,6 +43,8 @@ def raw_meta(case: common.Case) -> dict[str, object]:
         "N": case.n,
         "D": case.d,
         "repeats": case.repeats,
+        "include_baselines": 1,
+        "phase_start": 0,
         "phase_count": 16,
         "phase_step_bytes": 8,
         "phase_period_bytes": 128,
@@ -447,11 +449,76 @@ class RunConcurrencyTest(unittest.TestCase):
             build_timeout_seconds=1,
             disassembly_timeout_seconds=1,
             jobs=1,
+            include_baselines=True,
+            phase_start=0,
+            phase_count=16,
         )
         runner.validate_options(args)
         args.jobs = 0
         with self.assertRaises(ValueError):
             runner.validate_options(args)
+
+    def test_phase_shard_schedule_is_exact(self) -> None:
+        phases = runner.selected_phases(4, 3)
+        self.assertEqual(phases, (32, 40, 48))
+        keys = runner.expected_record_keys(
+            self.case.repeats, False, phases
+        )
+        self.assertEqual(len(keys), 24)
+        self.assertEqual(
+            runner.expected_smu_invocations(
+                self.case.repeats, False, phases
+            ),
+            12,
+        )
+        self.assertEqual(
+            {key[0] for key in keys}, {"C3_CORE", "C3"}
+        )
+        with self.assertRaises(ValueError):
+            runner.selected_phases(15, 2)
+
+    def test_phase_only_complete_schedule_passes(self) -> None:
+        phases = runner.selected_phases(4, 3)
+        records = []
+        invocation = 0
+        for phase in phases:
+            for scenario in ("C3_CORE", "C3"):
+                for repeat in range(-1, self.case.repeats):
+                    is_smu = scenario == "C3"
+                    records.append(
+                        raw_record(
+                            self.case,
+                            scenario,
+                            phase,
+                            repeat,
+                            invocation if is_smu else -1,
+                        )
+                    )
+                    if is_smu:
+                        invocation += 1
+        meta = raw_meta(self.case)
+        meta.update(
+            {
+                "include_baselines": 0,
+                "phase_start": 4,
+                "phase_count": 3,
+                "register_iterations": 0,
+                "register_target_cycles_hi": 0,
+                "register_target_cycles_lo": 0,
+            }
+        )
+        fsms = [raw_fsm(self.case, item) for item in range(invocation)]
+        errors = runner.validate_complete_schedule(
+            records,
+            [meta],
+            fsms,
+            self.case,
+            runner.PASS_BANNER,
+            False,
+            4,
+            phases,
+        )
+        self.assertEqual(errors, [])
 
 
 if __name__ == "__main__":

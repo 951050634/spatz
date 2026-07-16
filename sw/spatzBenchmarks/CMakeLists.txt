@@ -100,6 +100,21 @@ set(ONLINE_MERGE_REPEATS "5" CACHE STRING
     "Online merge measured repetitions after one warm-up")
 set(ONLINE_MERGE_TRACE_PROXY "0" CACHE STRING
     "Gate trace markers to B2-R/B3 repeat zero")
+set(ONLINE_MERGE_CONCURRENCY_INCLUDE_BASELINES "1" CACHE STRING
+    "Include C0/C1/C2 in the concurrency shard")
+set(ONLINE_MERGE_CONCURRENCY_PHASE_START "0" CACHE STRING
+    "First C3 bank-phase index in the concurrency shard")
+set(ONLINE_MERGE_CONCURRENCY_PHASE_COUNT "16" CACHE STRING
+    "Number of C3 bank phases in the concurrency shard")
+string(CONCAT ONLINE_MERGE_CONCURRENCY_BASELINES_DEFINE
+    "ONLINE_MERGE_CONCURRENCY_INCLUDE_BASELINES="
+    "${ONLINE_MERGE_CONCURRENCY_INCLUDE_BASELINES}")
+string(CONCAT ONLINE_MERGE_CONCURRENCY_PHASE_START_DEFINE
+    "ONLINE_MERGE_CONCURRENCY_PHASE_START="
+    "${ONLINE_MERGE_CONCURRENCY_PHASE_START}")
+string(CONCAT ONLINE_MERGE_CONCURRENCY_PHASE_COUNT_DEFINE
+    "ONLINE_MERGE_CONCURRENCY_PHASE_COUNT="
+    "${ONLINE_MERGE_CONCURRENCY_PHASE_COUNT}")
 if(NOT PYTHON)
   find_program(PYTHON python3 REQUIRED)
 endif()
@@ -148,6 +163,12 @@ target_include_directories(
     test-${SNITCH_TEST_PREFIX}online-softmax-merge-concurrency
     PRIVATE ${ONLINE_MERGE_GENERATED_DIR}
             ${CMAKE_CURRENT_SOURCE_DIR}/online-softmax-merge)
+target_compile_definitions(
+    test-${SNITCH_TEST_PREFIX}online-softmax-merge-concurrency
+    PRIVATE
+      ${ONLINE_MERGE_CONCURRENCY_BASELINES_DEFINE}
+      ${ONLINE_MERGE_CONCURRENCY_PHASE_START_DEFINE}
+      ${ONLINE_MERGE_CONCURRENCY_PHASE_COUNT_DEFINE})
 target_link_libraries(
     test-${SNITCH_TEST_PREFIX}online-softmax-merge-concurrency
     benchmark ${SNITCH_RUNTIME})
