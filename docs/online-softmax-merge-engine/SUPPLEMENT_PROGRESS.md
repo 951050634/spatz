@@ -31,7 +31,7 @@ small manifests only.
 | 4 | Break-even table and fitted scale model | P0 | complete | Stage 4e formal fit and direct 16-point table |
 | 5 | Full-SMU FSM cycle breakdown and A0/A2 | P0 | complete | Stage 5b exact three-point formal closure |
 | 6 | C0/C1/C2/C3 concurrency and 16 bank phases | P0 | in_progress | Stage 6b target schedule and host runner; analysis/formal run pending |
-| 7 | Yosys Slang generic-resource proxy | P0 | in_progress | Stage 7a fixed wrapper/script and capture runner complete; analyzer and clean run pending |
+| 7 | Yosys Slang generic-resource proxy | P0 | in_progress | Stage 7b analyzer and clean capture complete; clean committed analysis pending |
 | 8 | Representative RTL VCD toggle proxy | P0 | pending | pending |
 | 9 | Target `expf` B0/B2-F | P1 | pending | pending |
 | 10 | Scalar-only A1 | P1 | pending | pending |
@@ -2432,3 +2432,47 @@ small manifests only.
   work is Stage 7b's deterministic per-resource/per-source parser, clean
   committed `exp`/`reciprocal`/`full` capture, independent verification, and
   explicit structured `blocked_external` PPA record.
+
+### Stage 7b checkpoint: deterministic parser and clean capture
+
+- Objective: add the deterministic resource parser required by specification
+  section 6 and obtain a clean committed capture before formal analysis.
+- Clean capture is retained at
+  `/home/wxt/work-online-merge-stage7b-resource-clean-20260716T014550Z`, UTC
+  window `2026-07-16T01:45:50Z..2026-07-16T01:46:22Z`, commit
+  `679331001c59ac7466bbc0039ffe4ce1a87ff3c0`, `git_dirty=false`, CFG reference
+  SHA256
+  `120fa0c30199e54e6e9b5c60d8da40913eae8526640992cc5d4f130bef159775`,
+  and Yosys `0.66+4` with the Slang plugin.  All four independent scopes pass,
+  `failures.json` is empty, and `resource_proxy_evidence=true`.
+- Clean capture pre/post cell totals are exp `38/4235`, reciprocal `24/4629`,
+  vector `156/33070`, and full `938/94713`.  The full pre-techmap netlist has
+  ten `$mul` cells and 620 register bits; no memory/ROM/LUT-like cell is
+  inferred.  These are version-specific generic logic proxies only.
+- `analyze_resource_proxy.py` validates capture, input, and artifact hashes,
+  Yosys stat sums, required scopes, and current source identities.  It emits
+  complete pre/post cell types, major operator groups, multiplier width rows,
+  register bits, memory-like inference, module rows, deterministic CSV/JSON,
+  and an artifact manifest.
+- Independent scopes are explicitly non-additive.  Because no separate
+  scalar/FSM/control synthesis top exists, that decomposition is retained as
+  `unsupported`; the analyzer does not manufacture it by subtracting
+  independently optimized scopes.
+- Physical PPA remains an explicit `blocked_external` record.  Missing inputs
+  are the target PDK, liberty/LEF, defined PVT and clock/IO/load constraints,
+  floorplan/routing constraints, and physical synthesis/P&R/timing/power
+  tools.  No area, Fmax, critical-path, mW, pJ, or physical-efficiency value is
+  generated.
+- Validation before this checkpoint: all 85 utility tests pass, all utility
+  modules and tests compile under Python 3.12.3, changed Python/Markdown lines
+  meet repository limits, and `git diff --check` passes.  A direct parse of the
+  clean capture passes every substantive gate; only
+  `analysis_git_clean=false` while this atomic implementation is uncommitted.
+- Git synchronization note: `git fetch origin` and `git pull --rebase` showed
+  the branch up to date on 2026-07-16, but the following push retry failed at
+  the HTTPS TLS handshake.  The local checkpoint is retained; no force-push,
+  merge commit, reset, stash, or clean was used.  Synchronization must be
+  retried after this atomic commit.
+- Remaining Stage 7 gate: commit this analyzer from a clean worktree, run it on
+  the retained clean capture, independently rehash its outputs, and record the
+  formal analysis identity before marking Stage 7 complete.

@@ -490,6 +490,39 @@ logic complexity proxy only.  No liberty, PDK, physical constraint, timing, or
 power model is used, so these files must never be relabeled as ASIC area,
 frequency/Fmax, critical path, power, energy, or physical efficiency.
 
+## Yosys generic-resource proxy analysis
+
+After a clean capture passes, parse it from a clean committed checkout into a
+new external result directory:
+
+```bash
+python3 util/online_softmax_merge/analyze_resource_proxy.py \
+  --repo-root "$PWD" \
+  --result-root /home/user/work-online-merge-resource-proxy-capture \
+  --output-dir /home/user/work-online-merge-resource-proxy-analysis
+```
+
+The analyzer independently rehashes every captured input and raw artifact,
+checks the capture manifest, command statuses, clean provenance, required
+scopes, and Yosys `stat` totals, then inspects the pre-techmap JSON netlists.
+It reports operator counts, every multiplier's input/output width and signed
+flags, register cells/bits, memory-like inference, post-techmap generic cell
+types, and module rows.  Deterministic outputs are:
+
+- `analysis.json`: complete gates, provenance, scope details, P2 blocker, and
+  the explicit non-physical claim boundary;
+- `resource_summary.csv`: pre/post totals and major operator/resource groups;
+- `multiplier_widths.csv`: every retained pre-techmap `$mul` width tuple;
+- `cell_types.csv`: complete pre/post cell-type counts;
+- `module_resources.csv`: available module-level `stat` rows;
+- `artifact_manifest.json`: capture and analysis identities and output hashes.
+
+The independent exp, reciprocal, vector, and full scopes are non-additive.
+The flow therefore records scalar/FSM/control-only decomposition as
+`unsupported` until an independent synthesis top exists; it does not subtract
+independently optimized scopes.  ASIC PPA remains `blocked_external` without
+the required PDK, liberty/LEF, constraints, and physical signoff flow.
+
 ## Validation
 
 ```bash
