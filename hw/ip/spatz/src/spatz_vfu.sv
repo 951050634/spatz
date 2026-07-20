@@ -170,10 +170,15 @@ module spatz_vfu
 
   // Propagate the tags through the functional units
   vfu_tag_t ipu_result_tag, fpu_result_tag, result_tag, result_buf_tag_d, result_buf_tag_q;
+  logic     cfma_dedicated_complete_valid;
+  vfu_tag_t cfma_dedicated_complete_tag;
   vfu_tag_t input_tag;
   logic result_buf_valid_d, result_buf_valid_q;
 
-  assign result_tag = result_buf_valid_q ? result_buf_tag_q : (state_q == VFU_RunningIPU ? ipu_result_tag : fpu_result_tag);
+  assign result_tag = result_buf_valid_q ? result_buf_tag_q :
+                      (state_q == VFU_RunningIPU ? ipu_result_tag :
+                       (cfma_dedicated_complete_valid ? cfma_dedicated_complete_tag :
+                        fpu_result_tag));
 
   // Number of words advanced by vstart
   vlen_t vstart;
@@ -189,8 +194,12 @@ module spatz_vfu
   logic op1_is_ready, op2_is_ready, op3_is_ready, operands_ready;
   logic cfma_insn;
   logic cfma_mask_request;
+  logic cfma_dedicated_active;
   logic cfma_mask_ready;
   assign cfma_insn         = spatz_req.op == VFCMADD;
+  assign cfma_dedicated_active = CfmaDedicatedReadCollectorEn && CfmaDedicatedWritebackEn &&
+                                cfma_insn && (spatz_req.vtype.vsew == EW_64) && (spatz_req.vl == 1);
+
   assign cfma_mask_request = spatz_req_valid && cfma_insn && !spatz_req.op_arith.vm &&
                              !cfma_mask_valid_q;
   assign cfma_mask_ready   = !cfma_insn || spatz_req.op_arith.vm || cfma_mask_valid_q;
@@ -209,6 +218,7 @@ module spatz_vfu
 
   // Did we issue a microoperation?
   logic word_issued;
+  logic cfma_dedicated_issue_ready;
 
   // Currently running instructions
   logic [NrParallelInstructions-1:0] running_d, running_q;
@@ -236,7 +246,9 @@ module spatz_vfu
   logic cfma_phase_result_done;
   logic cfma_final_result_done;
 
-  assign cfma_final_phase       = cfma_phase_q == Cfma_IR;
+  assign cfma_final_phase       = cfma_dedicated_active ?
+                                  (cfma_phase_q == Cfma_RR) :
+                                  (cfma_phase_q == Cfma_IR);
   assign cfma_step_result_done  = result_tag.cfma_step_last &&
                                   &(result_valid | ~pending_results) && result_ready;
   assign cfma_phase_result_done = cfma_step_result_done && !result_tag.last;
@@ -479,7 +491,8 @@ module spatz_vfu
 
   assign in_ready     = state_q == VFU_RunningIPU ? ipu_in_ready     : fpu_in_ready;
   assign result       = state_q == VFU_RunningIPU ? ipu_result       : fpu_result;
-  assign result_valid = state_q == VFU_RunningIPU ? ipu_result_valid : fpu_result_valid;
+  assign result_valid = state_q == VFU_RunningIPU ? ipu_result_valid :
+                        (cfma_dedicated_complete_valid ? '1 : fpu_result_valid);
 
   assign scalar_result = result[ELEN-1:0];
 
@@ -574,7 +587,8 @@ module spatz_vfu
     unique case (reduction_state_q)
       Reduction_NormalExecution: begin
         // Did we issue a word to the FUs?
-        word_issued = spatz_req_valid && &(in_ready | ~valid_operations) && operands_ready && !stall;
+        word_issued = spatz_req_valid && &(in_ready | ~valid_operations) && operands_ready &&
+                      cfma_dedicated_issue_ready && !stall;
 
         // Are we ready to accept a result?
         result_ready = &(result_valid | ~pending_results) && ((result_tag.wb && vfu_rsp_ready_i) || vrf_wvalid_i);
@@ -1343,8 +1357,7 @@ module spatz_vfu
       assign int_fpu_in_valid = spatz_req_valid && operands_ready &&
                                 (!spatz_req.op_arith.is_scalar || fpu == 0) &&
                                 is_fpu_insn &&
-                                !(CfmaDedicatedReadCollectorEn &&
-                                  CfmaDedicatedWritebackEn && cfma_insn);
+                                !cfma_dedicated_active;
 
       // Generate an FPU pipeline
       elen_t fpu_operand1_q, fpu_operand2_q, fpu_operand3_q;
@@ -1443,6 +1456,7 @@ module spatz_vfu
     // =========================================================
     logic                      cfma_read_start_valid;
     logic                      cfma_read_start_ready;
+    logic                      cfma_read_start_last;
     vrf_addr_t                 cfma_read_a_real_addr;
     vrf_addr_t                 cfma_read_a_imag_addr;
     vrf_addr_t                 cfma_read_b_real_addr;
@@ -1468,20 +1482,21 @@ module spatz_vfu
     always_comb begin : cfma_read_addr_proc
       automatic vreg_t cfma_read_lmul = cfma_lmul_offset(spatz_req.vtype.vlmul);
 
-      cfma_read_a_real_addr = vrf_addr_t'((spatz_req.vs1 + vstart) << $clog2(NrWordsPerVector));
-      cfma_read_a_imag_addr = vrf_addr_t'((spatz_req.vs1 + cfma_read_lmul + vstart) <<
+      cfma_read_a_real_addr = vrf_addr_t'((spatz_req.vs2 + vstart) << $clog2(NrWordsPerVector));
+      cfma_read_a_imag_addr = vrf_addr_t'((spatz_req.vs2 + cfma_read_lmul + vstart) <<
                                           $clog2(NrWordsPerVector));
-      cfma_read_b_real_addr = vrf_addr_t'((spatz_req.vs2 + vstart) << $clog2(NrWordsPerVector));
-      cfma_read_b_imag_addr = vrf_addr_t'((spatz_req.vs2 + cfma_read_lmul + vstart) <<
+      cfma_read_b_real_addr = vrf_addr_t'((spatz_req.vs1 + vstart) << $clog2(NrWordsPerVector));
+      cfma_read_b_imag_addr = vrf_addr_t'((spatz_req.vs1 + cfma_read_lmul + vstart) <<
                                           $clog2(NrWordsPerVector));
       cfma_read_c_real_addr = vrf_addr_t'((spatz_req.vd + vstart) << $clog2(NrWordsPerVector));
       cfma_read_c_imag_addr = vrf_addr_t'((spatz_req.vd + cfma_read_lmul + vstart) <<
                                           $clog2(NrWordsPerVector));
     end
 
-    assign cfma_read_start_valid = CfmaDedicatedReadCollectorEn && spatz_req_valid &&
-                                   cfma_insn && word_issued && (cfma_phase_q == Cfma_RR);
-    assign cfma_read_bundle_ready = CfmaDedicatedReadCollectorEn ? cfma_op_ready : 1'b1;
+    assign cfma_read_start_valid = cfma_dedicated_active && spatz_req_valid &&
+                                   word_issued && (cfma_phase_q == Cfma_RR);
+    assign cfma_read_start_last  = (vl_q + nr_elem_word) >= spatz_req.vl;
+    assign cfma_read_bundle_ready = cfma_dedicated_active ? cfma_op_ready : 1'b1;
 
     spatz_cfma_read_collector #(
       .ELEN      ( $bits(vrf_data_t) ),
@@ -1499,7 +1514,7 @@ module spatz_vfu
       .c_real_addr_i  ( cfma_read_c_real_addr  ),
       .c_imag_addr_i  ( cfma_read_c_imag_addr  ),
       .elem_idx_i     ( vl_q                   ),
-      .last_i         ( last_request           ),
+      .last_i         ( cfma_read_start_last   ),
       .vrf_raddr_o    ( cfma_read_vrf_raddr    ),
       .vrf_re_o       ( cfma_read_vrf_re       ),
       .vrf_rvalid_i   ( vrf_rvalid_i           ),
@@ -1518,6 +1533,8 @@ module spatz_vfu
       .last_o         ( cfma_read_last         ),
       .busy_o         ( cfma_read_busy         )
     );
+
+    assign cfma_dedicated_issue_ready = !cfma_dedicated_active || cfma_read_start_ready;
 
     assign cfma_read_mux_en    = CfmaDedicatedReadCollectorEn && cfma_read_busy;
     assign cfma_read_mux_raddr = cfma_read_vrf_raddr;
@@ -1685,6 +1702,7 @@ module spatz_vfu
     vrf_addr_t         cfma_wb_imag_addr_q, cfma_wb_imag_addr_d;
     vrf_be_t           cfma_wb_be_q, cfma_wb_be_d;
     logic              cfma_wb_pending_q, cfma_wb_pending_d;
+    vfu_tag_t          cfma_wb_tag_q, cfma_wb_tag_d;
 
     `FF(cfma_write_state_q, cfma_write_state_d, CFMA_WRITE_REAL)
     `FF(cfma_wb_real_q, cfma_wb_real_d, '0)
@@ -1693,6 +1711,7 @@ module spatz_vfu
     `FF(cfma_wb_imag_addr_q, cfma_wb_imag_addr_d, '0)
     `FF(cfma_wb_be_q, cfma_wb_be_d, '0)
     `FF(cfma_wb_pending_q, cfma_wb_pending_d, 1'b0)
+    `FF(cfma_wb_tag_q, cfma_wb_tag_d, '{vsew: EW_8, default: '0})
 
     always_comb begin : cfma_writeback_proc
       automatic vreg_t cfma_wb_lmul = cfma_lmul_offset(spatz_req.vtype.vlmul);
@@ -1710,6 +1729,10 @@ module spatz_vfu
       cfma_wb_imag_addr_d = cfma_wb_imag_addr_q;
       cfma_wb_be_d       = cfma_wb_be_q;
       cfma_wb_pending_d  = cfma_wb_pending_q;
+      cfma_wb_tag_d      = cfma_wb_tag_q;
+
+      cfma_dedicated_complete_valid = 1'b0;
+      cfma_dedicated_complete_tag   = cfma_wb_tag_q;
 
       cfma_wb_addr = '0;
       cfma_wb_data = '0;
@@ -1729,6 +1752,7 @@ module spatz_vfu
         cfma_wb_be_d        = cfma_wb_lane_be &
                               cfma_active_wbe(cfma_tag_out, spatz_req.vl,
                                                spatz_req.op_arith.vm, cfma_mask_q);
+        cfma_wb_tag_d       = cfma_tag_out;
         cfma_wb_pending_d   = 1'b1;
       end
 
@@ -1753,6 +1777,8 @@ module spatz_vfu
             if (vrf_wvalid_i) begin
               cfma_write_state_d = CFMA_WRITE_REAL;
               cfma_wb_pending_d  = 1'b0; // both beats done
+              cfma_dedicated_complete_valid = 1'b1;
+              cfma_dedicated_complete_tag   = cfma_wb_tag_q;
             end
           end
         endcase
@@ -1760,6 +1786,9 @@ module spatz_vfu
     end : cfma_writeback_proc
 
   end: gen_fpu else begin: gen_no_fpu
+    assign cfma_dedicated_issue_ready = 1'b1;
+    assign cfma_dedicated_complete_valid = 1'b0;
+    assign cfma_dedicated_complete_tag = '{vsew: EW_8, default: '0};
     assign is_fpu_busy      = 1'b0;
     assign fpu_in_ready     = '0;
     assign fpu_result       = '0;

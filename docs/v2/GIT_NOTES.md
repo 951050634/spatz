@@ -375,3 +375,30 @@
 - `docs/v2/evidence/stage6_vfcmacc_coverage_audit.txt` evidence cross-check：PASS，确认 dedicated-mode `vfcmacc_smoke`、full `vfcmacc`、`vfcmacc_illegal`、`vfmacc`、`vfnmsac` direct runs 均有 `[SUCCESS] Program finished successfully` 证据。
 
 结论：dedicated-mode full `vfcmacc` ISA run 的现有 test body 已覆盖 mask/tail/fflags/e16/e32/e64 主功能维度；下一阶段转向 benchmark/performance 和默认路径决策。
+
+## 2026-07-07 阶段 7 小阶段：`vfcmacc_perf` microbenchmark 与 dedicated 限界
+
+计划提交信息：`[cfma-v2] Add limited CFMA dedicated performance microbenchmark`
+
+主要内容：
+
+- 新增 `sw/riscvTests/isa/rv64uv/vfcmacc_perf.c` 和 CMake target `vfcmacc_perf`，用于 hart0-only、`vl=1,e64`、64 次 `vfcmacc.vv` 的 mcycle microbenchmark。
+- 修改 `hw/ip/spatz/src/spatz_vfu.sv`：
+  - dedicated `word_issued` 等待 read collector `start_ready`；
+  - dedicated collector 使用 per-word last：`(vl_q + nr_elem_word) >= vl`；
+  - dedicated split writeback 完成 imag beat 时向 VFU completion path 注入 completion tag/result-valid；
+  - dedicated path 当前只在 `CFMA_DEDICATED_V2 && vsew==EW_64 && vl==1` 时启用，其它情况 fallback 到 v1。
+- 新增 `docs/v2/STAGE7_PERFORMANCE.md` 和 `docs/v2/evidence/stage7_vfcmacc_perf_microbenchmark.txt`，记录性能结果、RED 调试过程和当前 dedicated 限界。
+
+验证命令：
+
+- `git diff --check`：PASS；
+- `PATH="$PWD/.venv/bin:$PATH" make -C hw/system/spatz_cluster sw.vlt`：PASS；
+- default-off build：PASS；
+- default-off `vfcmacc_perf`：PASS，`cycles=1058`；
+- default-off `ctest -R 'riscvTests-rtl-(vfcmacc|vfmacc|vfnmsac)$'`：PASS，3/3；
+- dedicated-mode build：PASS；
+- dedicated-mode `vfcmacc_perf`：PASS，`cycles=624`；
+- dedicated-mode full `vfcmacc` direct run：PASS。
+
+结论：当前 dedicated path 在受限 `vl=1,e64` microbenchmark 上相对 v1 fallback 为 `1.70x`；但 full vector dedicated CFMA 尚未完成，默认 path 不切换。

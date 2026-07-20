@@ -6,6 +6,7 @@ work/*
 transcript
 *.ini
 *.wlf
+*.vcd
 *.vstf
 wlft*
 *nfs*

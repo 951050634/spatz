@@ -1,0 +1,133 @@
+# Stage 7 vfcmacc_perf microbenchmark and dedicated-mode closure
+
+Date: 2026-07-07
+Branch: feature/cfma-v2-datapath
+
+## Design/debug summary
+
+A new single-hart ISA-style microbenchmark was added:
+
+- `sw/riscvTests/isa/rv64uv/vfcmacc_perf.c`
+- CMake target: `vfcmacc_perf`
+- Workload: 64 repeated `vfcmacc.vv` instructions, `vl=1`, `vsew=e64`, `m1`.
+- It prints `mcycle` delta and `cycles_per_insn_x100`.
+
+During RED testing, `CFMA_DEDICATED_V2` exposed three dedicated-mode issues:
+
+1. `word_issued` did not wait for the dedicated read collector `start_ready`, so back-to-back CFMA could drop starts.
+2. dedicated read collector used `last_request`, not per-word last; the second e32/e64 word could be tagged `last=0` and never complete.
+3. dedicated split writeback did not inject a completion tag/result-valid into the normal VFU completion path; the request could remain busy after writeback.
+
+Fixes are in `hw/ip/spatz/src/spatz_vfu.sv`.
+
+Important limitation found during Stage 7:
+
+- The current `fpnew_complex_fma` instance is fixed to `FpFormat=FP64` and computes one complex element.
+- Therefore `CFMA_DEDICATED_V2` is intentionally gated to `vsew=e64 && vl=1`.
+- e16/e32 and multi-lane/vector CFMA continue to use the v1 fallback path even in `CFMA_DEDICATED_V2` builds.
+- The default build remains v1 fallback.
+
+## git diff --check
+
+Command:
+
+```bash
+git diff --check
+```
+
+Result: PASS
+
+## Software build
+
+Command:
+
+```bash
+PATH="$PWD/.venv/bin:$PATH" make -C hw/system/spatz_cluster sw.vlt
+```
+
+Result: PASS
+
+## Default-off build + perf + regression
+
+Commands:
+
+```bash
+PATH="$PWD/.venv/bin:$PATH" make -C hw/system/spatz_cluster clean.vlt
+PATH="$PWD/.venv/bin:$PATH" make -C hw/system/spatz_cluster bin/spatz_cluster.vlt
+timeout 240s hw/system/spatz_cluster/bin/spatz_cluster.vlt \
+  hw/system/spatz_cluster/sw/build/riscvTests/test-riscvTests-vfcmacc_perf
+cd hw/system/spatz_cluster/sw/build && \
+  PATH="/home/wxt/spatz-cfma/.venv/bin:$PATH" \
+  ctest -R 'riscvTests-rtl-(vfcmacc|vfmacc|vfnmsac)$' --output-on-failure
+```
+
+Output summary:
+
+```text
+vfcmacc_perf iterations=64 vl=1 vsew=e64 cycles=1058 cycles_per_insn_x100=1653
+[SUCCESS] Program finished successfully
+100% tests passed, 0 tests failed out of 3
+```
+
+Result: PASS
+
+## Dedicated-mode build + perf + full vfcmacc
+
+Commands:
+
+```bash
+PATH="$PWD/.venv/bin:$PATH" make -C hw/system/spatz_cluster clean.vlt
+PATH="$PWD/.venv/bin:$PATH" make -C hw/system/spatz_cluster \
+  DEFS=-DCFMA_DEDICATED_V2 bin/spatz_cluster.vlt
+timeout 240s hw/system/spatz_cluster/bin/spatz_cluster.vlt \
+  hw/system/spatz_cluster/sw/build/riscvTests/test-riscvTests-vfcmacc_perf
+timeout 600s hw/system/spatz_cluster/bin/spatz_cluster.vlt \
+  hw/system/spatz_cluster/sw/build/riscvTests/test-riscvTests-vfcmacc
+```
+
+Output summary:
+
+```text
+vfcmacc_perf iterations=64 vl=1 vsew=e64 cycles=624 cycles_per_insn_x100=975
+[SUCCESS] Program finished successfully
+[TC 1] PASSED.
+[TC 2] PASSED.
+[TC 3] PASSED.
+[TC 4] PASSED.
+[TC 5] PASSED.
+[TC 6] PASSED.
+[TC 7] PASSED.
+[TC 8] PASSED.
+[TC 9] PASSED.
+[TC 10] PASSED.
+[TC 11] PASSED.
+[TC 11] fflags PASSED.
+[TC 12] PASSED.
+[TC 12] fflags PASSED.
+[TC 13] PASSED.
+[TC 13] fflags PASSED.
+[TC 14] PASSED.
+[TC 15] PASSED.
+[TC 16] PASSED.
+[TC 17] PASSED.
+[TC 18] PASSED.
+PASSED: /home/wxt/spatz-cfma/sw/riscvTests/isa/rv64uv/vfcmacc.c!
+[SUCCESS] Program finished successfully
+```
+
+Result: PASS
+
+## Performance comparison
+
+| Mode | Build | Workload | Cycles | cycles/insn |
+| --- | --- | --- | ---: | ---: |
+| v1 fallback | default-off | 64 x `vfcmacc.vv`, `vl=1`, `e64` | 1058 | 16.53 |
+| v2 dedicated limited | `DEFS=-DCFMA_DEDICATED_V2` | 64 x `vfcmacc.vv`, `vl=1`, `e64` | 624 | 9.75 |
+
+Speedup for this limited scalar-lane e64 microbenchmark:
+
+```text
+1058 / 624 = 1.70x
+```
+
+Do not extrapolate this to packed e16/e32 or multi-lane vector CFMA; those currently remain on the v1 fallback path.
