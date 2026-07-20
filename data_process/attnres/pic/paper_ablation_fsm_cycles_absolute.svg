@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="940" height="650" viewBox="0 0 940 650">
+<rect width="100%" height="100%" fill="white"/>
+<style>text{font-family:Arial,"Noto Sans",sans-serif;fill:#202A33}.axis{stroke:#34424F;stroke-width:1.4}.grid{stroke:#D9E0E5;stroke-width:1}.minor{fill:#65727E}.title{font-weight:700}.label{font-weight:600}</style>
+<text x="470.0" y="38.0" font-size="22" text-anchor="middle" class="title">Full-SMU End-to-End Cycle Decomposition</text>
+<text x="470.0" y="64.0" font-size="12" text-anchor="middle" class="minor">Absolute cycles; command/setup/wait is non-busy overhead</text>
+<line x1="95.0" y1="555.0" x2="895.0" y2="555.0" stroke="#D9E0E5" stroke-width="1"/>
+<text x="83.0" y="559.0" font-size="11" text-anchor="end" >0</text>
+<line x1="95.0" y1="469.5" x2="895.0" y2="469.5" stroke="#D9E0E5" stroke-width="1"/>
+<text x="83.0" y="473.5" font-size="11" text-anchor="end" >2,000</text>
+<line x1="95.0" y1="384.1" x2="895.0" y2="384.1" stroke="#D9E0E5" stroke-width="1"/>
+<text x="83.0" y="388.1" font-size="11" text-anchor="end" >4,000</text>
+<line x1="95.0" y1="298.6" x2="895.0" y2="298.6" stroke="#D9E0E5" stroke-width="1"/>
+<text x="83.0" y="302.6" font-size="11" text-anchor="end" >6,000</text>
+<line x1="95.0" y1="213.2" x2="895.0" y2="213.2" stroke="#D9E0E5" stroke-width="1"/>
+<text x="83.0" y="217.2" font-size="11" text-anchor="end" >8,000</text>
+<line x1="95.0" y1="127.7" x2="895.0" y2="127.7" stroke="#D9E0E5" stroke-width="1"/>
+<text x="83.0" y="131.7" font-size="11" text-anchor="end" >10,000</text>
+<line x1="95.0" y1="85.0" x2="95.0" y2="555.0" stroke="#34424F" stroke-width="1.4"/>
+<line x1="95.0" y1="555.0" x2="895.0" y2="555.0" stroke="#34424F" stroke-width="1.4"/>
+<rect x="170.8" y="508.2" width="115.0" height="46.8" fill="#65727E" stroke="white" rx="1" opacity="1.0"/>
+<text x="228.3" y="536.6" font-size="12" text-anchor="middle" font-weight="700" fill="white">1,095</text>
+<rect x="170.8" y="507.8" width="115.0" height="0.4" fill="#2A9D8F" stroke="white" rx="1" opacity="1.0"/>
+<rect x="170.8" y="507.0" width="115.0" height="0.9" fill="#E07A2D" stroke="white" rx="1" opacity="1.0"/>
+<text x="228.3" y="583.0" font-size="13" text-anchor="middle" class="label">(1,1)</text>
+<text x="228.3" y="497.0" font-size="12" text-anchor="middle" font-weight="700">Total 1,124</text>
+<rect x="437.5" y="510.6" width="115.0" height="44.4" fill="#65727E" stroke="white" rx="1" opacity="1.0"/>
+<text x="495.0" y="537.8" font-size="12" text-anchor="middle" font-weight="700" fill="white">1,040</text>
+<rect x="437.5" y="422.4" width="115.0" height="88.1" fill="#2A9D8F" stroke="white" rx="1" opacity="1.0"/>
+<text x="495.0" y="471.5" font-size="12" text-anchor="middle" font-weight="700" fill="white">2,063</text>
+<rect x="437.5" y="415.6" width="115.0" height="6.8" fill="#E07A2D" stroke="white" rx="1" opacity="1.0"/>
+<text x="495.0" y="583.0" font-size="13" text-anchor="middle" class="label">(8,32)</text>
+<text x="495.0" y="405.6" font-size="12" text-anchor="middle" font-weight="700">Total 3,263</text>
+<rect x="704.2" y="511.3" width="115.0" height="43.7" fill="#65727E" stroke="white" rx="1" opacity="1.0"/>
+<text x="761.7" y="538.2" font-size="12" text-anchor="middle" font-weight="700" fill="white">1,022</text>
+<rect x="704.2" y="160.4" width="115.0" height="351.0" fill="#2A9D8F" stroke="white" rx="1" opacity="1.0"/>
+<text x="761.7" y="340.9" font-size="12" text-anchor="middle" font-weight="700" fill="white">8,214</text>
+<rect x="704.2" y="146.7" width="115.0" height="13.7" fill="#E07A2D" stroke="white" rx="1" opacity="1.0"/>
+<text x="761.7" y="583.0" font-size="13" text-anchor="middle" class="label">(16,64)</text>
+<text x="761.7" y="136.7" font-size="12" text-anchor="middle" font-weight="700">Total 9,556</text>
+<text x="495.0" y="625.0" font-size="14" text-anchor="middle" class="label">Matrix size (N,D)</text>
+<text x="25.0" y="320.0" font-size="14" text-anchor="middle" class="label" transform="rotate(-90 25 320.0)">Cycles</text>
+<rect x="655.0" y="93.0" width="16.0" height="16.0" fill="#E07A2D" stroke="none" rx="0" opacity="1.0"/>
+<text x="680.0" y="106.0" font-size="12" text-anchor="start" >Scalar FSM</text>
+<rect x="655.0" y="120.0" width="16.0" height="16.0" fill="#2A9D8F" stroke="none" rx="0" opacity="1.0"/>
+<text x="680.0" y="133.0" font-size="12" text-anchor="start" >Vector update</text>
+<rect x="655.0" y="147.0" width="16.0" height="16.0" fill="#65727E" stroke="none" rx="0" opacity="1.0"/>
+<text x="680.0" y="160.0" font-size="12" text-anchor="start" >Command/setup/wait</text>
+</svg>
