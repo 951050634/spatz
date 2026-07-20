@@ -21,6 +21,12 @@ feature/online-softmax-merge-engine
   旁路 SMU 系统实现计划和分阶段验收标准。
 - [PAPER_AB_ARTICLE_POSITIONING.md](PAPER_AB_ARTICLE_POSITIONING.md)：将论文 A
   和论文 B 合成一篇文章时的故事线、贡献点、可扩展性口径和限制边界。
+- [RESEARCH_TO_PAPER_PLAN.md](RESEARCH_TO_PAPER_PLAN.md)：从创新性审计、关键
+  实验补充到 IEEEtran 6 页 workshop 论文交付的总计划和阶段门槛。
+- [NOVELTY_LANDSCAPE.md](NOVELTY_LANDSCAPE.md)：多源检索策略、竞争工作矩阵、
+  closest-prior-art 风险和创新性判定状态。
+- [CLAIM_EVIDENCE_MATRIX.md](CLAIM_EVIDENCE_MATRIX.md)：候选论文主张、本地证据、
+  prior-art 风险和允许使用的措辞。
 
 v1 的默认方向是在 cluster 内新增一个由 MMIO 寄存器控制、带 TCDM master 端口的 Streaming Merge-Update Engine。软件负责配置地址和维度并启动引擎，硬件直接在 TCDM 中流式读取和更新 online softmax merge 状态。
 
