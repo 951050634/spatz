@@ -1,0 +1,10 @@
+N,D,implementation,design,measured_repeats,cycles_min,cycles_median,cycles_max
+1,1,A0,Software scalar + RVV vector,3,1867,1975,2101
+1,1,A1,SMU scalar + RVV vector,3,1428,1436,1504
+1,1,A2,Full SMU,3,1335,1348,1364
+8,32,A0,Software scalar + RVV vector,3,13038,13317,13446
+8,32,A1,SMU scalar + RVV vector,3,2543,2543,2619
+8,32,A2,Full SMU,3,3486,3489,3496
+16,64,A0,Software scalar + RVV vector,3,26759,27088,27431
+16,64,A1,SMU scalar + RVV vector,3,4870,4878,4936
+16,64,A2,Full SMU,3,9771,9791,9800
