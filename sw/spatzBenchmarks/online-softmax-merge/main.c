@@ -11,6 +11,7 @@
 
 #include "online_merge_case_data.h"
 #include "rtl_reference.h"
+#include "rvv_update.h"
 
 #undef PRINTF
 #define PRINTF(...) printf(__VA_ARGS__)
@@ -27,6 +28,10 @@
 #define ONLINE_MERGE_IMPLEMENTATION_B1 1u
 #define ONLINE_MERGE_IMPLEMENTATION_B2_R 2u
 #define ONLINE_MERGE_IMPLEMENTATION_B3 3u
+#define ONLINE_MERGE_IMPLEMENTATION_A1 4u
+
+#define ONLINE_MERGE_MODE_FULL 0u
+#define ONLINE_MERGE_MODE_SCALAR_ONLY 1u
 
 // The three implementations' measured samples and correctness state make
 // main's frame larger than the runtime's 1 KiB default.  Reserve 8 KiB per
@@ -55,6 +60,8 @@ typedef struct {
   float *m_ref;
   float *l_ref;
   float *o_ref;
+  float *old_weight;
+  float *tile_weight;
   uint32_t n;
   uint32_t d;
   uint32_t stride;
@@ -64,6 +71,8 @@ typedef struct {
 
 typedef struct {
   uint64_t cycles;
+  uint64_t smu_scalar_cycles;
+  uint64_t rvv_vector_cycles;
   uint32_t tcdm_accessed;
   uint32_t tcdm_congested;
   int saw_busy;
@@ -140,7 +149,7 @@ static int allocate_buffers(online_merge_buffers_t *buffers, uint32_t n,
                             uint32_t d) {
   uint64_t vector_count = (uint64_t)n * (uint64_t)d;
   uint64_t stride_bytes = (uint64_t)d * sizeof(float);
-  uint64_t row_bytes = 32ull + 16ull * (uint64_t)d;
+  uint64_t row_bytes = 40ull + 16ull * (uint64_t)d;
   uint64_t limit = ((uint64_t)SNRT_TCDM_SIZE * 7u) / 10u;
 
   buffers->n = n;
@@ -183,6 +192,8 @@ static int allocate_buffers(online_merge_buffers_t *buffers, uint32_t n,
   take_floats(&cursor, &buffers->m_ref, n);
   take_floats(&cursor, &buffers->l_ref, n);
   take_floats(&cursor, &buffers->o_ref, vectors);
+  take_floats(&cursor, &buffers->old_weight, n);
+  take_floats(&cursor, &buffers->tile_weight, n);
   return 0;
 }
 
@@ -211,13 +222,15 @@ static void clear_output(online_merge_buffers_t *buffers) {
   for (uint32_t i = 0; i < buffers->n; i++) {
     buffers->m_out[i] = 0.0f;
     buffers->l_out[i] = 0.0f;
+    buffers->old_weight[i] = 0.0f;
+    buffers->tile_weight[i] = 0.0f;
   }
   for (uint32_t i = 0; i < vectors; i++) {
     buffers->o_out[i] = 0.0f;
   }
 }
 
-static void smu_start(const online_merge_buffers_t *buffers) {
+static void smu_start(const online_merge_buffers_t *buffers, uint32_t mode) {
   *cluster_reg(SPATZ_CLUSTER_PERIPHERAL_MERGE_SRC_M_OLD_REG_OFFSET) =
       tcdm_offset(buffers->m_old);
   *cluster_reg(SPATZ_CLUSTER_PERIPHERAL_MERGE_SRC_L_OLD_REG_OFFSET) =
@@ -240,6 +253,11 @@ static void smu_start(const online_merge_buffers_t *buffers) {
   *cluster_reg(SPATZ_CLUSTER_PERIPHERAL_MERGE_D_REG_OFFSET) = buffers->d;
   *cluster_reg(SPATZ_CLUSTER_PERIPHERAL_MERGE_STRIDE_REG_OFFSET) =
       buffers->stride;
+  *cluster_reg(SPATZ_CLUSTER_PERIPHERAL_MERGE_MODE_REG_OFFSET) = mode;
+  *cluster_reg(SPATZ_CLUSTER_PERIPHERAL_MERGE_DST_WEIGHT_OLD_REG_OFFSET) =
+      tcdm_offset(buffers->old_weight);
+  *cluster_reg(SPATZ_CLUSTER_PERIPHERAL_MERGE_DST_WEIGHT_TILE_REG_OFFSET) =
+      tcdm_offset(buffers->tile_weight);
   *cluster_reg(SPATZ_CLUSTER_PERIPHERAL_MERGE_CTRL_REG_OFFSET) =
       1u << SPATZ_CLUSTER_PERIPHERAL_MERGE_CTRL_CLEAR_DONE_BIT;
   *cluster_reg(SPATZ_CLUSTER_PERIPHERAL_MERGE_CTRL_REG_OFFSET) =
@@ -442,6 +460,16 @@ static void run_b2_r(online_merge_buffers_t *buffers,
   }
 }
 
+static void run_rvv_weighted_update(online_merge_buffers_t *buffers) {
+  for (uint32_t row = 0; row < buffers->n; row++) {
+    uint32_t base = row * buffers->d;
+    online_merge_rvv_update(
+        &buffers->o_old[base], &buffers->o_tile[base],
+        &buffers->o_out[base], buffers->d, buffers->old_weight[row],
+        buffers->tile_weight[row]);
+  }
+}
+
 static const char *wait_status(online_merge_wait_t wait_result) {
   if (wait_result == ONLINE_MERGE_WAIT_TIMEOUT) {
     return "timeout";
@@ -452,11 +480,57 @@ static const char *wait_status(online_merge_wait_t wait_result) {
   return "pass";
 }
 
+static int run_a1(online_merge_buffers_t *buffers,
+                  online_merge_sample_t *samples,
+                  online_merge_metrics_t *metrics) {
+  clear_output(buffers);
+  smu_start(buffers, ONLINE_MERGE_MODE_SCALAR_ONLY);
+  int warmup_busy;
+  online_merge_wait_t warmup = smu_wait(&warmup_busy);
+  if (warmup == ONLINE_MERGE_WAIT_OK) {
+    run_rvv_weighted_update(buffers);
+  }
+  smu_clear_done();
+  if (warmup != ONLINE_MERGE_WAIT_OK) {
+    samples[0].status = wait_status(warmup);
+    samples[0].saw_busy = warmup_busy;
+    return -1;
+  }
+
+  for (uint32_t repeat = 0; repeat < ONLINE_MERGE_CASE_REPEATS; repeat++) {
+    clear_output(buffers);
+    start_tcdm_counters();
+    trace_marker_start(ONLINE_MERGE_IMPLEMENTATION_A1, repeat);
+    uint64_t start = benchmark_get_cycle64();
+    smu_start(buffers, ONLINE_MERGE_MODE_SCALAR_ONLY);
+    int saw_busy;
+    online_merge_wait_t wait_result = smu_wait(&saw_busy);
+    uint64_t scalar_end = benchmark_get_cycle64();
+    if (wait_result == ONLINE_MERGE_WAIT_OK) {
+      run_rvv_weighted_update(buffers);
+    }
+    uint64_t end = benchmark_get_cycle64();
+    trace_marker_stop(ONLINE_MERGE_IMPLEMENTATION_A1, repeat);
+    samples[repeat].cycles = end - start;
+    samples[repeat].smu_scalar_cycles = scalar_end - start;
+    samples[repeat].rvv_vector_cycles = end - scalar_end;
+    samples[repeat].saw_busy = saw_busy;
+    samples[repeat].status = wait_status(wait_result);
+    stop_tcdm_counters(&samples[repeat]);
+    smu_clear_done();
+    if (wait_result != ONLINE_MERGE_WAIT_OK) {
+      return (int)repeat + 1;
+    }
+    metrics[repeat] = check_output(buffers);
+  }
+  return 0;
+}
+
 static int run_b3(online_merge_buffers_t *buffers,
                   online_merge_sample_t *samples,
                   online_merge_metrics_t *metrics) {
   clear_output(buffers);
-  smu_start(buffers);
+  smu_start(buffers, ONLINE_MERGE_MODE_FULL);
   int warmup_busy;
   online_merge_wait_t warmup = smu_wait(&warmup_busy);
   smu_clear_done();
@@ -471,7 +545,7 @@ static int run_b3(online_merge_buffers_t *buffers,
     start_tcdm_counters();
     trace_marker_start(ONLINE_MERGE_IMPLEMENTATION_B3, repeat);
     uint64_t start = benchmark_get_cycle64();
-    smu_start(buffers);
+    smu_start(buffers, ONLINE_MERGE_MODE_FULL);
     int saw_busy;
     online_merge_wait_t wait_result = smu_wait(&saw_busy);
     uint64_t end = benchmark_get_cycle64();
@@ -550,6 +624,10 @@ static void print_result(const char *implementation, int repeat,
   PRINTF("\"case_class\":\"%s\",", ONLINE_MERGE_CASE_CLASS);
   PRINTF("\"repeat\":%d,", repeat);
   PRINTF("\"cycles_hi\":%u,\"cycles_lo\":%u,", cycles_hi, cycles_lo);
+  PRINTF("\"smu_scalar_cycles\":%llu,",
+         (unsigned long long)sample->smu_scalar_cycles);
+  PRINTF("\"rvv_vector_cycles\":%llu,",
+         (unsigned long long)sample->rvv_vector_cycles);
   PRINTF("\"tcdm_accessed\":%u,", sample->tcdm_accessed);
   PRINTF("\"tcdm_congested\":%u,", sample->tcdm_congested);
   PRINTF("\"max_abs_bits\":%u,", float_bits(metrics->max_abs));
@@ -570,7 +648,7 @@ static void print_result(const char *implementation, int repeat,
 
 static void print_terminal_status(const online_merge_buffers_t *buffers,
                                   const char *status) {
-  const char *implementations[] = {"B1", "B2-R", "B3"};
+  const char *implementations[] = {"B1", "B2-R", "A1", "B3"};
   online_merge_sample_t sample = {
       .status = status,
   };
@@ -578,7 +656,7 @@ static void print_terminal_status(const online_merge_buffers_t *buffers,
       .max_rel_denominator = 1.0f,
       .passed = 1,
   };
-  for (uint32_t i = 0; i < 3; i++) {
+  for (uint32_t i = 0; i < 4; i++) {
     print_result(implementations[i], -1, buffers, &sample, &metrics, status);
   }
 }
@@ -638,13 +716,16 @@ int main(void) {
 
   online_merge_sample_t b1_samples[ONLINE_MERGE_MAX_REPEATS] = {0};
   online_merge_sample_t b2_r_samples[ONLINE_MERGE_MAX_REPEATS] = {0};
+  online_merge_sample_t a1_samples[ONLINE_MERGE_MAX_REPEATS] = {0};
   online_merge_sample_t b3_samples[ONLINE_MERGE_MAX_REPEATS] = {0};
   online_merge_metrics_t b1_metrics[ONLINE_MERGE_MAX_REPEATS] = {0};
   online_merge_metrics_t b2_r_metrics[ONLINE_MERGE_MAX_REPEATS] = {0};
+  online_merge_metrics_t a1_metrics[ONLINE_MERGE_MAX_REPEATS] = {0};
   online_merge_metrics_t b3_metrics[ONLINE_MERGE_MAX_REPEATS] = {0};
 
   run_b1(&buffers, b1_samples, b1_metrics);
   run_b2_r(&buffers, b2_r_samples, b2_r_metrics);
+  int a1_result = run_a1(&buffers, a1_samples, a1_metrics);
   int b3_result = run_b3(&buffers, b3_samples, b3_metrics);
 
   for (uint32_t repeat = 0; repeat < ONLINE_MERGE_CASE_REPEATS; repeat++) {
@@ -652,6 +733,23 @@ int main(void) {
                  &b1_metrics[repeat], 0);
     print_result("B2-R", (int)repeat, &buffers, &b2_r_samples[repeat],
                  &b2_r_metrics[repeat], 0);
+  }
+  if (a1_result == 0) {
+    for (uint32_t repeat = 0; repeat < ONLINE_MERGE_CASE_REPEATS; repeat++) {
+      print_result("A1", (int)repeat, &buffers, &a1_samples[repeat],
+                   &a1_metrics[repeat], 0);
+    }
+  } else if (a1_result < 0) {
+    const char *status = a1_samples[0].status != 0
+                             ? a1_samples[0].status
+                             : "tool_error";
+    print_result("A1", -1, &buffers, &a1_samples[0], &a1_metrics[0], status);
+  } else {
+    uint32_t failed_repeat = (uint32_t)(a1_result - 1);
+    for (uint32_t repeat = 0; repeat <= failed_repeat; repeat++) {
+      print_result("A1", (int)repeat, &buffers, &a1_samples[repeat],
+                   &a1_metrics[repeat], 0);
+    }
   }
   if (b3_result == 0) {
     for (uint32_t repeat = 0; repeat < ONLINE_MERGE_CASE_REPEATS; repeat++) {
@@ -673,10 +771,12 @@ int main(void) {
 
   print_first_failure("B1", &buffers, b1_metrics);
   print_first_failure("B2-R", &buffers, b2_r_metrics);
+  print_first_failure("A1", &buffers, a1_metrics);
   print_first_failure("B3", &buffers, b3_metrics);
 
   int result = metrics_pass(b1_metrics) && metrics_pass(b2_r_metrics) &&
-               b3_result == 0 && metrics_pass(b3_metrics);
+               a1_result == 0 && metrics_pass(a1_metrics) && b3_result == 0 &&
+               metrics_pass(b3_metrics);
   PRINTF("online-softmax-merge %s\n", result ? "PASS" : "FAILURE");
   snrt_cluster_hw_barrier();
   return result ? 0 : -1;

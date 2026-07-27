@@ -44,6 +44,9 @@ module spatz_cluster_peripheral
   output logic [31:0]                merge_n_o,
   output logic [31:0]                merge_d_o,
   output logic [31:0]                merge_stride_o,
+  output logic [31:0]                merge_mode_o,
+  output addr_t                      merge_dst_weight_old_o,
+  output addr_t                      merge_dst_weight_tile_o,
   output logic                       merge_start_o,
   output logic                       merge_clear_done_o,
   input  logic                       merge_busy_i,
@@ -115,6 +118,9 @@ module spatz_cluster_peripheral
   assign merge_n_o           = reg2hw.merge_n.q;
   assign merge_d_o           = reg2hw.merge_d.q;
   assign merge_stride_o      = reg2hw.merge_stride.q;
+  assign merge_mode_o        = reg2hw.merge_mode.q;
+  assign merge_dst_weight_old_o = addr_t'(reg2hw.merge_dst_weight_old.q);
+  assign merge_dst_weight_tile_o = addr_t'(reg2hw.merge_dst_weight_tile.q);
   assign merge_start_o       = reg2hw.merge_ctrl.start.qe & reg2hw.merge_ctrl.start.q;
   assign merge_clear_done_o  = reg2hw.merge_ctrl.clear_done.qe & reg2hw.merge_ctrl.clear_done.q;
   assign hw2reg.merge_status.busy.d  = merge_busy_i;

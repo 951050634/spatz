@@ -320,6 +320,15 @@ module spatz_cluster_peripheral_reg_top #(
   logic [31:0] merge_stride_qs;
   logic [31:0] merge_stride_wd;
   logic merge_stride_we;
+  logic [31:0] merge_mode_qs;
+  logic [31:0] merge_mode_wd;
+  logic merge_mode_we;
+  logic [31:0] merge_dst_weight_old_qs;
+  logic [31:0] merge_dst_weight_old_wd;
+  logic merge_dst_weight_old_we;
+  logic [31:0] merge_dst_weight_tile_qs;
+  logic [31:0] merge_dst_weight_tile_wd;
+  logic merge_dst_weight_tile_we;
   logic merge_ctrl_start_wd;
   logic merge_ctrl_start_we;
   logic merge_ctrl_clear_done_wd;
@@ -2520,6 +2529,87 @@ module spatz_cluster_peripheral_reg_top #(
   );
 
 
+  // R[merge_mode]: V(False)
+
+  prim_subreg #(
+    .DW      (32),
+    .SWACCESS("RW"),
+    .RESVAL  (32'h0)
+  ) u_merge_mode (
+    .clk_i   (clk_i    ),
+    .rst_ni  (rst_ni  ),
+
+    // from register interface
+    .we     (merge_mode_we),
+    .wd     (merge_mode_wd),
+
+    // from internal hardware
+    .de     (1'b0),
+    .d      ('0  ),
+
+    // to internal hardware
+    .qe     (),
+    .q      (reg2hw.merge_mode.q ),
+
+    // to register interface (read)
+    .qs     (merge_mode_qs)
+  );
+
+
+  // R[merge_dst_weight_old]: V(False)
+
+  prim_subreg #(
+    .DW      (32),
+    .SWACCESS("RW"),
+    .RESVAL  (32'h0)
+  ) u_merge_dst_weight_old (
+    .clk_i   (clk_i    ),
+    .rst_ni  (rst_ni  ),
+
+    // from register interface
+    .we     (merge_dst_weight_old_we),
+    .wd     (merge_dst_weight_old_wd),
+
+    // from internal hardware
+    .de     (1'b0),
+    .d      ('0  ),
+
+    // to internal hardware
+    .qe     (),
+    .q      (reg2hw.merge_dst_weight_old.q ),
+
+    // to register interface (read)
+    .qs     (merge_dst_weight_old_qs)
+  );
+
+
+  // R[merge_dst_weight_tile]: V(False)
+
+  prim_subreg #(
+    .DW      (32),
+    .SWACCESS("RW"),
+    .RESVAL  (32'h0)
+  ) u_merge_dst_weight_tile (
+    .clk_i   (clk_i    ),
+    .rst_ni  (rst_ni  ),
+
+    // from register interface
+    .we     (merge_dst_weight_tile_we),
+    .wd     (merge_dst_weight_tile_wd),
+
+    // from internal hardware
+    .de     (1'b0),
+    .d      ('0  ),
+
+    // to internal hardware
+    .qe     (),
+    .q      (reg2hw.merge_dst_weight_tile.q ),
+
+    // to register interface (read)
+    .qs     (merge_dst_weight_tile_qs)
+  );
+
+
   // R[merge_ctrl]: V(True)
 
   //   F[start]: 0:0
@@ -2601,7 +2691,7 @@ module spatz_cluster_peripheral_reg_top #(
 
 
 
-  logic [26:0] addr_hit;
+  logic [29:0] addr_hit;
   always_comb begin
     addr_hit = '0;
     addr_hit[ 0] = (reg_addr == SPATZ_CLUSTER_PERIPHERAL_PERF_COUNTER_ENABLE_0_OFFSET);
@@ -2629,8 +2719,11 @@ module spatz_cluster_peripheral_reg_top #(
     addr_hit[22] = (reg_addr == SPATZ_CLUSTER_PERIPHERAL_MERGE_N_OFFSET);
     addr_hit[23] = (reg_addr == SPATZ_CLUSTER_PERIPHERAL_MERGE_D_OFFSET);
     addr_hit[24] = (reg_addr == SPATZ_CLUSTER_PERIPHERAL_MERGE_STRIDE_OFFSET);
-    addr_hit[25] = (reg_addr == SPATZ_CLUSTER_PERIPHERAL_MERGE_CTRL_OFFSET);
-    addr_hit[26] = (reg_addr == SPATZ_CLUSTER_PERIPHERAL_MERGE_STATUS_OFFSET);
+    addr_hit[25] = (reg_addr == SPATZ_CLUSTER_PERIPHERAL_MERGE_MODE_OFFSET);
+    addr_hit[26] = (reg_addr == SPATZ_CLUSTER_PERIPHERAL_MERGE_DST_WEIGHT_OLD_OFFSET);
+    addr_hit[27] = (reg_addr == SPATZ_CLUSTER_PERIPHERAL_MERGE_DST_WEIGHT_TILE_OFFSET);
+    addr_hit[28] = (reg_addr == SPATZ_CLUSTER_PERIPHERAL_MERGE_CTRL_OFFSET);
+    addr_hit[29] = (reg_addr == SPATZ_CLUSTER_PERIPHERAL_MERGE_STATUS_OFFSET);
   end
 
   assign addrmiss = (reg_re || reg_we) ? ~|addr_hit : 1'b0 ;
@@ -2664,7 +2757,10 @@ module spatz_cluster_peripheral_reg_top #(
                (addr_hit[23] & (|(SPATZ_CLUSTER_PERIPHERAL_PERMIT[23] & ~reg_be))) |
                (addr_hit[24] & (|(SPATZ_CLUSTER_PERIPHERAL_PERMIT[24] & ~reg_be))) |
                (addr_hit[25] & (|(SPATZ_CLUSTER_PERIPHERAL_PERMIT[25] & ~reg_be))) |
-               (addr_hit[26] & (|(SPATZ_CLUSTER_PERIPHERAL_PERMIT[26] & ~reg_be)))));
+               (addr_hit[26] & (|(SPATZ_CLUSTER_PERIPHERAL_PERMIT[26] & ~reg_be))) |
+               (addr_hit[27] & (|(SPATZ_CLUSTER_PERIPHERAL_PERMIT[27] & ~reg_be))) |
+               (addr_hit[28] & (|(SPATZ_CLUSTER_PERIPHERAL_PERMIT[28] & ~reg_be))) |
+               (addr_hit[29] & (|(SPATZ_CLUSTER_PERIPHERAL_PERMIT[29] & ~reg_be)))));
   end
 
   assign perf_counter_enable_0_cycle_0_we = addr_hit[0] & reg_we & !reg_error;
@@ -2923,17 +3019,26 @@ module spatz_cluster_peripheral_reg_top #(
   assign merge_stride_we = addr_hit[24] & reg_we & !reg_error;
   assign merge_stride_wd = reg_wdata[31:0];
 
-  assign merge_ctrl_start_we = addr_hit[25] & reg_we & !reg_error;
+  assign merge_mode_we = addr_hit[25] & reg_we & !reg_error;
+  assign merge_mode_wd = reg_wdata[31:0];
+
+  assign merge_dst_weight_old_we = addr_hit[26] & reg_we & !reg_error;
+  assign merge_dst_weight_old_wd = reg_wdata[31:0];
+
+  assign merge_dst_weight_tile_we = addr_hit[27] & reg_we & !reg_error;
+  assign merge_dst_weight_tile_wd = reg_wdata[31:0];
+
+  assign merge_ctrl_start_we = addr_hit[28] & reg_we & !reg_error;
   assign merge_ctrl_start_wd = reg_wdata[0];
 
-  assign merge_ctrl_clear_done_we = addr_hit[25] & reg_we & !reg_error;
+  assign merge_ctrl_clear_done_we = addr_hit[28] & reg_we & !reg_error;
   assign merge_ctrl_clear_done_wd = reg_wdata[1];
 
-  assign merge_status_busy_re = addr_hit[26] & reg_re & !reg_error;
+  assign merge_status_busy_re = addr_hit[29] & reg_re & !reg_error;
 
-  assign merge_status_done_re = addr_hit[26] & reg_re & !reg_error;
+  assign merge_status_done_re = addr_hit[29] & reg_re & !reg_error;
 
-  assign merge_status_error_re = addr_hit[26] & reg_re & !reg_error;
+  assign merge_status_error_re = addr_hit[29] & reg_re & !reg_error;
 
   // Read data return
   always_comb begin
@@ -3100,11 +3205,23 @@ module spatz_cluster_peripheral_reg_top #(
       end
 
       addr_hit[25]: begin
+        reg_rdata_next[31:0] = merge_mode_qs;
+      end
+
+      addr_hit[26]: begin
+        reg_rdata_next[31:0] = merge_dst_weight_old_qs;
+      end
+
+      addr_hit[27]: begin
+        reg_rdata_next[31:0] = merge_dst_weight_tile_qs;
+      end
+
+      addr_hit[28]: begin
         reg_rdata_next[0] = '0;
         reg_rdata_next[1] = '0;
       end
 
-      addr_hit[26]: begin
+      addr_hit[29]: begin
         reg_rdata_next[0] = merge_status_busy_qs;
         reg_rdata_next[1] = merge_status_done_qs;
         reg_rdata_next[2] = merge_status_error_qs;

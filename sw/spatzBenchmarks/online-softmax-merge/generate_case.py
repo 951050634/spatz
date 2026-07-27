@@ -33,7 +33,7 @@ CASE_KINDS = (
 
 
 def layout_bytes(n: int, d: int) -> tuple[int, int]:
-    footprint = n * (32 + 16 * d)
+    footprint = n * (40 + 16 * d)
     allocation = (
         (footprint + ALLOCATION_ALIGNMENT_BYTES - 1)
         // ALLOCATION_ALIGNMENT_BYTES

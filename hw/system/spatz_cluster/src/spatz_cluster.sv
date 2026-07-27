@@ -427,7 +427,8 @@ module spatz_cluster
   addr_t merge_src_m_old, merge_src_l_old, merge_src_o_old;
   addr_t merge_src_m_tile, merge_src_l_tile, merge_src_o_tile;
   addr_t merge_dst_m, merge_dst_l, merge_dst_o;
-  logic [31:0] merge_n, merge_d, merge_stride;
+  addr_t merge_dst_weight_old, merge_dst_weight_tile;
+  logic [31:0] merge_n, merge_d, merge_stride, merge_mode;
   logic merge_start, merge_clear_done;
   logic merge_busy, merge_done, merge_error;
 
@@ -715,9 +716,12 @@ module spatz_cluster
     .dst_m_i            (tcdm_addr_t'(merge_dst_m)),
     .dst_l_i            (tcdm_addr_t'(merge_dst_l)),
     .dst_o_i            (tcdm_addr_t'(merge_dst_o)),
+    .dst_weight_old_i   (tcdm_addr_t'(merge_dst_weight_old)),
+    .dst_weight_tile_i  (tcdm_addr_t'(merge_dst_weight_tile)),
     .n_i                (merge_n),
     .d_i                (merge_d),
     .stride_i           (merge_stride),
+    .mode_i             (merge_mode),
     .start_i            (merge_start),
     .clear_done_i       (merge_clear_done),
     .busy_o             (merge_busy),
@@ -1088,6 +1092,9 @@ module spatz_cluster
     .merge_n_o                (merge_n               ),
     .merge_d_o                (merge_d               ),
     .merge_stride_o           (merge_stride          ),
+    .merge_mode_o             (merge_mode            ),
+    .merge_dst_weight_old_o   (merge_dst_weight_old  ),
+    .merge_dst_weight_tile_o  (merge_dst_weight_tile ),
     .merge_start_o            (merge_start           ),
     .merge_clear_done_o       (merge_clear_done      ),
     .merge_busy_i             (merge_busy            ),

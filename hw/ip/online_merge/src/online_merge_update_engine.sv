@@ -21,9 +21,12 @@ module online_merge_update_engine #(
   input  logic [AddrWidth-1:0] dst_m_i,
   input  logic [AddrWidth-1:0] dst_l_i,
   input  logic [AddrWidth-1:0] dst_o_i,
+  input  logic [AddrWidth-1:0] dst_weight_old_i,
+  input  logic [AddrWidth-1:0] dst_weight_tile_i,
   input  logic [31:0]          n_i,
   input  logic [31:0]          d_i,
   input  logic [31:0]          stride_i,
+  input  logic [31:0]          mode_i,
   input  logic                 start_i,
   input  logic                 clear_done_i,
 
@@ -60,6 +63,8 @@ module online_merge_update_engine #(
     RD_L_TILE,
     WR_M_OUT,
     WR_L_OUT,
+    WR_WEIGHT_OLD,
+    WR_WEIGHT_TILE,
     RD_O_OLD,
     RD_O_TILE,
     WR_O_OUT
@@ -75,7 +80,7 @@ module online_merge_update_engine #(
 
   logic [31:0] row_q, elem_q;
   logic [2:0] scalar_idx_q;
-  logic [1:0] store_idx_q;
+  logic [2:0] store_idx_q;
   logic [1:0] vector_idx_q;
   logic [31:0] m_old_q, l_old_q, m_tile_q, l_tile_q;
   logic [31:0] m_new_q, l_new_q, o_old_q, o_tile_q, o_new_q;
@@ -163,13 +168,18 @@ module online_merge_update_engine #(
 
   function automatic logic valid_cfg;
     logic stride_aligned;
+    logic scalar_only;
     begin
+      scalar_only = mode_i == 32'd1;
       stride_aligned = (stride_i == 32'd0) || (stride_i[1:0] == 2'b00);
-      valid_cfg = (n_i != 32'd0) && (d_i != 32'd0) && stride_aligned &&
+      valid_cfg = ((mode_i == 32'd0) || scalar_only) &&
+          (n_i != 32'd0) && (d_i != 32'd0) && stride_aligned &&
           is_aligned(src_m_old_i) && is_aligned(src_l_old_i) &&
           is_aligned(src_o_old_i) && is_aligned(src_m_tile_i) &&
           is_aligned(src_l_tile_i) && is_aligned(src_o_tile_i) &&
-          is_aligned(dst_m_i) && is_aligned(dst_l_i) && is_aligned(dst_o_i);
+          is_aligned(dst_m_i) && is_aligned(dst_l_i) && is_aligned(dst_o_i) &&
+          (!scalar_only || (is_aligned(dst_weight_old_i) &&
+                            is_aligned(dst_weight_tile_i)));
     end
   endfunction
 
@@ -428,30 +438,61 @@ module online_merge_update_engine #(
         end
 
         STORE_SCALAR: begin
-          if (!req_valid_q && !read_pending_q && (store_idx_q < 2'd2)) begin
+          if (!req_valid_q && !read_pending_q &&
+              (store_idx_q < ((mode_i == 32'd1) ? 3'd4 : 3'd2))) begin
             req_valid_q <= 1'b1;
             req_write_q <= 1'b1;
-            req_addr_q <= (store_idx_q == 2'd0)
-                              ? scalar_addr(dst_m_i, row_q)
-                              : scalar_addr(dst_l_i, row_q);
-            req_wdata_q <= pack_fp32(
-              (store_idx_q == 2'd0) ? m_new_q : l_new_q,
-              (store_idx_q == 2'd0)
-                ? scalar_addr(dst_m_i, row_q)
-                : scalar_addr(dst_l_i, row_q)
-            );
-            req_strb_q <= fp32_strb(
-              (store_idx_q == 2'd0)
-                ? scalar_addr(dst_m_i, row_q)
-                : scalar_addr(dst_l_i, row_q)
-            );
-            op_q <= (store_idx_q == 2'd0) ? WR_M_OUT : WR_L_OUT;
+            unique case (store_idx_q)
+              3'd0: begin
+                req_addr_q <= scalar_addr(dst_m_i, row_q);
+                req_wdata_q <= pack_fp32(m_new_q,
+                                         scalar_addr(dst_m_i, row_q));
+                req_strb_q <= fp32_strb(scalar_addr(dst_m_i, row_q));
+                op_q <= WR_M_OUT;
+              end
+              3'd1: begin
+                req_addr_q <= scalar_addr(dst_l_i, row_q);
+                req_wdata_q <= pack_fp32(l_new_q,
+                                         scalar_addr(dst_l_i, row_q));
+                req_strb_q <= fp32_strb(scalar_addr(dst_l_i, row_q));
+                op_q <= WR_L_OUT;
+              end
+              3'd2: begin
+                req_addr_q <= scalar_addr(dst_weight_old_i, row_q);
+                req_wdata_q <= pack_fp32(uq16_16_to_fp32(old_weight_q),
+                                         scalar_addr(dst_weight_old_i, row_q));
+                req_strb_q <= fp32_strb(
+                    scalar_addr(dst_weight_old_i, row_q));
+                op_q <= WR_WEIGHT_OLD;
+              end
+              default: begin
+                req_addr_q <= scalar_addr(dst_weight_tile_i, row_q);
+                req_wdata_q <= pack_fp32(uq16_16_to_fp32(tile_weight_q),
+                                         scalar_addr(dst_weight_tile_i, row_q));
+                req_strb_q <= fp32_strb(
+                    scalar_addr(dst_weight_tile_i, row_q));
+                op_q <= WR_WEIGHT_TILE;
+              end
+            endcase
           end else if (req_valid_q && tcdm_rsp_i.q_ready) begin
-            store_idx_q <= store_idx_q + 2'd1;
-          end else if (!req_valid_q && !read_pending_q && (store_idx_q == 2'd2)) begin
-            elem_q <= '0;
-            vector_idx_q <= '0;
-            state_q <= UPDATE_VECTOR;
+            store_idx_q <= store_idx_q + 3'd1;
+          end else if (!req_valid_q && !read_pending_q &&
+                       (store_idx_q == ((mode_i == 32'd1) ? 3'd4 : 3'd2))) begin
+            if (mode_i == 32'd1) begin
+              if (row_q == (n_i - 32'd1)) begin
+                done_q <= 1'b1;
+                state_q <= DONE;
+              end else begin
+                row_q <= row_q + 32'd1;
+                scalar_idx_q <= '0;
+                store_idx_q <= '0;
+                state_q <= LOAD_SCALAR;
+              end
+            end else begin
+              elem_q <= '0;
+              vector_idx_q <= '0;
+              state_q <= UPDATE_VECTOR;
+            end
           end
         end
 
