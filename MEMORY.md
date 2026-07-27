@@ -1,1 +1,1 @@
-- [一些思考](docs/online-softmax-merge-engine/一些思考.md) — 性能数据本质、加速原因分析、频率一致性证明、汇报规划、Spatz硬件架构设计、SMU专用加速器设计
+- [SMU设计与创新点](docs/online-softmax-merge-engine/SMU设计与创新点.md) — 研究定位、SMU 架构、执行边界、创新性审计与主张范围

@@ -1,50 +1,42 @@
-# Online Softmax Merge-Update Engine
+# Online Softmax Merge 加速项目文档
 
-本目录用于记录在 Spatz 平台上新增 online softmax merge 硬件旁路引擎的工程计划、阶段成果和 Git 状态。
+本目录只讨论 Spatz 向量 cluster 中的 online softmax merge 加速。当前论文主线是：
+SMU 卸载逐行 scalar recurrence，RVV 保留高吞吐 `O[D]` 更新。
 
-目标分支：
+截至 2026-07-20，A0/A1/A2 消融已经支持这一执行边界。A1 相对 A0 在三个 anchor
+上加速 `1.38x` 至 `5.55x`，并在两个中大规模 anchor 上分别比 Full SMU 快
+`1.37x` 和 `2.01x`。
 
-```text
-feature/online-softmax-merge-engine
-```
+## 文档结构
 
-文档说明：
+| 顺序 | 文档 | 内容 |
+| ---: | --- | --- |
+| 1 | [SMU设计与创新点.md](SMU设计与创新点.md) | 研究问题、SMU 结构、执行边界、创新性审计与主张范围 |
+| 2 | [实验设计与结果.md](实验设计与结果.md) | A0/A1/A2、规模、FSM、并发、正确性和 proxy 结果 |
+| 3 | [论文计划.md](论文计划.md) | 论文论点、章节、图表、剩余工作和完成标准 |
+| 4 | [复现与证据索引.md](复现与证据索引.md) | 配置、命令、artifact、哈希和证据等级 |
+| 5 | [A1标量卸载实验.md](A1标量卸载实验.md) | A1 三点验证的详细数据与 provenance |
+| 6 | [补充实验进度.md](补充实验进度.md) | checkpoint、失败记录和完整审计日志 |
 
-- [PLAN.md](PLAN.md)：完整实施流程、阶段节点、目标和验收标准。
-- [PHASE_RESULTS.md](PHASE_RESULTS.md)：各阶段执行结果、证据和备注记录。
-- [GIT_NOTES.md](GIT_NOTES.md)：分支状态、提交策略和 Git 操作记录。
-- [COMPARISON_EXPERIMENT.md](COMPARISON_EXPERIMENT.md)：CPU scalar path 与
-  merge engine path 的 A/B 对比实验、原始数据和评估结论。
-- [PAPER_ROADMAP.md](PAPER_ROADMAP.md)：受限语义原型论文和完整
-  online softmax/attention 加速论文的双路线规划。
-- [PAPER_B_FULL_SYSTEM_PLAN.md](PAPER_B_FULL_SYSTEM_PLAN.md)：论文 B 完整
-  旁路 SMU 系统实现计划和分阶段验收标准。
-- [PAPER_AB_ARTICLE_POSITIONING.md](PAPER_AB_ARTICLE_POSITIONING.md)：将论文 A
-  和论文 B 合成一篇文章时的故事线、贡献点、可扩展性口径和限制边界。
-- [RESEARCH_TO_PAPER_PLAN.md](RESEARCH_TO_PAPER_PLAN.md)：从创新性审计、关键
-  实验补充到 IEEEtran 6 页 workshop 论文交付的总计划和阶段门槛。
-- [NOVELTY_LANDSCAPE.md](NOVELTY_LANDSCAPE.md)：多源检索策略、竞争工作矩阵、
-  closest-prior-art 风险和创新性判定状态。
-- [CLAIM_EVIDENCE_MATRIX.md](CLAIM_EVIDENCE_MATRIX.md)：候选论文主张、本地证据、
-  prior-art 风险和允许使用的措辞。
+前四份文档构成当前主线。A1 明细和补充实验进度只提供复现与审计信息。
 
-v1 的默认方向是在 cluster 内新增一个由 MMIO 寄存器控制、带 TCDM master 端口的 Streaming Merge-Update Engine。软件负责配置地址和维度并启动引擎，硬件直接在 TCDM 中流式读取和更新 online softmax merge 状态。
+## 当前状态
 
-## 当前实现边界
+| 工作 | 状态 | 结论或下一步 |
+| --- | --- | --- |
+| 公平 B2-R/B3 baseline | 完成 | 16 个实测点上 B3 均快于 B2-R |
+| A0/A1/A2 消融 | 验证完成 | A1 在两个中大规模 anchor 上优于 A2 |
+| A1 正式证据 | 待收口 | 在 clean commit 上复跑三个 anchor |
+| FSM 与瓶颈分解 | 完成 | 中大规模由 SMU vector streaming 主导 |
+| TCDM 并发 | 完成 | 当前单引擎场景可以有效重叠 |
+| 数值正确性 | 支撑当前实现 | 不扩展为 LUT 设计空间研究 |
+| closest prior art 全文核验 | 进行中 | 决定最终创新措辞 |
+| 论文重写 | 待开始 | 围绕 scalar-SMU/RVV 执行边界组织 |
 
-截至 2026-06-06，本分支已经完成论文 A 受限语义 baseline，并在论文 B 最小闭环
-中接入完整 mixed-scalar online softmax merge datapath。当前 RTL 保持现有
-`MERGE_*` MMIO/TCDM 接口，不修改 Spatz ISA、decoder、controller、VFU、VRF、
-VLSU 或指令 pipeline。
+## 研究边界
 
-当前 SMU datapath 支持 finite normal FP32 输入以及受支持的 zero length 状态，
-内部使用 256 段 Q1.23 `exp` LUT、256 段 Q1.23 reciprocal LUT 和 Q16.32 定点
-缩放/加权累加。both-zero-`l`、非法配置、NaN/Inf/subnormal 等仍走 error 或
-unsupported 边界。
-
-`online-softmax-merge` benchmark 现在包含完整 mixed-scalar sweep、stride-zero
-packed layout、invalid config、both-zero-`l` error path、受限语义回归和
-attention-like SMU merge-chain fallback。`full-ref-probe` 已从 expected-error
-切换为 correctness gate。当前证据记录见
-[PHASE_RESULTS.md](PHASE_RESULTS.md) 和
-[COMPARISON_EXPERIMENT.md](COMPARISON_EXPERIMENT.md)。
+- 不把完整 attention、QK/PV 或 LLM 端到端性能作为必须实验；
+- 不做 LUT 段数和指数范围的大规模 sweep；
+- 不把 generic cells 或 RTL toggles 写成物理 PPA、功耗或能效；
+- 不把旧 scalar reference 的高加速比作为 headline；
+- 不把开发阶段或历史论文路线写成贡献。

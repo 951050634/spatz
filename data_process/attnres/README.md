@@ -50,13 +50,13 @@ python data_process/attnres/code/plot_attnres_results.py
 data_process/attnres/pic/
 ```
 
-当前环境如果没有 `matplotlib`，可用 stdlib-only SVG fallback 生成 Paper B 图：
+当前环境如果没有 `matplotlib`，可用 stdlib-only SVG fallback 生成旧版 SVG 图：
 
 ```bash
 python3 data_process/attnres/code/plot_paper_b_svg.py
 ```
 
-论文 B 的完整 online softmax merge 数值模型可以单独复现：
+完整 online softmax merge 数值模型可以单独复现：
 
 ```bash
 python data_process/attnres/code/full_merge_numeric_model.py
@@ -142,7 +142,7 @@ data/online_softmax_merge_bypass.csv
 这组数据来自 `online-softmax-merge` RTL benchmark，原始实验记录见：
 
 ```text
-docs/online-softmax-merge-engine/COMPARISON_EXPERIMENT.md
+docs/online-softmax-merge-engine/实验设计与结果.md
 ```
 
 这组数据是当前最适合展示“添加硬件旁路可以提升效率”的证据。
@@ -226,11 +226,11 @@ cycle_reduction = (cpu_cycles - engine_cycles) / cpu_cycles
 
 `online_softmax_merge_engine_flow.png`
 
-- 展示论文 A 使用的 engine 控制流图，包括正常流和 error path。
+- 展示 engine 控制流，包括正常流和 error path。
 
 `online_softmax_merge_cluster_integration.png`
 
-- 展示论文 A 使用的 Spatz cluster 集成图，标出 core TCDM ports、AXI-to-TCDM、
+- 展示 Spatz cluster 集成图，标出 core TCDM ports、AXI-to-TCDM、
   merge engine TCDM master、TCDM interconnect、TCDM banks 和 MMIO 寄存器控制路径。
 
 ### 稳定性记录
@@ -240,7 +240,7 @@ case 输出。三次运行的 cycle 和 TCDM counter 逐项一致；CTest wall t
 229.02 秒、232.16 秒和 219.20 秒。论文中应使用 cycle/counter 作为主要指标，
 不要把 wall time 当作架构性能结论。
 
-## 第三组：论文 B 完整方程数值模型
+## 第三组：完整方程数值模型
 
 数据文件：
 
@@ -248,7 +248,7 @@ case 输出。三次运行的 cycle 和 TCDM counter 逐项一致；CTest wall t
 data/online_softmax_full_merge_numeric.csv
 ```
 
-这组数据来自 host Python 模型，不是 RTL cycle 结果。它用于 Phase B1：固定完整
+这组数据来自 host Python 模型，不是 RTL cycle 结果。它用于固定完整
 online softmax merge reference、建立与后续 RTL 计划一致的 `ExpLUT + reciprocal`
 近似模型，并记录误差指标。
 
@@ -276,12 +276,12 @@ ref_l0_bits=0x3f5e3b41
 ref_o00_bits=0xbe567a2c
 ```
 
-备注：早期 benchmark 文档记录过 `ref_o00=0xbe567a2b`。Phase B1 复核后确认，
+备注：早期 benchmark 文档记录过 `ref_o00=0xbe567a2b`。复核后确认，
 若以 C benchmark 中已经舍入到 FP32 的 input buffer 为 authoritative 输入，
 golden 应为 `0xbe567a2c`；旧值对应更理想化十进制输入的一次最终舍入。后续
 RTL correctness gate 应使用本节记录的 FP32-buffer golden。
 
-## 第四组：论文 B full mixed-scalar RTL 数据
+## 第四组：Full mixed-scalar RTL 数据
 
 数据文件：
 
