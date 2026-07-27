@@ -113,6 +113,29 @@ def validated_observations(
     )
 
 
+class A1ObservationSelectionTest(unittest.TestCase):
+    def test_scalar_only_prefix_is_excluded_from_full_smu_analysis(self) -> None:
+        scalar_only = [
+            {
+                **fsm_observation(invocation),
+                "update_vector_cycles": 0,
+                "busy_cycles": 6,
+            }
+            for invocation in range(4)
+        ]
+        full = [fsm_observation(invocation + 4) for invocation in range(4)]
+        selected = analysis.validate_observations(
+            scalar_only + full, (1, 1), [0, 1, 2]
+        )
+        self.assertEqual([row["invocation"] for row in selected], [0, 1, 2, 3])
+        self.assertEqual(
+            [row["source_invocation"] for row in selected], [4, 5, 6, 7]
+        )
+        self.assertTrue(
+            all(row["update_vector_cycles"] == 4 for row in selected)
+        )
+
+
 def record_map(
     *,
     n: int = 1,

@@ -1,8 +1,8 @@
 # Online Softmax Merge Experiment Runner
 
-This runner implements the common measurement and preservation protocol from
-`docs/online-softmax-merge-engine/需要补充的若干实验内容.md`.
-It currently drives the compact-buffer B1/B2-R/B3 benchmark.  B2-R reuses the
+This runner implements the measurement and preservation protocol summarized in
+`docs/online-softmax-merge-engine/复现与证据索引.md`.
+It currently drives the compact-buffer B1/B2-R/A1/B3 benchmark.  B2-R reuses the
 RTL-aligned scalar weight calculation and performs the `O[D]` update with a
 VLA RVV kernel.  Later experiment stages extend the same record and artifact
 conventions.
@@ -135,7 +135,7 @@ undecoded instruction, or missing required mnemonic is retained as
 The host and target both check the reference-inclusive compact footprint:
 
 ```text
-footprint = N * (32 + 16D) bytes
+footprint = N * (40 + 16D) bytes
 allocation = round_up(footprint, 256 bytes)
 ```
 

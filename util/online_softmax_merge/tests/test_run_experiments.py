@@ -120,6 +120,40 @@ class RunExperimentsTest(unittest.TestCase):
         self.assertEqual(summary["cycles_max"], 9)
         self.assertEqual(summary["statuses"], {"pass": 3, "timeout": 1})
 
+    def test_summary_retains_a1_component_medians(self) -> None:
+        base = {
+            "implementation": "A1",
+            "N": 8,
+            "D": 32,
+            "seed": 1,
+            "case_kind": "main",
+            "status": "pass",
+        }
+        records = [
+            {
+                **base,
+                "cycles": 120,
+                "smu_scalar_cycles": 80,
+                "rvv_vector_cycles": 40,
+            },
+            {
+                **base,
+                "cycles": 100,
+                "smu_scalar_cycles": 70,
+                "rvv_vector_cycles": 30,
+            },
+            {
+                **base,
+                "cycles": 110,
+                "smu_scalar_cycles": 75,
+                "rvv_vector_cycles": 35,
+            },
+        ]
+        summary = runner.summarize(records)[0]
+        self.assertEqual(summary["cycles_median"], 110)
+        self.assertEqual(summary["smu_scalar_cycles_median"], 75)
+        self.assertEqual(summary["rvv_vector_cycles_median"], 35)
+
     def test_malformed_structured_json_is_reported(self) -> None:
         output = runner.RESULT_PREFIX + '{"implementation":"B1"'
         records, failures, errors = runner.parse_target_output(output)
@@ -305,7 +339,7 @@ class RunExperimentsTest(unittest.TestCase):
 
     def test_capacity_precheck_uses_allocator_rounded_bytes(self) -> None:
         fitting = runner.Case(1, 5700, repeats=3)
-        skipped = runner.Case(1, 5732, repeats=3)
+        skipped = runner.Case(1, 5726, repeats=3)
         self.assertTrue(runner.capacity_fits(fitting))
         self.assertFalse(runner.capacity_fits(skipped))
         footprint, allocation = runner.layout_bytes(skipped.n, skipped.d)
@@ -314,7 +348,7 @@ class RunExperimentsTest(unittest.TestCase):
 
     def test_capacity_skip_has_explicit_case_class(self) -> None:
         records = runner.synthetic_records(
-            runner.Case(1, 5732, repeats=3), "capacity_skip"
+            runner.Case(1, 5726, repeats=3), "capacity_skip"
         )
         self.assertTrue(
             all(record["case_class"] == "capacity" for record in records)

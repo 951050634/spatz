@@ -30,7 +30,7 @@ CATEGORIES = (
 )
 POST_CAPTURE_ALLOWED_PATHS = frozenset(
     {
-        "docs/online-softmax-merge-engine/SUPPLEMENT_PROGRESS.md",
+        "docs/online-softmax-merge-engine/补充实验进度.md",
         "util/online_softmax_merge/README.md",
         "util/online_softmax_merge/analyze_toggle_proxy.py",
         "util/online_softmax_merge/tests/test_toggle_proxy.py",

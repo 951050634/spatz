@@ -27,7 +27,7 @@ from typing import Any, Iterable, Mapping, Sequence
 
 RESULT_PREFIX = "OM_RESULT "
 FAILURE_PREFIX = "OM_FAILURE "
-EXPECTED_IMPLEMENTATIONS = ("B1", "B2-R", "B3")
+EXPECTED_IMPLEMENTATIONS = ("B1", "B2-R", "A1", "B3")
 RVV_UPDATE_SYMBOL = "online_merge_rvv_update"
 RVV_REQUIRED_MNEMONICS = (
     "vsetvli",
@@ -176,7 +176,7 @@ def is_relative_to(path: Path, parent: Path) -> bool:
 
 
 def layout_bytes(n: int, d: int) -> tuple[int, int]:
-    footprint = n * (32 + 16 * d)
+    footprint = n * (40 + 16 * d)
     allocation = (
         (footprint + ALLOCATION_ALIGNMENT_BYTES - 1)
         // ALLOCATION_ALIGNMENT_BYTES
@@ -835,6 +835,20 @@ def summarize(records: Iterable[dict[str, Any]]) -> list[dict[str, Any]]:
             if record.get("status") == "pass"
             and record.get("cycles") is not None
         ]
+        passing_smu_scalar_cycles = [
+            int(record["smu_scalar_cycles"])
+            for record in group
+            if record.get("status") == "pass"
+            and record.get("smu_scalar_cycles") is not None
+            and int(record["smu_scalar_cycles"]) > 0
+        ]
+        passing_rvv_vector_cycles = [
+            int(record["rvv_vector_cycles"])
+            for record in group
+            if record.get("status") == "pass"
+            and record.get("rvv_vector_cycles") is not None
+            and int(record["rvv_vector_cycles"]) > 0
+        ]
         statuses: dict[str, int] = {}
         for record in group:
             status = str(record.get("status", "tool_error"))
@@ -855,6 +869,16 @@ def summarize(records: Iterable[dict[str, Any]]) -> list[dict[str, Any]]:
                     else None
                 ),
                 "cycles_max": max(passing_cycles) if passing_cycles else None,
+                "smu_scalar_cycles_median": (
+                    statistics.median(passing_smu_scalar_cycles)
+                    if passing_smu_scalar_cycles
+                    else None
+                ),
+                "rvv_vector_cycles_median": (
+                    statistics.median(passing_rvv_vector_cycles)
+                    if passing_rvv_vector_cycles
+                    else None
+                ),
             }
         )
     return summaries
@@ -1552,7 +1576,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     run_manifest = {
         **metadata,
         "objective": (
-            "compact-buffer B1/B2-R/B3 timing, correctness, RVV gate, "
+            "compact-buffer B1/B2-R/A1/B3 timing, correctness, RVV gate, "
             "timeout, and structured-result framework"
         ),
         "wall_clock_start_end": {
@@ -1567,7 +1591,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             "tcdm_capacity_bytes": TCDM_CAPACITY_BYTES,
             "working_set_limit_bytes": TCDM_LIMIT_BYTES,
             "allocation_alignment_bytes": ALLOCATION_ALIGNMENT_BYTES,
-            "footprint_formula": "N * (32 + 16D)",
+            "footprint_formula": "N * (40 + 16D)",
         },
         "known_limitations": [
             "Verilator cycles are a same-configuration runtime proxy.",

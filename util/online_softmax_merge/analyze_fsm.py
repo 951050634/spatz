@@ -456,13 +456,25 @@ def validate_observations(
     repeats: Sequence[int],
 ) -> list[dict[str, Any]]:
     expected_invocations = list(range(len(repeats) + 1))
-    if len(observations) != len(expected_invocations):
+    selected_observations = list(observations)
+    if len(selected_observations) == 2 * len(expected_invocations):
+        # A1 scalar-only runs immediately before B3 and emits its own FSM
+        # records. The Full-SMU analysis consumes the trailing B3 sequence.
+        selected_observations = selected_observations[
+            len(expected_invocations):
+        ]
+        selected_observations = [
+            {**record, "source_invocation": record.get("invocation"),
+             "invocation": invocation}
+            for invocation, record in enumerate(selected_observations)
+        ]
+    if len(selected_observations) != len(expected_invocations):
         raise AnalysisError(
             f"{coordinate} expected {len(expected_invocations)} FSM records, "
             f"got {len(observations)}"
         )
     by_invocation = {}
-    for raw in observations:
+    for raw in selected_observations:
         record = dict(raw)
         if require_int(record, "schema_version") != 1:
             raise AnalysisError("unsupported FSM schema version")
