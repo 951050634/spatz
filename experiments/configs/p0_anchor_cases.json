@@ -1,0 +1,29 @@
+[
+  {
+    "N": 1,
+    "D": 1,
+    "seed": 1,
+    "case_kind": "main",
+    "size_class": "SMALL",
+    "timeout_seconds": 1800,
+    "max_kernel_cycles": 100000
+  },
+  {
+    "N": 8,
+    "D": 32,
+    "seed": 1,
+    "case_kind": "main",
+    "size_class": "TYPICAL",
+    "timeout_seconds": 1800,
+    "max_kernel_cycles": 10000000
+  },
+  {
+    "N": 16,
+    "D": 64,
+    "seed": 1,
+    "case_kind": "main",
+    "size_class": "LARGE",
+    "timeout_seconds": 3600,
+    "max_kernel_cycles": 50000000
+  }
+]

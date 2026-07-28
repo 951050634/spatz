@@ -1,0 +1,11 @@
+[
+  {
+    "N": 1,
+    "D": 1,
+    "seed": 1,
+    "case_kind": "main",
+    "size_class": "FRAMEWORK_SMOKE",
+    "timeout_seconds": 900,
+    "max_kernel_cycles": 100000
+  }
+]
