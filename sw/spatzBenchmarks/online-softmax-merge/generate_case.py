@@ -14,9 +14,13 @@ from pathlib import Path
 from typing import Iterable
 
 TCDM_CAPACITY_BYTES = 128 * 1024
-TCDM_WORKING_SET_NUMERATOR = 7
+TCDM_WORKING_SET_NUMERATOR = 8
 TCDM_WORKING_SET_DENOMINATOR = 10
 ALLOCATION_ALIGNMENT_BYTES = 256
+DEFAULT_CLUSTER_CORES = 2
+DEFAULT_STACK_LOG2 = 13
+DEFAULT_TEAM_BYTES = 112
+STACK_SKEW_BYTES_PER_CORE = 8
 UINT32_MAX = (1 << 32) - 1
 
 CASE_KINDS = (
@@ -42,14 +46,32 @@ def layout_bytes(n: int, d: int) -> tuple[int, int]:
     return footprint, allocation
 
 
-def fits_main_capacity(n: int, d: int) -> bool:
+def runtime_reserved_bytes(
+    cluster_cores: int, stack_log2: int, team_bytes: int
+) -> int:
+    return team_bytes + cluster_cores * (
+        (1 << stack_log2) + STACK_SKEW_BYTES_PER_CORE
+    )
+
+
+def fits_main_capacity(
+    n: int,
+    d: int,
+    tcdm_capacity: int = TCDM_CAPACITY_BYTES,
+    cluster_cores: int = DEFAULT_CLUSTER_CORES,
+    stack_log2: int = DEFAULT_STACK_LOG2,
+    team_bytes: int = DEFAULT_TEAM_BYTES,
+) -> bool:
     _, allocation = layout_bytes(n, d)
+    reserved = runtime_reserved_bytes(
+        cluster_cores, stack_log2, team_bytes
+    )
     limit = (
-        TCDM_CAPACITY_BYTES
+        tcdm_capacity
         * TCDM_WORKING_SET_NUMERATOR
         // TCDM_WORKING_SET_DENOMINATOR
     )
-    return allocation <= limit
+    return allocation + reserved <= limit
 
 
 def f32(value: float) -> float:
@@ -192,11 +214,29 @@ def format_u32_array(name: str, values: Iterable[float]) -> str:
 
 
 def generate_header(
-    n: int, d: int, seed: int, case_kind: str, repeats: int
+    n: int,
+    d: int,
+    seed: int,
+    case_kind: str,
+    repeats: int,
+    tcdm_capacity: int = TCDM_CAPACITY_BYTES,
+    cluster_cores: int = DEFAULT_CLUSTER_CORES,
+    stack_log2: int = DEFAULT_STACK_LOG2,
+    team_bytes: int = DEFAULT_TEAM_BYTES,
 ) -> str:
     if case_kind not in CASE_KINDS:
         raise ValueError(f"unsupported case kind: {case_kind}")
-    capacity_skip = not fits_main_capacity(n, d)
+    reserved = runtime_reserved_bytes(
+        cluster_cores, stack_log2, team_bytes
+    )
+    capacity_skip = not fits_main_capacity(
+        n,
+        d,
+        tcdm_capacity,
+        cluster_cores,
+        stack_log2,
+        team_bytes,
+    )
     if capacity_skip:
         inputs = tuple([0.0] for _ in range(6))
         golden_m, golden_l, golden_o, unsupported = [0.0], [0.0], [0.0], False
@@ -245,6 +285,9 @@ def generate_header(
             f"#define ONLINE_MERGE_CASE_CAPACITY_SKIP {int(capacity_skip)}u",
             f"#define ONLINE_MERGE_CASE_FOOTPRINT_BYTES {footprint}ull",
             f"#define ONLINE_MERGE_CASE_ALLOCATION_BYTES {allocation}ull",
+            f"#define ONLINE_MERGE_CASE_RUNTIME_RESERVED_BYTES {reserved}ull",
+            "#define ONLINE_MERGE_CASE_MEMORY_FOOTPRINT_BYTES "
+            f"{allocation + reserved}ull",
             "",
             *arrays,
             "",
@@ -259,6 +302,16 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--seed", type=int, default=1)
     parser.add_argument("--case-kind", choices=CASE_KINDS, default="main")
     parser.add_argument("--repeats", type=int, default=5)
+    parser.add_argument(
+        "--tcdm-capacity", type=int, default=TCDM_CAPACITY_BYTES
+    )
+    parser.add_argument(
+        "--cluster-cores", type=int, default=DEFAULT_CLUSTER_CORES
+    )
+    parser.add_argument(
+        "--stack-log2", type=int, default=DEFAULT_STACK_LOG2
+    )
+    parser.add_argument("--team-bytes", type=int, default=DEFAULT_TEAM_BYTES)
     parser.add_argument("--output", type=Path, required=True)
     return parser.parse_args()
 
@@ -269,12 +322,27 @@ def main() -> int:
         raise SystemExit("N and D must be positive")
     if args.n > UINT32_MAX or args.d > UINT32_MAX:
         raise SystemExit("N and D must fit in uint32_t")
-    if not 3 <= args.repeats <= 16:
-        raise SystemExit("repeats must be in [3, 16]")
+    if args.repeats != 1 and not 3 <= args.repeats <= 16:
+        raise SystemExit("repeats must be 1 or in [3, 16]")
+    if (
+        args.tcdm_capacity <= 0
+        or args.cluster_cores <= 0
+        or not 1 <= args.stack_log2 < 31
+        or args.team_bytes <= 0
+    ):
+        raise SystemExit("invalid TCDM/runtime-reservation parameters")
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(
         generate_header(
-            args.n, args.d, args.seed, args.case_kind, args.repeats
+            args.n,
+            args.d,
+            args.seed,
+            args.case_kind,
+            args.repeats,
+            args.tcdm_capacity,
+            args.cluster_cores,
+            args.stack_log2,
+            args.team_bytes,
         ),
         encoding="utf-8",
     )

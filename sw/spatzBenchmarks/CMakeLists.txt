@@ -100,6 +100,22 @@ set(ONLINE_MERGE_REPEATS "5" CACHE STRING
     "Online merge measured repetitions after one warm-up")
 set(ONLINE_MERGE_TRACE_PROXY "0" CACHE STRING
     "Gate trace markers to B2-R/B3 repeat zero")
+set(ONLINE_MERGE_COUNTER_PROFILE "memory" CACHE STRING
+    "Online merge performance counters: memory or instructions")
+set(ONLINE_MERGE_STACK_LOG2 "13" CACHE STRING
+    "Log2 bytes reserved for each online-merge hart stack")
+set(ONLINE_MERGE_TEAM_BYTES "112" CACHE STRING
+    "Observed snRuntime root-team bytes for input capacity precheck")
+set_property(CACHE ONLINE_MERGE_COUNTER_PROFILE PROPERTY STRINGS
+    memory instructions)
+if(ONLINE_MERGE_COUNTER_PROFILE STREQUAL "memory")
+  set(ONLINE_MERGE_COUNTER_PROFILE_VALUE 0)
+elseif(ONLINE_MERGE_COUNTER_PROFILE STREQUAL "instructions")
+  set(ONLINE_MERGE_COUNTER_PROFILE_VALUE 1)
+else()
+  message(FATAL_ERROR
+      "ONLINE_MERGE_COUNTER_PROFILE must be memory or instructions")
+endif()
 set(ONLINE_MERGE_CONCURRENCY_INCLUDE_BASELINES "1" CACHE STRING
     "Include C0/C1/C2 in the concurrency shard")
 set(ONLINE_MERGE_CONCURRENCY_PHASE_START "0" CACHE STRING
@@ -135,25 +151,44 @@ add_custom_command(
           --seed ${ONLINE_MERGE_SEED}
           --case-kind ${ONLINE_MERGE_CASE_KIND}
           --repeats ${ONLINE_MERGE_REPEATS}
+          --tcdm-capacity ${SNRT_TCDM_SIZE}
+          --cluster-cores ${SNRT_CLUSTER_CORE_NUM}
+          --stack-log2 ${ONLINE_MERGE_STACK_LOG2}
+          --team-bytes ${ONLINE_MERGE_TEAM_BYTES}
           --output "${ONLINE_MERGE_CASE_HEADER}"
   DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/online-softmax-merge/generate_case.py"
   VERBATIM)
 set_source_files_properties("${ONLINE_MERGE_CASE_HEADER}"
     PROPERTIES GENERATED TRUE)
-add_snitch_test(online-softmax-merge
-    online-softmax-merge/main.c
-    online-softmax-merge/rtl_reference.c
-    online-softmax-merge/rvv_update.c
-    ${ONLINE_MERGE_CASE_HEADER})
-target_include_directories(
-    test-${SNITCH_TEST_PREFIX}online-softmax-merge
-    PRIVATE ${ONLINE_MERGE_GENERATED_DIR}
-            ${CMAKE_CURRENT_SOURCE_DIR}/online-softmax-merge)
-target_compile_definitions(
-    test-${SNITCH_TEST_PREFIX}online-softmax-merge
-    PRIVATE ONLINE_MERGE_TRACE_PROXY=${ONLINE_MERGE_TRACE_PROXY})
-target_link_libraries(test-${SNITCH_TEST_PREFIX}online-softmax-merge
-    benchmark ${SNITCH_RUNTIME})
+
+function(add_online_merge_benchmark name implementation_selector)
+  add_snitch_test(${name}
+      online-softmax-merge/main.c
+      online-softmax-merge/rtl_reference.c
+      online-softmax-merge/rvv_update.c
+      ${ONLINE_MERGE_CASE_HEADER})
+  set(target test-${SNITCH_TEST_PREFIX}${name})
+  target_include_directories(
+      ${target}
+      PRIVATE ${ONLINE_MERGE_GENERATED_DIR}
+              ${CMAKE_CURRENT_SOURCE_DIR}/online-softmax-merge)
+  target_compile_definitions(
+      ${target}
+      PRIVATE ONLINE_MERGE_TRACE_PROXY=${ONLINE_MERGE_TRACE_PROXY}
+        ONLINE_MERGE_IMPLEMENTATION_SELECT=${implementation_selector}
+        ONLINE_MERGE_COUNTER_PROFILE=${ONLINE_MERGE_COUNTER_PROFILE_VALUE}
+        ONLINE_MERGE_STACK_LOG2=${ONLINE_MERGE_STACK_LOG2})
+  target_link_libraries(${target} benchmark ${SNITCH_RUNTIME})
+endfunction()
+
+# Selector zero retains the historical all-in-one functional regression.
+# Paper measurements use one implementation per ELF and one measured sample
+# per fresh simulator process.
+add_online_merge_benchmark(online-softmax-merge 0)
+add_online_merge_benchmark(online-softmax-merge-b1 1)
+add_online_merge_benchmark(online-softmax-merge-b2r 2)
+add_online_merge_benchmark(online-softmax-merge-a2 3)
+add_online_merge_benchmark(online-softmax-merge-a1 4)
 
 add_snitch_test(online-softmax-merge-concurrency
     online-softmax-merge/concurrency.c

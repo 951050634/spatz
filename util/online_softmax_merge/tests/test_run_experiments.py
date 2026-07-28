@@ -338,17 +338,20 @@ class RunExperimentsTest(unittest.TestCase):
         self.assertEqual(runner.display_path(external, root), str(external))
 
     def test_capacity_precheck_uses_allocator_rounded_bytes(self) -> None:
-        fitting = runner.Case(1, 5700, repeats=3)
-        skipped = runner.Case(1, 5726, repeats=3)
+        fitting = runner.Case(1, 5517, repeats=3)
+        skipped = runner.Case(1, 5518, repeats=3)
         self.assertTrue(runner.capacity_fits(fitting))
         self.assertFalse(runner.capacity_fits(skipped))
         footprint, allocation = runner.layout_bytes(skipped.n, skipped.d)
         self.assertLessEqual(footprint, runner.TCDM_LIMIT_BYTES)
-        self.assertGreater(allocation, runner.TCDM_LIMIT_BYTES)
+        self.assertGreater(
+            allocation + runner.RUNTIME_RESERVED_BYTES,
+            runner.TCDM_LIMIT_BYTES,
+        )
 
     def test_capacity_skip_has_explicit_case_class(self) -> None:
         records = runner.synthetic_records(
-            runner.Case(1, 5726, repeats=3), "capacity_skip"
+            runner.Case(1, 5518, repeats=3), "capacity_skip"
         )
         self.assertTrue(
             all(record["case_class"] == "capacity" for record in records)
@@ -515,6 +518,17 @@ class GenerateCaseTest(unittest.TestCase):
         self.assertIn("ONLINE_MERGE_CASE_CAPACITY_SKIP 1u", header)
         self.assertLess(len(header), 4096)
         self.assertIn("online_merge_o_old_bits[1]", header)
+
+    def test_capacity_includes_runtime_reservation(self) -> None:
+        reserved = generator.runtime_reserved_bytes(2, 13, 112)
+        self.assertEqual(reserved, 16512)
+        header = generator.generate_header(1, 1, 1, "main", 3)
+        self.assertIn(
+            "ONLINE_MERGE_CASE_RUNTIME_RESERVED_BYTES 16512ull", header
+        )
+        self.assertIn(
+            "ONLINE_MERGE_CASE_MEMORY_FOOTPRINT_BYTES 16768ull", header
+        )
 
     def test_different_dimensions_change_generated_header(self) -> None:
         one = generator.generate_header(1, 1, 1, "main", 3)

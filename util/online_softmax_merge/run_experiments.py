@@ -58,8 +58,9 @@ CASE_KINDS = {
 }
 UINT32_MAX = (1 << 32) - 1
 TCDM_CAPACITY_BYTES = 128 * 1024
-TCDM_LIMIT_BYTES = TCDM_CAPACITY_BYTES * 7 // 10
+TCDM_LIMIT_BYTES = TCDM_CAPACITY_BYTES * 8 // 10
 ALLOCATION_ALIGNMENT_BYTES = 256
+RUNTIME_RESERVED_BYTES = 16512
 REQUIRED_TARGET_FIELDS = {
     "implementation",
     "N",
@@ -106,6 +107,8 @@ DERIVED_FIELDS = (
     "cycles_per_element",
     "elements_per_cycle",
     "congestion_ratio",
+    "mean_abs_error",
+    "l2_relative_error",
 )
 CMAKE_DEFINE_KEY_PATTERN = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
 RESERVED_CMAKE_DEFINE_KEYS = frozenset(
@@ -187,7 +190,7 @@ def layout_bytes(n: int, d: int) -> tuple[int, int]:
 
 def capacity_fits(case: Case) -> bool:
     _, allocation = layout_bytes(case.n, case.d)
-    return allocation <= TCDM_LIMIT_BYTES
+    return allocation + RUNTIME_RESERVED_BYTES <= TCDM_LIMIT_BYTES
 
 
 def validate_case(case: Case) -> None:
@@ -382,6 +385,18 @@ def enrich_record(
             else math.nan
         )
     sum_sq = float_from_bits(int(enriched.pop("sum_sq_bits", 0)))
+    sum_abs_bits = enriched.pop("sum_abs_bits", None)
+    sum_ref_sq_bits = enriched.pop("sum_ref_sq_bits", None)
+    sum_abs = (
+        float_from_bits(int(sum_abs_bits))
+        if sum_abs_bits is not None
+        else math.nan
+    )
+    sum_ref_sq = (
+        float_from_bits(int(sum_ref_sq_bits))
+        if sum_ref_sq_bits is not None
+        else math.nan
+    )
     checked = int(enriched.get("checked", 0) or 0)
     bit_equal = int(enriched.get("bit_equal", 0) or 0)
     cycles = enriched.get("cycles")
@@ -403,8 +418,24 @@ def enrich_record(
         if checked and math.isfinite(sum_sq) and sum_sq >= 0.0
         else None
     )
+    enriched["mean_abs_error"] = (
+        sum_abs / checked
+        if checked and math.isfinite(sum_abs) and sum_abs >= 0.0
+        else None
+    )
+    enriched["l2_relative_error"] = (
+        math.sqrt(sum_sq / sum_ref_sq)
+        if math.isfinite(sum_sq)
+        and math.isfinite(sum_ref_sq)
+        and sum_sq >= 0.0
+        and sum_ref_sq > 0.0
+        else None
+    )
     enriched["bit_equal_ratio"] = (
         bit_equal / checked if checked else None
+    )
+    enriched["inf_count"] = int(enriched.get("pos_inf_count", 0) or 0) + int(
+        enriched.get("neg_inf_count", 0) or 0
     )
     enriched["cycles_per_element"] = (
         float(cycles) / elements if cycles is not None and elements else None
@@ -455,6 +486,10 @@ def synthetic_records(
             "congestion_ratio": None,
             "footprint_bytes": footprint,
             "allocation_bytes": allocation,
+            "runtime_reserved_bytes": RUNTIME_RESERVED_BYTES,
+            "memory_footprint_bytes": (
+                allocation + RUNTIME_RESERVED_BYTES
+            ),
             "tcdm_capacity_bytes": TCDM_CAPACITY_BYTES,
             "status": status,
         }
@@ -1331,7 +1366,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             case_records = synthetic_records(
                 case,
                 "capacity_skip",
-                "allocator-rounded footprint exceeds 70% TCDM limit",
+                "total resident footprint exceeds 80% TCDM limit",
             )
             for record in case_records:
                 record["host_capacity_precheck"] = True
@@ -1591,7 +1626,11 @@ def main(argv: Sequence[str] | None = None) -> int:
             "tcdm_capacity_bytes": TCDM_CAPACITY_BYTES,
             "working_set_limit_bytes": TCDM_LIMIT_BYTES,
             "allocation_alignment_bytes": ALLOCATION_ALIGNMENT_BYTES,
-            "footprint_formula": "N * (40 + 16D)",
+            "runtime_reserved_bytes": RUNTIME_RESERVED_BYTES,
+            "buffer_footprint_formula": "N * (40 + 16D)",
+            "memory_footprint_formula": (
+                "align256(buffer footprint) + runtime reserved"
+            ),
         },
         "known_limitations": [
             "Verilator cycles are a same-configuration runtime proxy.",

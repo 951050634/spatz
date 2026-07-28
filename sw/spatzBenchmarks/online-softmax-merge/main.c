@@ -25,6 +25,18 @@
 #define ONLINE_MERGE_TRACE_PROXY 0
 #endif
 
+#ifndef ONLINE_MERGE_IMPLEMENTATION_SELECT
+#define ONLINE_MERGE_IMPLEMENTATION_SELECT 0
+#endif
+
+#ifndef ONLINE_MERGE_COUNTER_PROFILE
+#define ONLINE_MERGE_COUNTER_PROFILE 0
+#endif
+
+#ifndef ONLINE_MERGE_STACK_LOG2
+#define ONLINE_MERGE_STACK_LOG2 13
+#endif
+
 #define ONLINE_MERGE_IMPLEMENTATION_B1 1u
 #define ONLINE_MERGE_IMPLEMENTATION_B2_R 2u
 #define ONLINE_MERGE_IMPLEMENTATION_B3 3u
@@ -33,15 +45,34 @@
 #define ONLINE_MERGE_MODE_FULL 0u
 #define ONLINE_MERGE_MODE_SCALAR_ONLY 1u
 
-// The three implementations' measured samples and correctness state make
+#define ONLINE_MERGE_COUNTER_MEMORY 0
+#define ONLINE_MERGE_COUNTER_INSTRUCTIONS 1
+
+// The four implementations' measured samples and correctness state make
 // main's frame larger than the runtime's 1 KiB default.  Reserve 8 KiB per
 // core so the stacks remain disjoint while the nonzero core waits at barrier.
-const uint32_t snrt_stack_size = 13u;
+const uint32_t snrt_stack_size = ONLINE_MERGE_STACK_LOG2;
+extern const uint32_t _snrt_team_size;
 
+#if ONLINE_MERGE_IMPLEMENTATION_SELECT == 0
 _Static_assert(ONLINE_MERGE_CASE_REPEATS >= 3u,
-               "online merge requires at least three measured repeats");
+               "all-in-one online merge requires at least three repeats");
+#else
+_Static_assert(ONLINE_MERGE_CASE_REPEATS == 1u,
+               "single-implementation target requires one measured sample");
+#endif
 _Static_assert(ONLINE_MERGE_CASE_REPEATS <= ONLINE_MERGE_MAX_REPEATS,
                "online merge repeat count exceeds local sample storage");
+_Static_assert(ONLINE_MERGE_IMPLEMENTATION_SELECT <=
+                   ONLINE_MERGE_IMPLEMENTATION_A1,
+               "invalid online merge implementation selector");
+_Static_assert(ONLINE_MERGE_COUNTER_PROFILE == ONLINE_MERGE_COUNTER_MEMORY ||
+                   ONLINE_MERGE_COUNTER_PROFILE ==
+                       ONLINE_MERGE_COUNTER_INSTRUCTIONS,
+               "invalid online merge counter profile");
+_Static_assert(ONLINE_MERGE_STACK_LOG2 > 0 &&
+                   ONLINE_MERGE_STACK_LOG2 < 31,
+               "invalid online merge stack size exponent");
 
 #ifndef SNRT_TCDM_SIZE
 #define SNRT_TCDM_SIZE (128u * 1024u)
@@ -67,6 +98,8 @@ typedef struct {
   uint32_t stride;
   uint32_t footprint_bytes;
   uint32_t allocation_bytes;
+  uint32_t runtime_reserved_bytes;
+  uint32_t memory_footprint_bytes;
 } online_merge_buffers_t;
 
 typedef struct {
@@ -75,6 +108,8 @@ typedef struct {
   uint64_t rvv_vector_cycles;
   uint32_t tcdm_accessed;
   uint32_t tcdm_congested;
+  uint32_t retired_instructions;
+  uint32_t retired_accelerator_instructions;
   int saw_busy;
   const char *status;
 } online_merge_sample_t;
@@ -83,10 +118,15 @@ typedef struct {
   float max_abs;
   float max_rel_numerator;
   float max_rel_denominator;
+  float sum_abs;
   float sum_sq;
+  float sum_ref_sq;
   uint32_t checked;
   uint32_t bit_equal;
   uint32_t nonfinite;
+  uint32_t nan_count;
+  uint32_t pos_inf_count;
+  uint32_t neg_inf_count;
   int passed;
   int has_failure;
   uint32_t component;
@@ -150,7 +190,10 @@ static int allocate_buffers(online_merge_buffers_t *buffers, uint32_t n,
   uint64_t vector_count = (uint64_t)n * (uint64_t)d;
   uint64_t stride_bytes = (uint64_t)d * sizeof(float);
   uint64_t row_bytes = 40ull + 16ull * (uint64_t)d;
-  uint64_t limit = ((uint64_t)SNRT_TCDM_SIZE * 7u) / 10u;
+  uint64_t limit = ((uint64_t)SNRT_TCDM_SIZE * 8u) / 10u;
+  uint64_t runtime_reserved = (uint64_t)_snrt_team_size +
+                              (uint64_t)snrt_cluster_core_num() *
+                                  ((1ull << ONLINE_MERGE_STACK_LOG2) + 8ull);
 
   buffers->n = n;
   buffers->d = d;
@@ -163,14 +206,19 @@ static int allocate_buffers(online_merge_buffers_t *buffers, uint32_t n,
   }
   uint64_t allocation_bytes =
       align_up_u64(footprint_bytes, ONLINE_MERGE_ALLOC_ALIGN);
+  uint64_t memory_footprint_bytes = allocation_bytes + runtime_reserved;
   if (stride_bytes > UINT32_MAX || vector_count > UINT32_MAX ||
-      footprint_bytes > UINT32_MAX || allocation_bytes > UINT32_MAX) {
+      footprint_bytes > UINT32_MAX || allocation_bytes > UINT32_MAX ||
+      runtime_reserved > UINT32_MAX ||
+      memory_footprint_bytes > UINT32_MAX) {
     return 1;
   }
   buffers->stride = (uint32_t)stride_bytes;
   buffers->footprint_bytes = (uint32_t)footprint_bytes;
   buffers->allocation_bytes = (uint32_t)allocation_bytes;
-  if (allocation_bytes > limit) {
+  buffers->runtime_reserved_bytes = (uint32_t)runtime_reserved;
+  buffers->memory_footprint_bytes = (uint32_t)memory_footprint_bytes;
+  if (memory_footprint_bytes > limit) {
     return 1;
   }
 
@@ -290,20 +338,45 @@ static online_merge_wait_t smu_wait(int *saw_busy) {
   return ONLINE_MERGE_WAIT_TIMEOUT;
 }
 
-static void start_tcdm_counters(void) {
+static void start_perf_counters(void) {
   snrt_reset_perf_counter(SNRT_PERF_CNT0);
   snrt_reset_perf_counter(SNRT_PERF_CNT1);
+#if ONLINE_MERGE_COUNTER_PROFILE == ONLINE_MERGE_COUNTER_MEMORY
   snrt_start_perf_counter(SNRT_PERF_CNT0, SNRT_PERF_CNT_TCDM_ACCESSED,
                           0);
   snrt_start_perf_counter(SNRT_PERF_CNT1, SNRT_PERF_CNT_TCDM_CONGESTED,
                           0);
+#else
+  snrt_start_perf_counter(SNRT_PERF_CNT0, SNRT_PERF_CNT_RETIRED_INSTR,
+                          0);
+  snrt_start_perf_counter(SNRT_PERF_CNT1, SNRT_PERF_CNT_RETIRED_ACC, 0);
+#endif
 }
 
-static void stop_tcdm_counters(online_merge_sample_t *sample) {
+static void stop_perf_counters(online_merge_sample_t *sample) {
   snrt_stop_perf_counter(SNRT_PERF_CNT0);
   snrt_stop_perf_counter(SNRT_PERF_CNT1);
+#if ONLINE_MERGE_COUNTER_PROFILE == ONLINE_MERGE_COUNTER_MEMORY
   sample->tcdm_accessed = snrt_get_perf_counter(SNRT_PERF_CNT0);
   sample->tcdm_congested = snrt_get_perf_counter(SNRT_PERF_CNT1);
+#else
+  sample->retired_instructions = snrt_get_perf_counter(SNRT_PERF_CNT0);
+  sample->retired_accelerator_instructions =
+      snrt_get_perf_counter(SNRT_PERF_CNT1);
+#endif
+}
+
+// Visible no-op markers let an offline DASM audit delimit the measurement
+// envelope without adding printf calls to the hot loop.  Target cycle timing
+// remains bounded by benchmark_get_cycle64() inside each run function.
+__attribute__((noinline, used)) void online_merge_trace_begin(
+    uint32_t implementation, uint32_t repeat) {
+  asm volatile("" : : "r"(implementation), "r"(repeat) : "memory");
+}
+
+__attribute__((noinline, used)) void online_merge_trace_end(
+    uint32_t implementation, uint32_t repeat) {
+  asm volatile("" : : "r"(implementation), "r"(repeat) : "memory");
 }
 
 static int trace_marker_enabled(uint32_t implementation, uint32_t repeat) {
@@ -321,11 +394,13 @@ static int trace_marker_enabled(uint32_t implementation, uint32_t repeat) {
 static void trace_marker_start(uint32_t implementation, uint32_t repeat) {
   if (trace_marker_enabled(implementation, repeat)) {
     start_kernel();
+    online_merge_trace_begin(implementation, repeat);
   }
 }
 
 static void trace_marker_stop(uint32_t implementation, uint32_t repeat) {
   if (trace_marker_enabled(implementation, repeat)) {
+    online_merge_trace_end(implementation, repeat);
     stop_kernel();
   }
 }
@@ -354,6 +429,18 @@ static void record_value(online_merge_metrics_t *metrics, uint32_t component,
   }
   if (!float_is_finite(actual) || !float_is_finite(expected)) {
     metrics->nonfinite++;
+    uint32_t actual_bits = float_bits(actual);
+    uint32_t actual_exponent = (actual_bits >> 23) & 0xffu;
+    uint32_t actual_fraction = actual_bits & 0x7fffffu;
+    if (actual_exponent == 0xffu) {
+      if (actual_fraction != 0u) {
+        metrics->nan_count++;
+      } else if ((actual_bits >> 31) != 0u) {
+        metrics->neg_inf_count++;
+      } else {
+        metrics->pos_inf_count++;
+      }
+    }
     record_failure(metrics, component, row, col, actual, expected);
     return;
   }
@@ -373,8 +460,12 @@ static void record_value(online_merge_metrics_t *metrics, uint32_t component,
     metrics->max_rel_numerator = absolute;
     metrics->max_rel_denominator = scale;
   }
+  metrics->sum_abs += absolute;
   metrics->sum_sq += absolute * absolute;
-  if (!float_is_finite(metrics->sum_sq)) {
+  metrics->sum_ref_sq += expected * expected;
+  if (!float_is_finite(metrics->sum_abs) ||
+      !float_is_finite(metrics->sum_sq) ||
+      !float_is_finite(metrics->sum_ref_sq)) {
     metrics->nonfinite++;
     record_failure(metrics, component, row, col, actual, expected);
     return;
@@ -415,7 +506,7 @@ static void run_b1(online_merge_buffers_t *buffers,
 
   for (uint32_t repeat = 0; repeat < ONLINE_MERGE_CASE_REPEATS; repeat++) {
     clear_output(buffers);
-    start_tcdm_counters();
+    start_perf_counters();
     trace_marker_start(ONLINE_MERGE_IMPLEMENTATION_B1, repeat);
     uint64_t start = benchmark_get_cycle64();
     online_merge_rtl_reference(
@@ -427,7 +518,7 @@ static void run_b1(online_merge_buffers_t *buffers,
     samples[repeat].cycles = end - start;
     samples[repeat].saw_busy = 0;
     samples[repeat].status = "pass";
-    stop_tcdm_counters(&samples[repeat]);
+    stop_perf_counters(&samples[repeat]);
     metrics[repeat] = check_output(buffers);
   }
 }
@@ -443,7 +534,7 @@ static void run_b2_r(online_merge_buffers_t *buffers,
 
   for (uint32_t repeat = 0; repeat < ONLINE_MERGE_CASE_REPEATS; repeat++) {
     clear_output(buffers);
-    start_tcdm_counters();
+    start_perf_counters();
     trace_marker_start(ONLINE_MERGE_IMPLEMENTATION_B2_R, repeat);
     uint64_t start = benchmark_get_cycle64();
     online_merge_b2_r(
@@ -455,7 +546,7 @@ static void run_b2_r(online_merge_buffers_t *buffers,
     samples[repeat].cycles = end - start;
     samples[repeat].saw_busy = 0;
     samples[repeat].status = "pass";
-    stop_tcdm_counters(&samples[repeat]);
+    stop_perf_counters(&samples[repeat]);
     metrics[repeat] = check_output(buffers);
   }
 }
@@ -499,7 +590,7 @@ static int run_a1(online_merge_buffers_t *buffers,
 
   for (uint32_t repeat = 0; repeat < ONLINE_MERGE_CASE_REPEATS; repeat++) {
     clear_output(buffers);
-    start_tcdm_counters();
+    start_perf_counters();
     trace_marker_start(ONLINE_MERGE_IMPLEMENTATION_A1, repeat);
     uint64_t start = benchmark_get_cycle64();
     smu_start(buffers, ONLINE_MERGE_MODE_SCALAR_ONLY);
@@ -516,7 +607,7 @@ static int run_a1(online_merge_buffers_t *buffers,
     samples[repeat].rvv_vector_cycles = end - scalar_end;
     samples[repeat].saw_busy = saw_busy;
     samples[repeat].status = wait_status(wait_result);
-    stop_tcdm_counters(&samples[repeat]);
+    stop_perf_counters(&samples[repeat]);
     smu_clear_done();
     if (wait_result != ONLINE_MERGE_WAIT_OK) {
       return (int)repeat + 1;
@@ -542,7 +633,7 @@ static int run_b3(online_merge_buffers_t *buffers,
 
   for (uint32_t repeat = 0; repeat < ONLINE_MERGE_CASE_REPEATS; repeat++) {
     clear_output(buffers);
-    start_tcdm_counters();
+    start_perf_counters();
     trace_marker_start(ONLINE_MERGE_IMPLEMENTATION_B3, repeat);
     uint64_t start = benchmark_get_cycle64();
     smu_start(buffers, ONLINE_MERGE_MODE_FULL);
@@ -553,7 +644,7 @@ static int run_b3(online_merge_buffers_t *buffers,
     samples[repeat].cycles = end - start;
     samples[repeat].saw_busy = saw_busy;
     samples[repeat].status = wait_status(wait_result);
-    stop_tcdm_counters(&samples[repeat]);
+    stop_perf_counters(&samples[repeat]);
     smu_clear_done();
     if (wait_result != ONLINE_MERGE_WAIT_OK) {
       return (int)repeat + 1;
@@ -628,27 +719,47 @@ static void print_result(const char *implementation, int repeat,
          (unsigned long long)sample->smu_scalar_cycles);
   PRINTF("\"rvv_vector_cycles\":%llu,",
          (unsigned long long)sample->rvv_vector_cycles);
+#if ONLINE_MERGE_COUNTER_PROFILE == ONLINE_MERGE_COUNTER_MEMORY
+  PRINTF("\"counter_profile\":\"memory\",");
   PRINTF("\"tcdm_accessed\":%u,", sample->tcdm_accessed);
   PRINTF("\"tcdm_congested\":%u,", sample->tcdm_congested);
+  PRINTF("\"retired_instructions\":null,");
+  PRINTF("\"retired_accelerator_instructions\":null,");
+#else
+  PRINTF("\"counter_profile\":\"instructions\",");
+  PRINTF("\"tcdm_accessed\":null,\"tcdm_congested\":null,");
+  PRINTF("\"retired_instructions\":%u,",
+         sample->retired_instructions);
+  PRINTF("\"retired_accelerator_instructions\":%u,",
+         sample->retired_accelerator_instructions);
+#endif
   PRINTF("\"max_abs_bits\":%u,", float_bits(metrics->max_abs));
   PRINTF("\"max_rel_numerator_bits\":%u,",
          float_bits(metrics->max_rel_numerator));
   PRINTF("\"max_rel_denominator_bits\":%u,",
          float_bits(metrics->max_rel_denominator));
   PRINTF("\"sum_sq_bits\":%u,", float_bits(metrics->sum_sq));
+  PRINTF("\"sum_abs_bits\":%u,", float_bits(metrics->sum_abs));
+  PRINTF("\"sum_ref_sq_bits\":%u,", float_bits(metrics->sum_ref_sq));
   PRINTF("\"checked\":%u,\"bit_equal\":%u,", metrics->checked,
          metrics->bit_equal);
   PRINTF("\"nonfinite\":%u,", metrics->nonfinite);
+  PRINTF("\"nan_count\":%u,", metrics->nan_count);
+  PRINTF("\"pos_inf_count\":%u,", metrics->pos_inf_count);
+  PRINTF("\"neg_inf_count\":%u,", metrics->neg_inf_count);
   PRINTF("\"status\":\"%s\",", status);
   PRINTF("\"saw_busy\":%u,", (uint32_t)sample->saw_busy);
   PRINTF("\"footprint_bytes\":%u,", buffers->footprint_bytes);
   PRINTF("\"allocation_bytes\":%u,", buffers->allocation_bytes);
+  PRINTF("\"runtime_reserved_bytes\":%u,",
+         buffers->runtime_reserved_bytes);
+  PRINTF("\"memory_footprint_bytes\":%u,",
+         buffers->memory_footprint_bytes);
   PRINTF("\"tcdm_capacity_bytes\":%u}\n", (uint32_t)SNRT_TCDM_SIZE);
 }
 
 static void print_terminal_status(const online_merge_buffers_t *buffers,
                                   const char *status) {
-  const char *implementations[] = {"B1", "B2-R", "A1", "B3"};
   online_merge_sample_t sample = {
       .status = status,
   };
@@ -656,9 +767,23 @@ static void print_terminal_status(const online_merge_buffers_t *buffers,
       .max_rel_denominator = 1.0f,
       .passed = 1,
   };
+#if ONLINE_MERGE_IMPLEMENTATION_SELECT == 0
+  const char *implementations[] = {"B1", "B2-R", "A1", "B3"};
   for (uint32_t i = 0; i < 4; i++) {
     print_result(implementations[i], -1, buffers, &sample, &metrics, status);
   }
+#else
+  const char *implementation =
+      ONLINE_MERGE_IMPLEMENTATION_SELECT == ONLINE_MERGE_IMPLEMENTATION_B1
+          ? "B1"
+      : ONLINE_MERGE_IMPLEMENTATION_SELECT ==
+                ONLINE_MERGE_IMPLEMENTATION_B2_R
+          ? "B2-R"
+      : ONLINE_MERGE_IMPLEMENTATION_SELECT == ONLINE_MERGE_IMPLEMENTATION_A1
+          ? "A1"
+          : "B3";
+  print_result(implementation, -1, buffers, &sample, &metrics, status);
+#endif
 }
 
 static int metrics_pass(const online_merge_metrics_t *metrics) {
@@ -714,6 +839,42 @@ int main(void) {
     return 0;
   }
 
+#if ONLINE_MERGE_IMPLEMENTATION_SELECT != 0
+  online_merge_sample_t samples[ONLINE_MERGE_MAX_REPEATS] = {0};
+  online_merge_metrics_t metrics[ONLINE_MERGE_MAX_REPEATS] = {0};
+  const char *implementation;
+  int run_result = 0;
+
+  if (ONLINE_MERGE_IMPLEMENTATION_SELECT == ONLINE_MERGE_IMPLEMENTATION_B1) {
+    implementation = "B1";
+    run_b1(&buffers, samples, metrics);
+  } else if (ONLINE_MERGE_IMPLEMENTATION_SELECT ==
+             ONLINE_MERGE_IMPLEMENTATION_B2_R) {
+    implementation = "B2-R";
+    run_b2_r(&buffers, samples, metrics);
+  } else if (ONLINE_MERGE_IMPLEMENTATION_SELECT ==
+             ONLINE_MERGE_IMPLEMENTATION_A1) {
+    implementation = "A1";
+    run_result = run_a1(&buffers, samples, metrics);
+  } else {
+    implementation = "B3";
+    run_result = run_b3(&buffers, samples, metrics);
+  }
+
+  if (run_result == 0) {
+    print_result(implementation, 0, &buffers, &samples[0], &metrics[0], 0);
+  } else {
+    const char *status = samples[0].status != 0 ? samples[0].status
+                                                : "tool_error";
+    print_result(implementation, run_result < 0 ? -1 : 0, &buffers,
+                 &samples[0], &metrics[0], status);
+  }
+  print_first_failure(implementation, &buffers, metrics);
+  int result = run_result == 0 && metrics_pass(metrics);
+  PRINTF("online-softmax-merge %s\n", result ? "PASS" : "FAILURE");
+  snrt_cluster_hw_barrier();
+  return result ? 0 : -1;
+#else
   online_merge_sample_t b1_samples[ONLINE_MERGE_MAX_REPEATS] = {0};
   online_merge_sample_t b2_r_samples[ONLINE_MERGE_MAX_REPEATS] = {0};
   online_merge_sample_t a1_samples[ONLINE_MERGE_MAX_REPEATS] = {0};
@@ -780,4 +941,5 @@ int main(void) {
   PRINTF("online-softmax-merge %s\n", result ? "PASS" : "FAILURE");
   snrt_cluster_hw_barrier();
   return result ? 0 : -1;
+#endif
 }
