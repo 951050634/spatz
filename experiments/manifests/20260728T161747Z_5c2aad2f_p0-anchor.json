@@ -1,0 +1,65 @@
+{
+  "all_trials_reproducible": true,
+  "case_file": "experiments/configs/p0_anchor_cases.json",
+  "case_file_sha256": "7eb15301d30441c1fc90f7f1bfbf48ad7dca2a935d505ec8e47d30270c5ba77b",
+  "cfg_path": "hw/system/spatz_cluster/cfg/spatz_cluster.default.dram.hjson",
+  "cfg_sha256": "120fa0c30199e54e6e9b5c60d8da40913eae8526640992cc5d4f130bef159775",
+  "configurations": [
+    "B1_SCALAR",
+    "B2R_RVV",
+    "A1_SMU_SCALAR",
+    "A2_SMU_FULL"
+  ],
+  "counter_profiles": [
+    "memory",
+    "instructions"
+  ],
+  "end_to_end_reason": "NO_EXPLICIT_TRANSFER_PHASE",
+  "end_utc": "2026-07-28T18:42:24+00:00",
+  "failure_count": 0,
+  "git_branch": "exp/online-softmax-supplement",
+  "git_commit": "5c2aad2f0af79dee95f8456bccddebcb8084d4b1",
+  "git_dirty": false,
+  "measured_samples_per_process": 1,
+  "measurement_window": "inputs resident in TCDM through final output completion; includes command, wait, RVV, and synchronization",
+  "policy": "experiments/configs/measurement_policy.json",
+  "policy_sha256": "015cd380d0611c84713fffe18c2a239bb0ad0303311b347d900d30f96987ad67",
+  "record_count": 72,
+  "run_id": "20260728T161747Z_5c2aad2f_p0-anchor",
+  "schema_version": 1,
+  "simulator": "/home/wxt/spatz/hw/system/spatz_cluster/bin/spatz_cluster.vlt",
+  "simulator_sha256": "361ff71bcc241b448e49ff6d212d06a13a986e2fad861b0aa0b67e40e7a21d68",
+  "start_utc": "2026-07-28T16:17:47+00:00",
+  "tool_versions": {
+    "cmake": {
+      "returncode": 0,
+      "status": "PASS",
+      "version": "cmake version 3.28.3 | CMake suite maintained and supported by Kitware (kitware.com/cmake)."
+    },
+    "compiler": {
+      "returncode": 0,
+      "status": "PASS",
+      "version": "clang version 14.0.6 (git@github.com:pulp-platform/llvm-project.git b494f2d8dde88723026db8ec16ac6c7ee1e140ca) | Target: riscv32-unknown-unknown-elf | Thread model: posix"
+    },
+    "objdump": {
+      "returncode": 0,
+      "status": "PASS",
+      "version": "LLVM (http://llvm.org/): | LLVM version 14.0.6 | Optimized build."
+    },
+    "simulator": {
+      "path": "/home/wxt/spatz/hw/system/spatz_cluster/bin/spatz_cluster.vlt",
+      "sha256": "361ff71bcc241b448e49ff6d212d06a13a986e2fad861b0aa0b67e40e7a21d68"
+    },
+    "verilator": {
+      "returncode": 0,
+      "status": "PASS",
+      "version": "Verilator 5.034 2025-02-24 rev v5.034"
+    }
+  },
+  "trials": 3,
+  "warmups_per_process": 1,
+  "worktree_snapshot": {
+    "entries": [],
+    "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+  }
+}
