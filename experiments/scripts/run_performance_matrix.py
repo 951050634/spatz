@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import shlex
 import shutil
 import sys
@@ -36,6 +37,31 @@ STATUS_MAP = {
     "tool_error": "TOOL_ERROR",
 }
 
+SIM_CONFIG_PREFIX = "OM_SIM_CONFIG "
+CASE_ID_PATTERN = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,95}")
+EVIDENCE_CLASSES = {
+    "MAIN_PERFORMANCE",
+    "FUNCTIONAL_BOUNDARY",
+    "CAPACITY_PROBE",
+    "MODEL_WORKLOAD",
+    "OPTIONAL_DIAGNOSTIC",
+}
+SUPPORTING_ONLY_EVIDENCE = {
+    "FUNCTIONAL_BOUNDARY": "FUNCTIONAL_BOUNDARY_ONLY",
+    "CAPACITY_PROBE": "CAPACITY_PROBE_ONLY",
+    "OPTIONAL_DIAGNOSTIC": "OPTIONAL_DIAGNOSTIC_ONLY",
+}
+TARGET_TIMING_FIELDS = {
+    "cycles_hi",
+    "cycles_lo",
+    "kernel_cycles",
+    "tcdm_accessed",
+    "tcdm_congested",
+    "cycles_per_element",
+    "elements_per_cycle",
+    "congestion_ratio",
+}
+
 
 @dataclass(frozen=True)
 class Case:
@@ -43,14 +69,15 @@ class Case:
     d: int
     seed: int
     case_kind: str
+    case_id: str
+    evidence_class: str
     size_class: str
     timeout_seconds: int
     max_kernel_cycles: int
 
     @property
     def slug(self) -> str:
-        kind = self.case_kind.replace("-", "_")
-        return f"N{self.n}_D{self.d}_S{self.seed}_{kind}"
+        return self.case_id
 
 
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
@@ -86,6 +113,15 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         type=Path,
         default=root / "hw/system/spatz_cluster/bin/spatz_cluster.vlt",
     )
+    parser.add_argument(
+        "--trace-witness-simulator",
+        type=Path,
+        help=(
+            "independent DASM-enabled simulator used once per executable "
+            "B2-R case; when set, the measurement simulator must identify "
+            "itself as the low-perturbation profile"
+        ),
+    )
     parser.add_argument("--artifact-root", type=Path)
     parser.add_argument("--build-dir", type=Path)
     parser.add_argument("--suite", default="p0")
@@ -104,14 +140,26 @@ def load_cases(path: Path) -> list[Case]:
     if not isinstance(payload, list) or not payload:
         raise ValueError("case file must contain a nonempty JSON array")
     cases: list[Case] = []
+    case_ids: set[str] = set()
     for index, item in enumerate(payload):
         if not isinstance(item, dict):
             raise ValueError(f"case {index} is not an object")
+        n = int(item["N"])
+        d = int(item["D"])
+        seed = int(item.get("seed", 1))
+        case_kind = str(item.get("case_kind", "main"))
+        default_case_id = (
+            f"N{n}_D{d}_S{seed}_{case_kind.replace('-', '_')}"
+        )
         case = Case(
-            n=int(item["N"]),
-            d=int(item["D"]),
-            seed=int(item.get("seed", 1)),
-            case_kind=str(item.get("case_kind", "main")),
+            n=n,
+            d=d,
+            seed=seed,
+            case_kind=case_kind,
+            case_id=str(item.get("case_id", default_case_id)),
+            evidence_class=str(
+                item.get("evidence_class", "MAIN_PERFORMANCE")
+            ),
             size_class=str(item.get("size_class", "UNCLASSIFIED")),
             timeout_seconds=int(item.get("timeout_seconds", 1800)),
             max_kernel_cycles=int(
@@ -125,6 +173,18 @@ def load_cases(path: Path) -> list[Case]:
             or case.max_kernel_cycles <= 0
         ):
             raise ValueError(f"case {index} has a nonpositive value")
+        if CASE_ID_PATTERN.fullmatch(case.case_id) is None:
+            raise ValueError(
+                f"case {index} has an unsafe or invalid case_id"
+            )
+        if case.case_id in case_ids:
+            raise ValueError(f"duplicate case_id: {case.case_id}")
+        if case.evidence_class not in EVIDENCE_CLASSES:
+            raise ValueError(
+                f"case {index} has unknown evidence_class: "
+                f"{case.evidence_class}"
+            )
+        case_ids.add(case.case_id)
         cases.append(case)
     return cases
 
@@ -245,6 +305,70 @@ def compiler_fairness_hash(command: str | None) -> str | None:
     return common.sha256_json(normalized)
 
 
+def parse_simulator_configuration(
+    output: str,
+    expected_profile: str,
+    expected_dasm: bool,
+) -> tuple[dict[str, Any] | None, list[dict[str, Any]]]:
+    """Parse and validate exactly one simulator instrumentation record."""
+    records, errors = common.parse_prefixed_json(output, SIM_CONFIG_PREFIX)
+    if len(records) != 1:
+        errors.append(
+            {
+                "message": (
+                    "expected exactly one OM_SIM_CONFIG record, got "
+                    f"{len(records)}"
+                )
+            }
+        )
+        return None, errors
+    record = records[0]
+    expected = {
+        "schema_version": 1,
+        "profile": expected_profile,
+        "dasm_trace_enabled": expected_dasm,
+        "fsm_observer_enabled": True,
+    }
+    for field, value in expected.items():
+        if record.get(field) != value:
+            errors.append(
+                {
+                    "message": (
+                        f"simulator configuration {field}="
+                        f"{record.get(field)!r}, expected {value!r}"
+                    )
+                }
+            )
+    return record, errors
+
+
+def target_functional_projection(
+    target_record: dict[str, Any],
+) -> dict[str, Any]:
+    """Return target output fields unaffected by tracing or counters."""
+    return {
+        key: target_record[key]
+        for key in sorted(target_record)
+        if key not in TARGET_TIMING_FIELDS
+    }
+
+
+def expected_case_status(
+    case: Case, policy: dict[str, Any]
+) -> str:
+    """Predict only generator-declared terminal cases from policy values."""
+    hardware = policy["hardware"]
+    alignment = int(hardware["allocation_alignment_bytes"])
+    footprint = case.n * (40 + 16 * case.d)
+    allocation = (footprint + alignment - 1) // alignment * alignment
+    total = allocation + int(hardware["runtime_reserved_bytes"])
+    if total > int(hardware["formal_total_footprint_limit_bytes"]):
+        return "capacity_skip"
+    if case.case_kind == "both-zero-l":
+        return "unsupported"
+    return "pass"
+
+
 def make_failure_record(
     base: dict[str, Any], status: str, reason: str
 ) -> dict[str, Any]:
@@ -306,6 +430,8 @@ def canonical_base(
         "input_hash": None,
         "N": case.n,
         "D": case.d,
+        "case_id": case.case_id,
+        "evidence_class": case.evidence_class,
         "tile_size": None,
         "logical_N": case.n,
         "logical_D": case.d,
@@ -341,6 +467,16 @@ def canonical_base(
         "neg_inf_count": None,
         "raw_log_path": None,
         "dynamic_trace_verified": "NO",
+        "measurement_simulator_gate": "NA",
+        "measurement_simulator_profile": None,
+        "measurement_simulator_dasm_trace_enabled": None,
+        "trace_source": None,
+        "trace_witness_gate": "NA",
+        "trace_witness_simulator_path": None,
+        "trace_witness_simulator_hash": None,
+        "trace_witness_target_projection_hash": None,
+        "measurement_target_projection_hash": None,
+        "trace_target_equivalence_gate": "NA",
     }
 
 
@@ -406,11 +542,18 @@ def measured_fsm(
 def apply_reproducibility(
     records: list[dict[str, Any]], trials: int
 ) -> None:
+    deterministic_terminal_statuses = {
+        "PASS",
+        "SKIPPED_MEMORY_LIMIT",
+        "UNSUPPORTED_SHAPE",
+    }
     groups: dict[tuple[Any, ...], list[dict[str, Any]]] = {}
     for record in records:
         key = (
             record.get("config"),
             record.get("counter_profile"),
+            record.get("case_id"),
+            record.get("evidence_class"),
             record.get("N"),
             record.get("D"),
             record.get("seed"),
@@ -418,22 +561,32 @@ def apply_reproducibility(
         )
         groups.setdefault(key, []).append(record)
     for group in groups.values():
-        passing = [row for row in group if row.get("status") == "PASS"]
-        cycles = {row.get("kernel_cycles") for row in passing}
+        accepted = [
+            row
+            for row in group
+            if row.get("status") in deterministic_terminal_statuses
+        ]
+        statuses = {row.get("status") for row in accepted}
+        cycles = {row.get("kernel_cycles") for row in accepted}
         result_hashes = {
-            row.get("target_result_hash") for row in passing
+            row.get("target_result_hash") for row in accepted
         }
         exact = (
             len(group) == trials
-            and len(passing) == trials
+            and len(accepted) == trials
+            and len(statuses) == 1
             and len(cycles) == 1
             and None not in result_hashes
             and len(result_hashes) == 1
         )
         for row in group:
             row["reproducible"] = "YES" if exact else "NO"
-        unstable = len(cycles) > 1 or len(result_hashes) > 1
-        if len(group) == trials and len(passing) == trials and unstable:
+        unstable = (
+            len(statuses) > 1
+            or len(cycles) > 1
+            or len(result_hashes) > 1
+        )
+        if len(group) == trials and len(accepted) == trials and unstable:
             for row in group:
                 row["status"] = "NONDETERMINISTIC"
                 row["failure_reason"] = (
@@ -461,6 +614,8 @@ def apply_cross_config_fairness(
     for record in records:
         coordinate = (
             record.get("counter_profile"),
+            record.get("case_id"),
+            record.get("evidence_class"),
             record.get("N"),
             record.get("D"),
             record.get("seed"),
@@ -510,6 +665,9 @@ def apply_paper_eligibility(records: list[dict[str, Any]]) -> None:
             "dynamic_trace_verified"
         ) != "YES":
             reasons.append("DYNAMIC_RVV_TRACE_PENDING")
+        evidence_class = record.get("evidence_class")
+        if evidence_class in SUPPORTING_ONLY_EVIDENCE:
+            reasons.append(SUPPORTING_ONLY_EVIDENCE[evidence_class])
         record["paper_eligible"] = "NO" if reasons else "YES"
         record["paper_ineligible_reasons"] = (
             ";".join(reasons) if reasons else None
@@ -524,6 +682,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     source_dir = args.source_dir.resolve()
     cfg_path = args.cfg.resolve()
     simulator = args.simulator.resolve()
+    trace_witness_simulator = (
+        args.trace_witness_simulator.resolve()
+        if args.trace_witness_simulator
+        else None
+    )
     if args.trials < 3:
         raise SystemExit("--trials must be at least three")
     if args.jobs <= 0:
@@ -575,6 +738,12 @@ def main(argv: Sequence[str] | None = None) -> int:
     simulator_hash = (
         common.sha256_file(simulator) if simulator.is_file() else None
     )
+    trace_witness_simulator_hash = (
+        common.sha256_file(trace_witness_simulator)
+        if trace_witness_simulator is not None
+        and trace_witness_simulator.is_file()
+        else None
+    )
     objdump = repo_root / "install/llvm/bin/llvm-objdump"
     llvm_nm = repo_root / "install/llvm/bin/llvm-nm"
     llvm_size = repo_root / "install/llvm/bin/llvm-size"
@@ -609,6 +778,18 @@ def main(argv: Sequence[str] | None = None) -> int:
         "cfg_sha256": cfg_hash,
         "simulator": str(simulator),
         "simulator_sha256": simulator_hash,
+        "trace_witness_simulator": (
+            str(trace_witness_simulator)
+            if trace_witness_simulator is not None
+            else None
+        ),
+        "trace_witness_simulator_sha256": trace_witness_simulator_hash,
+        "trace_witness_policy": (
+            "one independent DASM-enabled B2-R execution per executable "
+            "case/profile using the identical ELF and generated input"
+            if trace_witness_simulator is not None
+            else None
+        ),
         "configurations": config_names,
         "counter_profiles": profiles,
         "trials": args.trials,
@@ -624,6 +805,14 @@ def main(argv: Sequence[str] | None = None) -> int:
             "simulator": {
                 "path": str(simulator),
                 "sha256": simulator_hash,
+            },
+            "trace_witness_simulator": {
+                "path": (
+                    str(trace_witness_simulator)
+                    if trace_witness_simulator is not None
+                    else None
+                ),
+                "sha256": trace_witness_simulator_hash,
             },
         },
         "measurement_window": (
@@ -642,6 +831,17 @@ def main(argv: Sequence[str] | None = None) -> int:
     ]
     if simulator.is_file():
         artifacts.append(artifact(simulator, artifact_root, "simulator"))
+    if (
+        trace_witness_simulator is not None
+        and trace_witness_simulator.is_file()
+    ):
+        artifacts.append(
+            artifact(
+                trace_witness_simulator,
+                artifact_root,
+                "trace_witness_simulator",
+            )
+        )
     persist(
         artifact_root, records, failures, commands, artifacts, manifest
     )
@@ -877,6 +1077,259 @@ def main(argv: Sequence[str] | None = None) -> int:
                     else None
                 )
                 elf_hash = common.sha256_file(elf) if elf.is_file() else None
+                expected_status = expected_case_status(case, policy)
+                witness_gate = "NA"
+                witness_sim_config: dict[str, Any] | None = None
+                witness_trace_payload: dict[str, Any] | None = None
+                witness_trace_audit_path: Path | None = None
+                witness_target_projection_hash: str | None = None
+                witness_target_result_hash: str | None = None
+                if (
+                    config_name == "B2R_RVV"
+                    and trace_witness_simulator is not None
+                ):
+                    if expected_status != "pass":
+                        witness_gate = "NOT_APPLICABLE_TERMINAL_CASE"
+                    elif static_gate != "PASS" or not elf.is_file():
+                        witness_gate = "BLOCKED_BY_STATIC_GATE"
+                    else:
+                        witness_dir = config_dir / "trace-witness"
+                        witness_logs_dir = witness_dir / "logs"
+                        witness_logs_dir.mkdir(
+                            parents=True, exist_ok=False
+                        )
+                        witness_log = witness_dir / "simulator.log"
+                        witness_errors: list[dict[str, Any]] = []
+                        witness_command = None
+                        witness_target: dict[str, Any] | None = None
+                        if not trace_witness_simulator.is_file():
+                            witness_errors.append(
+                                {
+                                    "message": (
+                                        "trace witness simulator unavailable: "
+                                        f"{trace_witness_simulator}"
+                                    )
+                                }
+                            )
+                        else:
+                            witness_command, witness_output = (
+                                common.run_command(
+                                    [
+                                        str(trace_witness_simulator),
+                                        str(elf),
+                                    ],
+                                    witness_dir,
+                                    witness_log,
+                                    case.timeout_seconds,
+                                )
+                            )
+                            commands.append(
+                                common.command_dict(witness_command)
+                            )
+                            artifacts.append(
+                                artifact(
+                                    witness_log,
+                                    artifact_root,
+                                    "trace_witness_simulator_log",
+                                )
+                            )
+                            if witness_command.status != "PASS":
+                                witness_errors.append(
+                                    {
+                                        "message": (
+                                            "trace witness command failed: "
+                                            f"{witness_command.status}"
+                                        )
+                                    }
+                                )
+                            witness_sim_config, simulator_errors = (
+                                parse_simulator_configuration(
+                                    witness_output,
+                                    expected_profile="default",
+                                    expected_dasm=True,
+                                )
+                            )
+                            witness_errors.extend(simulator_errors)
+                            witness_target, target_errors = parse_one_result(
+                                witness_output,
+                                str(
+                                    definition[
+                                        "internal_implementation"
+                                    ]
+                                ),
+                            )
+                            witness_errors.extend(target_errors)
+                            if witness_target is not None:
+                                witness_target_result_hash = (
+                                    common.sha256_json(witness_target)
+                                )
+                                witness_projection = (
+                                    target_functional_projection(
+                                        witness_target
+                                    )
+                                )
+                                witness_target_projection_hash = (
+                                    common.sha256_json(witness_projection)
+                                )
+                                projection_path = (
+                                    witness_dir
+                                    / "target_functional_projection.json"
+                                )
+                                common.write_json(
+                                    projection_path, witness_projection
+                                )
+                                artifacts.append(
+                                    artifact(
+                                        projection_path,
+                                        artifact_root,
+                                        "trace_witness_target_projection",
+                                    )
+                                )
+                                if witness_target.get("status") != "pass":
+                                    witness_errors.append(
+                                        {
+                                            "message": (
+                                                "trace witness target status "
+                                                "is not pass"
+                                            )
+                                        }
+                                    )
+                            trace_path = (
+                                witness_logs_dir
+                                / "trace_hart_00000.dasm"
+                            )
+                            for dasm_path in sorted(
+                                witness_logs_dir.glob(
+                                    "trace_hart_*.dasm"
+                                )
+                            ):
+                                artifacts.append(
+                                    artifact(
+                                        dasm_path,
+                                        artifact_root,
+                                        "trace_witness_dasm_trace",
+                                    )
+                                )
+                            disassembly_path = config_dir / "objdump.txt"
+                            if (
+                                trace_path.is_file()
+                                and disassembly_path.is_file()
+                            ):
+                                try:
+                                    audited_trace = trace_audit.audit_trace(
+                                        trace_path,
+                                        disassembly_path,
+                                        config_name,
+                                        case.n,
+                                        case.d,
+                                    )
+                                except (OSError, ValueError) as error:
+                                    witness_errors.append(
+                                        {"message": str(error)}
+                                    )
+                                else:
+                                    witness_trace_audit_path = (
+                                        witness_dir
+                                        / "instruction_trace_audit.json"
+                                    )
+                                    common.write_json(
+                                        witness_trace_audit_path,
+                                        audited_trace,
+                                    )
+                                    artifacts.append(
+                                        artifact(
+                                            witness_trace_audit_path,
+                                            artifact_root,
+                                            "trace_witness_audit",
+                                        )
+                                    )
+                                    if audited_trace["errors"]:
+                                        witness_errors.extend(
+                                            {"message": message}
+                                            for message in audited_trace[
+                                                "errors"
+                                            ]
+                                        )
+                                    elif not audited_trace[
+                                        "dynamic_rvv_trace_verified"
+                                    ]:
+                                        witness_errors.append(
+                                            {
+                                                "message": (
+                                                    "trace witness did not "
+                                                    "verify dynamic RVV"
+                                                )
+                                            }
+                                        )
+                                    else:
+                                        witness_trace_payload = audited_trace
+                            else:
+                                witness_errors.append(
+                                    {
+                                        "message": (
+                                            "trace witness hart-0 DASM or "
+                                            "disassembly missing"
+                                        )
+                                    }
+                                )
+
+                        witness_gate = (
+                            "FAIL" if witness_errors else "PASS"
+                        )
+                        witness_metadata = {
+                            "schema_version": 1,
+                            "case_id": case.case_id,
+                            "config": config_name,
+                            "counter_profile": profile,
+                            "expected_target_status": expected_status,
+                            "gate": witness_gate,
+                            "errors": witness_errors,
+                            "simulator": str(trace_witness_simulator),
+                            "simulator_sha256": (
+                                trace_witness_simulator_hash
+                            ),
+                            "simulator_configuration": witness_sim_config,
+                            "binary_sha256": elf_hash,
+                            "input_sha256": input_hash,
+                            "target_result_sha256": (
+                                witness_target_result_hash
+                            ),
+                            "target_functional_projection_sha256": (
+                                witness_target_projection_hash
+                            ),
+                            "command": (
+                                common.command_dict(witness_command)
+                                if witness_command is not None
+                                else None
+                            ),
+                        }
+                        witness_metadata_path = (
+                            witness_dir / "trace_witness_metadata.json"
+                        )
+                        common.write_json(
+                            witness_metadata_path, witness_metadata
+                        )
+                        artifacts.append(
+                            artifact(
+                                witness_metadata_path,
+                                artifact_root,
+                                "trace_witness_metadata",
+                            )
+                        )
+                        if witness_errors:
+                            failures.append(
+                                {
+                                    "case": case.slug,
+                                    "profile": profile,
+                                    "config": config_name,
+                                    "trial": "trace-witness",
+                                    "kind": "TRACE_WITNESS_GATE",
+                                    "message": ";".join(
+                                        str(error.get("message"))
+                                        for error in witness_errors
+                                    ),
+                                }
+                            )
                 for trial in range(args.trials):
                     base = canonical_base(
                         run_id,
@@ -908,6 +1361,31 @@ def main(argv: Sequence[str] | None = None) -> int:
                                 ";".join(gate_reasons)
                                 if gate_reasons
                                 else None
+                            ),
+                            "expected_target_status": expected_status,
+                            "trace_witness_gate": (
+                                witness_gate
+                                if config_name == "B2R_RVV"
+                                else "NA"
+                            ),
+                            "trace_witness_simulator_path": (
+                                str(trace_witness_simulator)
+                                if config_name == "B2R_RVV"
+                                and trace_witness_simulator is not None
+                                else None
+                            ),
+                            "trace_witness_simulator_hash": (
+                                trace_witness_simulator_hash
+                                if config_name == "B2R_RVV"
+                                else None
+                            ),
+                            "trace_witness_simulator_profile": (
+                                witness_sim_config.get("profile")
+                                if witness_sim_config is not None
+                                else None
+                            ),
+                            "trace_witness_target_projection_hash": (
+                                witness_target_projection_hash
                             ),
                         }
                     )
@@ -944,6 +1422,7 @@ def main(argv: Sequence[str] | None = None) -> int:
 
                     trial_dir = config_dir / f"trial-{trial}"
                     trial_dir.mkdir(parents=True, exist_ok=False)
+                    (trial_dir / "logs").mkdir(exist_ok=False)
                     log_path = trial_dir / "simulator.log"
                     command, output = common.run_command(
                         [str(simulator), str(elf)],
@@ -958,9 +1437,101 @@ def main(argv: Sequence[str] | None = None) -> int:
                     target_record, parse_errors = parse_one_result(
                         output, str(definition["internal_implementation"])
                     )
-                    fsm, fsm_errors = measured_fsm(output, config_name)
-                    errors = parse_errors + fsm_errors
+                    if target_record is not None and target_record.get(
+                        "status"
+                    ) in {"capacity_skip", "unsupported"}:
+                        fsm, fsm_errors = None, []
+                    else:
+                        fsm, fsm_errors = measured_fsm(
+                            output, config_name
+                        )
+                    simulator_config: dict[str, Any] | None = None
+                    simulator_errors: list[dict[str, Any]] = []
+                    if trace_witness_simulator is not None:
+                        simulator_config, simulator_errors = (
+                            parse_simulator_configuration(
+                                output,
+                                expected_profile="low_perturbation",
+                                expected_dasm=False,
+                            )
+                        )
+                    base.update(
+                        {
+                            "measurement_simulator_gate": (
+                                "PASS"
+                                if trace_witness_simulator is not None
+                                and not simulator_errors
+                                else (
+                                    "FAIL"
+                                    if trace_witness_simulator is not None
+                                    else "NA"
+                                )
+                            ),
+                            "measurement_simulator_profile": (
+                                simulator_config.get("profile")
+                                if simulator_config is not None
+                                else None
+                            ),
+                            "measurement_simulator_dasm_trace_enabled": (
+                                simulator_config.get(
+                                    "dasm_trace_enabled"
+                                )
+                                if simulator_config is not None
+                                else None
+                            ),
+                        }
+                    )
+                    errors = (
+                        parse_errors + fsm_errors + simulator_errors
+                    )
+                    if (
+                        target_record is not None
+                        and target_record.get("status") != expected_status
+                    ):
+                        errors.append(
+                            {
+                                "message": (
+                                    "target status does not match declared "
+                                    f"case policy: {target_record.get('status')}"
+                                    f" != {expected_status}"
+                                )
+                            }
+                        )
+                    measurement_projection_hash: str | None = None
+                    trace_equivalence_gate = "NA"
+                    if target_record is not None:
+                        measurement_projection_hash = common.sha256_json(
+                            target_functional_projection(target_record)
+                        )
+                    if config_name == "B2R_RVV" and witness_gate == "PASS":
+                        if (
+                            measurement_projection_hash
+                            == witness_target_projection_hash
+                        ):
+                            trace_equivalence_gate = "PASS"
+                        else:
+                            trace_equivalence_gate = "FAIL"
+                            errors.append(
+                                {
+                                    "message": (
+                                        "measurement and trace-witness "
+                                        "functional target projections differ"
+                                    )
+                                }
+                            )
+                    base.update(
+                        {
+                            "measurement_target_projection_hash": (
+                                measurement_projection_hash
+                            ),
+                            "trace_target_equivalence_gate": (
+                                trace_equivalence_gate
+                            ),
+                        }
+                    )
                     trace_payload: dict[str, Any] | None = None
+                    trace_source: str | None = None
+                    trace_audit_record_path: Path | None = None
                     trace_path = (
                         trial_dir / "logs/trace_hart_00000.dasm"
                     )
@@ -995,6 +1566,8 @@ def main(argv: Sequence[str] | None = None) -> int:
                             trace_audit_path = (
                                 trial_dir / "instruction_trace_audit.json"
                             )
+                            trace_audit_record_path = trace_audit_path
+                            trace_source = "MEASUREMENT_PROCESS_DASM"
                             common.write_json(
                                 trace_audit_path, trace_payload
                             )
@@ -1018,7 +1591,19 @@ def main(argv: Sequence[str] | None = None) -> int:
                                         ),
                                     }
                                 )
-                    elif config_name in {"B2R_RVV", "A1_SMU_SCALAR"}:
+                    elif (
+                        config_name == "B2R_RVV"
+                        and witness_gate == "PASS"
+                        and witness_trace_payload is not None
+                    ):
+                        trace_payload = witness_trace_payload
+                        trace_audit_record_path = witness_trace_audit_path
+                        trace_source = "INDEPENDENT_DASM_WITNESS"
+                    elif (
+                        config_name == "B2R_RVV"
+                        and expected_status == "pass"
+                        and trace_witness_simulator is None
+                    ):
                         failures.append(
                             {
                                 "case": case.slug,
@@ -1120,10 +1705,16 @@ def main(argv: Sequence[str] | None = None) -> int:
                             else None
                         )
                         record["instruction_mix_source"] = (
-                            "DASM_MARKER_ENVELOPE"
+                            (
+                                "DASM_MARKER_ENVELOPE_WITNESS"
+                                if trace_source
+                                == "INDEPENDENT_DASM_WITNESS"
+                                else "DASM_MARKER_ENVELOPE"
+                            )
                             if trace_payload
                             else None
                         )
+                        record["trace_source"] = trace_source
                         trace_cycles = (
                             trace_payload.get("category_cycle_spans", {})
                             if trace_payload
@@ -1143,11 +1734,11 @@ def main(argv: Sequence[str] | None = None) -> int:
                             ] = trace_cycles.get(category_name)
                         record["trace_audit_path"] = (
                             common.relative_or_absolute(
-                                trial_dir
-                                / "instruction_trace_audit.json",
+                                trace_audit_record_path,
                                 artifact_root,
                             )
                             if trace_payload
+                            and trace_audit_record_path is not None
                             else None
                         )
                         record["raw_log_path"] = common.relative_or_absolute(
@@ -1183,10 +1774,11 @@ def main(argv: Sequence[str] | None = None) -> int:
                             record["rvv_vector_cycles"] = None
                         if fsm is None:
                             record["fsm_gate"] = (
-                                "NA"
-                                if config_name
-                                not in {"A1_SMU_SCALAR", "A2_SMU_FULL"}
-                                else "TOOL_ERROR"
+                                "TOOL_ERROR"
+                                if target_status == "pass"
+                                and config_name
+                                in {"A1_SMU_SCALAR", "A2_SMU_FULL"}
+                                else "NA"
                             )
                             record["smu_busy_cycles"] = None
                             record["command_and_sync_cycles"] = None
@@ -1264,6 +1856,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         (
             record.get("config"),
             record.get("counter_profile"),
+            record.get("case_id"),
+            record.get("evidence_class"),
             record.get("N"),
             record.get("D"),
             record.get("seed"),
@@ -1284,6 +1878,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     fairness_failures = {
         (
             record.get("counter_profile"),
+            record.get("case_id"),
+            record.get("evidence_class"),
             record.get("N"),
             record.get("D"),
             record.get("seed"),

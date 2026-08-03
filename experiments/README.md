@@ -56,14 +56,28 @@ pre-implementation state remains in `PROJECT_STATE.md`):
 python3 experiments/scripts/collect_project_state.py
 ```
 
-Run the three P0 anchor cases after creating or selecting a compatible
-Verilator simulator:
+Run formal cases with a low-perturbation measurement simulator and an
+independently built DASM-enabled trace-witness simulator.  The runner accepts
+the measured cycles only when the first binary reports
+`profile=low_perturbation`, DASM disabled, and the FSM observer enabled.  For
+each executable B2-R case it runs the second binary once with the identical
+ELF and generated input, audits dynamic RVV execution, and requires the
+non-timing target-result fields to match the measurement run:
 
 ```bash
 python3 experiments/scripts/run_performance_matrix.py \
   --case-file experiments/configs/p0_anchor_cases.json \
-  --simulator hw/system/spatz_cluster/bin/spatz_cluster.vlt
+  --simulator /path/to/low-perturbation/spatz_cluster.vlt \
+  --trace-witness-simulator /path/to/traced/spatz_cluster.vlt
 ```
+
+Case files may provide a path-safe unique `case_id` and one of these evidence
+classes: `MAIN_PERFORMANCE`, `MODEL_WORKLOAD`, `FUNCTIONAL_BOUNDARY`,
+`CAPACITY_PROBE`, or `OPTIONAL_DIAGNOSTIC`.  Boundary, capacity, and optional
+diagnostic rows are preserved but are supporting-only and cannot become
+`paper_eligible=YES`.  Expected capacity skips and unsupported shapes still
+run three independent processes and must produce stable terminal records;
+they are never silently removed or replaced by a measured kernel result.
 
 Parse and check a preserved run:
 

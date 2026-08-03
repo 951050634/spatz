@@ -102,6 +102,119 @@ class ExperimentFrameworkTest(unittest.TestCase):
         self.assertTrue(errors)
         self.assertIn("implementation mismatch", errors[-1]["message"])
 
+    def test_simulator_configuration_distinguishes_measurement_and_trace(
+        self,
+    ) -> None:
+        measurement = (
+            'OM_SIM_CONFIG {"schema_version":1,'
+            '"profile":"low_perturbation",'
+            '"dasm_trace_enabled":false,'
+            '"fsm_observer_enabled":true}'
+        )
+        traced = measurement.replace(
+            '"profile":"low_perturbation"', '"profile":"default"'
+        ).replace(
+            '"dasm_trace_enabled":false',
+            '"dasm_trace_enabled":true',
+        )
+
+        measurement_record, measurement_errors = (
+            matrix.parse_simulator_configuration(
+                measurement, "low_perturbation", False
+            )
+        )
+        traced_record, traced_errors = matrix.parse_simulator_configuration(
+            traced, "default", True
+        )
+        _, wrong_errors = matrix.parse_simulator_configuration(
+            traced, "low_perturbation", False
+        )
+
+        self.assertEqual(measurement_errors, [])
+        self.assertEqual(measurement_record["dasm_trace_enabled"], False)
+        self.assertEqual(traced_errors, [])
+        self.assertEqual(traced_record["dasm_trace_enabled"], True)
+        self.assertEqual(len(wrong_errors), 2)
+
+    def test_trace_witness_projection_excludes_only_timing_fields(self) -> None:
+        measurement = {
+            "implementation": "B2-R",
+            "status": "pass",
+            "checked": 9,
+            "max_abs_error": 0.0,
+            "kernel_cycles": 100,
+            "tcdm_accessed": 50,
+        }
+        traced = {
+            **measurement,
+            "kernel_cycles": 900,
+            "tcdm_accessed": 500,
+        }
+
+        self.assertEqual(
+            matrix.target_functional_projection(measurement),
+            matrix.target_functional_projection(traced),
+        )
+        traced["checked"] = 8
+        self.assertNotEqual(
+            matrix.target_functional_projection(measurement),
+            matrix.target_functional_projection(traced),
+        )
+
+    def test_case_loader_rejects_unsafe_identifier(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "cases.json"
+            path.write_text(
+                json.dumps(
+                    [
+                        {
+                            "N": 1,
+                            "D": 1,
+                            "case_id": "../escape",
+                        }
+                    ]
+                ),
+                encoding="utf-8",
+            )
+
+            with self.assertRaisesRegex(ValueError, "case_id"):
+                matrix.load_cases(path)
+
+    def test_policy_predicts_exact_tcdm_capacity_boundaries(self) -> None:
+        policy = json.loads(
+            (
+                SCRIPT_DIR.parent / "configs/measurement_policy.json"
+            ).read_text(encoding="utf-8")
+        )
+
+        def case(n: int, d: int) -> matrix.Case:
+            return matrix.Case(
+                n=n,
+                d=d,
+                seed=1,
+                case_kind="main",
+                case_id=f"N{n}_D{d}",
+                evidence_class="CAPACITY_PROBE",
+                size_class="BOUNDARY",
+                timeout_seconds=1,
+                max_kernel_cycles=1,
+            )
+
+        self.assertEqual(
+            matrix.expected_case_status(case(83, 64), policy), "pass"
+        )
+        self.assertEqual(
+            matrix.expected_case_status(case(84, 64), policy),
+            "capacity_skip",
+        )
+        self.assertEqual(
+            matrix.expected_case_status(case(8, 687), policy), "pass"
+        )
+        self.assertEqual(
+            matrix.expected_case_status(case(8, 688), policy),
+            "capacity_skip",
+        )
+
     def test_smu_fsm_parser_requires_warmup_then_measured(self) -> None:
         output = "\n".join(
             "OM_FSM "
@@ -174,6 +287,30 @@ class ExperimentFrameworkTest(unittest.TestCase):
             {record["reproducible"] for record in records}, {"NO"}
         )
 
+    def test_terminal_capacity_records_can_be_reproducible(self) -> None:
+        records = [
+            {
+                "config": "B1_SCALAR",
+                "counter_profile": "memory",
+                "case_id": "capacity",
+                "evidence_class": "CAPACITY_PROBE",
+                "N": 84,
+                "D": 64,
+                "seed": 1,
+                "input_pattern": "main",
+                "kernel_cycles": 0,
+                "target_result_hash": "same",
+                "status": "SKIPPED_MEMORY_LIMIT",
+            }
+            for _ in range(3)
+        ]
+
+        matrix.apply_reproducibility(records, 3)
+
+        self.assertEqual(
+            {record["reproducible"] for record in records}, {"YES"}
+        )
+
     def test_paper_gate_requires_dynamic_b2r_trace(self) -> None:
         record = {
             "status": "PASS",
@@ -194,6 +331,29 @@ class ExperimentFrameworkTest(unittest.TestCase):
         self.assertEqual(
             record["paper_ineligible_reasons"],
             "DYNAMIC_RVV_TRACE_PENDING",
+        )
+
+    def test_paper_gate_marks_boundary_evidence_supporting_only(self) -> None:
+        record = {
+            "status": "PASS",
+            "git_dirty": False,
+            "counter_profile": "memory",
+            "reproducible": "YES",
+            "static_code_gate": "PASS",
+            "fairness_gate": "PASS",
+            "comparison_set_complete": "YES",
+            "fsm_gate": "NA",
+            "config": "B1_SCALAR",
+            "dynamic_trace_verified": "NO",
+            "evidence_class": "FUNCTIONAL_BOUNDARY",
+        }
+
+        matrix.apply_paper_eligibility([record])
+
+        self.assertEqual(record["paper_eligible"], "NO")
+        self.assertEqual(
+            record["paper_ineligible_reasons"],
+            "FUNCTIONAL_BOUNDARY_ONLY",
         )
 
     def test_cross_config_fairness_detects_compile_mismatch(self) -> None:
