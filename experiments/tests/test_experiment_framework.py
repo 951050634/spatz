@@ -14,7 +14,9 @@ if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
 import audit_instruction_trace as trace_audit
+import analyze_p0_4 as p0_4_analysis
 import experiment_common as common
+import index_external_runs as external_index
 import make_plots
 import parse_results
 import run_performance_matrix as matrix
@@ -68,6 +70,31 @@ class ExperimentFrameworkTest(unittest.TestCase):
             common.require_fresh_external_root(
                 temporary / "work-online-merge-fresh", repo
             )
+
+    def test_external_indexer_verifies_artifact_hashes_and_paths(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            payload = root / "artifact.txt"
+            payload.write_text("evidence\n", encoding="utf-8")
+            entry = {
+                "path": "artifact.txt",
+                "kind": "test",
+                "bytes": payload.stat().st_size,
+                "sha256": common.sha256_file(payload),
+            }
+
+            count, total_bytes = external_index.verify_artifacts(
+                root, [entry]
+            )
+
+            self.assertEqual(count, 1)
+            self.assertEqual(total_bytes, payload.stat().st_size)
+            with self.assertRaisesRegex(ValueError, "SHA256"):
+                external_index.verify_artifacts(
+                    root, [{**entry, "sha256": "0" * 64}]
+                )
+            with self.assertRaisesRegex(ValueError, "escapes"):
+                external_index.artifact_path(root, "../outside")
 
     def test_csv_writer_uses_repository_lf_endings(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -340,6 +367,201 @@ class ExperimentFrameworkTest(unittest.TestCase):
         self.assertEqual(set(selected_ids), expected_ids)
         self.assertEqual(plan["trials"], 3)
         self.assertEqual(plan["counter_profiles"], ["memory"])
+
+    def test_p0_4_model_fit_recovers_exact_linear_parameters(self) -> None:
+        coordinates = (
+            {(n, 64) for n in (1, 2, 4, 8, 16, 32)}
+            | {(8, d) for d in (1, 8, 16, 32, 64, 128)}
+            | {
+                (n, d)
+                for n in (1, 2, 4, 8)
+                for d in (1, 8, 16, 32)
+            }
+        )
+        summaries = []
+        for config, c0, cs, cv in (
+            ("B2R_RVV", 100, 10, 2),
+            ("A2_SMU_FULL", 80, 8, 1),
+        ):
+            summaries.extend(
+                {
+                    "case_id": f"N{n}_D{d}",
+                    "evidence_class": "MAIN_PERFORMANCE",
+                    "N": n,
+                    "D": d,
+                    "config": config,
+                    "status": "PASS",
+                    "paper_eligible": "YES",
+                    "kernel_cycles_median": c0 + cs * n + cv * n * d,
+                }
+                for n, d in coordinates
+            )
+        issues: list[str] = []
+
+        models, parameters, residuals = p0_4_analysis.fit_models(
+            summaries, issues
+        )
+
+        self.assertEqual(issues, [])
+        self.assertEqual(len(parameters), 2)
+        self.assertEqual(len(residuals), 46)
+        self.assertEqual(
+            models["B2R_RVV"]["parameters_cycles"]["C0"]["decimal"],
+            100.0,
+        )
+        self.assertEqual(
+            models["B2R_RVV"]["parameters_cycles"]["Cs"]["decimal"],
+            10.0,
+        )
+        self.assertEqual(
+            models["B2R_RVV"]["parameters_cycles"]["Cv"]["decimal"],
+            2.0,
+        )
+        self.assertEqual(models["B2R_RVV"]["R_squared"]["decimal"], 1.0)
+
+    def test_p0_4_break_even_uses_only_direct_measurements(self) -> None:
+        summaries = []
+        for n in (1, 2, 4, 8):
+            for d in (1, 8, 16, 32):
+                summaries.extend(
+                    (
+                        {
+                            "N": n,
+                            "D": d,
+                            "config": "B2R_RVV",
+                            "evidence_class": "MAIN_PERFORMANCE",
+                            "status": "PASS",
+                            "kernel_cycles_median": 100,
+                        },
+                        {
+                            "N": n,
+                            "D": d,
+                            "config": "A2_SMU_FULL",
+                            "evidence_class": "MAIN_PERFORMANCE",
+                            "status": "PASS",
+                            "kernel_cycles_median": 120 - d,
+                        },
+                    )
+                )
+        issues: list[str] = []
+
+        rows, per_n = p0_4_analysis.measured_break_even(
+            summaries, issues
+        )
+
+        self.assertEqual(issues, [])
+        self.assertEqual(len(rows), 16)
+        self.assertEqual(
+            {row["minimum_measured_D"] for row in per_n}, {32}
+        )
+
+    def test_p0_4_record_audit_accepts_complete_exact_trials(self) -> None:
+        policy = json.loads(
+            (
+                SCRIPT_DIR.parent / "configs/measurement_policy.json"
+            ).read_text(encoding="utf-8")
+        )
+        case = matrix.Case(
+            n=1,
+            d=1,
+            seed=1,
+            case_kind="main",
+            case_id="test_case",
+            evidence_class="MAIN_PERFORMANCE",
+            size_class="TEST",
+            timeout_seconds=1,
+            max_kernel_cycles=1000,
+        )
+        records = []
+        for config_index, config in enumerate(p0_4_analysis.CONFIGS):
+            for trial in range(3):
+                record = {
+                    "run_id": "test_run",
+                    "case_id": case.case_id,
+                    "config": config,
+                    "trial": trial,
+                    "N": 1,
+                    "D": 1,
+                    "seed": 1,
+                    "input_pattern": "main",
+                    "evidence_class": "MAIN_PERFORMANCE",
+                    "counter_profile": "memory",
+                    "expected_target_status": "pass",
+                    "target_status": "pass",
+                    "status": "PASS",
+                    "git_dirty": False,
+                    "reproducible": "YES",
+                    "static_code_gate": "PASS",
+                    "fairness_gate": "PASS",
+                    "comparison_set_complete": "YES",
+                    "measurement_simulator_gate": "PASS",
+                    "logical_N": 1,
+                    "logical_D": 1,
+                    "padded_N": 1,
+                    "padded_D": 1,
+                    "padding_ratio": 1.0,
+                    "footprint_bytes": 56,
+                    "allocation_bytes": 256,
+                    "runtime_reserved_bytes": 16512,
+                    "memory_footprint_bytes": 16768,
+                    "paper_eligible": "YES",
+                    "paper_ineligible_reasons": None,
+                    "kernel_cycles": 100 + config_index,
+                    "nonfinite": 0,
+                    "nan_count": 0,
+                    "inf_count": 0,
+                    "target_result_hash": f"target-{config}",
+                    "input_hash": "same-input",
+                    "binary_hash": f"binary-{config}",
+                    "tcdm_accessed": 1,
+                    "tcdm_congested": 0,
+                    "max_abs_error": 0.0,
+                    "max_rel_error": 0.0,
+                    "mean_abs_error": 0.0,
+                    "l2_relative_error": 0.0,
+                }
+                if config in {"A1_SMU_SCALAR", "A2_SMU_FULL"}:
+                    record.update(
+                        {
+                            "fsm_gate": "PASS",
+                            "load_scalar_cycles": 1,
+                            "compute_scalar_cycles": 1,
+                            "compute_weight_cycles": 1,
+                            "store_scalar_cycles": 1,
+                            "update_vector_cycles": 1,
+                            "smu_busy_cycles": 5,
+                        }
+                    )
+                else:
+                    record["fsm_gate"] = "NA"
+                if config == "B2R_RVV":
+                    record.update(
+                        {
+                            "dynamic_trace_verified": "YES",
+                            "trace_witness_gate": "PASS",
+                            "trace_source": "INDEPENDENT_DASM_WITNESS",
+                            "trace_target_equivalence_gate": "PASS",
+                            "measurement_target_projection_hash": "same",
+                            "trace_witness_target_projection_hash": "same",
+                        }
+                    )
+                records.append(record)
+        runs = [
+            {
+                "run_id": "test_run",
+                "root": Path("/external/test"),
+                "manifest": {"selected_case_ids": [case.case_id]},
+                "records": records,
+            }
+        ]
+
+        issues, audited, summaries = p0_4_analysis.audit_records(
+            {}, {case.case_id: case}, policy, runs
+        )
+
+        self.assertEqual(issues, [])
+        self.assertEqual(len(audited), 12)
+        self.assertEqual(len(summaries), 4)
 
     def test_smu_fsm_parser_requires_warmup_then_measured(self) -> None:
         output = "\n".join(

@@ -96,6 +96,31 @@ file hash and records the exact ordered selection in `run_manifest.json`.
 Every shard still runs all four configurations and three independent trials;
 the consolidated analysis must reject missing or duplicated case IDs.
 
+Formal parallel shards use `--no-index` so that one completed process cannot
+dirty the worktree seen by another process.  After every shard in a stage has
+finished, verify every external artifact and create the small Git indices as
+one atomic measurement block:
+
+```bash
+python3 experiments/scripts/index_external_runs.py \
+  --set-name p0_4 \
+  --result-root /path/to/first-root \
+  --result-root /path/to/second-root \
+  --require-clean
+```
+
+The indexer recomputes every listed size and SHA256 before writing anything.
+P0-4 consolidation then re-verifies the indexed roots, enforces the 17-shard
+plan and all trial/correctness/fairness/FSM/trace/padding gates, and writes the
+23-point exact-rational fits and 16 directly measured break-even rows:
+
+```bash
+python3 experiments/scripts/analyze_p0_4.py \
+  --index-set experiments/manifests/p0_4_index_set.json \
+  --output-dir experiments/parsed/p0_4 \
+  --require-clean
+```
+
 Parse and check a preserved run:
 
 ```bash
