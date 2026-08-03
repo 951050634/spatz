@@ -1,0 +1,13 @@
+config,N,D,seed,input_pattern,symbol,static_instruction_count,static_vsetvli,static_vector_loads,static_vector_math,static_vector_stores,static_backedge,retired_instructions,retired_accelerator_instructions,dynamic_rvv_trace_verified,dynamic_retired_instructions,dynamic_vector_instructions
+B1_SCALAR,1,1,1,main,online_merge_rtl_reference,314,0,0,0,0,YES,1194,41,YES,1183,0
+B2R_RVV,1,1,1,main,online_merge_rvv_update,21,1,2,2,1,YES,1070,30,YES,1035,6
+A1_SMU_SCALAR,1,1,1,main,online_merge_rvv_update,21,1,2,2,1,YES,769,2,YES,885,6
+A2_SMU_FULL,1,1,1,main,online_merge_rvv_update,0,0,0,0,0,NO,693,0,YES,818,0
+B1_SCALAR,8,32,1,main,online_merge_rtl_reference,314,0,0,0,0,YES,73479,3304,YES,77430,0
+B2R_RVV,8,32,1,main,online_merge_rvv_update,21,1,2,2,1,YES,8777,264,YES,9071,192
+A1_SMU_SCALAR,8,32,1,main,online_merge_rvv_update,21,1,2,2,1,YES,1565,40,YES,1753,192
+A2_SMU_FULL,8,32,1,main,online_merge_rvv_update,0,0,0,0,0,NO,1845,0,YES,2218,0
+B1_SCALAR,16,64,1,main,online_merge_rtl_reference,314,0,0,0,0,YES,281210,12752,YES,296361,0
+B2R_RVV,16,64,1,main,online_merge_rvv_update,21,1,2,2,1,YES,18464,592,YES,19134,768
+A1_SMU_SCALAR,16,64,1,main,online_merge_rvv_update,21,1,2,2,1,YES,3525,144,YES,3801,768
+A2_SMU_FULL,16,64,1,main,online_merge_rvv_update,0,0,0,0,0,NO,5109,0,YES,6378,0

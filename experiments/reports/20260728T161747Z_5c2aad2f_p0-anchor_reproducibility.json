@@ -1,0 +1,862 @@
+{
+  "expected_trials": 3,
+  "failures": [],
+  "fairness_results": [
+    {
+      "configurations": [
+        "A1_SMU_SCALAR",
+        "A2_SMU_FULL",
+        "B1_SCALAR",
+        "B2R_RVV"
+      ],
+      "coordinate": [
+        "instructions",
+        1,
+        1,
+        1,
+        "main"
+      ],
+      "mismatches": {},
+      "passed": true
+    },
+    {
+      "configurations": [
+        "A1_SMU_SCALAR",
+        "A2_SMU_FULL",
+        "B1_SCALAR",
+        "B2R_RVV"
+      ],
+      "coordinate": [
+        "instructions",
+        16,
+        64,
+        1,
+        "main"
+      ],
+      "mismatches": {},
+      "passed": true
+    },
+    {
+      "configurations": [
+        "A1_SMU_SCALAR",
+        "A2_SMU_FULL",
+        "B1_SCALAR",
+        "B2R_RVV"
+      ],
+      "coordinate": [
+        "instructions",
+        8,
+        32,
+        1,
+        "main"
+      ],
+      "mismatches": {},
+      "passed": true
+    },
+    {
+      "configurations": [
+        "A1_SMU_SCALAR",
+        "A2_SMU_FULL",
+        "B1_SCALAR",
+        "B2R_RVV"
+      ],
+      "coordinate": [
+        "memory",
+        1,
+        1,
+        1,
+        "main"
+      ],
+      "mismatches": {},
+      "passed": true
+    },
+    {
+      "configurations": [
+        "A1_SMU_SCALAR",
+        "A2_SMU_FULL",
+        "B1_SCALAR",
+        "B2R_RVV"
+      ],
+      "coordinate": [
+        "memory",
+        16,
+        64,
+        1,
+        "main"
+      ],
+      "mismatches": {},
+      "passed": true
+    },
+    {
+      "configurations": [
+        "A1_SMU_SCALAR",
+        "A2_SMU_FULL",
+        "B1_SCALAR",
+        "B2R_RVV"
+      ],
+      "coordinate": [
+        "memory",
+        8,
+        32,
+        1,
+        "main"
+      ],
+      "mismatches": {},
+      "passed": true
+    }
+  ],
+  "group_results": [
+    {
+      "exact_cycles": true,
+      "exact_trials": true,
+      "group": [
+        "A1_SMU_SCALAR",
+        "instructions",
+        1,
+        1,
+        1,
+        "main"
+      ],
+      "kernel_cycles": [
+        1491,
+        1491,
+        1491
+      ],
+      "passed": true,
+      "record_count": 3,
+      "stable_input_and_binary": true,
+      "stable_target_output": true,
+      "statuses": [
+        "PASS",
+        "PASS",
+        "PASS"
+      ],
+      "trials": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "exact_cycles": true,
+      "exact_trials": true,
+      "group": [
+        "A1_SMU_SCALAR",
+        "instructions",
+        16,
+        64,
+        1,
+        "main"
+      ],
+      "kernel_cycles": [
+        4736,
+        4736,
+        4736
+      ],
+      "passed": true,
+      "record_count": 3,
+      "stable_input_and_binary": true,
+      "stable_target_output": true,
+      "statuses": [
+        "PASS",
+        "PASS",
+        "PASS"
+      ],
+      "trials": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "exact_cycles": true,
+      "exact_trials": true,
+      "group": [
+        "A1_SMU_SCALAR",
+        "instructions",
+        8,
+        32,
+        1,
+        "main"
+      ],
+      "kernel_cycles": [
+        2683,
+        2683,
+        2683
+      ],
+      "passed": true,
+      "record_count": 3,
+      "stable_input_and_binary": true,
+      "stable_target_output": true,
+      "statuses": [
+        "PASS",
+        "PASS",
+        "PASS"
+      ],
+      "trials": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "exact_cycles": true,
+      "exact_trials": true,
+      "group": [
+        "A1_SMU_SCALAR",
+        "memory",
+        1,
+        1,
+        1,
+        "main"
+      ],
+      "kernel_cycles": [
+        1467,
+        1467,
+        1467
+      ],
+      "passed": true,
+      "record_count": 3,
+      "stable_input_and_binary": true,
+      "stable_target_output": true,
+      "statuses": [
+        "PASS",
+        "PASS",
+        "PASS"
+      ],
+      "trials": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "exact_cycles": true,
+      "exact_trials": true,
+      "group": [
+        "A1_SMU_SCALAR",
+        "memory",
+        16,
+        64,
+        1,
+        "main"
+      ],
+      "kernel_cycles": [
+        4778,
+        4778,
+        4778
+      ],
+      "passed": true,
+      "record_count": 3,
+      "stable_input_and_binary": true,
+      "stable_target_output": true,
+      "statuses": [
+        "PASS",
+        "PASS",
+        "PASS"
+      ],
+      "trials": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "exact_cycles": true,
+      "exact_trials": true,
+      "group": [
+        "A1_SMU_SCALAR",
+        "memory",
+        8,
+        32,
+        1,
+        "main"
+      ],
+      "kernel_cycles": [
+        2497,
+        2497,
+        2497
+      ],
+      "passed": true,
+      "record_count": 3,
+      "stable_input_and_binary": true,
+      "stable_target_output": true,
+      "statuses": [
+        "PASS",
+        "PASS",
+        "PASS"
+      ],
+      "trials": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "exact_cycles": true,
+      "exact_trials": true,
+      "group": [
+        "A2_SMU_FULL",
+        "instructions",
+        1,
+        1,
+        1,
+        "main"
+      ],
+      "kernel_cycles": [
+        1329,
+        1329,
+        1329
+      ],
+      "passed": true,
+      "record_count": 3,
+      "stable_input_and_binary": true,
+      "stable_target_output": true,
+      "statuses": [
+        "PASS",
+        "PASS",
+        "PASS"
+      ],
+      "trials": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "exact_cycles": true,
+      "exact_trials": true,
+      "group": [
+        "A2_SMU_FULL",
+        "instructions",
+        16,
+        64,
+        1,
+        "main"
+      ],
+      "kernel_cycles": [
+        9800,
+        9800,
+        9800
+      ],
+      "passed": true,
+      "record_count": 3,
+      "stable_input_and_binary": true,
+      "stable_target_output": true,
+      "statuses": [
+        "PASS",
+        "PASS",
+        "PASS"
+      ],
+      "trials": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "exact_cycles": true,
+      "exact_trials": true,
+      "group": [
+        "A2_SMU_FULL",
+        "instructions",
+        8,
+        32,
+        1,
+        "main"
+      ],
+      "kernel_cycles": [
+        3520,
+        3520,
+        3520
+      ],
+      "passed": true,
+      "record_count": 3,
+      "stable_input_and_binary": true,
+      "stable_target_output": true,
+      "statuses": [
+        "PASS",
+        "PASS",
+        "PASS"
+      ],
+      "trials": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "exact_cycles": true,
+      "exact_trials": true,
+      "group": [
+        "A2_SMU_FULL",
+        "memory",
+        1,
+        1,
+        1,
+        "main"
+      ],
+      "kernel_cycles": [
+        1338,
+        1338,
+        1338
+      ],
+      "passed": true,
+      "record_count": 3,
+      "stable_input_and_binary": true,
+      "stable_target_output": true,
+      "statuses": [
+        "PASS",
+        "PASS",
+        "PASS"
+      ],
+      "trials": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "exact_cycles": true,
+      "exact_trials": true,
+      "group": [
+        "A2_SMU_FULL",
+        "memory",
+        16,
+        64,
+        1,
+        "main"
+      ],
+      "kernel_cycles": [
+        9820,
+        9820,
+        9820
+      ],
+      "passed": true,
+      "record_count": 3,
+      "stable_input_and_binary": true,
+      "stable_target_output": true,
+      "statuses": [
+        "PASS",
+        "PASS",
+        "PASS"
+      ],
+      "trials": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "exact_cycles": true,
+      "exact_trials": true,
+      "group": [
+        "A2_SMU_FULL",
+        "memory",
+        8,
+        32,
+        1,
+        "main"
+      ],
+      "kernel_cycles": [
+        3477,
+        3477,
+        3477
+      ],
+      "passed": true,
+      "record_count": 3,
+      "stable_input_and_binary": true,
+      "stable_target_output": true,
+      "statuses": [
+        "PASS",
+        "PASS",
+        "PASS"
+      ],
+      "trials": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "exact_cycles": true,
+      "exact_trials": true,
+      "group": [
+        "B1_SCALAR",
+        "instructions",
+        1,
+        1,
+        1,
+        "main"
+      ],
+      "kernel_cycles": [
+        2313,
+        2313,
+        2313
+      ],
+      "passed": true,
+      "record_count": 3,
+      "stable_input_and_binary": true,
+      "stable_target_output": true,
+      "statuses": [
+        "PASS",
+        "PASS",
+        "PASS"
+      ],
+      "trials": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "exact_cycles": true,
+      "exact_trials": true,
+      "group": [
+        "B1_SCALAR",
+        "instructions",
+        16,
+        64,
+        1,
+        "main"
+      ],
+      "kernel_cycles": [
+        362214,
+        362214,
+        362214
+      ],
+      "passed": true,
+      "record_count": 3,
+      "stable_input_and_binary": true,
+      "stable_target_output": true,
+      "statuses": [
+        "PASS",
+        "PASS",
+        "PASS"
+      ],
+      "trials": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "exact_cycles": true,
+      "exact_trials": true,
+      "group": [
+        "B1_SCALAR",
+        "instructions",
+        8,
+        32,
+        1,
+        "main"
+      ],
+      "kernel_cycles": [
+        99002,
+        99002,
+        99002
+      ],
+      "passed": true,
+      "record_count": 3,
+      "stable_input_and_binary": true,
+      "stable_target_output": true,
+      "statuses": [
+        "PASS",
+        "PASS",
+        "PASS"
+      ],
+      "trials": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "exact_cycles": true,
+      "exact_trials": true,
+      "group": [
+        "B1_SCALAR",
+        "memory",
+        1,
+        1,
+        1,
+        "main"
+      ],
+      "kernel_cycles": [
+        2065,
+        2065,
+        2065
+      ],
+      "passed": true,
+      "record_count": 3,
+      "stable_input_and_binary": true,
+      "stable_target_output": true,
+      "statuses": [
+        "PASS",
+        "PASS",
+        "PASS"
+      ],
+      "trials": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "exact_cycles": true,
+      "exact_trials": true,
+      "group": [
+        "B1_SCALAR",
+        "memory",
+        16,
+        64,
+        1,
+        "main"
+      ],
+      "kernel_cycles": [
+        372649,
+        372649,
+        372649
+      ],
+      "passed": true,
+      "record_count": 3,
+      "stable_input_and_binary": true,
+      "stable_target_output": true,
+      "statuses": [
+        "PASS",
+        "PASS",
+        "PASS"
+      ],
+      "trials": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "exact_cycles": true,
+      "exact_trials": true,
+      "group": [
+        "B1_SCALAR",
+        "memory",
+        8,
+        32,
+        1,
+        "main"
+      ],
+      "kernel_cycles": [
+        96853,
+        96853,
+        96853
+      ],
+      "passed": true,
+      "record_count": 3,
+      "stable_input_and_binary": true,
+      "stable_target_output": true,
+      "statuses": [
+        "PASS",
+        "PASS",
+        "PASS"
+      ],
+      "trials": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "exact_cycles": true,
+      "exact_trials": true,
+      "group": [
+        "B2R_RVV",
+        "instructions",
+        1,
+        1,
+        1,
+        "main"
+      ],
+      "kernel_cycles": [
+        1855,
+        1855,
+        1855
+      ],
+      "passed": true,
+      "record_count": 3,
+      "stable_input_and_binary": true,
+      "stable_target_output": true,
+      "statuses": [
+        "PASS",
+        "PASS",
+        "PASS"
+      ],
+      "trials": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "exact_cycles": true,
+      "exact_trials": true,
+      "group": [
+        "B2R_RVV",
+        "instructions",
+        16,
+        64,
+        1,
+        "main"
+      ],
+      "kernel_cycles": [
+        26652,
+        26652,
+        26652
+      ],
+      "passed": true,
+      "record_count": 3,
+      "stable_input_and_binary": true,
+      "stable_target_output": true,
+      "statuses": [
+        "PASS",
+        "PASS",
+        "PASS"
+      ],
+      "trials": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "exact_cycles": true,
+      "exact_trials": true,
+      "group": [
+        "B2R_RVV",
+        "instructions",
+        8,
+        32,
+        1,
+        "main"
+      ],
+      "kernel_cycles": [
+        13290,
+        13290,
+        13290
+      ],
+      "passed": true,
+      "record_count": 3,
+      "stable_input_and_binary": true,
+      "stable_target_output": true,
+      "statuses": [
+        "PASS",
+        "PASS",
+        "PASS"
+      ],
+      "trials": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "exact_cycles": true,
+      "exact_trials": true,
+      "group": [
+        "B2R_RVV",
+        "memory",
+        1,
+        1,
+        1,
+        "main"
+      ],
+      "kernel_cycles": [
+        1713,
+        1713,
+        1713
+      ],
+      "passed": true,
+      "record_count": 3,
+      "stable_input_and_binary": true,
+      "stable_target_output": true,
+      "statuses": [
+        "PASS",
+        "PASS",
+        "PASS"
+      ],
+      "trials": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "exact_cycles": true,
+      "exact_trials": true,
+      "group": [
+        "B2R_RVV",
+        "memory",
+        16,
+        64,
+        1,
+        "main"
+      ],
+      "kernel_cycles": [
+        27302,
+        27302,
+        27302
+      ],
+      "passed": true,
+      "record_count": 3,
+      "stable_input_and_binary": true,
+      "stable_target_output": true,
+      "statuses": [
+        "PASS",
+        "PASS",
+        "PASS"
+      ],
+      "trials": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "exact_cycles": true,
+      "exact_trials": true,
+      "group": [
+        "B2R_RVV",
+        "memory",
+        8,
+        32,
+        1,
+        "main"
+      ],
+      "kernel_cycles": [
+        13111,
+        13111,
+        13111
+      ],
+      "passed": true,
+      "record_count": 3,
+      "stable_input_and_binary": true,
+      "stable_target_output": true,
+      "statuses": [
+        "PASS",
+        "PASS",
+        "PASS"
+      ],
+      "trials": [
+        0,
+        1,
+        2
+      ]
+    }
+  ],
+  "passed": true,
+  "record_count": 72,
+  "records_path": "/home/wxt/work-online-merge-20260728T161747Z_5c2aad2f_p0-anchor/records.json",
+  "records_sha256": "d60473e5fa436e5fc4570c4f7f575731df65f27c4007c50ff92c4b471bf1bc42",
+  "schema_version": 1,
+  "status_counts": {
+    "PASS": 72
+  }
+}

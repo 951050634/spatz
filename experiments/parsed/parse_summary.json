@@ -1,0 +1,10 @@
+{
+  "paper_eligible_count": 36,
+  "progressive_row_count": 12,
+  "raw_records_sha256": "d60473e5fa436e5fc4570c4f7f575731df65f27c4007c50ff92c4b471bf1bc42",
+  "raw_root": "/home/wxt/work-online-merge-20260728T161747Z_5c2aad2f_p0-anchor",
+  "record_count": 72,
+  "status_counts": {
+    "PASS": 72
+  }
+}
