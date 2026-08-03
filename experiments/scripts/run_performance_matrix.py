@@ -125,12 +125,18 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--artifact-root", type=Path)
     parser.add_argument("--build-dir", type=Path)
     parser.add_argument("--suite", default="p0")
+    parser.add_argument(
+        "--case-ids",
+        default="",
+        help="comma-separated case IDs selected from the case file",
+    )
     parser.add_argument("--configs", default="")
     parser.add_argument("--profiles", default="memory,instructions")
     parser.add_argument("--trials", type=int, default=3)
     parser.add_argument("--jobs", type=int, default=8)
     parser.add_argument("--cmake", default="cmake")
     parser.add_argument("--build-timeout-seconds", type=int, default=900)
+    parser.add_argument("--require-clean", action="store_true")
     parser.add_argument("--no-index", action="store_true")
     return parser.parse_args(argv)
 
@@ -197,6 +203,19 @@ def selected_names(value: str, available: dict[str, Any]) -> list[str]:
     if unknown:
         raise ValueError(f"unknown configurations: {', '.join(unknown)}")
     return names
+
+
+def selected_cases(value: str, cases: Sequence[Case]) -> list[Case]:
+    if not value:
+        return list(cases)
+    names = [item.strip() for item in value.split(",") if item.strip()]
+    if len(names) != len(set(names)):
+        raise ValueError("case selection must not contain duplicate IDs")
+    by_id = {case.case_id: case for case in cases}
+    unknown = sorted(set(names) - set(by_id))
+    if unknown:
+        raise ValueError(f"unknown case IDs: {', '.join(unknown)}")
+    return [by_id[name] for name in names]
 
 
 def default_cmake_defines(
@@ -675,6 +694,7 @@ def apply_paper_eligibility(records: list[dict[str, Any]]) -> None:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
+    effective_argv = list(argv) if argv is not None else sys.argv[1:]
     args = parse_args(argv)
     repo_root = args.repo_root.resolve()
     policy_path = args.policy.resolve()
@@ -695,7 +715,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     definitions = policy["configurations"]
     try:
         config_names = selected_names(args.configs, definitions)
-        cases = load_cases(case_path)
+        case_catalog = load_cases(case_path)
+        cases = selected_cases(args.case_ids, case_catalog)
     except (KeyError, TypeError, ValueError, json.JSONDecodeError) as error:
         raise SystemExit(f"invalid experiment configuration: {error}") from error
     profiles = [item.strip() for item in args.profiles.split(",") if item.strip()]
@@ -704,6 +725,8 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     git_commit = common.git_output(repo_root, "rev-parse", "HEAD")
     git_dirty = bool(common.git_output(repo_root, "status", "--porcelain"))
+    if args.require_clean and git_dirty:
+        raise SystemExit("--require-clean rejected a dirty Git worktree")
     try:
         source_snapshot = common.worktree_snapshot(repo_root)
     except RuntimeError as error:
@@ -762,6 +785,12 @@ def main(argv: Sequence[str] | None = None) -> int:
     manifest: dict[str, Any] = {
         "schema_version": 1,
         "run_id": run_id,
+        "runner_argv": [
+            sys.executable,
+            str(Path(__file__).resolve()),
+            *effective_argv,
+        ],
+        "runner_sha256": common.sha256_file(Path(__file__).resolve()),
         "start_utc": common.utc_now(),
         "end_utc": None,
         "git_commit": git_commit,
@@ -772,6 +801,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         "worktree_snapshot": source_snapshot,
         "case_file": common.relative_or_absolute(case_path, repo_root),
         "case_file_sha256": common.sha256_file(case_path),
+        "case_catalog_count": len(case_catalog),
+        "selected_case_ids": [case.case_id for case in cases],
+        "selected_case_count": len(cases),
         "policy": common.relative_or_absolute(policy_path, repo_root),
         "policy_sha256": common.sha256_file(policy_path),
         "cfg_path": common.relative_or_absolute(cfg_path, repo_root),
@@ -825,6 +857,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     failures: list[dict[str, Any]] = []
     commands: list[dict[str, Any]] = []
     artifacts: list[dict[str, Any]] = [
+        artifact(
+            Path(__file__).resolve(), artifact_root, "runner_script"
+        ),
         artifact(cfg_path, artifact_root, "cluster_cfg"),
         artifact(case_path, artifact_root, "case_file"),
         artifact(policy_path, artifact_root, "measurement_policy"),

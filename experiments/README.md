@@ -68,7 +68,8 @@ non-timing target-result fields to match the measurement run:
 python3 experiments/scripts/run_performance_matrix.py \
   --case-file experiments/configs/p0_anchor_cases.json \
   --simulator /path/to/low-perturbation/spatz_cluster.vlt \
-  --trace-witness-simulator /path/to/traced/spatz_cluster.vlt
+  --trace-witness-simulator /path/to/traced/spatz_cluster.vlt \
+  --require-clean
 ```
 
 Case files may provide a path-safe unique `case_id` and one of these evidence
@@ -78,6 +79,22 @@ diagnostic rows are preserved but are supporting-only and cannot become
 `paper_eligible=YES`.  Expected capacity skips and unsupported shapes still
 run three independent processes and must produce stable terminal records;
 they are never silently removed or replaced by a measured kernel result.
+
+The versioned P0-4 catalogs are:
+
+- `p0_scaling_cases.json`: the 23-coordinate union of both fixed matrices and
+  the directly measured break-even grid;
+- `p0_rvv_tail_cases.json`: all nine required correctness-only RVV tails;
+- `p0_numerical_boundary_cases.json`: the seven defined numerical boundary
+  patterns plus the explicit both-zero-`l` unsupported case;
+- `p0_capacity_cases.json`: the five requested capacity probes and adjacent
+  measured pass/skip points at both exact policy thresholds.
+
+Long catalogs can be divided into non-overlapping processes without copying
+or rewriting the input file.  `--case-ids id1,id2` preserves the common case
+file hash and records the exact ordered selection in `run_manifest.json`.
+Every shard still runs all four configurations and three independent trials;
+the consolidated analysis must reject missing or duplicated case IDs.
 
 Parse and check a preserved run:
 

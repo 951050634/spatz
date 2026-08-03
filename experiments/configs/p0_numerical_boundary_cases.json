@@ -1,0 +1,82 @@
+[
+  {
+    "N": 4,
+    "D": 17,
+    "case_kind": "equal-m",
+    "case_id": "numerical_equal_m",
+    "evidence_class": "FUNCTIONAL_BOUNDARY",
+    "size_class": "NUMERICAL_BOUNDARY",
+    "timeout_seconds": 1800,
+    "max_kernel_cycles": 10000000
+  },
+  {
+    "N": 4,
+    "D": 17,
+    "case_kind": "delta-neg8",
+    "case_id": "numerical_delta_neg8",
+    "evidence_class": "FUNCTIONAL_BOUNDARY",
+    "size_class": "NUMERICAL_BOUNDARY",
+    "timeout_seconds": 1800,
+    "max_kernel_cycles": 10000000
+  },
+  {
+    "N": 4,
+    "D": 17,
+    "case_kind": "delta-below-neg8",
+    "case_id": "numerical_delta_below_neg8",
+    "evidence_class": "FUNCTIONAL_BOUNDARY",
+    "size_class": "NUMERICAL_BOUNDARY",
+    "timeout_seconds": 1800,
+    "max_kernel_cycles": 10000000
+  },
+  {
+    "N": 4,
+    "D": 17,
+    "case_kind": "l-old-zero",
+    "case_id": "numerical_l_old_zero",
+    "evidence_class": "FUNCTIONAL_BOUNDARY",
+    "size_class": "NUMERICAL_BOUNDARY",
+    "timeout_seconds": 1800,
+    "max_kernel_cycles": 10000000
+  },
+  {
+    "N": 4,
+    "D": 17,
+    "case_kind": "l-tile-zero",
+    "case_id": "numerical_l_tile_zero",
+    "evidence_class": "FUNCTIONAL_BOUNDARY",
+    "size_class": "NUMERICAL_BOUNDARY",
+    "timeout_seconds": 1800,
+    "max_kernel_cycles": 10000000
+  },
+  {
+    "N": 4,
+    "D": 17,
+    "case_kind": "small-l",
+    "case_id": "numerical_small_l",
+    "evidence_class": "FUNCTIONAL_BOUNDARY",
+    "size_class": "NUMERICAL_BOUNDARY",
+    "timeout_seconds": 1800,
+    "max_kernel_cycles": 10000000
+  },
+  {
+    "N": 4,
+    "D": 17,
+    "case_kind": "signed-o",
+    "case_id": "numerical_signed_o",
+    "evidence_class": "FUNCTIONAL_BOUNDARY",
+    "size_class": "NUMERICAL_BOUNDARY",
+    "timeout_seconds": 1800,
+    "max_kernel_cycles": 10000000
+  },
+  {
+    "N": 4,
+    "D": 17,
+    "case_kind": "both-zero-l",
+    "case_id": "numerical_both_zero_l",
+    "evidence_class": "FUNCTIONAL_BOUNDARY",
+    "size_class": "UNSUPPORTED_NUMERICAL_BOUNDARY",
+    "timeout_seconds": 1800,
+    "max_kernel_cycles": 10000000
+  }
+]

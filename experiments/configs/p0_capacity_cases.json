@@ -1,0 +1,83 @@
+[
+  {
+    "N": 48,
+    "D": 64,
+    "case_id": "capacity_d64_n48",
+    "evidence_class": "CAPACITY_PROBE",
+    "size_class": "CAPACITY_PROBE",
+    "timeout_seconds": 3600,
+    "max_kernel_cycles": 200000000
+  },
+  {
+    "N": 64,
+    "D": 64,
+    "case_id": "capacity_d64_n64",
+    "evidence_class": "CAPACITY_PROBE",
+    "size_class": "CAPACITY_PROBE",
+    "timeout_seconds": 3600,
+    "max_kernel_cycles": 200000000
+  },
+  {
+    "N": 80,
+    "D": 64,
+    "case_id": "capacity_d64_n80",
+    "evidence_class": "CAPACITY_PROBE",
+    "size_class": "CAPACITY_PROBE",
+    "timeout_seconds": 3600,
+    "max_kernel_cycles": 200000000
+  },
+  {
+    "N": 8,
+    "D": 256,
+    "case_id": "capacity_n8_d256",
+    "evidence_class": "CAPACITY_PROBE",
+    "size_class": "CAPACITY_PROBE",
+    "timeout_seconds": 3600,
+    "max_kernel_cycles": 200000000
+  },
+  {
+    "N": 8,
+    "D": 512,
+    "case_id": "capacity_n8_d512",
+    "evidence_class": "CAPACITY_PROBE",
+    "size_class": "CAPACITY_PROBE",
+    "timeout_seconds": 3600,
+    "max_kernel_cycles": 200000000
+  },
+  {
+    "N": 83,
+    "D": 64,
+    "case_id": "capacity_exact_d64_last_pass",
+    "evidence_class": "CAPACITY_PROBE",
+    "size_class": "CAPACITY_EXACT_BOUNDARY",
+    "timeout_seconds": 3600,
+    "max_kernel_cycles": 200000000
+  },
+  {
+    "N": 84,
+    "D": 64,
+    "case_id": "capacity_exact_d64_first_skip",
+    "evidence_class": "CAPACITY_PROBE",
+    "size_class": "CAPACITY_EXACT_BOUNDARY",
+    "timeout_seconds": 1800,
+    "max_kernel_cycles": 200000000
+  },
+  {
+    "N": 8,
+    "D": 687,
+    "case_id": "capacity_exact_n8_last_pass",
+    "evidence_class": "CAPACITY_PROBE",
+    "size_class": "CAPACITY_EXACT_BOUNDARY",
+    "timeout_seconds": 3600,
+    "max_kernel_cycles": 200000000
+  },
+  {
+    "N": 8,
+    "D": 688,
+    "case_id": "capacity_exact_n8_first_skip",
+    "evidence_class": "CAPACITY_PROBE",
+    "size_class": "CAPACITY_EXACT_BOUNDARY",
+    "timeout_seconds": 1800,
+    "max_kernel_cycles": 200000000
+  }
+]

@@ -180,6 +180,32 @@ class ExperimentFrameworkTest(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "case_id"):
                 matrix.load_cases(path)
 
+    def test_case_selection_is_explicit_and_ordered(self) -> None:
+        def case(case_id: str) -> matrix.Case:
+            return matrix.Case(
+                n=1,
+                d=1,
+                seed=1,
+                case_kind="main",
+                case_id=case_id,
+                evidence_class="MAIN_PERFORMANCE",
+                size_class="TEST",
+                timeout_seconds=1,
+                max_kernel_cycles=1,
+            )
+
+        cases = [case("first"), case("second"), case("third")]
+
+        selected = matrix.selected_cases("third,first", cases)
+
+        self.assertEqual(
+            [item.case_id for item in selected], ["third", "first"]
+        )
+        with self.assertRaisesRegex(ValueError, "unknown"):
+            matrix.selected_cases("missing", cases)
+        with self.assertRaisesRegex(ValueError, "duplicate"):
+            matrix.selected_cases("first,first", cases)
+
     def test_policy_predicts_exact_tcdm_capacity_boundaries(self) -> None:
         policy = json.loads(
             (
@@ -214,6 +240,106 @@ class ExperimentFrameworkTest(unittest.TestCase):
             matrix.expected_case_status(case(8, 688), policy),
             "capacity_skip",
         )
+
+    def test_p0_4_case_catalogs_cover_required_coordinates(self) -> None:
+        config_dir = SCRIPT_DIR.parent / "configs"
+        scaling = matrix.load_cases(
+            config_dir / "p0_scaling_cases.json"
+        )
+        tails = matrix.load_cases(config_dir / "p0_rvv_tail_cases.json")
+        numerical = matrix.load_cases(
+            config_dir / "p0_numerical_boundary_cases.json"
+        )
+        capacity = matrix.load_cases(
+            config_dir / "p0_capacity_cases.json"
+        )
+
+        required_scaling = (
+            {(n, 64) for n in (1, 2, 4, 8, 16, 32)}
+            | {(8, d) for d in (1, 8, 16, 32, 64, 128)}
+            | {
+                (n, d)
+                for n in (1, 2, 4, 8)
+                for d in (1, 8, 16, 32)
+            }
+        )
+        self.assertEqual(len(required_scaling), 23)
+        self.assertEqual(
+            {(case.n, case.d) for case in scaling}, required_scaling
+        )
+        self.assertEqual(
+            {case.evidence_class for case in scaling},
+            {"MAIN_PERFORMANCE"},
+        )
+        self.assertEqual(
+            {case.d for case in tails},
+            {1, 7, 15, 17, 31, 33, 63, 65, 127},
+        )
+        self.assertEqual(
+            {case.case_kind for case in numerical},
+            {
+                "equal-m",
+                "delta-neg8",
+                "delta-below-neg8",
+                "l-old-zero",
+                "l-tile-zero",
+                "small-l",
+                "signed-o",
+                "both-zero-l",
+            },
+        )
+        self.assertEqual(
+            {(case.n, case.d) for case in capacity},
+            {
+                (48, 64),
+                (64, 64),
+                (80, 64),
+                (8, 256),
+                (8, 512),
+                (83, 64),
+                (84, 64),
+                (8, 687),
+                (8, 688),
+            },
+        )
+
+    def test_p0_4_shard_plan_is_complete_and_nonoverlapping(self) -> None:
+        config_dir = SCRIPT_DIR.parent / "configs"
+        plan = json.loads(
+            (config_dir / "p0_4_shards.json").read_text(encoding="utf-8")
+        )
+        catalog_names = {
+            "p0_scaling_cases.json",
+            "p0_rvv_tail_cases.json",
+            "p0_numerical_boundary_cases.json",
+            "p0_capacity_cases.json",
+        }
+        catalogs = {
+            name: {
+                case.case_id for case in matrix.load_cases(config_dir / name)
+            }
+            for name in catalog_names
+        }
+        selected_ids: list[str] = []
+        suites: list[str] = []
+        for shard in plan["shards"]:
+            suites.append(shard["suite"])
+            self.assertIn(shard["case_file"], catalogs)
+            self.assertTrue(shard["case_ids"])
+            self.assertTrue(
+                set(shard["case_ids"]).issubset(
+                    catalogs[shard["case_file"]]
+                )
+            )
+            selected_ids.extend(shard["case_ids"])
+
+        expected_ids = set().union(*catalogs.values())
+        self.assertEqual(len(plan["shards"]), 17)
+        self.assertEqual(len(suites), len(set(suites)))
+        self.assertEqual(len(selected_ids), len(set(selected_ids)))
+        self.assertEqual(set(selected_ids), expected_ids)
+        self.assertEqual(plan["trials"], 3)
+        self.assertEqual(plan["counter_profiles"], ["memory"])
 
     def test_smu_fsm_parser_requires_warmup_then_measured(self) -> None:
         output = "\n".join(

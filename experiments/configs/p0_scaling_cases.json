@@ -1,0 +1,209 @@
+[
+  {
+    "N": 1,
+    "D": 64,
+    "case_id": "scale_d64_n1",
+    "evidence_class": "MAIN_PERFORMANCE",
+    "size_class": "SCALE_D64",
+    "timeout_seconds": 1800,
+    "max_kernel_cycles": 100000000
+  },
+  {
+    "N": 2,
+    "D": 64,
+    "case_id": "scale_d64_n2",
+    "evidence_class": "MAIN_PERFORMANCE",
+    "size_class": "SCALE_D64",
+    "timeout_seconds": 1800,
+    "max_kernel_cycles": 100000000
+  },
+  {
+    "N": 4,
+    "D": 64,
+    "case_id": "scale_d64_n4",
+    "evidence_class": "MAIN_PERFORMANCE",
+    "size_class": "SCALE_D64",
+    "timeout_seconds": 1800,
+    "max_kernel_cycles": 100000000
+  },
+  {
+    "N": 8,
+    "D": 64,
+    "case_id": "scale_d64_n8",
+    "evidence_class": "MAIN_PERFORMANCE",
+    "size_class": "SCALE_D64_AND_N8",
+    "timeout_seconds": 1800,
+    "max_kernel_cycles": 100000000
+  },
+  {
+    "N": 16,
+    "D": 64,
+    "case_id": "scale_d64_n16",
+    "evidence_class": "MAIN_PERFORMANCE",
+    "size_class": "SCALE_D64",
+    "timeout_seconds": 3600,
+    "max_kernel_cycles": 100000000
+  },
+  {
+    "N": 32,
+    "D": 64,
+    "case_id": "scale_d64_n32",
+    "evidence_class": "MAIN_PERFORMANCE",
+    "size_class": "SCALE_D64",
+    "timeout_seconds": 3600,
+    "max_kernel_cycles": 100000000
+  },
+  {
+    "N": 8,
+    "D": 1,
+    "case_id": "scale_n8_d1",
+    "evidence_class": "MAIN_PERFORMANCE",
+    "size_class": "SCALE_N8_BREAK_EVEN",
+    "timeout_seconds": 1800,
+    "max_kernel_cycles": 100000000
+  },
+  {
+    "N": 8,
+    "D": 8,
+    "case_id": "scale_n8_d8",
+    "evidence_class": "MAIN_PERFORMANCE",
+    "size_class": "SCALE_N8_BREAK_EVEN",
+    "timeout_seconds": 1800,
+    "max_kernel_cycles": 100000000
+  },
+  {
+    "N": 8,
+    "D": 16,
+    "case_id": "scale_n8_d16",
+    "evidence_class": "MAIN_PERFORMANCE",
+    "size_class": "SCALE_N8_BREAK_EVEN",
+    "timeout_seconds": 1800,
+    "max_kernel_cycles": 100000000
+  },
+  {
+    "N": 8,
+    "D": 32,
+    "case_id": "scale_n8_d32",
+    "evidence_class": "MAIN_PERFORMANCE",
+    "size_class": "SCALE_N8_BREAK_EVEN",
+    "timeout_seconds": 1800,
+    "max_kernel_cycles": 100000000
+  },
+  {
+    "N": 8,
+    "D": 128,
+    "case_id": "scale_n8_d128",
+    "evidence_class": "MAIN_PERFORMANCE",
+    "size_class": "SCALE_N8",
+    "timeout_seconds": 1800,
+    "max_kernel_cycles": 100000000
+  },
+  {
+    "N": 1,
+    "D": 1,
+    "case_id": "break_even_n1_d1",
+    "evidence_class": "MAIN_PERFORMANCE",
+    "size_class": "BREAK_EVEN",
+    "timeout_seconds": 1800,
+    "max_kernel_cycles": 100000000
+  },
+  {
+    "N": 1,
+    "D": 8,
+    "case_id": "break_even_n1_d8",
+    "evidence_class": "MAIN_PERFORMANCE",
+    "size_class": "BREAK_EVEN",
+    "timeout_seconds": 1800,
+    "max_kernel_cycles": 100000000
+  },
+  {
+    "N": 1,
+    "D": 16,
+    "case_id": "break_even_n1_d16",
+    "evidence_class": "MAIN_PERFORMANCE",
+    "size_class": "BREAK_EVEN",
+    "timeout_seconds": 1800,
+    "max_kernel_cycles": 100000000
+  },
+  {
+    "N": 1,
+    "D": 32,
+    "case_id": "break_even_n1_d32",
+    "evidence_class": "MAIN_PERFORMANCE",
+    "size_class": "BREAK_EVEN",
+    "timeout_seconds": 1800,
+    "max_kernel_cycles": 100000000
+  },
+  {
+    "N": 2,
+    "D": 1,
+    "case_id": "break_even_n2_d1",
+    "evidence_class": "MAIN_PERFORMANCE",
+    "size_class": "BREAK_EVEN",
+    "timeout_seconds": 1800,
+    "max_kernel_cycles": 100000000
+  },
+  {
+    "N": 2,
+    "D": 8,
+    "case_id": "break_even_n2_d8",
+    "evidence_class": "MAIN_PERFORMANCE",
+    "size_class": "BREAK_EVEN",
+    "timeout_seconds": 1800,
+    "max_kernel_cycles": 100000000
+  },
+  {
+    "N": 2,
+    "D": 16,
+    "case_id": "break_even_n2_d16",
+    "evidence_class": "MAIN_PERFORMANCE",
+    "size_class": "BREAK_EVEN",
+    "timeout_seconds": 1800,
+    "max_kernel_cycles": 100000000
+  },
+  {
+    "N": 2,
+    "D": 32,
+    "case_id": "break_even_n2_d32",
+    "evidence_class": "MAIN_PERFORMANCE",
+    "size_class": "BREAK_EVEN",
+    "timeout_seconds": 1800,
+    "max_kernel_cycles": 100000000
+  },
+  {
+    "N": 4,
+    "D": 1,
+    "case_id": "break_even_n4_d1",
+    "evidence_class": "MAIN_PERFORMANCE",
+    "size_class": "BREAK_EVEN",
+    "timeout_seconds": 1800,
+    "max_kernel_cycles": 100000000
+  },
+  {
+    "N": 4,
+    "D": 8,
+    "case_id": "break_even_n4_d8",
+    "evidence_class": "MAIN_PERFORMANCE",
+    "size_class": "BREAK_EVEN",
+    "timeout_seconds": 1800,
+    "max_kernel_cycles": 100000000
+  },
+  {
+    "N": 4,
+    "D": 16,
+    "case_id": "break_even_n4_d16",
+    "evidence_class": "MAIN_PERFORMANCE",
+    "size_class": "BREAK_EVEN",
+    "timeout_seconds": 1800,
+    "max_kernel_cycles": 100000000
+  },
+  {
+    "N": 4,
+    "D": 32,
+    "case_id": "break_even_n4_d32",
+    "evidence_class": "MAIN_PERFORMANCE",
+    "size_class": "BREAK_EVEN",
+    "timeout_seconds": 1800,
+    "max_kernel_cycles": 100000000
+  }
+]

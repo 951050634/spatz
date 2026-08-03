@@ -1,0 +1,114 @@
+{
+  "schema_version": 1,
+  "counter_profiles": ["memory"],
+  "configurations": [
+    "B1_SCALAR",
+    "B2R_RVV",
+    "A1_SMU_SCALAR",
+    "A2_SMU_FULL"
+  ],
+  "trials": 3,
+  "shards": [
+    {
+      "suite": "p0-4-scale-00",
+      "case_file": "p0_scaling_cases.json",
+      "case_ids": ["scale_d64_n1", "scale_d64_n2", "scale_d64_n4"]
+    },
+    {
+      "suite": "p0-4-scale-01",
+      "case_file": "p0_scaling_cases.json",
+      "case_ids": ["scale_d64_n8", "scale_d64_n16", "scale_d64_n32"]
+    },
+    {
+      "suite": "p0-4-scale-02",
+      "case_file": "p0_scaling_cases.json",
+      "case_ids": ["scale_n8_d1", "scale_n8_d8", "scale_n8_d16"]
+    },
+    {
+      "suite": "p0-4-scale-03",
+      "case_file": "p0_scaling_cases.json",
+      "case_ids": ["scale_n8_d32", "scale_n8_d128", "break_even_n1_d1"]
+    },
+    {
+      "suite": "p0-4-scale-04",
+      "case_file": "p0_scaling_cases.json",
+      "case_ids": ["break_even_n1_d8", "break_even_n1_d16", "break_even_n1_d32"]
+    },
+    {
+      "suite": "p0-4-scale-05",
+      "case_file": "p0_scaling_cases.json",
+      "case_ids": ["break_even_n2_d1", "break_even_n2_d8", "break_even_n2_d16"]
+    },
+    {
+      "suite": "p0-4-scale-06",
+      "case_file": "p0_scaling_cases.json",
+      "case_ids": ["break_even_n2_d32", "break_even_n4_d1", "break_even_n4_d8"]
+    },
+    {
+      "suite": "p0-4-scale-07",
+      "case_file": "p0_scaling_cases.json",
+      "case_ids": ["break_even_n4_d16", "break_even_n4_d32"]
+    },
+    {
+      "suite": "p0-4-tail-00",
+      "case_file": "p0_rvv_tail_cases.json",
+      "case_ids": ["rvv_tail_d1", "rvv_tail_d7", "rvv_tail_d15"]
+    },
+    {
+      "suite": "p0-4-tail-01",
+      "case_file": "p0_rvv_tail_cases.json",
+      "case_ids": ["rvv_tail_d17", "rvv_tail_d31", "rvv_tail_d33"]
+    },
+    {
+      "suite": "p0-4-tail-02",
+      "case_file": "p0_rvv_tail_cases.json",
+      "case_ids": ["rvv_tail_d63", "rvv_tail_d65", "rvv_tail_d127"]
+    },
+    {
+      "suite": "p0-4-numerical-00",
+      "case_file": "p0_numerical_boundary_cases.json",
+      "case_ids": [
+        "numerical_equal_m",
+        "numerical_delta_neg8",
+        "numerical_delta_below_neg8"
+      ]
+    },
+    {
+      "suite": "p0-4-numerical-01",
+      "case_file": "p0_numerical_boundary_cases.json",
+      "case_ids": [
+        "numerical_l_old_zero",
+        "numerical_l_tile_zero",
+        "numerical_small_l"
+      ]
+    },
+    {
+      "suite": "p0-4-numerical-02",
+      "case_file": "p0_numerical_boundary_cases.json",
+      "case_ids": ["numerical_signed_o", "numerical_both_zero_l"]
+    },
+    {
+      "suite": "p0-4-capacity-00",
+      "case_file": "p0_capacity_cases.json",
+      "case_ids": ["capacity_d64_n48", "capacity_d64_n64", "capacity_d64_n80"]
+    },
+    {
+      "suite": "p0-4-capacity-01",
+      "case_file": "p0_capacity_cases.json",
+      "case_ids": [
+        "capacity_n8_d256",
+        "capacity_n8_d512",
+        "capacity_exact_d64_last_pass"
+      ]
+    },
+    {
+      "suite": "p0-4-capacity-02",
+      "case_file": "p0_capacity_cases.json",
+      "case_ids": [
+        "capacity_exact_d64_first_skip",
+        "capacity_exact_n8_last_pass",
+        "capacity_exact_n8_first_skip"
+      ]
+    }
+  ]
+}

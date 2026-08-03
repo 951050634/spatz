@@ -1,0 +1,83 @@
+[
+  {
+    "N": 1,
+    "D": 1,
+    "case_id": "rvv_tail_d1",
+    "evidence_class": "FUNCTIONAL_BOUNDARY",
+    "size_class": "RVV_TAIL",
+    "timeout_seconds": 1800,
+    "max_kernel_cycles": 10000000
+  },
+  {
+    "N": 1,
+    "D": 7,
+    "case_id": "rvv_tail_d7",
+    "evidence_class": "FUNCTIONAL_BOUNDARY",
+    "size_class": "RVV_TAIL",
+    "timeout_seconds": 1800,
+    "max_kernel_cycles": 10000000
+  },
+  {
+    "N": 1,
+    "D": 15,
+    "case_id": "rvv_tail_d15",
+    "evidence_class": "FUNCTIONAL_BOUNDARY",
+    "size_class": "RVV_TAIL",
+    "timeout_seconds": 1800,
+    "max_kernel_cycles": 10000000
+  },
+  {
+    "N": 1,
+    "D": 17,
+    "case_id": "rvv_tail_d17",
+    "evidence_class": "FUNCTIONAL_BOUNDARY",
+    "size_class": "RVV_TAIL",
+    "timeout_seconds": 1800,
+    "max_kernel_cycles": 10000000
+  },
+  {
+    "N": 1,
+    "D": 31,
+    "case_id": "rvv_tail_d31",
+    "evidence_class": "FUNCTIONAL_BOUNDARY",
+    "size_class": "RVV_TAIL",
+    "timeout_seconds": 1800,
+    "max_kernel_cycles": 10000000
+  },
+  {
+    "N": 1,
+    "D": 33,
+    "case_id": "rvv_tail_d33",
+    "evidence_class": "FUNCTIONAL_BOUNDARY",
+    "size_class": "RVV_TAIL",
+    "timeout_seconds": 1800,
+    "max_kernel_cycles": 10000000
+  },
+  {
+    "N": 1,
+    "D": 63,
+    "case_id": "rvv_tail_d63",
+    "evidence_class": "FUNCTIONAL_BOUNDARY",
+    "size_class": "RVV_TAIL",
+    "timeout_seconds": 1800,
+    "max_kernel_cycles": 10000000
+  },
+  {
+    "N": 1,
+    "D": 65,
+    "case_id": "rvv_tail_d65",
+    "evidence_class": "FUNCTIONAL_BOUNDARY",
+    "size_class": "RVV_TAIL",
+    "timeout_seconds": 1800,
+    "max_kernel_cycles": 10000000
+  },
+  {
+    "N": 1,
+    "D": 127,
+    "case_id": "rvv_tail_d127",
+    "evidence_class": "FUNCTIONAL_BOUNDARY",
+    "size_class": "RVV_TAIL",
+    "timeout_seconds": 1800,
+    "max_kernel_cycles": 10000000
+  }
+]
