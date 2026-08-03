@@ -82,7 +82,9 @@ def write_csv(path: Path, records: list[dict[str, Any]]) -> None:
                 fields.append(field)
     temporary = path.with_suffix(path.suffix + ".tmp")
     with temporary.open("w", newline="", encoding="utf-8") as stream:
-        writer = csv.DictWriter(stream, fieldnames=fields)
+        writer = csv.DictWriter(
+            stream, fieldnames=fields, lineterminator="\n"
+        )
         writer.writeheader()
         for record in records:
             writer.writerow(

@@ -69,6 +69,16 @@ class ExperimentFrameworkTest(unittest.TestCase):
                 temporary / "work-online-merge-fresh", repo
             )
 
+    def test_csv_writer_uses_repository_lf_endings(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "results.csv"
+
+            common.write_csv(path, [{"value": 1}, {"value": None}])
+
+            payload = path.read_bytes()
+            self.assertEqual(payload, b"value\n1\nNA\n")
+            self.assertNotIn(b"\r\n", payload)
+
     def test_single_target_parser_rejects_mixed_output(self) -> None:
         base = {
             "cycles_hi": 0,
