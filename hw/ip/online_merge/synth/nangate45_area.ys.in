@@ -12,6 +12,8 @@ opt
 memory_collect
 opt_clean
 flatten
+# Propagate EnginePresent and FixedMode before arithmetic is bit-blasted.
+opt
 techmap
 opt
 dfflibmap -liberty @LIBERTY@
