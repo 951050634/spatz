@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "title": "P0-6 C0/C1/C2 SMU standard-cell synthesis",
+  "comparison_scope": "SMU contribution only; not a complete cluster",
+  "trials": 3,
+  "configurations": [
+    {
+      "config_id": "C0_NONE",
+      "top": "online_merge_c0_none_mapped_top",
+      "engine_present": false,
+      "fixed_mode": null,
+      "meaning": "No SMU engine; identical synthesis interface is tied off"
+    },
+    {
+      "config_id": "C1_SCALAR",
+      "top": "online_merge_c1_scalar_mapped_top",
+      "engine_present": true,
+      "fixed_mode": 1,
+      "meaning": "Production SMU scalar recurrence and weight writeback"
+    },
+    {
+      "config_id": "C2_FULL",
+      "top": "online_merge_c2_full_mapped_top",
+      "engine_present": true,
+      "fixed_mode": 0,
+      "meaning": "Production SMU scalar recurrence and vector update"
+    }
+  ],
+  "library": {
+    "name": "Nangate Open Cell Library",
+    "version": "PDKv1.3_v2010_12.Apache.CCL",
+    "corner": "typical",
+    "nominal_process": 1.0,
+    "nominal_temperature_c": 25.0,
+    "nominal_voltage_v": 1.1,
+    "default_liberty_path": "/home/wxt/yosys-sta/pdk/nangate45/lib/Nangate45_typ.lib",
+    "liberty_sha256": "2efd0b32eb580e4e60e72fc0575bb3bc69aac907c91d908442e4ae6d7fe55895",
+    "readme_sha256": "0e3c8a8cbe5429552764c6531dc454d64f6aa7c1f7128175b5f06070a3de578d",
+    "research_only": true,
+    "manufacturable": false
+  },
+  "tool": {
+    "default_yosys_path": "/home/wxt/yosys-sta/oss-cad-suite/bin/yosys",
+    "yosys_version": "Yosys 0.66+4 (git sha1 8125af88d, clang++ 18.1.8 -fPIC -O3)",
+    "launcher_sha256": "7c3e3396b38c129dd7485be5a0a0f0da8e495a94c8fd486059e3bea043a588d6",
+    "executable_sha256": "a5ebaa9fe453c5b9094421b2710d806e3e9a85f8fd16c955d97e12d2085bd308",
+    "slang_plugin_sha256": "97581993656bbf4a7c1c491fd0dfbf5ead120ece05afea78b4d6b1e723a9afe8"
+  },
+  "mapping": {
+    "timing_constraints": "none",
+    "area_metric": "sum of Liberty cell area values",
+    "area_unit": "Liberty cell-area unit",
+    "paper_claim": "pre-layout mapped cell area within the fixed SMU-only scope",
+    "prohibited_claims": [
+      "complete-cluster area",
+      "physical area",
+      "Fmax",
+      "critical path",
+      "timing closure",
+      "power",
+      "energy"
+    ]
+  }
+}

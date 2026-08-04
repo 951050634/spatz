@@ -1,0 +1,25 @@
+# Copyright 2026 ETH Zurich and University of Bologna.
+# Solderpad Hardware License, Version 0.51, see LICENSE for details.
+# SPDX-License-Identifier: SHL-0.51
+#
+# Versioned, unconstrained area-mapping flow for the C0/C1/C2 SMU-only scope.
+# The runner renders @LIBERTY@ into a fresh external trial directory.  No
+# clock, IO-delay, output-load, floorplan, routing, or power constraint is
+# supplied, so the output supports only a pre-layout Liberty cell-area claim.
+
+proc
+opt
+memory_collect
+opt_clean
+flatten
+techmap
+opt
+dfflibmap -liberty @LIBERTY@
+abc -liberty @LIBERTY@
+clean
+check -assert
+
+tee -q -o mapped-stat.json stat -json -liberty @LIBERTY@
+tee -o mapped-stat.txt stat -liberty @LIBERTY@
+write_json mapped-netlist.json
+write_verilog -noattr -noexpr mapped-netlist.v
