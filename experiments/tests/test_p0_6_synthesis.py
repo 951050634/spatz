@@ -58,6 +58,29 @@ class P06SynthesisTest(unittest.TestCase):
         with self.assertRaisesRegex(synthesis.SynthesisError, "lacks"):
             synthesis.render_flow("proc\n", path)
 
+    def test_flow_forces_fixed_mode_fsm_pruning_before_techmap(self) -> None:
+        flow_path = (
+            Path(__file__).resolve().parents[2]
+            / "hw/ip/online_merge/synth/nangate45_area.ys.in"
+        )
+        flow = flow_path.read_text(encoding="utf-8")
+        ordered_steps = (
+            "flatten",
+            "opt -nosdff -nodffe",
+            'setattr -set fsm_encoding "auto" w:*state_q',
+            "fsm",
+            "opt",
+            "techmap",
+            "dfflibmap -liberty @LIBERTY@",
+            "abc -liberty @LIBERTY@",
+        )
+
+        previous = -1
+        for step in ordered_steps:
+            position = flow.find(step, previous + 1)
+            self.assertGreater(position, previous, step)
+            previous = position
+
     def test_mapped_stat_requires_only_liberty_cells(self) -> None:
         payload = {
             "creator": "Yosys fixed version",
