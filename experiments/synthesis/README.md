@@ -19,3 +19,18 @@ The configuration catalog pins the library, Yosys executable, and Slang
 plugin identities; a runner must reject mismatches rather than silently using
 another tool or corner.  Existing generic-resource proxy results remain
 separate and are not substituted for P0-6 mapped synthesis.
+
+Run the complete three-process matrix from a clean committed worktree:
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 python3 \
+  experiments/scripts/run_p0_6_synthesis.py \
+  --require-clean
+```
+
+Every trial is a separate Yosys process with its own external directory,
+timeout, log, rendered flow, mapped statistics, JSON netlist, and Verilog
+netlist.  Failures are retained per configuration and do not suppress later
+scheduled trials.  `--config-id` and `--trials` may bound a diagnostic smoke,
+but only the exact three-configuration, three-trial clean run can become
+paper-eligible.
