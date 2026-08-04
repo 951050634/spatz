@@ -14,6 +14,14 @@ physical constraints.  Its accepted metric is therefore pre-layout mapped
 cell area in Liberty units.  It does not support complete-cluster area,
 physical area, Fmax, critical-path, timing-closure, power, or energy claims.
 
+After constant propagation, the flow explicitly extracts the production FSM
+so the scalar-only top does not retain unreachable full-update states.  It
+then uses the same Yosys `abc -fast` script (`strash; dretime; map`) for all
+three configurations.  The default higher-effort ABC script exceeded the
+fixed 3,600-second C1 diagnostic budget; that timeout remains failure
+evidence.  `-fast` trades output quality for bounded runtime, so these values
+are not presented as the minimum area achievable under every mapping effort.
+
 The open Nangate library is explicitly research-only and non-manufacturable.
 The configuration catalog pins the library, Yosys executable, and Slang
 plugin identities; a runner must reject mismatches rather than silently using

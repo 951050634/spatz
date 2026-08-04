@@ -131,6 +131,26 @@ def validate_catalog(payload: dict[str, Any]) -> list[dict[str, Any]]:
             raise SynthesisError(
                 f"invalid C0/C1/C2 semantics for {row['config_id']}"
             )
+    mapping = payload.get("mapping")
+    if not isinstance(mapping, dict):
+        raise SynthesisError("P0-6 mapping contract is missing")
+    pruning = mapping.get("fixed_mode_pruning")
+    expected_pruning = {
+        "method": "forced FSM extraction after flattening",
+        "state_selection": "w:*state_q",
+        "before_techmap": True,
+    }
+    if pruning != expected_pruning:
+        raise SynthesisError("P0-6 fixed-mode pruning contract differs")
+    abc = mapping.get("abc")
+    expected_abc = {
+        "mode": "fast",
+        "script": "strash; dretime; map",
+        "uniform_across_configurations": True,
+        "qor_boundary": "lower output quality than the default ABC script",
+    }
+    if abc != expected_abc:
+        raise SynthesisError("P0-6 bounded ABC mapping contract differs")
     return configurations
 
 
@@ -600,7 +620,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         "physical_ppa_evidence": False,
         "claim_boundary": (
             "Unconstrained pre-layout Nangate45 Liberty cell-area mapping "
-            "for the fixed SMU-only scope; no physical/timing/power claim."
+            "for the fixed SMU-only scope using one uniform Yosys ABC "
+            "-fast flow; lower QoR than the default ABC script and no "
+            "physical/timing/power claim."
         ),
     }
     persist(
