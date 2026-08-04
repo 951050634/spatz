@@ -388,6 +388,35 @@ def expected_case_status(
     return "pass"
 
 
+def implementation_static_gate_reasons(
+    output: str,
+    snippet: str | None,
+    config_name: str,
+    expected_status: str,
+) -> list[str]:
+    """Inspect hot implementation code only for executable pass cases."""
+    if expected_status != "pass":
+        return []
+    if config_name in {"B2R_RVV", "A1_SMU_SCALAR"}:
+        _, missing = legacy.inspect_rvv_disassembly(output)
+        return list(missing)
+    if config_name == "B1_SCALAR":
+        if snippet is None:
+            return ["missing scalar reference symbol"]
+        if any(
+            mnemonic in snippet
+            for mnemonic in (
+                "vsetvl",
+                "vle32.v",
+                "vse32.v",
+                "vfmul",
+                "vfmacc",
+            )
+        ):
+            return ["B1 scalar symbol contains RVV"]
+    return []
+
+
 def make_failure_record(
     base: dict[str, Any], status: str, reason: str
 ) -> dict[str, Any]:
@@ -882,6 +911,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     )
 
     for case in cases:
+        expected_status = expected_case_status(case, policy)
         for profile in profiles:
             profile_dir = artifact_root / case.slug / profile
             configure_log = profile_dir / "configure.log"
@@ -1052,36 +1082,17 @@ def main(argv: Sequence[str] | None = None) -> int:
                                         "hot_symbol_disassembly",
                                     )
                                 )
-                            if config_name in {
-                                "B2R_RVV",
-                                "A1_SMU_SCALAR",
-                            }:
-                                _, missing = legacy.inspect_rvv_disassembly(
-                                    output
+                            implementation_reasons = (
+                                implementation_static_gate_reasons(
+                                    output,
+                                    snippet,
+                                    config_name,
+                                    expected_status,
                                 )
-                                if missing:
-                                    static_gate = "TOOL_ERROR"
-                                    gate_reasons.extend(missing)
-                            elif config_name == "B1_SCALAR":
-                                if snippet is None:
-                                    static_gate = "TOOL_ERROR"
-                                    gate_reasons.append(
-                                        "missing scalar reference symbol"
-                                    )
-                                elif any(
-                                    mnemonic in snippet
-                                    for mnemonic in (
-                                        "vsetvl",
-                                        "vle32.v",
-                                        "vse32.v",
-                                        "vfmul",
-                                        "vfmacc",
-                                    )
-                                ):
-                                    static_gate = "TOOL_ERROR"
-                                    gate_reasons.append(
-                                        "B1 scalar symbol contains RVV"
-                                    )
+                            )
+                            if implementation_reasons:
+                                static_gate = "TOOL_ERROR"
+                                gate_reasons.extend(implementation_reasons)
 
                 compile_records = target_compile_commands(build_dir, target)
                 compile_line = main_compile_command(compile_records)
@@ -1112,7 +1123,6 @@ def main(argv: Sequence[str] | None = None) -> int:
                     else None
                 )
                 elf_hash = common.sha256_file(elf) if elf.is_file() else None
-                expected_status = expected_case_status(case, policy)
                 witness_gate = "NA"
                 witness_sim_config: dict[str, Any] | None = None
                 witness_trace_payload: dict[str, Any] | None = None

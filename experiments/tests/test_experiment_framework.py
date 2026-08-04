@@ -163,6 +163,30 @@ class ExperimentFrameworkTest(unittest.TestCase):
         self.assertEqual(traced_record["dasm_trace_enabled"], True)
         self.assertEqual(len(wrong_errors), 2)
 
+    def test_terminal_cases_skip_hot_implementation_static_gate(self) -> None:
+        for config_name in (
+            "B1_SCALAR",
+            "B2R_RVV",
+            "A1_SMU_SCALAR",
+        ):
+            self.assertEqual(
+                matrix.implementation_static_gate_reasons(
+                    "", None, config_name, "unsupported"
+                ),
+                [],
+            )
+
+        self.assertTrue(
+            matrix.implementation_static_gate_reasons(
+                "", None, "B1_SCALAR", "pass"
+            )
+        )
+        self.assertTrue(
+            matrix.implementation_static_gate_reasons(
+                "", None, "B2R_RVV", "pass"
+            )
+        )
+
     def test_trace_witness_projection_excludes_only_timing_fields(self) -> None:
         measurement = {
             "implementation": "B2-R",
