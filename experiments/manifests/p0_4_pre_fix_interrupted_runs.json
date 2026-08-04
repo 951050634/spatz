@@ -1,0 +1,148 @@
+{
+  "observation": "runner process absent while run_manifest end_utc and final counts remain null",
+  "observed_utc": "2026-08-04T03:26:50+00:00",
+  "paper_eligible": "NO",
+  "paper_ineligible_reasons": [
+    "INCOMPLETE_RUN",
+    "MISSING_END_UTC",
+    "MISSING_FINAL_COUNTS"
+  ],
+  "runs": [
+    {
+      "artifact_bytes": 281636623,
+      "artifact_count": 72,
+      "artifact_root": "/home/wxt/work-online-merge-9cc8d4c-p0-4-capacity-00",
+      "artifact_verification": "PASS_FOR_PERSISTED_ENTRIES",
+      "end_utc": null,
+      "git_commit": "9cc8d4cb852056b7265c3e40a55fd5742dcab198",
+      "git_dirty": false,
+      "manifest_failure_count": null,
+      "manifest_record_count": null,
+      "observed_failure_count": 0,
+      "observed_record_count": 14,
+      "run_id": "20260803T182445Z_9cc8d4cb_p0-4-capacity-00",
+      "start_utc": "2026-08-03T18:24:45+00:00",
+      "status_counts": {
+        "PASS": 14
+      },
+      "top_level_files": {
+        "artifact_manifest.json": {
+          "bytes": 15280,
+          "sha256": "0ca8db875dcc9a85e20ed4b7b2bef2f0b19b981fe6fa2534002e283327db793a"
+        },
+        "commands.json": {
+          "bytes": 33449,
+          "sha256": "f0a58d91cfb2939fc8f06390b58a1df1154484cd8bbdfaa2ce72c957f9df06de"
+        },
+        "failures.json": {
+          "bytes": 3,
+          "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+        },
+        "records.csv": {
+          "bytes": 43386,
+          "sha256": "33347b16e27020075434aeaa13e4361e6bc9c00f9243e62cc510fa426c15b0a4"
+        },
+        "records.json": {
+          "bytes": 84265,
+          "sha256": "f2fbd76bd5d65d897ea6624ba984e820e0b8a55bf47ce1f4b16b01002f3785fd"
+        },
+        "run_manifest.json": {
+          "bytes": 3966,
+          "sha256": "a78c0967c047cc93889a770100f183b392563905f0cb7e939d5ee99b99f47da0"
+        }
+      }
+    },
+    {
+      "artifact_bytes": 177281963,
+      "artifact_count": 73,
+      "artifact_root": "/home/wxt/work-online-merge-9cc8d4c-p0-4-capacity-01",
+      "artifact_verification": "PASS_FOR_PERSISTED_ENTRIES",
+      "end_utc": null,
+      "git_commit": "9cc8d4cb852056b7265c3e40a55fd5742dcab198",
+      "git_dirty": false,
+      "manifest_failure_count": null,
+      "manifest_record_count": null,
+      "observed_failure_count": 0,
+      "observed_record_count": 15,
+      "run_id": "20260803T183830Z_9cc8d4cb_p0-4-capacity-01",
+      "start_utc": "2026-08-03T18:38:30+00:00",
+      "status_counts": {
+        "PASS": 15
+      },
+      "top_level_files": {
+        "artifact_manifest.json": {
+          "bytes": 15484,
+          "sha256": "c5d048f3a64ed4a21aa14705d066194062d74282d490b31f7a4933f794539318"
+        },
+        "commands.json": {
+          "bytes": 34288,
+          "sha256": "1d6d2faab8f13c22a1200f8926207860dcea6a2c532c04358e35db8623a6854b"
+        },
+        "failures.json": {
+          "bytes": 3,
+          "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+        },
+        "records.csv": {
+          "bytes": 46050,
+          "sha256": "ad1589f690f7b047deccdceab3bcee82ade73f8b25f807bbde756cfe0b54d535"
+        },
+        "records.json": {
+          "bytes": 89925,
+          "sha256": "0c0177fe0313754fa68f937db3bc537432b7e912b3f5f91fee7ee8d6927a6900"
+        },
+        "run_manifest.json": {
+          "bytes": 3990,
+          "sha256": "a5e6eabc130cb9b84137d11a4088443087b84afcbbd70177c878ccf7a9e56a58"
+        }
+      }
+    },
+    {
+      "artifact_bytes": 361796406,
+      "artifact_count": 95,
+      "artifact_root": "/home/wxt/work-online-merge-9cc8d4c-p0-4-capacity-02",
+      "artifact_verification": "PASS_FOR_PERSISTED_ENTRIES",
+      "end_utc": null,
+      "git_commit": "9cc8d4cb852056b7265c3e40a55fd5742dcab198",
+      "git_dirty": false,
+      "manifest_failure_count": null,
+      "manifest_record_count": null,
+      "observed_failure_count": 5,
+      "observed_record_count": 19,
+      "run_id": "20260803T183830Z_9cc8d4cb_p0-4-capacity-02",
+      "start_utc": "2026-08-03T18:38:30+00:00",
+      "status_counts": {
+        "PASS": 3,
+        "SKIPPED_MEMORY_LIMIT": 12,
+        "TOOL_ERROR": 4
+      },
+      "top_level_files": {
+        "artifact_manifest.json": {
+          "bytes": 21115,
+          "sha256": "6033d33ca359b442f8d1007bb031d68c882fe9e8e4b2a209b280ef1edd890003"
+        },
+        "commands.json": {
+          "bytes": 46359,
+          "sha256": "f1d4588845abbbe8f5550d780d98069882136edfa31e4d073c952e9cd2c73af2"
+        },
+        "failures.json": {
+          "bytes": 1253,
+          "sha256": "34bb5b03f55c909df34484ac991b69a44a0ef0bb2554c1d51e3c2a5b7b669dd4"
+        },
+        "records.csv": {
+          "bytes": 56680,
+          "sha256": "86bf2a6ca62a18d66e6d349577572aab66abb75bbb102cdf740023d14b27228d"
+        },
+        "records.json": {
+          "bytes": 111801,
+          "sha256": "f40116e649b9ba025510f999972b8a5de3b8bf81bb505edbd30f4479538e3ffb"
+        },
+        "run_manifest.json": {
+          "bytes": 4038,
+          "sha256": "e8225387fec62d2d425ccc14990515ede3fbb0f19a76355d39dacd2e7db0be14"
+        }
+      }
+    }
+  ],
+  "schema_version": 1,
+  "status": "INTERRUPTED_INCOMPLETE"
+}

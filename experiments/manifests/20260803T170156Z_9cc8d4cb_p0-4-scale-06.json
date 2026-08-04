@@ -1,0 +1,103 @@
+{
+  "all_trials_reproducible": true,
+  "case_catalog_count": 23,
+  "case_file": "experiments/configs/p0_scaling_cases.json",
+  "case_file_sha256": "c25969a671056d0581c02d78b64aca6f12bc6f0589ab4a000975bc5e19d90e51",
+  "cfg_path": "hw/system/spatz_cluster/cfg/spatz_cluster.default.dram.hjson",
+  "cfg_sha256": "120fa0c30199e54e6e9b5c60d8da40913eae8526640992cc5d4f130bef159775",
+  "configurations": [
+    "B1_SCALAR",
+    "B2R_RVV",
+    "A1_SMU_SCALAR",
+    "A2_SMU_FULL"
+  ],
+  "counter_profiles": [
+    "memory"
+  ],
+  "end_to_end_reason": "NO_EXPLICIT_TRANSFER_PHASE",
+  "end_utc": "2026-08-03T17:40:07+00:00",
+  "failure_count": 0,
+  "git_branch": "exp/online-softmax-supplement",
+  "git_commit": "9cc8d4cb852056b7265c3e40a55fd5742dcab198",
+  "git_dirty": false,
+  "measured_samples_per_process": 1,
+  "measurement_window": "inputs resident in TCDM through final output completion; includes command, wait, RVV, and synchronization",
+  "policy": "experiments/configs/measurement_policy.json",
+  "policy_sha256": "015cd380d0611c84713fffe18c2a239bb0ad0303311b347d900d30f96987ad67",
+  "record_count": 36,
+  "run_id": "20260803T170156Z_9cc8d4cb_p0-4-scale-06",
+  "runner_argv": [
+    "/usr/bin/python3",
+    "/home/wxt/work-online-merge-supplement/experiments/scripts/run_performance_matrix.py",
+    "--case-file",
+    "experiments/configs/p0_scaling_cases.json",
+    "--case-ids",
+    "break_even_n2_d32,break_even_n4_d1,break_even_n4_d8",
+    "--artifact-root",
+    "/home/wxt/work-online-merge-9cc8d4c-p0-4-scale-06",
+    "--suite",
+    "p0-4-scale-06",
+    "--profiles",
+    "memory",
+    "--trials",
+    "3",
+    "--jobs",
+    "1",
+    "--simulator",
+    "/home/wxt/work-online-merge-low-dasm-simulator-5c2aad2-r1/spatz_cluster.vlt",
+    "--trace-witness-simulator",
+    "/home/wxt/work-online-merge-traced-simulator-088a44d-r1/spatz_cluster.vlt",
+    "--require-clean",
+    "--no-index"
+  ],
+  "runner_sha256": "6d51d7952fea50cba7f606d4f0d267b3e69ed5d98bd51dc86662405eaf7ae811",
+  "schema_version": 1,
+  "selected_case_count": 3,
+  "selected_case_ids": [
+    "break_even_n2_d32",
+    "break_even_n4_d1",
+    "break_even_n4_d8"
+  ],
+  "simulator": "/home/wxt/work-online-merge-low-dasm-simulator-5c2aad2-r1/spatz_cluster.vlt",
+  "simulator_sha256": "33f066a87e3592e55aa4c78bcc583383243061423e6a790856d5b1be7f593fef",
+  "start_utc": "2026-08-03T17:01:56+00:00",
+  "tool_versions": {
+    "cmake": {
+      "returncode": 0,
+      "status": "PASS",
+      "version": "cmake version 3.28.3 | CMake suite maintained and supported by Kitware (kitware.com/cmake)."
+    },
+    "compiler": {
+      "returncode": 0,
+      "status": "PASS",
+      "version": "clang version 14.0.6 (git@github.com:pulp-platform/llvm-project.git b494f2d8dde88723026db8ec16ac6c7ee1e140ca) | Target: riscv32-unknown-unknown-elf | Thread model: posix"
+    },
+    "objdump": {
+      "returncode": 0,
+      "status": "PASS",
+      "version": "LLVM (http://llvm.org/): | LLVM version 14.0.6 | Optimized build."
+    },
+    "simulator": {
+      "path": "/home/wxt/work-online-merge-low-dasm-simulator-5c2aad2-r1/spatz_cluster.vlt",
+      "sha256": "33f066a87e3592e55aa4c78bcc583383243061423e6a790856d5b1be7f593fef"
+    },
+    "trace_witness_simulator": {
+      "path": "/home/wxt/work-online-merge-traced-simulator-088a44d-r1/spatz_cluster.vlt",
+      "sha256": "361ff71bcc241b448e49ff6d212d06a13a986e2fad861b0aa0b67e40e7a21d68"
+    },
+    "verilator": {
+      "returncode": 0,
+      "status": "PASS",
+      "version": "Verilator 5.034 2025-02-24 rev v5.034"
+    }
+  },
+  "trace_witness_policy": "one independent DASM-enabled B2-R execution per executable case/profile using the identical ELF and generated input",
+  "trace_witness_simulator": "/home/wxt/work-online-merge-traced-simulator-088a44d-r1/spatz_cluster.vlt",
+  "trace_witness_simulator_sha256": "361ff71bcc241b448e49ff6d212d06a13a986e2fad861b0aa0b67e40e7a21d68",
+  "trials": 3,
+  "warmups_per_process": 1,
+  "worktree_snapshot": {
+    "entries": [],
+    "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+  }
+}
