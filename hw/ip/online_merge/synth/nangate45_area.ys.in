@@ -24,7 +24,7 @@ opt
 techmap
 opt
 dfflibmap -liberty @LIBERTY@
-abc -liberty @LIBERTY@
+abc -fast -liberty @LIBERTY@
 clean
 check -assert
 

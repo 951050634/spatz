@@ -72,7 +72,7 @@ class P06SynthesisTest(unittest.TestCase):
             "opt",
             "techmap",
             "dfflibmap -liberty @LIBERTY@",
-            "abc -liberty @LIBERTY@",
+            "abc -fast -liberty @LIBERTY@",
         )
 
         previous = -1
@@ -80,6 +80,14 @@ class P06SynthesisTest(unittest.TestCase):
             position = flow.find(step, previous + 1)
             self.assertGreater(position, previous, step)
             previous = position
+
+    def test_catalog_locks_bounded_mapping_effort(self) -> None:
+        synthesis.validate_catalog(self.catalog)
+        altered = copy.deepcopy(self.catalog)
+        altered["mapping"]["abc"]["mode"] = "default"
+
+        with self.assertRaisesRegex(synthesis.SynthesisError, "ABC"):
+            synthesis.validate_catalog(altered)
 
     def test_mapped_stat_requires_only_liberty_cells(self) -> None:
         payload = {

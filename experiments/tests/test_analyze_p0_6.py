@@ -25,6 +25,13 @@ class AnalyzeP06Test(unittest.TestCase):
         self.catalog = json.loads(catalog_path.read_text(encoding="utf-8"))
         self.configs = analysis.validate_catalog(self.catalog)
 
+    def test_catalog_locks_bounded_mapping_effort(self) -> None:
+        altered = json.loads(json.dumps(self.catalog))
+        altered["mapping"]["fixed_mode_pruning"]["before_techmap"] = False
+
+        with self.assertRaisesRegex(analysis.AnalysisError, "pruning"):
+            analysis.validate_catalog(altered)
+
     @staticmethod
     def stat_payload(
         top: str,

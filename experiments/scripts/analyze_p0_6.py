@@ -93,6 +93,22 @@ def validate_catalog(catalog: dict[str, Any]) -> dict[str, dict[str, Any]]:
         "C1_SCALAR": (True, 1),
         "C2_FULL": (True, 0),
     }
+    mapping = catalog.get("mapping")
+    if not isinstance(mapping, dict):
+        raise AnalysisError("catalog mapping contract is missing")
+    if mapping.get("fixed_mode_pruning") != {
+        "method": "forced FSM extraction after flattening",
+        "state_selection": "w:*state_q",
+        "before_techmap": True,
+    }:
+        raise AnalysisError("catalog fixed-mode pruning contract differs")
+    if mapping.get("abc") != {
+        "mode": "fast",
+        "script": "strash; dretime; map",
+        "uniform_across_configurations": True,
+        "qor_boundary": "lower output quality than the default ABC script",
+    }:
+        raise AnalysisError("catalog bounded ABC mapping contract differs")
     result = {}
     for row in rows:
         config_id = str(row["config_id"])
@@ -518,6 +534,9 @@ def markdown_report(report: dict[str, Any]) -> str:
         "research-only, non-manufacturable Nangate45 typical Liberty. The",
         "flow is unconstrained and pre-layout; areas are Liberty cell-area",
         "units, not complete-cluster or physical-layout area.",
+        "Fixed modes are pruned by forced FSM extraction before technology",
+        "mapping. The uniform ABC -fast script has lower output quality than",
+        "the default higher-effort script; these are not minimum-area claims.",
         "",
         "## Acceptance",
         "",
@@ -745,6 +764,13 @@ def main(argv: Sequence[str] | None = None) -> int:
             catalog["library"].get("research_only") is True
             and catalog["library"].get("manufacturable") is False
             and catalog["mapping"].get("timing_constraints") == "none"
+            and catalog["mapping"]["abc"].get("mode") == "fast"
+            and catalog["mapping"]["abc"].get(
+                "uniform_across_configurations"
+            ) is True
+            and catalog["mapping"]["fixed_mode_pruning"].get(
+                "before_techmap"
+            ) is True
             and catalog["mapping"].get("area_unit")
             == "Liberty cell-area unit"
         )

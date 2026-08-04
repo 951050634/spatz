@@ -48,6 +48,17 @@
   },
   "mapping": {
     "timing_constraints": "none",
+    "fixed_mode_pruning": {
+      "method": "forced FSM extraction after flattening",
+      "state_selection": "w:*state_q",
+      "before_techmap": true
+    },
+    "abc": {
+      "mode": "fast",
+      "script": "strash; dretime; map",
+      "uniform_across_configurations": true,
+      "qor_boundary": "lower output quality than the default ABC script"
+    },
     "area_metric": "sum of Liberty cell area values",
     "area_unit": "Liberty cell-area unit",
     "paper_claim": "pre-layout mapped cell area within the fixed SMU-only scope",
