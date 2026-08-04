@@ -392,6 +392,93 @@ class ExperimentFrameworkTest(unittest.TestCase):
         self.assertEqual(plan["trials"], 3)
         self.assertEqual(plan["counter_profiles"], ["memory"])
 
+    def test_p0_5_model_shapes_are_pinned_and_exact(self) -> None:
+        config_dir = SCRIPT_DIR.parent / "configs"
+        catalog_path = config_dir / "p0_model_workload_cases.json"
+        raw_cases = json.loads(catalog_path.read_text(encoding="utf-8"))
+        cases = matrix.load_cases(catalog_path)
+        by_id = {case.case_id: case for case in cases}
+        policy = json.loads(
+            (config_dir / "measurement_policy.json").read_text(
+                encoding="utf-8"
+            )
+        )
+
+        self.assertEqual(
+            {(case.n, case.d) for case in cases},
+            {(12, 64), (32, 128), (40, 128), (64, 128)},
+        )
+        self.assertEqual(
+            {case.evidence_class for case in cases}, {"MODEL_WORKLOAD"}
+        )
+        for item in raw_cases:
+            self.assertEqual(item["N"], item["num_attention_heads"])
+            self.assertEqual(
+                item["D"],
+                item["hidden_size"] // item["num_attention_heads"],
+            )
+            self.assertEqual(
+                item["hidden_size"] % item["num_attention_heads"], 0
+            )
+            self.assertRegex(item["model_revision"], r"^[0-9a-f]{40}$")
+            self.assertRegex(item["model_config_sha256"], r"^[0-9a-f]{64}$")
+            self.assertIn(item["model_revision"], item["model_config_url"])
+            self.assertGreater(item["model_config_bytes"], 0)
+            self.assertEqual(
+                item["workload_mapping"],
+                "one_attention_position_all_query_heads",
+            )
+
+        expected = {
+            "model_bert_base_heads": "pass",
+            "model_mistral_7b_heads": "pass",
+            "model_qwen2_5_14b_heads": "pass",
+            "model_qwen2_5_72b_heads": "capacity_skip",
+        }
+        self.assertEqual(
+            {
+                case_id: matrix.expected_case_status(case, policy)
+                for case_id, case in by_id.items()
+            },
+            expected,
+        )
+
+    def test_p0_5_shard_plan_is_complete_and_nonoverlapping(self) -> None:
+        config_dir = SCRIPT_DIR.parent / "configs"
+        plan = json.loads(
+            (config_dir / "p0_5_shards.json").read_text(encoding="utf-8")
+        )
+        case_ids = {
+            case.case_id
+            for case in matrix.load_cases(
+                config_dir / "p0_model_workload_cases.json"
+            )
+        }
+        selected = [
+            case_id
+            for shard in plan["shards"]
+            for case_id in shard["case_ids"]
+        ]
+
+        self.assertEqual(len(plan["shards"]), 2)
+        self.assertEqual(len(selected), len(set(selected)))
+        self.assertEqual(set(selected), case_ids)
+        self.assertEqual(
+            {shard["case_file"] for shard in plan["shards"]},
+            {"p0_model_workload_cases.json"},
+        )
+        self.assertEqual(plan["trials"], 3)
+        self.assertEqual(plan["counter_profiles"], ["memory"])
+        self.assertEqual(
+            plan["configurations"],
+            [
+                "B1_SCALAR",
+                "B2R_RVV",
+                "A1_SMU_SCALAR",
+                "A2_SMU_FULL",
+            ],
+        )
+
     def test_p0_4_model_fit_recovers_exact_linear_parameters(self) -> None:
         coordinates = (
             {(n, 64) for n in (1, 2, 4, 8, 16, 32)}
