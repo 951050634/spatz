@@ -12,7 +12,14 @@ opt
 memory_collect
 opt_clean
 flatten
-# Propagate EnginePresent and FixedMode before arithmetic is bit-blasted.
+# Propagate EnginePresent and FixedMode, then extract the production FSM so
+# unreachable scalar-only/full-update states are removed before arithmetic is
+# bit-blasted.  Yosys does not auto-detect this state register after flattening
+# because it sees no recoding benefit, so the synthesis-only flow marks the
+# exact internal state wire explicitly.
+opt -nosdff -nodffe
+setattr -set fsm_encoding "auto" w:*state_q
+fsm
 opt
 techmap
 opt
