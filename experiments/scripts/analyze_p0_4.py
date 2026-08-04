@@ -32,6 +32,7 @@ CONFIGS = (
     "A2_SMU_FULL",
 )
 MODEL_CONFIGS = ("B2R_RVV", "A2_SMU_FULL")
+PAPER_ELIGIBLE_EVIDENCE = {"MAIN_PERFORMANCE", "MODEL_WORKLOAD"}
 STATUS_FROM_TARGET = {
     "pass": "PASS",
     "capacity_skip": "SKIPPED_MEMORY_LIMIT",
@@ -395,7 +396,7 @@ def audit_records(
                 )
         expected_paper = (
             "YES"
-            if case.evidence_class == "MAIN_PERFORMANCE"
+            if case.evidence_class in PAPER_ELIGIBLE_EVIDENCE
             and expected_status == "PASS"
             else "NO"
         )

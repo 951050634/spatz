@@ -132,6 +132,17 @@ python3 experiments/scripts/analyze_p0_4.py \
   --require-clean
 ```
 
+P0-5 uses the same external-root and Git-index chain, then validates the
+pinned model metadata, exact shape mapping, three-trial matrices, explicit
+capacity disposition, and paper-eligibility scope:
+
+```bash
+python3 experiments/scripts/analyze_p0_5.py \
+  --index-set experiments/manifests/p0_5_index_set.json \
+  --output-dir experiments/parsed/p0_5 \
+  --require-clean
+```
+
 Parse and check a preserved run:
 
 ```bash

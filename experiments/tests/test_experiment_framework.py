@@ -7,6 +7,7 @@ import struct
 import sys
 import tempfile
 import unittest
+from collections import Counter
 from pathlib import Path
 
 SCRIPT_DIR = Path(__file__).resolve().parents[1] / "scripts"
@@ -15,6 +16,7 @@ if str(SCRIPT_DIR) not in sys.path:
 
 import audit_instruction_trace as trace_audit
 import analyze_p0_4 as p0_4_analysis
+import analyze_p0_5 as p0_5_analysis
 import experiment_common as common
 import index_external_runs as external_index
 import make_plots
@@ -477,6 +479,60 @@ class ExperimentFrameworkTest(unittest.TestCase):
                 "A1_SMU_SCALAR",
                 "A2_SMU_FULL",
             ],
+        )
+
+    def test_p0_5_source_audit_and_comparison(self) -> None:
+        config_dir = SCRIPT_DIR.parent / "configs"
+        catalog_path = config_dir / "p0_model_workload_cases.json"
+        raw_cases = json.loads(catalog_path.read_text(encoding="utf-8"))
+        cases = {
+            case.case_id: case for case in matrix.load_cases(catalog_path)
+        }
+
+        issues, source_rows = p0_5_analysis.validate_model_catalog(
+            raw_cases, cases
+        )
+
+        self.assertEqual(issues, [])
+        self.assertEqual(len(source_rows), 4)
+        self.assertEqual(
+            {row["source_audit"] for row in source_rows}, {"PASS"}
+        )
+
+        summaries = []
+        for source in source_rows:
+            skipped = source["case_id"] == "model_qwen2_5_72b_heads"
+            for index, config in enumerate(p0_4_analysis.CONFIGS):
+                summaries.append(
+                    {
+                        "case_id": source["case_id"],
+                        "config": config,
+                        "status": (
+                            "SKIPPED_MEMORY_LIMIT" if skipped else "PASS"
+                        ),
+                        "kernel_cycles_median": (
+                            None if skipped else 200 - index * 20
+                        ),
+                        "paper_eligible": "NO" if skipped else "YES",
+                        "memory_footprint_bytes": 1000,
+                    }
+                )
+        comparison_issues: list[str] = []
+        comparisons = p0_5_analysis.build_workload_comparisons(
+            source_rows, summaries, comparison_issues
+        )
+
+        self.assertEqual(comparison_issues, [])
+        self.assertEqual(
+            Counter(row["disposition"] for row in comparisons),
+            Counter({"MEASURED": 3, "EXPLICIT_CAPACITY_SKIP": 1}),
+        )
+        measured = next(
+            row for row in comparisons if row["disposition"] == "MEASURED"
+        )
+        self.assertEqual(measured["A2_vs_B2R_speedup"], 180 / 140)
+        self.assertIn(
+            "MODEL_WORKLOAD", p0_4_analysis.PAPER_ELIGIBLE_EVIDENCE
         )
 
     def test_p0_4_model_fit_recovers_exact_linear_parameters(self) -> None:
