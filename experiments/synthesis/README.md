@@ -34,3 +34,18 @@ netlist.  Failures are retained per configuration and do not suppress later
 scheduled trials.  `--config-id` and `--trials` may bound a diagnostic smoke,
 but only the exact three-configuration, three-trial clean run can become
 paper-eligible.
+
+After indexing the completed external root as the `p0_6` set, independently
+rehash and summarize it from another clean committed state:
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 python3 experiments/scripts/analyze_p0_6.py \
+  --index-set experiments/manifests/p0_6_index_set.json \
+  --output-dir experiments/parsed/p0_6 \
+  --require-clean
+```
+
+The analyzer reopens every mapped stat file, verifies every raw hash and
+current source/tool/library identity, reconstructs the exact three-process
+matrix, checks the C0/C1/C2 ordering, and emits trial, summary, and cell-type
+CSV files plus a bounded synthesis report and manifest.
