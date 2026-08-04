@@ -1,0 +1,30 @@
+{
+  "artifact_bytes": 363870966,
+  "artifact_count": 336,
+  "failure_count": 1,
+  "git_commit": "94e7538a55c901f955140a0d7dd51d93aff3522d",
+  "git_dirty_before_indexing": false,
+  "indexed_utc": "2026-08-04T11:22:38+00:00",
+  "indexer_path": "/home/wxt/work-online-merge-formal-source-94e7538/experiments/scripts/index_external_runs.py",
+  "indexer_sha256": "9e76d7c197914b183256b6875b0eb976b87ce6111922040cf8d0c702427e2b2d",
+  "record_count": 72,
+  "run_count": 2,
+  "runs": [
+    {
+      "index_path": "experiments/raw/20260804T085054Z_94e7538a_p0-4-scale-02.json",
+      "index_sha256": "953d49eaf6092e8ebc399326d37c2f0099f3b16c5f85ece8000b710ad82beed0",
+      "manifest_snapshot_path": "experiments/manifests/20260804T085054Z_94e7538a_p0-4-scale-02.json",
+      "manifest_snapshot_sha256": "d3d16cbe9b4640cc9c2e50d83f6d5c9142e7caa662a5817c8d911401ef271374",
+      "run_id": "20260804T085054Z_94e7538a_p0-4-scale-02"
+    },
+    {
+      "index_path": "experiments/raw/20260804T094243Z_94e7538a_p0-4-scale-03.json",
+      "index_sha256": "51a1d2dd05b7053498f65417b2c224514ab5ef8fa164941d96589a21af172702",
+      "manifest_snapshot_path": "experiments/manifests/20260804T094243Z_94e7538a_p0-4-scale-03.json",
+      "manifest_snapshot_sha256": "e13cc867fce05d5f6799ddeaae1553ed3c7b27da163c0ab89649762f5390bc02",
+      "run_id": "20260804T094243Z_94e7538a_p0-4-scale-03"
+    }
+  ],
+  "schema_version": 1,
+  "set_name": "p0_4_94e7538_r4"
+}
