@@ -1,0 +1,16 @@
+{
+  "artifact_bytes": 64345780,
+  "artifact_count": 60,
+  "artifact_manifest_sha256": "6db635719916a374c097c149e2786e04947d1d40c30676c645f34b1136485494",
+  "artifact_root": "/home/wxt/work-online-merge-67df03b-p0-4-alignment-formal-gate-r1",
+  "artifact_verification": "PASS",
+  "commands_sha256": "755e35764121d4ce7be87c2afaa19f5103f0baf647c9e331a0ebd2ee8b3941da",
+  "failure_count": 0,
+  "failures_sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+  "record_count": 12,
+  "records_csv_sha256": "c884f7c71969eddf5978131eb897a1c556aa6e68ca65f8a93e13de1edecddcb0",
+  "records_sha256": "83df95862c528c9f32be65f9b2bdd90435345d4c356256a6f98f6e1b9cc158af",
+  "run_id": "20260804T114106Z_67df03b7_p0-4-alignment-formal-gate",
+  "run_manifest_sha256": "a6fb296e875b44cfa08bd59a620ad36f0e4d2747c232ec89480424f30a5b9542",
+  "schema_version": 1
+}
