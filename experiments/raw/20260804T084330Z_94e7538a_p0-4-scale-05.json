@@ -1,0 +1,16 @@
+{
+  "artifact_bytes": 36220021,
+  "artifact_count": 45,
+  "artifact_manifest_sha256": "cce4be34a8b2de34bd1183926d388db09921ad2a2b1b44e6f62fa62f09c7ef1b",
+  "artifact_root": "/home/wxt/work-online-merge-94e7538-p0-4-scale-05-r3",
+  "artifact_verification": "PASS",
+  "commands_sha256": "a508de30ab5eb959dfa91fe8aea7426f301b3d73c0d43a637fb0741972ae73a1",
+  "failure_count": 36,
+  "failures_sha256": "4ee67771427b6ee705fde7415cab204f477d7eaece00868a09f0d2954074df0e",
+  "record_count": 36,
+  "records_csv_sha256": "a0058ba6a2f57c8e1910c81e57de99770807e35fe0fd14e2fe81375b16e0a64f",
+  "records_sha256": "183d678fd5280aa16b3289b508d23f94df30783a264bff9ac8f14d42c9dd4bc6",
+  "run_id": "20260804T084330Z_94e7538a_p0-4-scale-05",
+  "run_manifest_sha256": "86e80771057897c89772c562e9e5ca392220a6f67533f215ebc2cf4fee7bc93c",
+  "schema_version": 1
+}
