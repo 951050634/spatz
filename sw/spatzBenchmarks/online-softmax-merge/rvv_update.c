@@ -15,6 +15,20 @@ __attribute__((noinline)) void online_merge_rvv_update(
     const float *old_row, const float *tile_row, float *out_row, uint32_t d,
     float old_weight, float tile_weight) {
   uint32_t remaining = d;
+  // Spatz issues e32 vector memory operations over 64-bit TCDM beats.  The
+  // fixed RTL rotates lanes when all three row pointers are four bytes off a
+  // beat boundary, as happens on odd rows of an unpadded odd-D matrix.  Peel
+  // elements scalarly until every pointer is beat-aligned; the common layout
+  // needs at most one peel and retains the declared logical stride.
+  while (remaining != 0u &&
+         (((uintptr_t)old_row | (uintptr_t)tile_row | (uintptr_t)out_row) &
+          (sizeof(uint64_t) - 1u)) != 0u) {
+    *out_row = *old_row * old_weight + *tile_row * tile_weight;
+    old_row++;
+    tile_row++;
+    out_row++;
+    remaining--;
+  }
   while (remaining != 0u) {
     uint32_t request = remaining;
     if (request > ONLINE_MERGE_RVV_AVL_CAP) {
