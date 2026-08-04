@@ -228,20 +228,40 @@ static int allocate_buffers(online_merge_buffers_t *buffers, uint32_t n,
   }
   float *cursor = storage;
   uint32_t vectors = (uint32_t)vector_count;
-  take_floats(&cursor, &buffers->m_old, n);
-  take_floats(&cursor, &buffers->l_old, n);
-  take_floats(&cursor, &buffers->o_old, vectors);
-  take_floats(&cursor, &buffers->m_tile, n);
-  take_floats(&cursor, &buffers->l_tile, n);
-  take_floats(&cursor, &buffers->o_tile, vectors);
-  take_floats(&cursor, &buffers->m_out, n);
-  take_floats(&cursor, &buffers->l_out, n);
-  take_floats(&cursor, &buffers->o_out, vectors);
-  take_floats(&cursor, &buffers->m_ref, n);
-  take_floats(&cursor, &buffers->l_ref, n);
-  take_floats(&cursor, &buffers->o_ref, vectors);
-  take_floats(&cursor, &buffers->old_weight, n);
-  take_floats(&cursor, &buffers->tile_weight, n);
+  if ((vectors & 1u) == 0u) {
+    take_floats(&cursor, &buffers->m_old, n);
+    take_floats(&cursor, &buffers->l_old, n);
+    take_floats(&cursor, &buffers->o_old, vectors);
+    take_floats(&cursor, &buffers->m_tile, n);
+    take_floats(&cursor, &buffers->l_tile, n);
+    take_floats(&cursor, &buffers->o_tile, vectors);
+    take_floats(&cursor, &buffers->m_out, n);
+    take_floats(&cursor, &buffers->l_out, n);
+    take_floats(&cursor, &buffers->o_out, vectors);
+    take_floats(&cursor, &buffers->m_ref, n);
+    take_floats(&cursor, &buffers->l_ref, n);
+    take_floats(&cursor, &buffers->o_ref, vectors);
+    take_floats(&cursor, &buffers->old_weight, n);
+    take_floats(&cursor, &buffers->tile_weight, n);
+  } else {
+    // Odd vector arrays toggle the 64-bit beat phase.  Interleave one odd-N
+    // scalar array between vector arrays so every vector base starts on the
+    // same beat phase without adding padding or changing the footprint.
+    take_floats(&cursor, &buffers->m_old, n);
+    take_floats(&cursor, &buffers->l_old, n);
+    take_floats(&cursor, &buffers->o_old, vectors);
+    take_floats(&cursor, &buffers->m_tile, n);
+    take_floats(&cursor, &buffers->o_tile, vectors);
+    take_floats(&cursor, &buffers->l_tile, n);
+    take_floats(&cursor, &buffers->o_out, vectors);
+    take_floats(&cursor, &buffers->m_out, n);
+    take_floats(&cursor, &buffers->o_ref, vectors);
+    take_floats(&cursor, &buffers->l_out, n);
+    take_floats(&cursor, &buffers->m_ref, n);
+    take_floats(&cursor, &buffers->l_ref, n);
+    take_floats(&cursor, &buffers->old_weight, n);
+    take_floats(&cursor, &buffers->tile_weight, n);
+  }
   return 0;
 }
 

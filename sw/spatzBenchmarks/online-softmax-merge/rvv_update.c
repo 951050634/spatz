@@ -18,8 +18,10 @@ __attribute__((noinline)) void online_merge_rvv_update(
   // Spatz issues e32 vector memory operations over 64-bit TCDM beats.  The
   // fixed RTL rotates lanes when all three row pointers are four bytes off a
   // beat boundary, as happens on odd rows of an unpadded odd-D matrix.  Peel
-  // elements scalarly until every pointer is beat-aligned; the common layout
-  // needs at most one peel and retains the declared logical stride.
+  // elements scalarly until every pointer is beat-aligned.  The benchmark
+  // allocator gives all vector buffers a common beat phase, so this needs at
+  // most one peel and retains the declared logical stride; other callers with
+  // mismatched phases safely fall back to scalar execution.
   while (remaining != 0u &&
          (((uintptr_t)old_row | (uintptr_t)tile_row | (uintptr_t)out_row) &
           (sizeof(uint64_t) - 1u)) != 0u) {
