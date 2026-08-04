@@ -90,6 +90,17 @@ The versioned P0-4 catalogs are:
 - `p0_capacity_cases.json`: the five requested capacity probes and adjacent
   measured pass/skip points at both exact policy thresholds.
 
+The P0-5 model-shape catalog is `p0_model_workload_cases.json`, partitioned by
+`p0_5_shards.json`.  Each source configuration is pinned to an immutable model
+revision and records the retrieved byte count and SHA256.  The mapping is
+deliberately narrow: `N` is the published number of query attention heads and
+`D` is `hidden_size / num_attention_heads`, representing all query heads at
+one logical attention position.  The benchmark still uses its deterministic
+`main` input generator; these rows are model-derived shapes, not captured
+activations or end-to-end inference.  A shape that exceeds the fixed TCDM
+policy remains an explicit three-process capacity skip and is never silently
+tiled.
+
 Long catalogs can be divided into non-overlapping processes without copying
 or rewriting the input file.  `--case-ids id1,id2` preserves the common case
 file hash and records the exact ordered selection in `run_manifest.json`.
