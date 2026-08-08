@@ -143,6 +143,21 @@ python3 experiments/scripts/analyze_p0_5.py \
   --require-clean
 ```
 
+After the formal stages are parsed, record optional experiment capabilities
+and blockers without installing or updating tools:
+
+```bash
+python3 experiments/scripts/audit_optional_capabilities.py \
+  --output-dir experiments/parsed/optional_capabilities \
+  --require-clean
+```
+
+The audit distinguishes an absent `EXP_ONLY` implementation, an inapplicable
+tile sweep, P0-4 supporting input-pattern coverage, missing OpenROAD and power
+flows, and an unavailable plotting runtime.  It never replaces a blocked
+measurement with a software approximation, generic resource proxy, RTL
+toggle count, or fabricated figure.
+
 Parse and check a preserved run:
 
 ```bash
