@@ -1,0 +1,7 @@
+stage,cycles_per_row,share_of_smu_busy,notes
+LOAD_SCALAR,13,0.542,
+COMPUTE_SCALAR,1,0.042,
+COMPUTE_WEIGHT,1,0.042,
+STORE_SCALAR,9,0.375,
+SMU busy total,24,1.0,
+software smu_scalar window fixed overhead (N=1 median),1316,,
