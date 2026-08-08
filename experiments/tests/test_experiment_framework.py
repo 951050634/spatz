@@ -511,7 +511,9 @@ class ExperimentFrameworkTest(unittest.TestCase):
                             "SKIPPED_MEMORY_LIMIT" if skipped else "PASS"
                         ),
                         "kernel_cycles_median": (
-                            None if skipped else 200 - index * 20
+                            0
+                            if skipped
+                            else 200 - index * 20
                         ),
                         "paper_eligible": "NO" if skipped else "YES",
                         "memory_footprint_bytes": 1000,

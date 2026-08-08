@@ -210,7 +210,7 @@ def build_workload_comparisons(
             ):
                 issues.append(f"{case_id} measured rows are paper-ineligible")
         elif disposition == "EXPLICIT_CAPACITY_SKIP":
-            if any(value is not None for value in cycles.values()):
+            if any(value not in (None, 0) for value in cycles.values()):
                 issues.append(f"{case_id} capacity skip reports cycles")
             if any(
                 summary is None
