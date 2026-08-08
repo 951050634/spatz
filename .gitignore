@@ -26,3 +26,6 @@ mems
 install
 .projectBender.lock
 .venv/
+
+# local synthesis work artifacts (not committed)
+work-*/

@@ -1,0 +1,12 @@
+label,top,delay_target_ps,mapped_cell_count,mapped_cell_area,sequential_cell_area,critical_delay_ps,fmax_mhz,target_met,elapsed_s,critical_path_gates
+C1_SCALAR/trial1,online_merge_c1_scalar_mapped_top,1000,59910,66264.058,2766.4,12342.85,81.01856540426239,False,,['pi'; 'AOI22_X1'; 'NAND3_X1'; 'OR3_X1'; 'NOR3_X1']
+C1_SCALAR/trial1,online_merge_c1_scalar_mapped_top,1500,59910,66264.058,2766.4,12342.85,81.01856540426239,False,,['pi'; 'AOI22_X1'; 'NAND3_X1'; 'OR3_X1'; 'NOR3_X1']
+C1_SCALAR/trial1,online_merge_c1_scalar_mapped_top,3000,59910,66264.058,2766.4,12342.85,81.01856540426239,False,,['pi'; 'AOI22_X1'; 'NAND3_X1'; 'OR3_X1'; 'NOR3_X1']
+C1_SCALAR/trial1,online_merge_c1_scalar_mapped_top,5000,59910,66264.058,2766.4,12342.85,81.01856540426239,False,,['pi'; 'AOI22_X1'; 'NAND3_X1'; 'OR3_X1'; 'NOR3_X1']
+C2_FULL/trial1,online_merge_c2_full_mapped_top,1000,91361,101978.548,3293.08,13202.6,75.74265674942814,False,,['pi'; 'INV_X1'; 'NAND2_X1'; 'AOI22_X1'; 'AND2_X1']
+C2_FULL/trial1,online_merge_c2_full_mapped_top,1500,91361,101978.548,3293.08,13202.6,75.74265674942814,False,,['pi'; 'INV_X1'; 'NAND2_X1'; 'AOI22_X1'; 'AND2_X1']
+C2_FULL/trial1,online_merge_c2_full_mapped_top,3000,91361,101978.548,3293.08,13202.6,75.74265674942814,False,,['pi'; 'INV_X1'; 'NAND2_X1'; 'AOI22_X1'; 'AND2_X1']
+C2_FULL/trial1,online_merge_c2_full_mapped_top,5000,91361,101978.548,3293.08,13202.6,75.74265674942814,False,,['pi'; 'INV_X1'; 'NAND2_X1'; 'AOI22_X1'; 'AND2_X1']
+SCOPE_EXP_LUT/trial1,online_merge_exp_resource_top,1500,4428,4526.788,0.0,4070.47,245.67187572933838,False,,['pi'; 'INV_X1'; 'AOI21_X1'; 'NOR2_X1'; 'NAND2_X1']
+SCOPE_RECIP_LUT/trial1,online_merge_reciprocal_resource_top,1500,4502,4594.618,0.0,2493.75,401.0025062656642,False,,['pi'; 'INV_X1'; 'NAND4_X1'; 'NAND2_X1'; 'NAND3_X1']
+SCOPE_VECTOR_MERGE/trial1,online_merge_vector_resource_top,1500,44114,46019.596,0.0,6930.62,144.28723548542555,False,,['pi'; 'INV_X1'; 'NOR3_X1'; 'XNOR2_X1'; 'NAND4_X1']
