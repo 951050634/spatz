@@ -1,0 +1,23 @@
+{
+  "artifact_bytes": 398187311,
+  "artifact_count": 57,
+  "failure_count": 0,
+  "git_commit": "8c2dfdaac25a3f7fb9ecd30cc8ff910c1b79216f",
+  "git_dirty_before_indexing": false,
+  "indexed_utc": "2026-08-08T07:14:24+00:00",
+  "indexer_path": "experiments/scripts/index_external_runs.py",
+  "indexer_sha256": "9e76d7c197914b183256b6875b0eb976b87ce6111922040cf8d0c702427e2b2d",
+  "record_count": 9,
+  "run_count": 1,
+  "runs": [
+    {
+      "index_path": "experiments/raw/20260808T071000Z_8c2dfdaa_p0-6-synthesis.json",
+      "index_sha256": "71ea8dcea4a86d880ea458473f7fe8a27eebdd8058af7588b67e6ad76ecdfdc6",
+      "manifest_snapshot_path": "experiments/manifests/20260808T071000Z_8c2dfdaa_p0-6-synthesis.json",
+      "manifest_snapshot_sha256": "f25cf043db8f560402f82bb4b889995d6dfed9d3940df9aa99a044d32bbb6cbc",
+      "run_id": "20260808T071000Z_8c2dfdaa_p0-6-synthesis"
+    }
+  ],
+  "schema_version": 1,
+  "set_name": "p0_6"
+}

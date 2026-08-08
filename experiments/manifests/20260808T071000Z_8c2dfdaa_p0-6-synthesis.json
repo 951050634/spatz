@@ -1,0 +1,93 @@
+{
+  "catalog_path": "experiments/configs/p0_6_synthesis.json",
+  "catalog_sha256": "59359dcf3bc839e3ce36a5778397db8d3328023e014f5feab97c18cf59d61eb2",
+  "claim_boundary": "Unconstrained pre-layout Nangate45 Liberty cell-area mapping for the fixed SMU-only scope using one uniform Yosys ABC -fast flow; lower QoR than the default ABC script and no physical/timing/power claim.",
+  "end_utc": "2026-08-08T07:13:31+00:00",
+  "exact_reproducibility_by_config": {
+    "C0_NONE": true,
+    "C1_SCALAR": true,
+    "C2_FULL": true
+  },
+  "failure_count": 0,
+  "formal_acceptance_gates": {
+    "all_cells_in_liberty": true,
+    "all_configurations_exact": true,
+    "all_configurations_requested": true,
+    "all_trials_pass": true,
+    "c0_is_zero_cell_baseline": true,
+    "exactly_three_trials": true,
+    "failures_empty": true,
+    "git_clean": true,
+    "input_identity_pass": true,
+    "tool_identity_pass": true
+  },
+  "git_commit": "8c2dfdaac25a3f7fb9ecd30cc8ff910c1b79216f",
+  "git_dirty": false,
+  "input_identity_pass": true,
+  "liberty_path": "/home/wxt/yosys-sta/pdk/nangate45/lib/Nangate45_typ.lib",
+  "liberty_sha256": "2efd0b32eb580e4e60e72fc0575bb3bc69aac907c91d908442e4ae6d7fe55895",
+  "library": {
+    "corner": "typical",
+    "default_liberty_path": "/home/wxt/yosys-sta/pdk/nangate45/lib/Nangate45_typ.lib",
+    "liberty_sha256": "2efd0b32eb580e4e60e72fc0575bb3bc69aac907c91d908442e4ae6d7fe55895",
+    "manufacturable": false,
+    "name": "Nangate Open Cell Library",
+    "nominal_process": 1.0,
+    "nominal_temperature_c": 25.0,
+    "nominal_voltage_v": 1.1,
+    "readme_sha256": "0e3c8a8cbe5429552764c6531dc454d64f6aa7c1f7128175b5f06070a3de578d",
+    "research_only": true,
+    "version": "PDKv1.3_v2010_12.Apache.CCL"
+  },
+  "mapping": {
+    "abc": {
+      "mode": "fast",
+      "qor_boundary": "lower output quality than the default ABC script",
+      "script": "strash; dretime; map",
+      "uniform_across_configurations": true
+    },
+    "area_metric": "sum of Liberty cell area values",
+    "area_unit": "Liberty cell-area unit",
+    "fixed_mode_pruning": {
+      "before_techmap": true,
+      "method": "forced FSM extraction after flattening",
+      "state_selection": "w:*state_q"
+    },
+    "paper_claim": "pre-layout mapped cell area within the fixed SMU-only scope",
+    "prohibited_claims": [
+      "complete-cluster area",
+      "physical area",
+      "Fmax",
+      "critical path",
+      "timing closure",
+      "power",
+      "energy"
+    ],
+    "timing_constraints": "none"
+  },
+  "paper_eligible": true,
+  "physical_ppa_evidence": false,
+  "record_count": 9,
+  "requested_config_ids": [
+    "C0_NONE",
+    "C1_SCALAR",
+    "C2_FULL"
+  ],
+  "required_config_ids": [
+    "C0_NONE",
+    "C1_SCALAR",
+    "C2_FULL"
+  ],
+  "required_trials": 3,
+  "run_id": "20260808T071000Z_8c2dfdaa_p0-6-synthesis",
+  "schema_version": 1,
+  "stage": "P0-6",
+  "start_utc": "2026-08-08T07:10:00+00:00",
+  "status": "pass",
+  "title": "P0-6 C0/C1/C2 SMU standard-cell synthesis",
+  "tool_identity_pass": true,
+  "trials": 3,
+  "worktree_snapshot_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+  "yosys_path": "/home/wxt/yosys-sta/oss-cad-suite/bin/yosys",
+  "yosys_version": "Yosys 0.66+4 (git sha1 8125af88d, clang++ 18.1.8 -fPIC -O3)"
+}
