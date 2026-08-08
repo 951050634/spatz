@@ -1,0 +1,30 @@
+{
+  "artifact_bytes": 767726748,
+  "artifact_count": 219,
+  "failure_count": 0,
+  "git_commit": "8c2dfdaac25a3f7fb9ecd30cc8ff910c1b79216f",
+  "git_dirty_before_indexing": false,
+  "indexed_utc": "2026-08-08T11:08:14+00:00",
+  "indexer_path": "experiments/scripts/index_external_runs.py",
+  "indexer_sha256": "9e76d7c197914b183256b6875b0eb976b87ce6111922040cf8d0c702427e2b2d",
+  "record_count": 48,
+  "run_count": 2,
+  "runs": [
+    {
+      "index_path": "experiments/raw/20260808T065809Z_8c2dfdaa_p0-5-model-00.json",
+      "index_sha256": "a1e03a5223ca77ed3715b9deb7d28104932a88d54acd6fc115c807a222ce44de",
+      "manifest_snapshot_path": "experiments/manifests/20260808T065809Z_8c2dfdaa_p0-5-model-00.json",
+      "manifest_snapshot_sha256": "189aeffe8e2406abd3eaeba1ac07e8e695c3ffd8fd552131e6f72002679ab1ff",
+      "run_id": "20260808T065809Z_8c2dfdaa_p0-5-model-00"
+    },
+    {
+      "index_path": "experiments/raw/20260808T080342Z_8c2dfdaa_p0-5-model-01.json",
+      "index_sha256": "ebd0ec22de156e54484e85579346e3f396294ea6c36e657b113cc16aef06c344",
+      "manifest_snapshot_path": "experiments/manifests/20260808T080342Z_8c2dfdaa_p0-5-model-01.json",
+      "manifest_snapshot_sha256": "17e99c8b974470634e695ef5df08292229d1d19bd06200d4cb9095da16b298ce",
+      "run_id": "20260808T080342Z_8c2dfdaa_p0-5-model-01"
+    }
+  ],
+  "schema_version": 1,
+  "set_name": "p0_5"
+}
