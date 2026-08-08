@@ -1,0 +1,51 @@
+{
+  "audit_tool": {
+    "path": "experiments/scripts/audit_optional_capabilities.py",
+    "python": "3.12.3",
+    "sha256": "0a9f5c2111739e83d2310511c0e24e55f0a935dd09c6498df573bd5d27dc7b38"
+  },
+  "inputs": [
+    {
+      "path": "experiments/configs/measurement_policy.json",
+      "present": true,
+      "role": "policy",
+      "sha256": "015cd380d0611c84713fffe18c2a239bb0ad0303311b347d900d30f96987ad67"
+    },
+    {
+      "path": "experiments/configs/p0_numerical_boundary_cases.json",
+      "present": true,
+      "role": "numerical_catalog",
+      "sha256": "e0004d9b6898222de302eae5a3f03394df2e2010944d3ccc59b2cf04ebdb2510"
+    },
+    {
+      "path": "experiments/configs/p0_rvv_tail_cases.json",
+      "present": true,
+      "role": "tail_catalog",
+      "sha256": "3c11c15b65643ecd55f760f042806ae75fce6b829c763028bb3d40d280eda1cc"
+    },
+    {
+      "path": "experiments/parsed/p0_4/p0_4_analysis.json",
+      "present": true,
+      "role": "p0_4_analysis",
+      "sha256": "164e4860ed7b175eae7be0c00ebac11c8f046bdd240da53bd442ae4a0510c540"
+    }
+  ],
+  "outputs": [
+    {
+      "bytes": 4264,
+      "path": "experiments/parsed/optional_capabilities/optional_capability_audit.json",
+      "sha256": "c6c4c639925d04168df05e005b39d6062439fd32878b47290f623ac2061792ed"
+    },
+    {
+      "bytes": 1582,
+      "path": "experiments/parsed/optional_capabilities/optional_capability_audit.csv",
+      "sha256": "7730c44d2beaa2d63d7998890cdbe2fb23659bccb3a8283e03acd01f2f759456"
+    },
+    {
+      "bytes": 979,
+      "path": "experiments/parsed/optional_capabilities/OPTIONAL_EXPERIMENT_STATUS.md",
+      "sha256": "adf6cd3b9a08f91939baf033182b4697d0bd0eeda311b5b80485ffad09f441f9"
+    }
+  ],
+  "schema_version": 1
+}

@@ -1,0 +1,153 @@
+{
+  "audit_utc": "2026-08-08T07:27:10+00:00",
+  "capabilities": [
+    {
+      "capability_id": "EXP_ONLY",
+      "evidence": "experiments/configs/measurement_policy.json",
+      "paper_eligible": "NO",
+      "reason": "EXP_ONLY_NOT_IMPLEMENTED; software exp() and zero-cost substitutes are forbidden",
+      "requested_scope": "target exponential-only baseline",
+      "status": "BLOCKED_NOT_IMPLEMENTED"
+    },
+    {
+      "capability_id": "TILE_SCAN",
+      "evidence": "experiments/configs/measurement_policy.json",
+      "paper_eligible": "NO",
+      "reason": "NO_INDEPENDENT_TILE_PARAMETER",
+      "requested_scope": "independent tile-size sweep",
+      "status": "NOT_APPLICABLE"
+    },
+    {
+      "capability_id": "INPUT_PATTERN",
+      "details": {
+        "expected_numerical_patterns": [
+          "both-zero-l",
+          "delta-below-neg8",
+          "delta-neg8",
+          "equal-m",
+          "l-old-zero",
+          "l-tile-zero",
+          "signed-o",
+          "small-l"
+        ],
+        "expected_rvv_tail_dimensions": [
+          1,
+          7,
+          15,
+          17,
+          31,
+          33,
+          63,
+          65,
+          127
+        ],
+        "numerical_patterns": [
+          "both-zero-l",
+          "delta-below-neg8",
+          "delta-neg8",
+          "equal-m",
+          "l-old-zero",
+          "l-tile-zero",
+          "signed-o",
+          "small-l"
+        ],
+        "rvv_tail_dimensions": [
+          1,
+          7,
+          15,
+          17,
+          31,
+          33,
+          63,
+          65,
+          127
+        ]
+      },
+      "evidence": "experiments/configs/p0_numerical_boundary_cases.json;experiments/configs/p0_rvv_tail_cases.json;/home/wxt/work-online-merge-supplement/experiments/parsed/p0_4/p0_4_analysis.json",
+      "paper_eligible": "NO",
+      "reason": "P0_4_BOUNDARY_COVERAGE_PASS",
+      "requested_scope": "numerical patterns and RVV tail dimensions",
+      "status": "COMPLETE_SUPPORTING"
+    },
+    {
+      "capability_id": "OPENROAD",
+      "evidence": "NOT_FOUND",
+      "paper_eligible": "NO",
+      "reason": "OPENROAD_NOT_FOUND",
+      "requested_scope": "placed-and-routed physical implementation",
+      "status": "BLOCKED_TOOLCHAIN"
+    },
+    {
+      "capability_id": "WORKLOAD_POWER_ENERGY",
+      "evidence": "experiments/power/README.md",
+      "paper_eligible": "NO",
+      "reason": "MISSING_TOOLS=openroad,sta,vcd2saif; MISSING_GATE_OR_POSTLAYOUT_ACTIVITY_PARASITICS_CLOCK_TREE_AND_CHARACTERIZED_POWER_FLOW",
+      "requested_scope": "workload-driven physical power and energy",
+      "status": "BLOCKED_EXTERNAL"
+    },
+    {
+      "capability_id": "FIGURE_RENDERING",
+      "evidence": "experiments/scripts/make_plots.py",
+      "paper_eligible": "NO",
+      "reason": "MISSING_PACKAGES=matplotlib",
+      "requested_scope": "Python PDF/SVG/PNG figure bundle",
+      "status": "BLOCKED_PYTHON_PACKAGES"
+    }
+  ],
+  "git": {
+    "branch": "exp/online-softmax-supplement",
+    "commit": "e9bdbf8819c9e8ad7a94cff53d74345da1be5ad9",
+    "dirty": false
+  },
+  "no_install_or_update_performed": true,
+  "proxy_claim_boundary": "RTL toggles are not physical power or energy",
+  "python_packages": {
+    "matplotlib": {
+      "name": "matplotlib",
+      "status": "NOT_FOUND"
+    },
+    "numpy": {
+      "name": "numpy",
+      "status": "AVAILABLE"
+    },
+    "pandas": {
+      "name": "pandas",
+      "status": "NOT_FOUND"
+    },
+    "seaborn": {
+      "name": "seaborn",
+      "status": "NOT_FOUND"
+    }
+  },
+  "schema_version": 1,
+  "tools": {
+    "openroad": {
+      "name": "openroad",
+      "path": null,
+      "sha256": null,
+      "status": "NOT_FOUND",
+      "version": null
+    },
+    "sta": {
+      "name": "sta",
+      "path": null,
+      "sha256": null,
+      "status": "NOT_FOUND",
+      "version": null
+    },
+    "vcd2saif": {
+      "name": "vcd2saif",
+      "path": null,
+      "sha256": null,
+      "status": "NOT_FOUND",
+      "version": null
+    },
+    "yosys": {
+      "name": "yosys",
+      "path": "/home/wxt/yosys-sta/oss-cad-suite/bin/yosys",
+      "sha256": "7c3e3396b38c129dd7485be5a0a0f0da8e495a94c8fd486059e3bea043a588d6",
+      "status": "PASS",
+      "version": "Yosys 0.66+4 (git sha1 8125af88d, clang++ 18.1.8 -fPIC -O3)"
+    }
+  }
+}
