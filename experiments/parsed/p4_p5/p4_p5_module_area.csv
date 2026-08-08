@@ -1,0 +1,6 @@
+module,basis,mapped_cell_area,mapped_cell_count
+EXP (exp LUT proxy),exp_approx,5978.882,6156
+Reciprocal (recip LUT proxy),recip_approx,7516.096,7852
+Scalar control+datapath+interface (deduced),C1 - EXP - RECIP,63608.314000000006,
+Full vector path (deduced),C2 - C1,37610.005999999994,
+Vector merge datapath (standalone proxy),vector_resource_top,46726.89,47696
