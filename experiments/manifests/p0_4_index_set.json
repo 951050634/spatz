@@ -1,0 +1,135 @@
+{
+  "artifact_bytes": 4291242812,
+  "artifact_count": 2727,
+  "failure_count": 0,
+  "git_commit": "67df03b7d55d2baf2afcae39f96d27eed7a6bfef",
+  "git_dirty_before_indexing": false,
+  "indexed_utc": "2026-08-08T06:48:18+00:00",
+  "indexer_path": "experiments/scripts/index_external_runs.py",
+  "indexer_sha256": "9e76d7c197914b183256b6875b0eb976b87ce6111922040cf8d0c702427e2b2d",
+  "record_count": 588,
+  "run_count": 17,
+  "runs": [
+    {
+      "index_path": "experiments/raw/20260804T120234Z_67df03b7_p0-4-scale-00.json",
+      "index_sha256": "79b2defa0dcc7b262bd2ef043ca834bc912344a9a44edcfef4f8138a1cba74be",
+      "manifest_snapshot_path": "experiments/manifests/20260804T120234Z_67df03b7_p0-4-scale-00.json",
+      "manifest_snapshot_sha256": "df7b33d85c0cdc7f69739dfbebb0e5174104e21cf23a0ed8d6fa85bac6dbd789",
+      "run_id": "20260804T120234Z_67df03b7_p0-4-scale-00"
+    },
+    {
+      "index_path": "experiments/raw/20260804T120234Z_67df03b7_p0-4-scale-01.json",
+      "index_sha256": "e25de31f3329a361bfb5d0f35f642a993c25fcbb9c54a0ce4fb3b52164420de9",
+      "manifest_snapshot_path": "experiments/manifests/20260804T120234Z_67df03b7_p0-4-scale-01.json",
+      "manifest_snapshot_sha256": "3dc7fa846db77d5c17fbe22a1c6c7346086b0e448b3510fe9eebf675f70c0054",
+      "run_id": "20260804T120234Z_67df03b7_p0-4-scale-01"
+    },
+    {
+      "index_path": "experiments/raw/20260804T120234Z_67df03b7_p0-4-scale-02.json",
+      "index_sha256": "7cc0627604185622926e00368068d22a5505dff58d8c0e9acecbe593dc6623e2",
+      "manifest_snapshot_path": "experiments/manifests/20260804T120234Z_67df03b7_p0-4-scale-02.json",
+      "manifest_snapshot_sha256": "bb4466f2d8a81119494b74facaacb1c84e0b311ad2126eab1272e75ee4f58abc",
+      "run_id": "20260804T120234Z_67df03b7_p0-4-scale-02"
+    },
+    {
+      "index_path": "experiments/raw/20260804T130711Z_67df03b7_p0-4-scale-03.json",
+      "index_sha256": "2e9af82d054f310c9ad6308c2e540faddea586249999425e213595f95d136192",
+      "manifest_snapshot_path": "experiments/manifests/20260804T130711Z_67df03b7_p0-4-scale-03.json",
+      "manifest_snapshot_sha256": "cc63ce595959efb8760d8f6c44f474445a77a0e183cc56322828eccc3517cdac",
+      "run_id": "20260804T130711Z_67df03b7_p0-4-scale-03"
+    },
+    {
+      "index_path": "experiments/raw/20260804T131305Z_67df03b7_p0-4-scale-04.json",
+      "index_sha256": "4d67d6244e7103a528e85b20f6d069a3fc19b509d7d97048bab56dcfcdbabc15",
+      "manifest_snapshot_path": "experiments/manifests/20260804T131305Z_67df03b7_p0-4-scale-04.json",
+      "manifest_snapshot_sha256": "e1d7a6b620acb25e04022db9f61effe31cc0bbcc5807c4ea22c8acb536c83ef2",
+      "run_id": "20260804T131305Z_67df03b7_p0-4-scale-04"
+    },
+    {
+      "index_path": "experiments/raw/20260804T141116Z_67df03b7_p0-4-scale-05.json",
+      "index_sha256": "c1f48d8820cfc7f98a7f56a3cc31e3d34e55100cb80cedcadbf05e0dee76f01f",
+      "manifest_snapshot_path": "experiments/manifests/20260804T141116Z_67df03b7_p0-4-scale-05.json",
+      "manifest_snapshot_sha256": "ba7a015e412dc943135378d7d797f670fd986616283d7d1181f6eb7ad4c12214",
+      "run_id": "20260804T141116Z_67df03b7_p0-4-scale-05"
+    },
+    {
+      "index_path": "experiments/raw/20260804T150141Z_67df03b7_p0-4-scale-06.json",
+      "index_sha256": "75ba42f58afc3132caab1a0e5ceca95ecb7bf94c991e3ac2b822df4a1eb29ba6",
+      "manifest_snapshot_path": "experiments/manifests/20260804T150141Z_67df03b7_p0-4-scale-06.json",
+      "manifest_snapshot_sha256": "8606b908f7783a97c075fb03f23a7caa2cfb887bae18b4c1c6c6aa8c11493397",
+      "run_id": "20260804T150141Z_67df03b7_p0-4-scale-06"
+    },
+    {
+      "index_path": "experiments/raw/20260804T150305Z_67df03b7_p0-4-scale-07.json",
+      "index_sha256": "303b176627e400b9b7505b7d3d2a11e89c20a77bd4704b4386aec13076160c46",
+      "manifest_snapshot_path": "experiments/manifests/20260804T150305Z_67df03b7_p0-4-scale-07.json",
+      "manifest_snapshot_sha256": "77eb406951c6464f31f93e68ef24a415b3147a00d1a0206ccd383efebb8a8538",
+      "run_id": "20260804T150305Z_67df03b7_p0-4-scale-07"
+    },
+    {
+      "index_path": "experiments/raw/20260804T154212Z_67df03b7_p0-4-tail-00.json",
+      "index_sha256": "24c7a65fd6ceecce5019ced55aa97293252ed863670c08994190fa463cd16b05",
+      "manifest_snapshot_path": "experiments/manifests/20260804T154212Z_67df03b7_p0-4-tail-00.json",
+      "manifest_snapshot_sha256": "112489648da7b3888064a0877646d1ba4da2bce5f4bd6d5c401130864a184d7b",
+      "run_id": "20260804T154212Z_67df03b7_p0-4-tail-00"
+    },
+    {
+      "index_path": "experiments/raw/20260804T154327Z_67df03b7_p0-4-tail-01.json",
+      "index_sha256": "d53b2b7d5267bbf2fd2767eb567d33b9b08cabd1d3d57c18cc258c2b541da3f6",
+      "manifest_snapshot_path": "experiments/manifests/20260804T154327Z_67df03b7_p0-4-tail-01.json",
+      "manifest_snapshot_sha256": "8707f1b6db2aab9346c4aa9f4e56547abbe759c074ff8a3244359a0f2687bb5e",
+      "run_id": "20260804T154327Z_67df03b7_p0-4-tail-01"
+    },
+    {
+      "index_path": "experiments/raw/20260804T155120Z_67df03b7_p0-4-tail-02.json",
+      "index_sha256": "fc2d4695292fa429dbcec9bba9af33c5d9f2b1ca3f00753164aa9fe5321a3180",
+      "manifest_snapshot_path": "experiments/manifests/20260804T155120Z_67df03b7_p0-4-tail-02.json",
+      "manifest_snapshot_sha256": "8385fdca01035571df223fdac78f60b0bff0bedd44aa1848d20af0dbbac5dfc5",
+      "run_id": "20260804T155120Z_67df03b7_p0-4-tail-02"
+    },
+    {
+      "index_path": "experiments/raw/20260804T163325Z_67df03b7_p0-4-numerical-00.json",
+      "index_sha256": "b2d154b2d22c70b6b1387c2f6376a496bdaf5f7c60984d55e2dada1bf9a9bb08",
+      "manifest_snapshot_path": "experiments/manifests/20260804T163325Z_67df03b7_p0-4-numerical-00.json",
+      "manifest_snapshot_sha256": "bbeaa378960a677ebbba3aee649bbf927ee2e67cf11b8b3e46f995968a12fb49",
+      "run_id": "20260804T163325Z_67df03b7_p0-4-numerical-00"
+    },
+    {
+      "index_path": "experiments/raw/20260804T163825Z_67df03b7_p0-4-numerical-01.json",
+      "index_sha256": "b4026340ae18a190c882596c5065c0909309394af216f51bc41093aee4eaaeb9",
+      "manifest_snapshot_path": "experiments/manifests/20260804T163825Z_67df03b7_p0-4-numerical-01.json",
+      "manifest_snapshot_sha256": "62a7df78c4effb77e3e7300e03b702f884a6827f49d21c3d77a7f1490c937edd",
+      "run_id": "20260804T163825Z_67df03b7_p0-4-numerical-01"
+    },
+    {
+      "index_path": "experiments/raw/20260804T165813Z_67df03b7_p0-4-numerical-02.json",
+      "index_sha256": "33434c0c87152ec735a9a287c875c95608b4a8c9cee53dc7863e93cc49a755ed",
+      "manifest_snapshot_path": "experiments/manifests/20260804T165813Z_67df03b7_p0-4-numerical-02.json",
+      "manifest_snapshot_sha256": "fddc46aada8d93b6b18673c2422b2c48fee7347e52800b4d325e99a90156472b",
+      "run_id": "20260804T165813Z_67df03b7_p0-4-numerical-02"
+    },
+    {
+      "index_path": "experiments/raw/20260804T173217Z_67df03b7_p0-4-capacity-00.json",
+      "index_sha256": "582db083874945928e81de13e11c92fcf389d4d0c458b213e5402cad9e7f83af",
+      "manifest_snapshot_path": "experiments/manifests/20260804T173217Z_67df03b7_p0-4-capacity-00.json",
+      "manifest_snapshot_sha256": "7dafa28ffcaa6daa5849974f7dcc3d51fc5f48c1b7a94607348bf7875493e865",
+      "run_id": "20260804T173217Z_67df03b7_p0-4-capacity-00"
+    },
+    {
+      "index_path": "experiments/raw/20260804T173618Z_67df03b7_p0-4-capacity-01.json",
+      "index_sha256": "d0426472409accfcf1dfd5565c61eb98d8d83506676332ce6df13634924b2b35",
+      "manifest_snapshot_path": "experiments/manifests/20260804T173618Z_67df03b7_p0-4-capacity-01.json",
+      "manifest_snapshot_sha256": "e1c6eaf3292213dc5718232228e4d3d05a9192f9544c8b8c804fc14efabae564",
+      "run_id": "20260804T173618Z_67df03b7_p0-4-capacity-01"
+    },
+    {
+      "index_path": "experiments/raw/20260804T174119Z_67df03b7_p0-4-capacity-02.json",
+      "index_sha256": "8491fdbbf4cfa2b7bea1ddae6c55019e703186109e8fcc00067697652eb18a0c",
+      "manifest_snapshot_path": "experiments/manifests/20260804T174119Z_67df03b7_p0-4-capacity-02.json",
+      "manifest_snapshot_sha256": "0347ba1113f1f029977582f22d2dea739f1b55f1ff92ce0eac3a94802039657d",
+      "run_id": "20260804T174119Z_67df03b7_p0-4-capacity-02"
+    }
+  ],
+  "schema_version": 1,
+  "set_name": "p0_4"
+}
