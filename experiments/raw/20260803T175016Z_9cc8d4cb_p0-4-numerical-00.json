@@ -2,7 +2,7 @@
   "artifact_bytes": 170951990,
   "artifact_count": 168,
   "artifact_manifest_sha256": "59c27bbde01e8c4ceb1848113168891eec5c334ebc9d23bc84b38c759578090b",
-  "artifact_root": "/home/wxt/work-online-merge-9cc8d4c-p0-4-numerical-00",
+  "artifact_root": "/home/wxt/work-online-merge-supplement/work-artifacts/work-online-merge-9cc8d4c-p0-4-numerical-00",
   "artifact_verification": "PASS",
   "commands_sha256": "1193969d7c7253b380a683ec553493d16c19ca520b413cf68df054665253b853",
   "failure_count": 21,

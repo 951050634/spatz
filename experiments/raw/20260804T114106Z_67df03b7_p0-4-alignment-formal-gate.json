@@ -2,7 +2,7 @@
   "artifact_bytes": 64345780,
   "artifact_count": 60,
   "artifact_manifest_sha256": "6db635719916a374c097c149e2786e04947d1d40c30676c645f34b1136485494",
-  "artifact_root": "/home/wxt/work-online-merge-67df03b-p0-4-alignment-formal-gate-r1",
+  "artifact_root": "/home/wxt/work-online-merge-supplement/work-artifacts/work-online-merge-67df03b-p0-4-alignment-formal-gate-r1",
   "artifact_verification": "PASS",
   "commands_sha256": "755e35764121d4ce7be87c2afaa19f5103f0baf647c9e331a0ebd2ee8b3941da",
   "failure_count": 0,
