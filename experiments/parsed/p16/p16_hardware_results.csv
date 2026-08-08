@@ -1,0 +1,11 @@
+metric,baseline,proposed,full
+"BERT latency (us, iso-freq)",256.5,51.0,95.1
+"Mistral latency (us, iso-freq)",734.4,158.8,428.6
+"Qwen14B latency (us, iso-freq)",926.0,194.2,533.3
+Mapped cells (SMU),n/a,73505,107372
+"Mapped area (SMU, Liberty units)",n/a,"77,103.3","114,713.3"
+Cluster area overhead,–,≤ 77.1k cells (bound),≤ 114.7k cells (bound)
+"Critical delay (ps, pre-layout ABC)",n/a,"12,342.9","13,202.6"
+Fmax (MHz),n/a,81.02,75.74
+Throughput geomean (MElements/s),4.52,21.72,9.05
+Area efficiency geomean (ME/s / norm-area),n/a,21.72,6.08
