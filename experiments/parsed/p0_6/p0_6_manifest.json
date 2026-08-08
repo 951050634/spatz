@@ -1,0 +1,61 @@
+{
+  "analysis_git": {
+    "branch": "exp/online-softmax-supplement",
+    "commit": "b6a315bd9b7f4d4ec4bd02665ba20356cf7ea157",
+    "dirty": false
+  },
+  "analysis_tool": {
+    "path": "experiments/scripts/analyze_p0_6.py",
+    "python": "3.12.3",
+    "sha256": "f5a54e556e618ebb1e861fe71cd8f2d31e0d410e8b4383bbbeca15fdd69e1e42"
+  },
+  "inputs": {
+    "catalog": {
+      "path": "experiments/configs/p0_6_synthesis.json",
+      "sha256": "59359dcf3bc839e3ce36a5778397db8d3328023e014f5feab97c18cf59d61eb2"
+    },
+    "index_set": {
+      "path": "experiments/manifests/p0_6_index_set.json",
+      "sha256": "33ef813e26e7fb687d1b7a81ae92a296d55d3840b17ae2d36e3243dacd689466"
+    },
+    "root_evidence": {
+      "artifact_bytes": 398187311,
+      "artifact_count": 57,
+      "artifact_manifest_sha256": "703722df785fdaa9014200d46c3ecd4cbc84ff50315a1fa9b2ae281ab34e6a04",
+      "artifact_root": "/home/wxt/work-online-merge-20260808T071000Z_8c2dfdaa_p0-6-synthesis",
+      "artifact_verification": "PASS",
+      "git_commit": "8c2dfdaac25a3f7fb9ecd30cc8ff910c1b79216f",
+      "records_sha256": "82585aed44d3fbe7baa9cbeec853a5013aeb851f09477c7865649a0bb0489a7e",
+      "run_id": "20260808T071000Z_8c2dfdaa_p0-6-synthesis",
+      "run_manifest_sha256": "f25cf043db8f560402f82bb4b889995d6dfed9d3940df9aa99a044d32bbb6cbc"
+    }
+  },
+  "outputs": [
+    {
+      "bytes": 11241,
+      "path": "experiments/parsed/p0_6/p0_6_analysis.json",
+      "sha256": "0a5f1ac975962e261f53bdc3f2cf55c2d858f5f4d994d45f5f0c455487520930"
+    },
+    {
+      "bytes": 7594,
+      "path": "experiments/parsed/p0_6/p0_6_synthesis_trials.csv",
+      "sha256": "7c70b0aa8cf6e4ee8ecf0d249ac6126588e7e04121cc630a565345ebf9ebbff6"
+    },
+    {
+      "bytes": 389,
+      "path": "experiments/parsed/p0_6/p0_6_synthesis_summary.csv",
+      "sha256": "3b806ea0ed90515cec7d9fdd7f27bf100c956a38b5940b37d38db54c26fe5a11"
+    },
+    {
+      "bytes": 1119,
+      "path": "experiments/parsed/p0_6/p0_6_cell_types.csv",
+      "sha256": "1afcbd21786ddd4d1d42b1fb39dcdbcd3c76712717a58cd0af1ba0e741b9f7fc"
+    },
+    {
+      "bytes": 1883,
+      "path": "experiments/parsed/p0_6/P0_6_SYNTHESIS_REPORT.md",
+      "sha256": "451a0306eb70abef7fc93a20d7c95bf10563901cf71981822f906b67ec3da6b2"
+    }
+  ],
+  "schema_version": 1
+}

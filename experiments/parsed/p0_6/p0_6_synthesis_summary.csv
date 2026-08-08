@@ -1,0 +1,4 @@
+config_id,trial_count,pass_count,exact_reproducible,mapped_cell_count,mapped_cell_area,sequential_cell_area,combinational_cell_area,delta_area_from_C0,normalized_area_to_C1,paper_eligible
+C0_NONE,3,3,True,0,0.0,0.0,0.0,0.0,0.0,YES
+C1_SCALAR,3,3,True,73505,77103.292,2766.4,74336.892,77103.292,1.0,YES
+C2_FULL,3,3,True,107372,114713.298,3293.08,111420.218,114713.298,1.4877872918837238,YES

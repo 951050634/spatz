@@ -1,0 +1,284 @@
+{
+  "acceptance": {
+    "all_commands_pass": true,
+    "all_raw_outputs_reverified": true,
+    "analysis_git_clean": true,
+    "c0_c1_c2_area_ordering": true,
+    "capture_acceptance_gates_pass": true,
+    "capture_git_clean": true,
+    "capture_paper_eligible": true,
+    "capture_physical_ppa_false": true,
+    "capture_status_pass": true,
+    "catalog_hash_matches": true,
+    "claim_boundary_explicit": true,
+    "command_schedule_exact": true,
+    "failure_entries_empty": true,
+    "index_set_named_p0_6": true,
+    "input_hashes_reverified": true,
+    "one_indexed_formal_root": true,
+    "record_matrix_complete": true,
+    "requested_matrix_exact": true,
+    "synthesis_timeout_uniform": true,
+    "three_exact_processes_per_config": true,
+    "tool_and_library_identity_pass": true,
+    "validation_issue_free": true
+  },
+  "claim_boundary": "Unconstrained pre-layout Nangate45 Liberty cell-area mapping for the fixed SMU-only scope using one uniform Yosys ABC -fast flow; lower QoR than the default ABC script and no physical/timing/power claim.",
+  "counts": {
+    "cell_type_row_count": 50,
+    "command_count": 11,
+    "failure_count": 0,
+    "record_count": 9,
+    "status_counts": {
+      "pass": 9
+    },
+    "validation_issue_count": 0
+  },
+  "exact_reproducibility_by_config": {
+    "C0_NONE": true,
+    "C1_SCALAR": true,
+    "C2_FULL": true
+  },
+  "failure_entries": [],
+  "index_set": {
+    "artifact_bytes": 398187311,
+    "artifact_count": 57,
+    "failure_count": 0,
+    "git_commit": "8c2dfdaac25a3f7fb9ecd30cc8ff910c1b79216f",
+    "git_dirty_before_indexing": false,
+    "indexed_utc": "2026-08-08T07:14:24+00:00",
+    "indexer_path": "experiments/scripts/index_external_runs.py",
+    "indexer_sha256": "9e76d7c197914b183256b6875b0eb976b87ce6111922040cf8d0c702427e2b2d",
+    "record_count": 9,
+    "run_count": 1,
+    "runs": [
+      {
+        "index_path": "experiments/raw/20260808T071000Z_8c2dfdaa_p0-6-synthesis.json",
+        "index_sha256": "71ea8dcea4a86d880ea458473f7fe8a27eebdd8058af7588b67e6ad76ecdfdc6",
+        "manifest_snapshot_path": "experiments/manifests/20260808T071000Z_8c2dfdaa_p0-6-synthesis.json",
+        "manifest_snapshot_sha256": "f25cf043db8f560402f82bb4b889995d6dfed9d3940df9aa99a044d32bbb6cbc",
+        "run_id": "20260808T071000Z_8c2dfdaa_p0-6-synthesis"
+      }
+    ],
+    "schema_version": 1,
+    "set_name": "p0_6"
+  },
+  "input_checks": [
+    {
+      "captured_sha256": "5f398649da11f10a0c8926831b16040817ca8ccb52f8b7ebfe8ffa8b518a299b",
+      "current_sha256": "5f398649da11f10a0c8926831b16040817ca8ccb52f8b7ebfe8ffa8b518a299b",
+      "matches": true,
+      "path": "/home/wxt/work-online-merge-supplement/experiments/scripts/run_p0_6_synthesis.py",
+      "pinned": false,
+      "role": "runner"
+    },
+    {
+      "captured_sha256": "59359dcf3bc839e3ce36a5778397db8d3328023e014f5feab97c18cf59d61eb2",
+      "current_sha256": "59359dcf3bc839e3ce36a5778397db8d3328023e014f5feab97c18cf59d61eb2",
+      "matches": true,
+      "path": "/home/wxt/work-online-merge-supplement/experiments/configs/p0_6_synthesis.json",
+      "pinned": false,
+      "role": "catalog"
+    },
+    {
+      "captured_sha256": "364f72e7b990ec300bad18c7f05afdef87df46ebd5aac241058b6e31e99c64b9",
+      "current_sha256": "364f72e7b990ec300bad18c7f05afdef87df46ebd5aac241058b6e31e99c64b9",
+      "matches": true,
+      "path": "/home/wxt/work-online-merge-supplement/hw/ip/online_merge/synth/nangate45_area.ys.in",
+      "pinned": false,
+      "role": "flow_template"
+    },
+    {
+      "captured_sha256": "40594f9565ff8de4919571e5e2f0f046bc79b77d397cbf48a0cfd19c3bec0904",
+      "current_sha256": "40594f9565ff8de4919571e5e2f0f046bc79b77d397cbf48a0cfd19c3bec0904",
+      "matches": true,
+      "path": "/home/wxt/work-online-merge-supplement/hw/ip/online_merge/synth/online_merge_mapped_wrapper.sv",
+      "pinned": false,
+      "role": "mapped_wrapper"
+    },
+    {
+      "captured_sha256": "53f464891016a2cd6f4e137648e8ce52a09f2007ff4c2fb11311fd8cfd2e4754",
+      "current_sha256": "53f464891016a2cd6f4e137648e8ce52a09f2007ff4c2fb11311fd8cfd2e4754",
+      "matches": true,
+      "path": "/home/wxt/work-online-merge-supplement/hw/ip/online_merge/synth/online_merge_resource_wrapper.sv",
+      "pinned": false,
+      "role": "resource_wrapper"
+    },
+    {
+      "captured_sha256": "5214724007affc041efe6b01950e44c60808e84898b62ca095bd1ea525e6e786",
+      "current_sha256": "5214724007affc041efe6b01950e44c60808e84898b62ca095bd1ea525e6e786",
+      "matches": true,
+      "path": "/home/wxt/work-online-merge-supplement/hw/ip/online_merge/src/online_merge_fp32_helpers.sv",
+      "pinned": false,
+      "role": "fp32_helpers"
+    },
+    {
+      "captured_sha256": "8890918192d6659057967193f4f2d1197cdd16899217c919388a931464f5babe",
+      "current_sha256": "8890918192d6659057967193f4f2d1197cdd16899217c919388a931464f5babe",
+      "matches": true,
+      "path": "/home/wxt/work-online-merge-supplement/hw/ip/online_merge/src/online_merge_exp_approx.sv",
+      "pinned": false,
+      "role": "exp_approximation"
+    },
+    {
+      "captured_sha256": "13590b295a4c567e0fa69179b2c11969ab46debd22f8e7b86107a77d58b2ff1f",
+      "current_sha256": "13590b295a4c567e0fa69179b2c11969ab46debd22f8e7b86107a77d58b2ff1f",
+      "matches": true,
+      "path": "/home/wxt/work-online-merge-supplement/hw/ip/online_merge/src/online_merge_recip_approx.sv",
+      "pinned": false,
+      "role": "reciprocal_approximation"
+    },
+    {
+      "captured_sha256": "defd7887bcf89e8462a2045aabdea87f9d7a251d444e429413b91aefb73bfc82",
+      "current_sha256": "defd7887bcf89e8462a2045aabdea87f9d7a251d444e429413b91aefb73bfc82",
+      "matches": true,
+      "path": "/home/wxt/work-online-merge-supplement/hw/ip/online_merge/src/online_merge_update_engine.sv",
+      "pinned": false,
+      "role": "update_engine"
+    },
+    {
+      "captured_sha256": "120fa0c30199e54e6e9b5c60d8da40913eae8526640992cc5d4f130bef159775",
+      "current_sha256": "120fa0c30199e54e6e9b5c60d8da40913eae8526640992cc5d4f130bef159775",
+      "matches": true,
+      "path": "/home/wxt/work-online-merge-supplement/hw/system/spatz_cluster/cfg/spatz_cluster.default.dram.hjson",
+      "pinned": false,
+      "role": "fixed_configuration_reference"
+    },
+    {
+      "captured_sha256": "2efd0b32eb580e4e60e72fc0575bb3bc69aac907c91d908442e4ae6d7fe55895",
+      "current_sha256": "2efd0b32eb580e4e60e72fc0575bb3bc69aac907c91d908442e4ae6d7fe55895",
+      "matches": true,
+      "path": "/home/wxt/yosys-sta/pdk/nangate45/lib/Nangate45_typ.lib",
+      "pinned": true,
+      "role": "liberty"
+    },
+    {
+      "captured_sha256": "0e3c8a8cbe5429552764c6531dc454d64f6aa7c1f7128175b5f06070a3de578d",
+      "current_sha256": "0e3c8a8cbe5429552764c6531dc454d64f6aa7c1f7128175b5f06070a3de578d",
+      "matches": true,
+      "path": "/home/wxt/yosys-sta/pdk/nangate45/README.md",
+      "pinned": true,
+      "role": "library_readme"
+    },
+    {
+      "captured_sha256": "7c3e3396b38c129dd7485be5a0a0f0da8e495a94c8fd486059e3bea043a588d6",
+      "current_sha256": "7c3e3396b38c129dd7485be5a0a0f0da8e495a94c8fd486059e3bea043a588d6",
+      "matches": true,
+      "path": "/home/wxt/yosys-sta/oss-cad-suite/bin/yosys",
+      "pinned": true,
+      "role": "yosys_launcher"
+    },
+    {
+      "captured_sha256": "a5ebaa9fe453c5b9094421b2710d806e3e9a85f8fd16c955d97e12d2085bd308",
+      "current_sha256": "a5ebaa9fe453c5b9094421b2710d806e3e9a85f8fd16c955d97e12d2085bd308",
+      "matches": true,
+      "path": "/home/wxt/yosys-sta/oss-cad-suite/libexec/yosys",
+      "pinned": true,
+      "role": "yosys_executable"
+    },
+    {
+      "captured_sha256": "97581993656bbf4a7c1c491fd0dfbf5ead120ece05afea78b4d6b1e723a9afe8",
+      "current_sha256": "97581993656bbf4a7c1c491fd0dfbf5ead120ece05afea78b4d6b1e723a9afe8",
+      "matches": true,
+      "path": "/home/wxt/yosys-sta/oss-cad-suite/share/yosys/plugins/slang.so",
+      "pinned": true,
+      "role": "slang_plugin"
+    }
+  ],
+  "library": {
+    "corner": "typical",
+    "default_liberty_path": "/home/wxt/yosys-sta/pdk/nangate45/lib/Nangate45_typ.lib",
+    "liberty_sha256": "2efd0b32eb580e4e60e72fc0575bb3bc69aac907c91d908442e4ae6d7fe55895",
+    "manufacturable": false,
+    "name": "Nangate Open Cell Library",
+    "nominal_process": 1.0,
+    "nominal_temperature_c": 25.0,
+    "nominal_voltage_v": 1.1,
+    "readme_sha256": "0e3c8a8cbe5429552764c6531dc454d64f6aa7c1f7128175b5f06070a3de578d",
+    "research_only": true,
+    "version": "PDKv1.3_v2010_12.Apache.CCL"
+  },
+  "mapping": {
+    "abc": {
+      "mode": "fast",
+      "qor_boundary": "lower output quality than the default ABC script",
+      "script": "strash; dretime; map",
+      "uniform_across_configurations": true
+    },
+    "area_metric": "sum of Liberty cell area values",
+    "area_unit": "Liberty cell-area unit",
+    "fixed_mode_pruning": {
+      "before_techmap": true,
+      "method": "forced FSM extraction after flattening",
+      "state_selection": "w:*state_q"
+    },
+    "paper_claim": "pre-layout mapped cell area within the fixed SMU-only scope",
+    "prohibited_claims": [
+      "complete-cluster area",
+      "physical area",
+      "Fmax",
+      "critical path",
+      "timing closure",
+      "power",
+      "energy"
+    ],
+    "timing_constraints": "none"
+  },
+  "objective": "P0-6 C0/C1/C2 mapped synthesis",
+  "physical_ppa_evidence": false,
+  "root_evidence": {
+    "artifact_bytes": 398187311,
+    "artifact_count": 57,
+    "artifact_manifest_sha256": "703722df785fdaa9014200d46c3ecd4cbc84ff50315a1fa9b2ae281ab34e6a04",
+    "artifact_root": "/home/wxt/work-online-merge-20260808T071000Z_8c2dfdaa_p0-6-synthesis",
+    "artifact_verification": "PASS",
+    "git_commit": "8c2dfdaac25a3f7fb9ecd30cc8ff910c1b79216f",
+    "records_sha256": "82585aed44d3fbe7baa9cbeec853a5013aeb851f09477c7865649a0bb0489a7e",
+    "run_id": "20260808T071000Z_8c2dfdaa_p0-6-synthesis",
+    "run_manifest_sha256": "f25cf043db8f560402f82bb4b889995d6dfed9d3940df9aa99a044d32bbb6cbc"
+  },
+  "schema_version": 1,
+  "scope": "SMU contribution only; not a complete cluster",
+  "synthesis_summary": [
+    {
+      "combinational_cell_area": 0.0,
+      "config_id": "C0_NONE",
+      "delta_area_from_C0": 0.0,
+      "exact_reproducible": true,
+      "mapped_cell_area": 0.0,
+      "mapped_cell_count": 0,
+      "normalized_area_to_C1": 0.0,
+      "paper_eligible": "YES",
+      "pass_count": 3,
+      "sequential_cell_area": 0.0,
+      "trial_count": 3
+    },
+    {
+      "combinational_cell_area": 74336.892,
+      "config_id": "C1_SCALAR",
+      "delta_area_from_C0": 77103.292,
+      "exact_reproducible": true,
+      "mapped_cell_area": 77103.292,
+      "mapped_cell_count": 73505,
+      "normalized_area_to_C1": 1.0,
+      "paper_eligible": "YES",
+      "pass_count": 3,
+      "sequential_cell_area": 2766.4,
+      "trial_count": 3
+    },
+    {
+      "combinational_cell_area": 111420.218,
+      "config_id": "C2_FULL",
+      "delta_area_from_C0": 114713.298,
+      "exact_reproducible": true,
+      "mapped_cell_area": 114713.298,
+      "mapped_cell_count": 107372,
+      "normalized_area_to_C1": 1.4877872918837238,
+      "paper_eligible": "YES",
+      "pass_count": 3,
+      "sequential_cell_area": 3293.08,
+      "trial_count": 3
+    }
+  ],
+  "validation_issues": []
+}
