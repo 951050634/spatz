@@ -17,6 +17,8 @@ SMU 卸载逐行 scalar recurrence，RVV 保留高吞吐 `O[D]` 更新。
 | 4 | [复现与证据索引.md](复现与证据索引.md) | 配置、命令、artifact、哈希和证据等级 |
 | 5 | [A1标量卸载实验.md](A1标量卸载实验.md) | A1 三点验证的详细数据与 provenance |
 | 6 | [补充实验进度.md](补充实验进度.md) | checkpoint、失败记录和完整审计日志 |
+| 7 | [TCAS2后续工程任务规划.md](TCAS2后续工程任务规划.md) | TCAS-II 总任务清单：P1–P18 冻结 Proposed、scaling model、综合/时序/面积效率证据链 |
+| 8 | [GOAL_PROMPT.md](GOAL_PROMPT.md) | 在新窗口调用 goal 工具开始执行的提示词 |
 
 前四份文档构成当前主线。A1 明细和补充实验进度只提供复现与审计信息。
 
@@ -32,6 +34,7 @@ SMU 卸载逐行 scalar recurrence，RVV 保留高吞吐 `O[D]` 更新。
 | 数值正确性 | 支撑当前实现 | 不扩展为 LUT 设计空间研究 |
 | closest prior art 全文核验 | 进行中 | 决定最终创新措辞 |
 | 论文重写 | 待开始 | 围绕 scalar-SMU/RVV 执行边界组织 |
+| TCAS-II 量化证据 | 待开始 | 按 [TCAS2后续工程任务规划.md](TCAS2后续工程任务规划.md) P1–P18 补齐 A1 scaling model、SMU latency 分解、cluster-level area/timing、throughput 与 area efficiency |
 
 ## 研究边界
 
