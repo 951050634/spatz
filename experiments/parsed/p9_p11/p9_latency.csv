@@ -1,0 +1,10 @@
+workload,config,N,D,elements,cycles,freq_mhz,freq_source,latency_us
+BERT,B2R_RVV,12,64,768,20785,81.0186,iso (Proposed Fmax),256.546
+BERT,A1_SMU_SCALAR,12,64,768,4128,81.0186,iso (Proposed Fmax),50.951
+BERT,A2_SMU_FULL,12,64,768,7704,81.0186,iso (Proposed Fmax),95.089
+Mistral,B2R_RVV,32,128,4096,59500,81.0186,iso (Proposed Fmax),734.400
+Mistral,A1_SMU_SCALAR,32,128,4096,12866,81.0186,iso (Proposed Fmax),158.803
+Mistral,A2_SMU_FULL,32,128,4096,34728,81.0186,iso (Proposed Fmax),428.642
+Qwen14B,B2R_RVV,40,128,5120,75027,81.0186,iso (Proposed Fmax),926.047
+Qwen14B,A1_SMU_SCALAR,40,128,5120,15733,81.0186,iso (Proposed Fmax),194.190
+Qwen14B,A2_SMU_FULL,40,128,5120,43206,81.0186,iso (Proposed Fmax),533.285

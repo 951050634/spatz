@@ -1,0 +1,10 @@
+workload,config,throughput_MElements_per_s,normalized_area,area_efficiency_MElements_per_s_per_area
+BERT,B2R_RVV,2.994,n/a,n/a
+BERT,A1_SMU_SCALAR,15.073,1.0000,15.073
+BERT,A2_SMU_FULL,8.077,1.4878,5.429
+Mistral,B2R_RVV,5.577,n/a,n/a
+Mistral,A1_SMU_SCALAR,25.793,1.0000,25.793
+Mistral,A2_SMU_FULL,9.556,1.4878,6.423
+Qwen14B,B2R_RVV,5.529,n/a,n/a
+Qwen14B,A1_SMU_SCALAR,26.366,1.0000,26.366
+Qwen14B,A2_SMU_FULL,9.601,1.4878,6.453
