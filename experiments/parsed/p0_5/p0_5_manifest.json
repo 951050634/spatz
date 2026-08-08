@@ -1,0 +1,110 @@
+{
+  "analysis_git": {
+    "branch": "exp/online-softmax-supplement",
+    "commit": "c32a82b8316c3cb9385b24ff8ca15cec1b98af37",
+    "dirty": false
+  },
+  "analysis_tool": {
+    "path": "experiments/scripts/analyze_p0_5.py",
+    "python": "3.12.3",
+    "sha256": "d81592f2a88fb6f6c6a791ada5be5dfbb216f562bbc25b5426ed4a660f9a55f0"
+  },
+  "inputs": {
+    "index_set": {
+      "path": "experiments/manifests/p0_5_index_set.json",
+      "sha256": "76eae4f1f97598295b45054c0992b4769ac1a01de74fc89bcb640f56fb3d15ea"
+    },
+    "model_catalog": {
+      "path": "experiments/configs/p0_model_workload_cases.json",
+      "sha256": "ba485b6cb12fa73a8a4af4bf8af5a2257c0d8f83f45d96f201c4be56a4f350f1"
+    },
+    "plan": {
+      "path": "experiments/configs/p0_5_shards.json",
+      "sha256": "05ca985d59ce76ce4e9265410eb963731b65878ec81ea84114f17b252be03fa2"
+    },
+    "policy": {
+      "path": "experiments/configs/measurement_policy.json",
+      "sha256": "015cd380d0611c84713fffe18c2a239bb0ad0303311b347d900d30f96987ad67"
+    },
+    "roots": [
+      {
+        "artifact_manifest_sha256": "95c6cfbdee71a7b4a211d9b1528fe345c6bb919abe69bbae06f2c253b2ebb8d6",
+        "artifact_root": "/home/wxt/work-online-merge-8c2dfda-p0-5-model-00-r1",
+        "artifact_verification": "PASS",
+        "cfg_sha256": "120fa0c30199e54e6e9b5c60d8da40913eae8526640992cc5d4f130bef159775",
+        "failure_count": 0,
+        "git_commit": "8c2dfdaac25a3f7fb9ecd30cc8ff910c1b79216f",
+        "git_dirty": false,
+        "record_count": 24,
+        "records_sha256": "3798098a53618dcdb6abf681e3b14db7db764a4b57e4a725f4253a099e330b45",
+        "run_id": "20260808T065809Z_8c2dfdaa_p0-5-model-00",
+        "run_manifest_sha256": "189aeffe8e2406abd3eaeba1ac07e8e695c3ffd8fd552131e6f72002679ab1ff",
+        "selected_case_ids": [
+          "model_bert_base_heads",
+          "model_mistral_7b_heads"
+        ],
+        "simulator_sha256": "33f066a87e3592e55aa4c78bcc583383243061423e6a790856d5b1be7f593fef",
+        "suite": "p0-5-model-00",
+        "trace_witness_simulator_sha256": "361ff71bcc241b448e49ff6d212d06a13a986e2fad861b0aa0b67e40e7a21d68"
+      },
+      {
+        "artifact_manifest_sha256": "889706b4de8ffd63d2a708f4b0d060f673020b3200e9b442771d63471cf42912",
+        "artifact_root": "/home/wxt/work-online-merge-8c2dfda-p0-5-model-01-r1",
+        "artifact_verification": "PASS",
+        "cfg_sha256": "120fa0c30199e54e6e9b5c60d8da40913eae8526640992cc5d4f130bef159775",
+        "failure_count": 0,
+        "git_commit": "8c2dfdaac25a3f7fb9ecd30cc8ff910c1b79216f",
+        "git_dirty": false,
+        "record_count": 24,
+        "records_sha256": "3ced12fe4b40a94a32047a30672c366434714cc1e9fb69625dca2aea1fd32f43",
+        "run_id": "20260808T080342Z_8c2dfdaa_p0-5-model-01",
+        "run_manifest_sha256": "17e99c8b974470634e695ef5df08292229d1d19bd06200d4cb9095da16b298ce",
+        "selected_case_ids": [
+          "model_qwen2_5_14b_heads",
+          "model_qwen2_5_72b_heads"
+        ],
+        "simulator_sha256": "33f066a87e3592e55aa4c78bcc583383243061423e6a790856d5b1be7f593fef",
+        "suite": "p0-5-model-01",
+        "trace_witness_simulator_sha256": "361ff71bcc241b448e49ff6d212d06a13a986e2fad861b0aa0b67e40e7a21d68"
+      }
+    ]
+  },
+  "outputs": [
+    {
+      "bytes": 13141,
+      "path": "experiments/parsed/p0_5/p0_5_analysis.json",
+      "sha256": "91f17388f05a19ff2227770d730540e3a7d9cd6186edf4c22b65cf772583da2c"
+    },
+    {
+      "bytes": 298884,
+      "path": "experiments/parsed/p0_5/p0_5_all_records.json",
+      "sha256": "b9785f070bc15b67964653dafc00d9b276309a487eca746f8cb03e56d3473e02"
+    },
+    {
+      "bytes": 147341,
+      "path": "experiments/parsed/p0_5/p0_5_all_records.csv",
+      "sha256": "c416aff4128a500eaf6fed846437361a4fa341587855e0db06fc421ac14c8066"
+    },
+    {
+      "bytes": 7698,
+      "path": "experiments/parsed/p0_5/p0_5_trial_summary.csv",
+      "sha256": "3a3c891bc125f1c14be0cb28a8003e77e48449ecaa6df6cc7fcbc3980144e786"
+    },
+    {
+      "bytes": 1669,
+      "path": "experiments/parsed/p0_5/p0_5_model_source_audit.csv",
+      "sha256": "8c5e10e8efb37d5054e39522d8cf68e706a2bc4fe6ea2fe132211a665dc9d956"
+    },
+    {
+      "bytes": 2409,
+      "path": "experiments/parsed/p0_5/p0_5_workload_comparison.csv",
+      "sha256": "774439ed57b6d76ecbc8842557451047f7ce97cf2f206fcf2a878b1200807363"
+    },
+    {
+      "bytes": 1132,
+      "path": "experiments/parsed/p0_5/P0_5_MODEL_WORKLOAD_REPORT.md",
+      "sha256": "80ce9d182f7a09d82362a4f8d805481cba7fa927ec1c6a2053ed786681e80d61"
+    }
+  ],
+  "schema_version": 1
+}
