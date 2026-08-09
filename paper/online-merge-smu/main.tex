@@ -98,8 +98,8 @@ Proposed is Scalar SMU plus existing RVV: the SMU executes the state-dependent
 scalar recurrence, while existing RVV executes the regular $O[D]$ update.
 Shared TCDM carries scalar inputs, new state, and weights between the
 software-visible phases. Software waits for SMU completion before invoking RVV,
-preserving the existing vector datapath and making
-Figure~\ref{fig:proposed-architecture} the architectural boundary. This split
+preserving the existing vector datapath. Figure~\ref{fig:proposed-architecture}
+shows this architectural boundary. This split
 keeps state-dependent work local while leaving regular vector work on the
 established core path.
 
@@ -183,9 +183,8 @@ an independent TCDM requester for scalar reads and writes. Existing core ports
 continue to serve RVV loads and stores, so the vector path remains unchanged
 and arbitration occurs through shared TCDM rather than a private engine link.
 This implementation changes neither the ISA nor the RVV datapath. The
-resulting boundary is what Evaluation measures:
-scalar recurrence work is specialized, regular vector work is reused, and
-standalone evidence remains separate from measured cycles.
+evaluation next quantifies this specialization while keeping standalone
+evidence separate from measured cycles.
 
 \section{Evaluation}
 
