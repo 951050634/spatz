@@ -64,96 +64,131 @@ a measured scaling matrix. Third, it measures the internal state-machine
 phases and shared-TCDM interference, which identify the remaining vector
 streaming bottleneck and quantify coexistence with a core workload.
 
-\section{Online Merge and SMU Design}
+\section{Selective-Offload Architecture}
 
-For an old state $(m_o,l_o,O_o)$ and tile state $(m_t,l_t,O_t)$, online softmax
-uses the recurrence
+Proposed is a Scalar SMU paired with existing RVV: the SMU handles the
+state-dependent scalar recurrence, while the core retains the regular $O[D]$
+vector update. This selective boundary moves normalization control across the
+accelerator interface and leaves the established vector datapath and software
+sequencing in place. Shared TCDM carries the handoff state, so the architecture
+composes an RTL-defined scalar engine with an unchanged RVV update path. The
+scalar unit owns quantities whose next value depends on the row's selected
+maximum and normalization state; RVV owns operations that repeat over
+independent vector elements. The handoff therefore preserves software-visible
+memory ordering while narrowing hardware specialization to the recurrence.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{../../experiments/plots/figure1_proposed_architecture.pdf}
+\caption{Proposed architecture. Mode 1 directs the Scalar SMU to read scalar
+state and write $m_{\mathrm{new}}$, $l_{\mathrm{new}}$, $w_{\mathrm{old}}$, and
+$w_{\mathrm{tile}}$ to shared TCDM. Software waits for completion, then invokes
+existing RVV for the $O[D]$ update; the diagram has no direct SMU-to-RVV link.}
+\label{fig:proposed-architecture}
+\end{figure*}
+
+\subsection{Specialization Boundary}
+
+Online merge separates state selection and normalization from the regular
+elementwise vector update. For one row, the decomposition is
 \begin{align}
-m_n &= \max(m_o,m_t),\\
-l_n &= l_o e^{m_o-m_n}+l_t e^{m_t-m_n},\\
-O_n &= \frac{O_o l_o e^{m_o-m_n}+O_t l_t e^{m_t-m_n}}{l_n}.
+m_{\mathrm{new}} &= \max(m_{\mathrm{old}},m_{\mathrm{tile}}),\\
+s_{\mathrm{old}} &= l_{\mathrm{old}}\exp(m_{\mathrm{old}}-m_{\mathrm{new}}),\\
+s_{\mathrm{tile}} &= l_{\mathrm{tile}}\exp(m_{\mathrm{tile}}-m_{\mathrm{new}}),\\
+l_{\mathrm{new}} &= s_{\mathrm{old}}+s_{\mathrm{tile}},\\
+w_{\mathrm{old}} &= s_{\mathrm{old}}/l_{\mathrm{new}},\quad
+w_{\mathrm{tile}} = s_{\mathrm{tile}}/l_{\mathrm{new}},\\
+O_{\mathrm{new}}[j] &= w_{\mathrm{old}}O_{\mathrm{old}}[j]
+  +w_{\mathrm{tile}}O_{\mathrm{tile}}[j],\quad 0\leq j<D.
 \end{align}
-The scalar values select and normalize the vector update. The \smu{} streams
-these inputs directly from TCDM and writes $m_n$, $l_n$, and $O_n$ back to
-TCDM.
+The first five lines execute in Scalar SMU, while the final line executes in
+existing RVV. EXP and reciprocal blocks implement RTL approximations, so these
+equations describe the decomposition rather than an IEEE-exact arithmetic
+claim. The index constraint makes the handoff explicit: the SMU produces
+per-row weights and RVV applies them across $D$ elements. These lines reduce
+each row to two weights before any vector element moves. The decomposition also
+separates row-level dependencies from element-level accumulation, which defines
+the architecture's scheduling boundary.
 
-\begin{figure}[t]
-\centering
-\includegraphics[width=\columnwidth]{../../data_process/attnres/pic/online_softmax_merge_engine_flow.png}
-\caption{The SMU controller loads scalar state, computes merge weights, and
-streams vector updates. Invalid configuration and unsupported scalar inputs
-terminate through the error path.}
-\label{fig:engine-flow}
-\end{figure}
+Scalar recurrence belongs on a state-dependent datapath because both
+exponential arguments depend on the selected maximum and the reciprocal
+depends on the newly accumulated length. A regular vector loop excels at
+independent $O[j]$ operations after weights are known, but it does not remove
+the serial decisions that produce those weights. The boundary therefore assigns
+control-sensitive work to Scalar SMU and keeps uniform multiply-add work on
+existing RVV. This division avoids duplicating vector functional units while
+matching each phase to its natural execution granularity. Both decisions
+serialize within a row, whereas elements within one $O$ row share the resulting
+weights and expose regular parallelism. Keeping this distinction explicit lets
+the core reuse its tuned VLSU and FMA sequence.
 
-Figure~\ref{fig:engine-flow} summarizes the controller. The engine validates
-nonzero dimensions, aligned addresses, aligned strides, and supported finite
-scalar inputs before it starts a merge. The controller then loads four scalar
-values, computes the new maximum and scaled lengths, stores the scalar state,
-and streams the two output vectors. The engine reports explicit error status
-for invalid configurations and unsupported scalar inputs.
+\subsection{Scalar Datapath and Schedule}
 
-The implementation represents intermediate weights in fixed point. Two
-256-segment linear LUTs approximate $\exp(x)$ over $[-8,0]$ and a normalized
-reciprocal mantissa over $[1,2]$. The reciprocal exponent restores scale after
-normalization. This organization confines nonlinear logic to the scalar path
-and keeps the vector loop to TCDM reads, weighted additions, and writes.
+The Scalar SMU implements the recurrence with a compact scalar datapath. A
+comparator selects $m_{\mathrm{new}}$ and forms two deltas; two EXP
+approximation/LUT blocks transform those deltas into scaled factors. Fixed-point
+multipliers combine the factors with $l_{\mathrm{old}}$ and $l_{\mathrm{tile}}$,
+an accumulator forms $l_{\mathrm{new}}$, and a reciprocal approximation
+normalizes both scaled lengths. Weight generation then emits
+$w_{\mathrm{old}}$ and $w_{\mathrm{tile}}$ for TCDM writeback. The RTL places
+these operations in the scalar states and exposes no vector-update datapath in
+the Proposed path. All intermediate values remain on the scalar path until
+writeback, so the datapath follows the recurrence's data dependencies. The
+resulting interface exports weights as ordinary TCDM state for the next phase.
 
-\subsection{The interface defines a narrow offload contract}
+RTL observer counts establish a fixed per-row scalar schedule:
+\texttt{LOAD\_SCALAR} consumes 13 cycles, \texttt{COMPUTE\_SCALAR} 1,
+\texttt{COMPUTE\_WEIGHT} 1, and \texttt{STORE\_SCALAR} 9, for 24 SMU-busy
+cycles per row. LOAD and STORE account for 22 of 24 cycles as TCDM
+communication states; the two compute states occupy the remaining two cycles.
+The 24-cycle count describes the scalar-only FSM schedule. It is neither the
+fitted $C_s=90.28$ nor software-visible or end-to-end latency, which also
+includes command sequencing and completion polling. The observer records these
+states for scalar-only mode, where \texttt{UPDATE\_VECTOR} is absent. The communication
+count reflects four reads plus four writes at state-machine handshake
+granularity, while the compute states represent combinational evaluations.
 
-The software-visible contract consists of source and destination addresses for
-the six inputs and three outputs, dimensions $N$ and $D$, a row stride, a start
-bit, and busy, done, and error status bits. A stride of zero selects packed
-rows with a default stride of $4D$ bytes. This convention lets software use
-contiguous state vectors without generating an explicit stride. The engine
-uses 64-bit TCDM transactions and packs or extracts one FP32 value according
-to the address half. It therefore supports scalar arrays and packed vector
-arrays through one request format.
+\subsection{TCDM-Mediated RVV Handoff}
 
-\begin{table}[t]
-\caption{SMU command contract. All addresses identify TCDM-resident FP32
-arrays or scalars.}
-\label{tab:interface}
-\centering\small
-\renewcommand{\arraystretch}{1.08}
-\begin{tabular}{p{0.27\columnwidth}p{0.61\columnwidth}}
-\toprule
-Field & Role\\
-\midrule
-Source addresses & Old and tile $m$, $l$, and $O$ state.\\
-Destination addresses & Merged $m$, $l$, and $O$ state.\\
-$N$, $D$, stride & Row count, vector dimension, and vector row layout.\\
-Start and clear & Launch one merge or clear terminal status.\\
-Busy, done, error & Pollable progress and explicit validation result.\\
-\bottomrule
-\end{tabular}
-\end{table}
+Mode 1 makes the handoff state explicit in TCDM. For each row, the Scalar SMU
+reads four FP32 scalar inputs, $m_{\mathrm{old}}$, $l_{\mathrm{old}}$,
+$m_{\mathrm{tile}}$, and $l_{\mathrm{tile}}$, from their TCDM arrays. It
+computes the new scalar state and writes $m_{\mathrm{new}}$, $l_{\mathrm{new}}$,
+$w_{\mathrm{old}}$, and $w_{\mathrm{tile}}$ back to TCDM for all rows. The
+output weights are software-visible arrays rather than private accelerator
+state, which gives the core a stable handoff point. Because the weight arrays
+share TCDM with the state, the SMU does not retain a private weight interface
+for the core. The same row indexing keeps scalar outputs aligned with
+subsequent vector rows.
 
-The controller uses five active states. \texttt{LOAD\_SCALAR} issues four
-scalar reads. \texttt{COMPUTE\_SCALAR} chooses $m_n$ and forms scaled lengths.
-\texttt{COMPUTE\_WEIGHT} applies the reciprocal approximation. \texttt{STORE\_SCALAR}
-writes the two scalar outputs. \texttt{UPDATE\_VECTOR} iterates over rows and
-elements, reads $O_o$ and $O_t$, and writes the weighted sum. The engine
-accepts one operation at a time. This small FSM favors integration clarity and
-deterministic observability over aggressive pipelining.
+Software sequences the two engines through status and memory. It programs the
+MMIO command, starts mode 1, polls the status until done, and then reads the two
+weight arrays from TCDM. After completion, software invokes existing RVV to load
+$O_{\mathrm{old}}[D]$ and $O_{\mathrm{tile}}[D]$, apply the weights, and store
+$O_{\mathrm{new}}[D]$. The ordering gives RVV a completed, software-addressable
+weight state; no direct SMU-to-RVV path or weight-register bypass exists.
+Software remains the sequencing agent: it observes completion before exposing
+weights to RVV, so the core never consumes partially written rows. The RVV
+routine retains its existing load, multiply, FMA, and store sequence.
 
-\begin{figure}[t]
-\centering
-\includegraphics[width=\columnwidth]{../../data_process/attnres/pic/online_softmax_merge_cluster_integration.png}
-\caption{Cluster integration. The SMU contributes one TCDM master and receives
-commands through the existing peripheral register path.}
-\label{fig:cluster}
-\end{figure}
+MMIO supplies command and status signals without changing the ISA. The cluster
+peripheral presents the software-selected operation to the Scalar SMU, while
+the engine contributes an independent TCDM requester to the shared interconnect.
+Existing core ports continue to serve RVV loads and stores, so the handoff
+traverses shared TCDM rather than a private engine link. This structure changes
+neither instruction decoding nor the RVV datapath.
+The interconnect arbitrates both requester classes through existing TCDM
+machinery, while MMIO remains the control-plane boundary. This composition adds
+no decoder instruction or custom vector operand.
 
-\subsection{The cluster integration avoids ISA changes}
-
-Figure~\ref{fig:cluster} places the SMU beside the core complexes and their
-existing TCDM paths. The cluster peripheral owns the merge registers and
-forwards their values to the engine. The engine joins the TCDM interconnect as
-an additional requester. This organization avoids decoder entries, instruction
-encodings, register-file ports, and vector functional-unit changes. Software
-configures an operation, starts it, then observes terminal status through the
-same peripheral path.
+This boundary fixes the architecture evaluated next: Scalar SMU removes
+state-dependent scalar recurrence work, and existing RVV retains the regular
+vector update through a software-mediated TCDM handoff. The Evaluation section
+measures the resulting cycle behavior and then separates scaling, model-derived
+configurations, and standalone hardware evidence.
+This framing lets the next section attribute cycle changes to the scalar
+recurrence while retaining a fixed vector implementation in the primary
+comparison. It also keeps standalone evidence separate from measured cycles.
 
 \section{Evaluation}
 
