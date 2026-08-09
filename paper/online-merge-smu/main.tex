@@ -41,28 +41,48 @@ online softmax, attention, RISC-V vector processor, scratchpad, accelerator
 
 \section{Introduction}
 
-Blockwise attention maintains an online normalizer and a partial output state
-instead of materializing a full attention matrix \cite{milakov2018online,dao2022flashattention}.
-Each completed tile merges one scalar maximum, one scalar normalizer, and one
-output vector into the running state. This recurrence has little instruction
-level parallelism across its scalar steps, yet it executes once for every row
-and tile. A vector core can update $O$, but it still pays the scalar merge,
-normalization, command, and synchronization costs.
+Tiled attention avoids materializing the full score matrix by updating
+online-softmax state after each tile \cite{milakov2018online,dao2022flashattention}.
+Each merge produces $m_{\mathrm{new}}$, $l_{\mathrm{new}}$, $w_{\mathrm{old}}$,
+and $w_{\mathrm{tile}}$ before the regular $O[D]$ vector update. The same
+pattern repeats for every row and tile in the kernel. This decomposition
+separates the state-dependent scalar recurrence from uniform elementwise work.
+The recurrence has row-level dependencies, whereas the
+vector update exposes element-level parallelism, so the two phases have
+different dependency/parallelism structures.
 
-We study whether a small cluster-local engine can execute this state update
-without changing the processor instruction path. Spatz combines compact
-RISC-V vector units with a banked L1 scratchpad \cite{spatz2023}. Its cluster
-integration offers an opportunity: an auxiliary unit can receive commands
-through existing memory-mapped registers and exchange state through TCDM.
-This interface isolates the mechanism from the decoder, vector register file,
-and vector functional units.
+Spatz provides compact RVV execution and shared TCDM, which suits the regular
+elementwise update \cite{spatz2023}. We use B2R as the strong software baseline:
+RVV executes the $O[D]$ update while software executes the scalar recurrence.
+Maximum selection, exponential rescaling, length accumulation, and weight
+generation remain serial within each row and tile. The Full-Offload Ablation
+lowers scalar cost but replaces the efficient existing RVV datapath with a
+specialized vector datapath. This contrast makes the specialization boundary
+the design question.
 
-This paper makes three contributions. First, it implements a full mixed-scalar
-online-softmax merge datapath behind an existing MMIO/TCDM boundary. Second,
-it evaluates the design against scalar and RVV-assisted software paths across
-a measured scaling matrix. Third, it measures the internal state-machine
-phases and shared-TCDM interference, which identify the remaining vector
-streaming bottleneck and quantify coexistence with a core workload.
+Our proposed design is exactly Scalar SMU + existing RVV. The Scalar SMU
+executes the state-dependent recurrence and writes $m_{\mathrm{new}}$,
+$l_{\mathrm{new}}$, $w_{\mathrm{old}}$, and $w_{\mathrm{tile}}$ to TCDM. After
+completion, software loads the two weights from TCDM and invokes existing RVV
+for the regular $O[D]$ update. This implementation leaves the existing ISA and
+RVV datapath unchanged (Figure~\ref{fig:proposed-architecture}).
+
+Across three model-derived configurations, Proposed achieves a 4.81$\times$ geometric-mean measured-cycle speedup over B2R, with speedup defined as B2R cycles divided by Proposed cycles. Relative to B2R, Proposed reduces the fitted per-row scalar term $C_s$ by 17.66$\times$ while increasing the per-element vector term $C_v$ by 1.88\%; the Full-Offload Ablation lowers $C_s$ further, but its $C_v$ is 3.78$\times$ Proposed and its standalone mapped SMU area is 48.8\% larger. We make three contributions:
+
+\begin{itemize}
+  \item \textbf{Lightweight Scalar SMU.} We design a cluster-local
+  accelerator for the state-dependent online-softmax recurrence, covering
+  maximum selection, exponential rescaling, length accumulation, reciprocal
+  normalization, and weight generation.
+
+  \item \textbf{Selective Offloading.} We assign the scalar recurrence to the
+  SMU and retain the regular $O[D]$ update on the existing RVV datapath through
+  a post-completion, TCDM-mediated weight handoff.
+
+  \item \textbf{Quantitative Validation.} We measure RTL/Verilator cycles
+  across scaling and model-derived configurations and report standalone SMU
+  mapped cells and Nangate45 Liberty cell-area units from Yosys/ABC.
+\end{itemize}
 
 \section{Selective-Offload Architecture}
 
