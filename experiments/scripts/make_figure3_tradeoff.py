@@ -58,7 +58,7 @@ for cfg in CONFIGS:
                label=LABELS[cfg])
     for wl, v in zip(WORKLOADS, per_wl):
         ax.scatter([x[cfg]], [v], s=34, color=COLORS[cfg], alpha=0.45,
-                   marker="x", zorder=2)
+                   marker="x", zorder=4)
 # B2R reference point
 ax.scatter([x["B2R_RVV"]], [1.0], s=110, color=COLORS["B2R_RVV"], zorder=3,
            label=LABELS["B2R_RVV"])
@@ -67,7 +67,8 @@ for cfg in CONFIGS:
     xx, yy = x[cfg], gms[cfg]
     ha = "left" if cfg == "B2R_RVV" else "center"
     ax.annotate(f"{yy:.2f}×", (xx, yy), textcoords="offset points",
-                xytext=(8, 6) if ha == "left" else (0, 8),
+                xytext=(8, 6) if ha == "left" else
+                (28, 8) if cfg == "A1_SMU_SCALAR" else (0, 8),
                 ha="center", fontsize=9, color=COLORS[cfg], fontweight="bold")
 
 ax.set_xlabel("Standalone SMU mapped area (10^3 Liberty units)")
