@@ -19,20 +19,21 @@
 \maketitle
 
 \begin{abstract}
-Blockwise attention updates a compact $(m,l,O)$ state after every tile. A
-general-purpose core pays scalar control and normalization costs for every
-row, even when vector hardware handles the output update. This paper presents
-a cluster-local Softmax Merge Unit (\smu) for this recurrence. The \smu{} uses
-the existing memory-mapped control plane and TCDM scratchpad interface of a
-Spatz RISC-V vector cluster. It therefore leaves the ISA and the main vector
-pipeline unchanged. The datapath evaluates the maximum, two exponential
-scales, reciprocal-based weights, and the weighted output-vector update.
-Across 16 measured $(N,D)$ coordinates, the full \smu{} outperforms an
-RTL-aligned scalar-plus-RVV baseline by 1.42--10.14$\times$. Concurrent
-execution with a streaming core workload preserves the \smu{} execution time
-within 0.05\% at $(16,64)$, while the core slows by 0.6\%. The results show
-that a compact auxiliary engine can remove per-row merge overhead without
-requiring an ISA extension.
+Blockwise attention repeatedly merges a compact $(m,l,O)$ state after each
+tile. This online merge combines a state-dependent scalar recurrence with a
+regular $O[D]$ vector update. In the strong RVV software baseline B2R, RVV
+handles the vector work while software executes the scalar dependence. We
+present Proposed, a Selective Offloading design that assigns the recurrence to
+a cluster-local Scalar Softmax Merge Unit (\smu) and reuses the existing RVV
+datapath after a TCDM-mediated weight handoff. RTL/Verilator measurements show
+that Proposed reduces the fitted per-row scalar term $C_s$ by 17.66$\times$
+over B2R while increasing the per-element vector term $C_v$ by 1.88\%. Across
+three model-derived configurations, Proposed achieves a 4.81$\times$
+geometric-mean measured-cycle speedup over B2R. We define speedup as B2R cycles
+divided by Proposed cycles. The Full-Offload Ablation lowers $C_s$ further but
+has 48.8\% greater standalone mapped SMU area than Proposed. These results show
+that specializing the recurrence preserves efficient vector reuse while
+avoiding the cost of full offload.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -539,13 +540,16 @@ accelerators.
 
 \section{Conclusion}
 
-The SMU moves online-softmax merge state updates into a compact TCDM-connected
-engine while preserving the Spatz ISA and vector pipeline. Measured B3 results
-outperform the RTL-aligned RVV-assisted baseline at all 16 scaling coordinates
-and retain component throughput during a shared-TCDM experiment. The measured
-FSM phases identify vector streaming and command overhead as the next design
-targets. These results establish cluster-local merge offload as a practical
-building block for future tiled-attention systems.
+This work defines and validates a selective specialization boundary for
+online-softmax merge. Proposed assigns the state-dependent scalar recurrence
+to a cluster-local Scalar SMU and retains the regular $O[D]$ update on the
+existing RVV datapath through TCDM. Across three model-derived configurations,
+RTL/Verilator measurements show a 4.81$\times$ geometric-mean measured-cycle
+speedup over B2R, while the fitted decomposition preserves B2R-like vector
+cost. The Full-Offload Ablation reduces the scalar term further but increases
+vector cost and standalone mapped SMU area relative to Proposed. Selective
+Offloading therefore concentrates dedicated hardware on the recurrence and
+reuses existing RVV resources for regular elementwise work.
 
 \bibliographystyle{IEEEtran}
 \bibliography{refs}
