@@ -19,9 +19,11 @@ missing or ineligible data instead of substituting historical constants.
 - Replicates: three independent deterministic simulator processes; no mean or
   error bar is shown unless all cycle values are exactly equal.
 
-The selected backend is Python.  Rendering currently stops with an explicit
-dependency error because `matplotlib` is absent; no cross-backend substitute
-or fabricated preview is produced.
+Historical P0 environment note: the selected backend was Python, and that
+environment stopped rendering with an explicit dependency error because
+`matplotlib` was absent.  Figure 1 is rendered from the existing
+Python/matplotlib environment; no cross-backend substitute or fabricated
+preview is used.
 
 The source preflight reports one accepted warning: no TIFF export.  These are
 vector bar charts, so PDF/SVG are the submission masters; the 600 dpi PNG is

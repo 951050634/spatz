@@ -311,7 +311,7 @@ def main() -> None:
     add_box(ax, smu_x + 0.032, smu_y + 0.096, smu_w - 0.064, 0.047,
             facecolor=WHITE, edgecolor=BLUE, linewidth=0.65, radius=0.006, zorder=3)
     add_text(ax, smu_x + smu_w / 2, smu_y + 0.120,
-             "max + 2× EXP LUTs", size=7, color=NEUTRAL)
+             "max → m_new; 2× EXP LUTs", size=7, color=NEUTRAL)
     add_arrow(ax, (smu_x + smu_w / 2, smu_y + 0.094),
               (smu_x + smu_w / 2, smu_y + 0.066), color=BLUE,
               linewidth=0.75, mutation_scale=7.5)
@@ -352,18 +352,44 @@ def main() -> None:
     add_text(ax, tcdm_x + tcdm_w / 2, tcdm_y + 0.031,
              "m/l + w_old,w_tile + O vectors", size=7, color=NEUTRAL_MID)
 
-    # Solid, two-way data paths.  There is intentionally no SMU → RVV arrow.
-    add_arrow(ax, (0.405, tcdm_y + tcdm_h), (0.405, smu_y),
-              color=BLUE, linewidth=0.95, mutation_scale=8.5, arrowstyle="<->")
-    add_text(ax, 0.365, 0.205, "m/l + weights", size=7, color=BLUE,
-             ha="right", bbox={"facecolor": WHITE, "edgecolor": "none", "pad": 1.0})
+    # Separate one-way paths make the RTL-true TCDM handoff explicit.  There
+    # is intentionally no SMU → RVV arrow.
+    add_arrow(ax, (0.385, tcdm_y + tcdm_h), (0.385, smu_y),
+              color=BLUE, linewidth=0.95, mutation_scale=8.5, arrowstyle="->")
+    add_text(ax, 0.375, 0.226, "read m_old,l_old,m_tile,l_tile", size=7,
+             color=BLUE, ha="right",
+             bbox={"facecolor": WHITE, "edgecolor": "none", "pad": 1.0})
+    add_arrow(ax, (0.435, smu_y), (0.435, tcdm_y + tcdm_h),
+              color=BLUE, linewidth=0.95, mutation_scale=8.5, arrowstyle="->")
+    add_text(ax, 0.447, 0.198, "write m_new,l_new,w_old,w_tile", size=7,
+             color=BLUE, ha="left",
+             bbox={"facecolor": WHITE, "edgecolor": "none", "pad": 1.0})
     add_arrow(ax, (0.770, tcdm_y + tcdm_h), (0.770, rvv_y),
               color=GREEN, linewidth=0.95, mutation_scale=8.5, arrowstyle="<->")
     add_text(ax, 0.805, 0.205, "O vectors", size=7, color=GREEN,
              ha="left", bbox={"facecolor": WHITE, "edgecolor": "none", "pad": 1.0})
 
-    # After completion, software reads weights from TCDM and launches RVV.  The
-    # route is dashed and originates at Software/Core, not at the SMU.
+    # TCDM is software-visible: after completion, software loads the weights
+    # through this solid neutral path before issuing the RVV update.
+    add_routed_arrow(
+        ax,
+        [(tcdm_x, tcdm_y + tcdm_h / 2), (0.190, tcdm_y + tcdm_h / 2),
+         (0.190, 0.560), (0.180, 0.560)],
+        color=NEUTRAL,
+        dashed=False,
+        linewidth=0.85,
+    )
+    add_text(
+        ax,
+        0.105,
+        0.340,
+        "load w_old,w_tile after done",
+        size=7,
+        color=NEUTRAL,
+        bbox={"facecolor": WHITE, "edgecolor": "none", "pad": 1.4},
+    )
+
+    # The separate dashed route originates at Software/Core, not at the SMU.
     add_routed_arrow(
         ax,
         [(0.180, 0.520), (0.195, 0.286), (0.745, 0.286), (0.745, 0.340)],
@@ -375,7 +401,7 @@ def main() -> None:
         ax,
         0.470,
         0.305,
-        "after done: software loads weights from TCDM; issues RVV update",
+        "after done: issue RVV update",
         size=7,
         color=NEUTRAL_MID,
         bbox={"facecolor": WHITE, "edgecolor": "none", "pad": 1.4},
@@ -384,6 +410,11 @@ def main() -> None:
     # No tight bounding box: preserving the figure canvas is part of the export
     # contract, so the saved page remains exactly 180 x 88 mm.
     fig.savefig(OUT_SVG, facecolor=WHITE)
+    svg_text = OUT_SVG.read_text(encoding="utf-8")
+    OUT_SVG.write_text(
+        "\n".join(line.rstrip() for line in svg_text.splitlines()) + "\n",
+        encoding="utf-8",
+    )
     fig.savefig(OUT_PDF, facecolor=WHITE)
     fig.savefig(OUT_PNG, dpi=600, facecolor=WHITE)
     plt.close(fig)
