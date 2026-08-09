@@ -464,32 +464,51 @@ operation in fewer target cycles. These observations motivate vector-path
 optimization and physical synthesis. They do not establish an area, frequency,
 power, or energy advantage.
 
-\section{Limitations and Related Work}
+\section{Related Work}
 
-Online normalization provides the recurrence that enables streaming softmax
-state \cite{milakov2018online}. IO-aware attention algorithms use this
-structure to process tiles without materializing full score matrices
-\cite{dao2022flashattention}. The \smu{} complements these algorithms at the
-cluster level. It accelerates the merge state after a tile; it does not
-implement QK multiplication, PV multiplication, masking, scheduling, or an
-end-to-end attention runtime.
+Dedicated Softmax and attention accelerators place the recurrence inside a
+broader datapath. Softermax combines unnormalized and normalization hardware
+with online normalization for Transformer softmax \cite{softermax2021}. Hyft
+provides a reconfigurable full-vector Softmax pipeline for training and
+inference \cite{hyft2024}. SoftEx provides the closest shared-TCDM/HWPE
+precedent, but it still offloads the full Softmax path \cite{softex2025}.
+Alexandridis et al. add custom exponent and multiplication
+hardware to FlashAttention, including recurrence-related computation and the
+output-vector update \cite{alexandridis2025expmul}. These designs accelerate a
+complete Softmax or attention stage; they do not isolate the scalar merge
+recurrence from the regular vector update.
 
-Spatz supplies compact vector execution and a shared scratchpad
-\cite{spatz2023}. Our design adds a TCDM master beside this execution path
-instead of introducing a vector instruction. The evaluation compares
-RTL-aligned software paths, not an optimized CPU, GPU, or production attention
-kernel. The Yosys and toggle numbers remain logic-activity proxies. A physical
-technology library, timing constraints, and power analysis would be required
-for PPA claims.
+Programmable RVV systems expose a different point in the design space. Spatz
+provides the RVV/TCDM substrate used by our cluster \cite{spatz2023}.
+Spatzformer reconfigures a dual-core RVV cluster between split and merge modes,
+using generic mixed scalar-vector resource reconfiguration rather than a
+kernel-specific recurrence unit \cite{spatzformer2024}. VEXP adds BF16
+scalar/SIMD EXP instructions to RISC-V while software FREP, SSR, and SIMD
+support handles the remaining partial Softmax \cite{vexp2025}. Titopoulos et al.
+vectorize
+FlashAttention entirely with standard RVV and software-controlled exponential
+computation, without custom hardware or scalar operations
+\cite{titopoulos2026vectorized}. These approaches retain programmability at the
+ISA or processor level, whereas our boundary places scalar recurrence control
+in a separate SMU and leaves the existing RVV datapath for $O[D]$.
 
-The approximation range also bounds the current result. The exponential LUT
-saturates below $-8$ and above zero, and the input validation excludes NaN,
-infinity, and subnormal values. The measured numerical cases cover mixed
-scalar inputs, a delta sweep, and a merge-chain workload. They establish
-behavior for those cases; they do not provide a universal error bound over all
-attention distributions. A future design can add wider approximation ranges,
-refinement steps, or IEEE floating-point datapaths when the target workload
-requires them.
+Tightly coupled kernel accelerators target a larger computational unit. RedMulE
+couples a semi-systolic FP16 matrix-multiplication engine to a PULP cluster and
+shared TCDM, covering complete GEMM kernels \cite{redmule2022}. OpenGeMM
+combines a parameterized GEMM array, lightweight RISC-V control, and a tightly
+coupled scratchpad with prefetch and buffering mechanisms \cite{opengemm2024}.
+Both works optimize complete matrix or GEMM execution and its data movement.
+Their accelerators therefore differ from a design that isolates state-dependent
+recurrence work and hands regular $O[D]$ arithmetic back to an existing vector
+core.
+
+Among the reviewed designs, we did not identify an architecture that dedicates
+hardware only to the state-dependent online-merge scalar recurrence and, after
+completion, reuses an existing RVV datapath through a TCDM-mediated weight
+handoff for the regular $O[D]$ update. To our knowledge, this selective-offload
+boundary is distinct from prior full-Softmax or full-attention accelerators,
+programmable-vector or ISA-centered approaches, and tightly coupled full-kernel
+accelerators.
 
 \section{Conclusion}
 
