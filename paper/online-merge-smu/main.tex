@@ -42,7 +42,8 @@ online softmax, attention, RISC-V vector processor, scratchpad, accelerator
 \section{Introduction}
 
 Tiled attention avoids materializing the full score matrix by updating
-online-softmax state after each tile \cite{milakov2018online,dao2022flashattention}.
+online-softmax state after each tile
+\cite{milakov2018online,dao2022flashattention}.
 Each merge produces $m_{\mathrm{new}}$, $l_{\mathrm{new}}$, $w_{\mathrm{old}}$,
 and $w_{\mathrm{tile}}$ before the regular $O[D]$ vector update. The same
 pattern repeats for every row and tile in the kernel. This decomposition
@@ -67,7 +68,13 @@ completion, software loads the two weights from TCDM and invokes existing RVV
 for the regular $O[D]$ update. This implementation leaves the existing ISA and
 RVV datapath unchanged (Figure~\ref{fig:proposed-architecture}).
 
-Across three model-derived configurations, Proposed achieves a 4.81$\times$ geometric-mean measured-cycle speedup over B2R, with speedup defined as B2R cycles divided by Proposed cycles. Relative to B2R, Proposed reduces the fitted per-row scalar term $C_s$ by 17.66$\times$ while increasing the per-element vector term $C_v$ by 1.88\%; the Full-Offload Ablation lowers $C_s$ further, but its $C_v$ is 3.78$\times$ Proposed and its standalone mapped SMU area is 48.8\% larger. We make three contributions:
+Across three model-derived configurations, Proposed achieves a 4.81$\times$
+geometric-mean measured-cycle speedup over B2R, with speedup defined as B2R
+cycles divided by Proposed cycles. Relative to B2R, Proposed reduces the fitted
+per-row scalar term $C_s$ by 17.66$\times$ while increasing the per-element
+vector term $C_v$ by 1.88\%; the Full-Offload Ablation lowers $C_s$ further,
+but its $C_v$ is 3.78$\times$ Proposed and its standalone mapped SMU area is
+48.8\% larger. We make three contributions:
 
 \begin{itemize}
   \item \textbf{Lightweight Scalar SMU.} We design a cluster-local
