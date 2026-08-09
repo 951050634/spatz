@@ -442,56 +442,6 @@ within A1/A2 evidence: selective scalar offload retains vector cost discipline
 while Full trades additional standalone area for vector-path offload in this
 ablation.
 
-\section{Discussion}
-
-\subsection{The design targets a specific granularity}
-
-The SMU receives a complete merge command, so each launch carries a fixed
-configuration and completion cost. The measurements show that this choice
-works best when several rows amortize that cost. At $(1,1)$, only 29 SMU busy
-cycles execute inside a 1,124-cycle end-to-end operation. At $(16,64)$, the
-engine executes 8,534 busy cycles inside 9,556 end-to-end cycles. This change
-explains why the engine remains useful for matrix shapes that contain many
-short scalar recurrences, even when each recurrence has a compact vector.
-
-The command boundary also defines a clear deployment path. A tiled attention
-kernel can retain its QK and PV computation on an existing vector or matrix
-engine, place the partial $(m,l,O)$ state in local scratchpad memory, and
-submit merge commands at tile completion. The current prototype serializes one
-command, but independent rows and heads expose natural opportunities for
-multiple engines. A future front end can batch commands or use a queue to
-reduce the small-workload overhead that the current MMIO protocol reveals.
-
-\subsection{The evaluation distinguishes evidence layers}
-
-The paper uses three measurement layers because each answers a separate
-question. RTL end-to-end cycles establish the software-versus-engine result.
-FSM counters establish where the engine spends active cycles. The concurrency
-experiment establishes whether a co-running stream alters those component
-times. The combination gives a stronger explanation than a speedup number
-alone: the scalar work leaves the core, the vector loop becomes dominant, and
-the shared scratchpad introduces measurable yet small interference for the
-tested stream.
-
-The numerical results also have two layers. The host model tests the selected
-LUT interpolation and reciprocal construction against the complete recurrence.
-The RTL benchmark tests the implemented fixed-point data path against its
-RTL-aligned software reference. Reporting both values prevents the lower model
-error from becoming an end-to-end RTL claim. The explicit validation paths
-serve the same purpose. They show that the engine rejects malformed commands
-instead of silently producing an output.
-
-\subsection{Proxy data guides follow-up work}
-
-The generic logic and toggle measurements guide architectural choices but do
-not replace physical implementation. The resource decomposition assigns most
-generic cells to the vector arithmetic and data path, while the exponential and
-reciprocal blocks occupy smaller independent scopes. The toggle traces show a
-lower count for B3 at the largest sampled coordinate because B3 completes the
-operation in fewer target cycles. These observations motivate vector-path
-optimization and physical synthesis. They do not establish an area, frequency,
-power, or energy advantage.
-
 \section{Related Work}
 
 Dedicated Softmax and attention accelerators offload broader Softmax or
