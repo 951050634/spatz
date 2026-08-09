@@ -57,8 +57,10 @@ for cfg in CONFIGS:
     ax.scatter([x[cfg]], [gm], s=110, color=COLORS[cfg], zorder=3,
                label=LABELS[cfg])
     for wl, v in zip(WORKLOADS, per_wl):
-        ax.scatter([x[cfg]], [v], s=34, color=COLORS[cfg], alpha=0.45,
+        ax.scatter([x[cfg]], [v], s=58, color="white", linewidths=2.4,
                    marker="x", zorder=4)
+        ax.scatter([x[cfg]], [v], s=34, color=COLORS[cfg], alpha=0.45,
+                   marker="x", zorder=5)
 # B2R reference point
 ax.scatter([x["B2R_RVV"]], [1.0], s=110, color=COLORS["B2R_RVV"], zorder=3,
            label=LABELS["B2R_RVV"])
