@@ -2,8 +2,8 @@
 """Hardware performance-area trade-off figure.
 
 x-axis: standalone SMU mapped area in 10^3 Liberty units (P0-6 exact;
-B2R = 0 since it adds no SMU).  y-axis: cycle speedup over B2R at
-iso-frequency.  Points per design are geometric means over BERT/Mistral/Qwen,
+B2R = 0 since it adds no SMU).  y-axis: cycle speedup over B2R.
+Points per design are geometric means over BERT/Mistral/Qwen,
 with per-workload markers.
 """
 from __future__ import annotations
@@ -15,6 +15,7 @@ from pathlib import Path
 import matplotlib
 
 matplotlib.use("Agg")
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 
 ROOT = Path(__file__).resolve().parent.parent.parent
@@ -22,6 +23,25 @@ MODEL = ROOT / "experiments" / "parsed" / "final_scaling_model.csv"
 P06 = ROOT / "experiments" / "parsed" / "p0_6" / "p0_6_synthesis_summary.csv"
 OUT_PNG = ROOT / "experiments" / "plots" / "figure3_hardware_tradeoff.png"
 OUT_PDF = ROOT / "experiments" / "plots" / "figure3_hardware_tradeoff.pdf"
+OUT_SVG = ROOT / "experiments" / "plots" / "figure3_hardware_tradeoff.svg"
+
+fig_width_mm = 180.0
+fig_height_mm = 110.0
+mpl.rcParams.update(
+    {
+        "font.family": "sans-serif",
+        "font.sans-serif": ["Arial", "Helvetica", "DejaVu Sans", "sans-serif"],
+        "font.size": 7,
+        "svg.fonttype": "none",
+        "pdf.fonttype": 42,
+        "axes.linewidth": 0.8,
+        "axes.spines.top": False,
+        "axes.spines.right": False,
+        "axes.facecolor": "white",
+        "figure.facecolor": "white",
+        "savefig.facecolor": "white",
+    }
+)
 
 CONFIGS = ("B2R_RVV", "A1_SMU_SCALAR", "A2_SMU_FULL")
 LABELS = {"B2R_RVV": "B2R (RVV SW)",
@@ -46,7 +66,11 @@ x = {"B2R_RVV": 0.0,
      "A1_SMU_SCALAR": area["C1_SCALAR"] / 1000.0,
      "A2_SMU_FULL": area["C2_FULL"] / 1000.0}
 
-fig, ax = plt.subplots(figsize=(6.6, 4.4), dpi=150)
+fig, ax = plt.subplots(
+    figsize=(fig_width_mm / 25.4, fig_height_mm / 25.4),
+    dpi=600,
+    facecolor="white",
+)
 gms = {"B2R_RVV": 1.0}
 for cfg in CONFIGS:
     if cfg == "B2R_RVV":
@@ -73,15 +97,28 @@ for cfg in CONFIGS:
                 (28, 8) if cfg == "A1_SMU_SCALAR" else (0, 8),
                 ha="center", fontsize=9, color=COLORS[cfg], fontweight="bold")
 
-ax.set_xlabel("Standalone SMU mapped area (10^3 Liberty units)")
-ax.set_ylabel("Cycle speedup over B2R (iso-frequency)")
+ax.set_xlabel(r"Standalone SMU mapped area ($10^3$ Liberty units)")
+ax.set_ylabel("Cycle speedup over B2R")
 ax.set_title("Performance–area trade-off\n"
              "(×=per workload: BERT / Mistral / Qwen14B; ●=geomean)",
              fontsize=10)
 ax.grid(alpha=0.3)
 ax.spines[["top", "right"]].set_visible(False)
-ax.legend(fontsize=8, loc="upper left")
+ax.tick_params(labelsize=7)
+handles, legend_labels = ax.get_legend_handles_labels()
+handle_by_label = dict(zip(legend_labels, handles))
+legend_order = [LABELS[cfg] for cfg in CONFIGS]
+ax.legend([handle_by_label[label] for label in legend_order], legend_order,
+          fontsize=8, loc="upper left")
 fig.tight_layout()
-for p in (OUT_PNG, OUT_PDF):
-    fig.savefig(p, bbox_inches="tight")
-print(f"wrote {OUT_PNG}, {OUT_PDF}")
+# Preserve the requested canvas exactly; do not use bbox_inches="tight".
+fig.savefig(OUT_SVG, facecolor="white")
+svg_text = OUT_SVG.read_text(encoding="utf-8")
+OUT_SVG.write_text(
+    "\n".join(line.rstrip() for line in svg_text.splitlines()) + "\n",
+    encoding="utf-8",
+)
+fig.savefig(OUT_PDF, facecolor="white")
+fig.savefig(OUT_PNG, dpi=600, facecolor="white")
+plt.close(fig)
+print(f"wrote {OUT_SVG}, {OUT_PDF}, {OUT_PNG}")
