@@ -147,8 +147,8 @@ cycles per row. LOAD and STORE account for 22 of 24 cycles as TCDM
 communication states; the two compute states occupy the remaining two cycles.
 The 24-cycle count describes the scalar-only FSM schedule. It is neither the
 fitted $C_s=90.28$ nor software-visible or end-to-end latency, which also
-includes command sequencing and completion polling. The observer records these
-states only for the four scalar states because mode 1 never enters
+includes command sequencing and completion polling. The observer
+records only the four scalar states because mode 1 never enters
 \texttt{UPDATE\_VECTOR}. The communication
 count reflects four reads plus four writes at state-machine handshake
 granularity, while the compute states represent combinational evaluations.
