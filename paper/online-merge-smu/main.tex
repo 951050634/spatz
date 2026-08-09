@@ -225,126 +225,99 @@ comparison. It also keeps standalone evidence separate from measured cycles.
 
 \section{Evaluation}
 
-Selective scalar offloading retains the low vector cost of existing RVV and
-yields a 4.81$\times$ geometric-mean speedup in measured cycles over B2R. The
-Proposed design combines a Scalar SMU with existing RVV, while Full serves only
-as the Full-Offload Ablation. B2R supplies the head-to-head reference because it
-already performs the vector update with existing RVV. This reference makes
-scalar recurrence offload the measured question and keeps Full's role
-diagnostic. The primary result therefore concerns selective offload with the
-vector path held fixed in the comparison.
+Selective scalar offloading retains the low vector cost of existing RVV while
+moving the state-dependent recurrence to Proposed. Proposed combines Scalar SMU
+with existing RVV, B2R is the primary strong baseline, and Full is the
+Full-Offload Ablation. Across the three model-derived configurations, Proposed
+reaches a 4.81$\times$ geometric-mean speedup in measured RTL/Verilator cycles
+over B2R. Speedup is B2R cycles divided by Proposed cycles.
 
 \subsection{Experimental Setup}
 
-We evaluate FP32 state on a Spatz cluster with the $(m,l,O)$ arrays resident in
-TCDM. The simulator runs RTL through Verilator, and every reported cycle count
-comes from the measured RTL/Verilator run. Each implementation uses the same
-generated state and command shape, so cycle differences reflect the execution
-path. The state includes old and tile scalar values together with output
-vectors, and the benchmark places source and destination arrays in TCDM before
-launch. We use one cluster configuration and one launch protocol across roles.
-RTL/Verilator cycles include the software-visible command and completion work,
-so each role exposes the path that its implementation actually executes.
+We evaluate FP32 merge state on a Spatz cluster with $(m,l,O)$ arrays resident
+in TCDM. Every cycle count comes from a measured RTL/Verilator run, so the
+comparison follows the implemented software-visible path rather than a model-
+only estimate. We apply the same correctness gate to every role and retain only
+passing outputs. B1 runs the scalar software context; B2R runs the software
+scalar recurrence and existing RVV vector update; Proposed assigns the
+recurrence to Scalar SMU and keeps existing RVV; Full runs the Full-Offload
+Ablation with both recurrence and vector update in the SMU. This role set
+isolates scalar offloading against a strong RVV baseline while retaining B1 as
+context and Full as a diagnostic comparison.
 
-We compare four roles. B1 runs the scalar software context. B2R runs the scalar
-recurrence in software and uses existing RVV for the vector update, making it
-the primary strong baseline. Proposed combines Scalar SMU with existing RVV.
-Full runs the Full-Offload Ablation, which moves the vector update into the SMU
-as well. We retain only outputs that pass the correctness gate; incomplete or
-failing cases do not enter a primary result. B1 supplies context for total
-scalar work but supplies no primary speedup. B2R keeps the vector loop on the
-existing RVV path, so its cycle count establishes the cost after vectorization.
-Proposed moves only the scalar recurrence across the SMU boundary, whereas Full
-moves both recurrence and vector update. This role assignment keeps each
-comparison tied to one architectural change.
-
-We use Yosys/ABC with the Nangate45 library to collect standalone hardware
-evidence. An area-oriented \texttt{abc -fast} mapping reports formal cell
-counts and mapped area. A separate timing-driven mapping reports critical delay
-and an estimated standalone Fmax. The two flows answer different questions, so
-we keep their cell and area outputs separate from timing outputs. The available
-records provide no cluster PPA or power measurement. The area flow supports a
-standalone size comparison, while the timing flow supports a standalone timing
-estimate under its own constraints. We never combine a timing-flow cell count
-with the area-flow result. The evidence therefore supports the SMU-local
-comparison and leaves cluster-level PPA and power outside the reported scope.
+Standalone hardware evidence uses Yosys/ABC with the Nangate45 library. The
+area flow uses \texttt{abc -fast} to report mapped cells and Liberty cell-area
+units. A separate timing-driven flow reports critical delay and estimated
+standalone Fmax. Timing-flow cells and area remain outside the formal area
+comparison, because the two mappings answer different questions. The records
+provide no cluster PPA or power measurement. Formal cells and mapped area answer
+the standalone size question, while delay and Fmax report timing under separate
+constraints. This evidence describes the SMU-local implementation rather than
+a complete cluster.
 
 \subsection{Progressive Baseline}
 
-B1 to B2R isolates the contribution of RVV vectorization. B1 remains in
-Table~\ref{tab:model-cycles} as cycle context, while B2R supplies the primary
-strong baseline for every speedup. This comparison identifies the cost that
-existing RVV removes before any SMU offload. The B1 column lets readers see how
-the scalar context grows with each model-derived shape, but it carries no
-speedup column. B2R preserves the same state representation and command setup
-while using the existing vector instructions, which makes the next comparison
-isolate the recurrence itself.
-
-Every primary speedup divides B2R cycles by Proposed cycles. The ratio
-attributes improvement to scalar recurrence offload after RVV handles the
-vector update. Full appears only to quantify the cost and benefit of moving
-that vector update as an ablation. A common denominator keeps the interpretation
-stable across shapes and prevents a scalar-context comparison from becoming a
-headline result. The reported ratios thus measure the incremental contribution
-of Scalar SMU under the same RVV vector path.
+B1 to B2R isolates the contribution of RVV vectorization while B2R remains the
+primary strong baseline. B1 supplies scalar context but no primary speedup. B2R
+performs the scalar recurrence in software and the regular $O[D]$ update on
+existing RVV. Proposed moves only the state-dependent recurrence to Scalar SMU.
+Full is the Full-Offload Ablation and moves the vector update as well. Every
+reported speedup is B2R cycles divided by Proposed cycles, so the primary ratio
+attributes the gain to selective scalar offloading while holding the regular
+vector path in both roles.
 
 \subsection{Scaling and Cost Decomposition}
 
-To explain the cycle trend, we fit $C=C_0+C_sN+C_vND$ to each design. Here $N$
-denotes rows, $D$ denotes vector dimension, $C_0$ captures fixed work, $C_s$
-captures per-row scalar recurrence work, and $C_v$ captures per-element vector
-work. The fitted coefficients summarize RTL/Verilator cycle trends; they do
-not equal FSM busy-cycle counts. Figure~\ref{fig:scaling-decomposition} presents
-the fit and uses a logarithmic scale for $C_s$. The decomposition treats $N$
-and $D$ as independent shape variables, so each coefficient summarizes a
-different growth direction. $C_0$ absorbs launch and loop-independent work,
-whereas $C_s$ and $C_v$ describe fitted contributions across the measured
-coordinates. None of these coefficients is a direct FSM state counter.
+We fit $C=C_0+C_sN+C_vND$ to measured RTL/Verilator cycles for each design.
+$N$ is rows, $D$ is vector dimension, $C_0$ is fixed work, $C_s$ is fitted
+per-row scalar recurrence cost, and $C_v$ is fitted per-element vector cost.
+Figure~\ref{fig:scaling-decomposition} displays these trends with a logarithmic
+$C_s$ axis. The fit describes growth across measured shapes; it is distinct
+from the SMU-busy schedule and does not identify a single FSM counter. This view
+ties the primary comparison to scalar dependence without changing the regular
+vector path.
 
 \begin{figure*}[t]
 \centering
 \includegraphics[width=\textwidth]{../../experiments/plots/figure2_scaling.pdf}
 \caption{Fitted $C_s$ and $C_v$ from RTL/Verilator cycles for B2R, Proposed,
-and Full. The $C_s$ axis uses a log scale. The fitted terms describe cycle
-trends and exclude wall-time and FSM-busy-cycle interpretations.}
+and the Full-Offload Ablation. Coefficients are fitted trends, not FSM busy
+cycles; $C_s$ uses a logarithmic axis.}
 \label{fig:scaling-decomposition}
 \end{figure*}
 
 B2R fits $C_s/C_v=1594.23/2.09$, whereas Proposed fits $90.28/2.13$.
-Proposed therefore cuts the scalar coefficient by 17.66$\times$ while
-increasing the vector coefficient by only 1.88\%. The near-constant $C_v$
-shows that Scalar SMU offload removes recurrence work after RVV vectorization
-without changing the existing vector path. The fitted scalar term accounts for
-the large difference between the two paths, while the fitted vector term stays
-within the same scale. This separation links the measured speedup to the
-specific recurrence work that Proposed moves off the core.
+The fitted $C_s=90.28$ is not the 24-cycle SMU-busy schedule.
+Proposed therefore cuts the fitted scalar term by 17.66$\times$ while
+increasing the fitted vector term by 1.88\%. The near-constant $C_v$ shows
+that Scalar SMU offload removes recurrence work after RVV vectorization without
+changing the existing vector path. This decomposition ties the measured
+speedup to the scalar work moved off the core.
 
-Full fits $C_s/C_v=19.32/8.03$, and its $C_v$ is 3.78$\times$ Proposed's.
-Full therefore reduces the scalar coefficient further but pays a larger vector
-coefficient when it absorbs the vector update. The decomposition points to the
-selective tradeoff: low $C_s$ with low $C_v$ gives Proposed its measured
-advantage. Full quantifies the cost of extending scalar offload into the vector
-path, so the ablation separates the two sources of cycle change. Proposed keeps
-the lower vector coefficient while retaining the scalar reduction that matters
-for the primary baseline.
+The Full-Offload Ablation fits $C_s/C_v=19.32/8.03$, and its $C_v$ is
+3.78$\times$ Proposed. It therefore lowers the scalar term further but incurs a
+larger vector term when it absorbs the regular update. Proposed keeps both the
+scalar reduction and the lower vector cost, which defines the selective-offload
+trade-off measured in the primary comparison. The ablation therefore isolates
+the penalty of assigning regular elementwise work to dedicated hardware.
 
 \subsection{Model-Derived Configurations}
 
-We next evaluate one attention-position shape per model. For each shape, we
-generate a deterministic merge state with FP32 arrays in TCDM and measure the
-four roles under the same RTL/Verilator flow. The selected shapes are BERT
-$(N,D)=(12,64)$, Mistral $(32,128)$, and Qwen14B $(40,128)$. Table~\ref{tab:model-cycles}
-reports the resulting cycles, with B1 included as context. Each row represents
-one attention-position merge state, so the table exercises the recurrence at a
-model-derived $(N,D)$ shape. Deterministic state generation keeps the inputs
-aligned across roles and makes the measured cycle columns directly comparable.
-The table reports merge cycles only and uses no end-to-end inference schedule.
+We evaluate three model-derived attention-position shapes: BERT
+$(N,D)=(12,64)$, Mistral $(32,128)$, and Qwen14B
+$(40,128)$. Table~\ref{tab:model-cycles}
+reports measured RTL/Verilator merge-microbenchmark cycles for B1, B2R,
+Proposed, and the Full-Offload Ablation. The table records one-position merge
+work, with B1 retained as context; it does not represent end-to-end inference.
+This scope lets the cycle columns compare the same recurrence and regular
+vector update roles. Each role is measured on the one-position problem, while B1
+remains separate from the primary speedup comparison.
 
 \begin{table*}[t]
 \centering
 \caption{Model-derived one-position shapes and measured RTL/Verilator cycles.
-Values describe the merge microbenchmark, not end-to-end inference. B1
-provides context and has no speedup column.}
+B1 provides context; speedup is B2R cycles divided by Proposed cycles. Values
+are merge-microbenchmark cycles, not end-to-end inference.}
 \label{tab:model-cycles}
 \renewcommand{\arraystretch}{1.08}
 \begin{tabular}{l c r r r r c}
@@ -359,35 +332,27 @@ Geomean & -- & -- & -- & -- & -- & 4.81$\times$\\
 \end{tabular}
 \end{table*}
 
-The Proposed/B2R speedups are 5.04$\times$ for BERT, 4.62$\times$ for
-Mistral, and 4.77$\times$ for Qwen14B. Their geometric mean is 4.81$\times$,
-matching the section result. These ratios keep the vector update in both
-compared paths and isolate scalar recurrence offload across model-derived
-dimensions. The three ratios remain close because each workload uses the same
-role definitions and the same vector path in Proposed and B2R. The geomean
-therefore summarizes a consistent selective-offload effect across the tested
-model dimensions rather than a single favorable shape.
-
-Qwen72B's selected shape exceeds local TCDM capacity, so the benchmark has no
-cycle result for that shape and this boundary closes the measured feasible
-scope.
+Proposed/B2R speedups are 5.04$\times$ for BERT, 4.62$\times$ for Mistral, and
+4.77$\times$ for Qwen14B, with 4.81$\times$ geometric mean. The three results
+support the same selective-offload conclusion across model-derived
+configurations: Proposed moves scalar recurrence work to Scalar SMU while B2R
+and Proposed retain the existing RVV update. The geomean summarizes measured
+ratios rather than fitted coefficients, giving a model-derived check on
+selective scalar offloading.
 
 \subsection{Hardware Cost and Full-Offload Ablation}
 
-Table~\ref{tab:standalone-hardware} separates area evidence from timing
-evidence. The area flow uses formal cell count and mapped area from
-\texttt{abc -fast}; the timing flow uses a separate timing-driven mapping for
-critical delay and standalone Fmax. We keep timing-flow cell and area outputs
-out of the area comparison so the two mappings answer their intended questions.
-The table consequently reports formal cells and area from one flow, then delay
-and estimated Fmax from the other. This separation preserves the meaning of
-each column and prevents a timing result from changing the area comparison.
+Table~\ref{tab:standalone-hardware} separates area and timing evidence. The
+area-oriented Yosys/ABC flow reports formal mapped cells and Liberty cell-area
+units with \texttt{abc -fast}; a separate timing-driven mapping reports
+critical delay and estimated standalone Fmax. Timing-flow area and cells do
+not enter the formal area comparison. Fmax is a pre-layout standalone estimate.
 
 \begin{table*}[t]
 \centering
-\caption{Standalone mapped hardware evidence. The area and timing columns use
-separate mappings; timing-flow cells and area do not enter the area flow. Fmax
-is a pre-layout standalone estimate.}
+\caption{Standalone mapped hardware. Cells/area and delay/Fmax use separate
+mappings; timing-flow area does not enter the formal area comparison. Fmax is a
+pre-layout standalone estimate.}
 \label{tab:standalone-hardware}
 \renewcommand{\arraystretch}{1.08}
 \begin{tabular}{l r r c c}
@@ -400,47 +365,37 @@ Full-Offload Ablation & 107,372 & 114,713.3 & 13.20\,ns & 75.74\,MHz\\
 \end{tabular}
 \end{table*}
 
-Proposed maps to 73,505 cells and 77,103.3 Liberty units with a 12.34\,ns
-critical delay and an estimated standalone Fmax of 81.02\,MHz. Full maps to
-107,372 cells and 114,713.3 Liberty units with a 13.20\,ns critical delay and
-an estimated standalone Fmax of 75.74\,MHz. Full increases standalone mapped
-area by 48.8\% over Proposed. The Proposed row therefore combines the smaller
-formal mapped design with the shorter timing-flow delay in this standalone
-evidence. Full exposes the additional mapped logic required when the vector
-update joins the offload path.
+Proposed maps to 73,505 cells and 77,103.3 Liberty units, with 12.34\,ns
+critical delay and 81.02\,MHz estimated standalone Fmax. The Full-Offload
+Ablation maps to 107,372 cells and 114,713.3 Liberty units, with 13.20\,ns and
+75.74\,MHz. Its standalone mapped area is 48.8\% larger than Proposed. These
+values describe standalone hardware evidence, not cluster-level PPA. The area
+direction is explicit: Full is larger than Proposed, while its timing estimate
+is also lower. These are standalone mapped values.
 
-Figure~\ref{fig:performance-area} places B2R at 1.00$\times$ speedup with zero
-SMU increment. Proposed reaches 4.81$\times$ at 77.103\,k mapped area, and
-Full reaches 2.00$\times$ at 114.713\,k. B2R's zero SMU increment denotes the
-software baseline and does not denote zero cluster area. The x-coordinate
-tracks standalone SMU mapped area, while the y-coordinate tracks measured
-cycles relative to B2R. The Full point shows how extra vector offload changes
-this standalone tradeoff, and workload crosses show variation across all three
-model-derived shapes in the measured comparison.
+Figure~\ref{fig:performance-area} places B2R at 1.00$\times$ measured-cycle
+speedup with zero SMU increment, Proposed at 4.81$\times$ and 77.103\,k Liberty
+units, and the Full-Offload Ablation at 2.00$\times$ and 114.713\,k units. The
+zero B2R increment denotes the software baseline, not zero cluster area. The
+speedup is frequency-independent, and circles mark geomeans while crosses mark
+workloads. The points connect measured speed to the standalone hardware view.
 
 \begin{figure*}[t]
 \centering
 \includegraphics[width=\textwidth]{../../experiments/plots/figure3_hardware_tradeoff.pdf}
-\caption{Standalone SMU mapped area on the x-axis and frequency-independent
-measured-cycle speedup over B2R on the y-axis. B2R's zero SMU increment does
-not denote zero cluster area. Circles mark geomeans and crosses mark
-workloads; the plot makes no cluster-area claim.}
+\caption{Frequency-independent measured-cycle speedup over B2R versus
+standalone SMU mapped area. B2R's zero SMU increment is not zero cluster area;
+circles mark geomeans and crosses mark workloads.}
 \label{fig:performance-area}
 \end{figure*}
 
-Using a common 81.0186\,MHz assumption yields a 2.40$\times$ Proposed/Full
-derived throughput ratio for the two standalone designs. The same frequency
-gives a 3.57$\times$ incremental standalone-SMU area-efficiency ratio. These
-A1/A2-only derived comparisons do
-not measure system throughput or cluster efficiency. Cluster area, cluster
-timing and Fmax, physical area, signoff, power, and energy remain unavailable.
-The selective tradeoff is clear: Scalar SMU plus existing RVV preserves low
-vector cost while Full spends area to offload the vector update. The frequency
-assumption lets us compare the two standalone designs on one common scale, but
-it cannot turn mapped evidence into a system measurement. The conclusion stays
-within A1/A2 evidence: selective scalar offload retains vector cost discipline
-while Full trades additional standalone area for vector-path offload in this
-ablation.
+Cluster PPA, power, and energy remain unavailable, so these standalone mappings
+do not imply system-level area or throughput. The evidence supports a narrow
+conclusion: Proposed concentrates dedicated hardware on the scalar recurrence
+and reuses existing RVV resources for regular elementwise work, while the
+Full-Offload Ablation exposes the cost of extending offload into the vector
+path. This keeps the evaluation within measured cycles and standalone evidence
+rather than inferring cluster-wide resource use from mapped SMU values.
 
 \section{Related Work}
 
