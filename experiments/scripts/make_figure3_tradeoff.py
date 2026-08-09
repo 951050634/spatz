@@ -77,7 +77,7 @@ ax.set_title("Performance–area trade-off\n"
              fontsize=10)
 ax.grid(alpha=0.3)
 ax.spines[["top", "right"]].set_visible(False)
-ax.legend(fontsize=8, loc="upper right")
+ax.legend(fontsize=8, loc="upper left")
 fig.tight_layout()
 for p in (OUT_PNG, OUT_PDF):
     fig.savefig(p, bbox_inches="tight")
