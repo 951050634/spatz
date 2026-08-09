@@ -466,8 +466,8 @@ power, or energy advantage.
 
 \section{Related Work}
 
-Dedicated Softmax and attention accelerators place the recurrence inside a
-broader datapath. Softermax combines unnormalized and normalization hardware
+Dedicated Softmax and attention accelerators offload broader Softmax or
+attention datapaths. Softermax combines unnormalized and normalization hardware
 with online normalization for Transformer softmax \cite{softermax2021}. Hyft
 provides a reconfigurable full-vector Softmax pipeline for training and
 inference \cite{hyft2024}. SoftEx provides the closest shared-TCDM/HWPE
