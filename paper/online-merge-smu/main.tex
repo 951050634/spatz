@@ -336,21 +336,12 @@ These values are standalone evidence, not cluster-level PPA. Full is larger
 than Proposed, has a longer critical delay, and has a lower estimated
 standalone Fmax; mapped area and timing remain results from separate flows.
 
-Figure~\ref{fig:performance-area} places B2R at 1.00$\times$ measured-cycle
-speedup with zero SMU increment, Proposed at 4.81$\times$ and 77.103\,k Liberty
-units, and the Full-Offload Ablation at 2.00$\times$ and 114.713\,k units. The
-zero B2R increment denotes the software baseline, not zero cluster area. The
-speedup is frequency-independent, and circles mark geomeans while crosses mark
-workloads. The points connect measured speed to the standalone hardware view.
-
-\begin{figure*}[t]
-\centering
-\includegraphics[width=\textwidth]{../../experiments/plots/figure3_hardware_tradeoff.pdf}
-\caption{Frequency-independent measured-cycle speedup over B2R versus
-standalone SMU mapped area. B2R's zero SMU increment is not zero cluster area;
-circles mark geomeans and crosses mark workloads.}
-\label{fig:performance-area}
-\end{figure*}
+The performance-area comparison places B2R at 1.00$\times$ measured-cycle
+speedup with zero SMU increment, Proposed at 4.81$\times$ and 77.103\,k
+Liberty units, and the Full-Offload Ablation at 2.00$\times$ and
+114.713\,k units. The zero B2R increment denotes the software baseline,
+not zero cluster area, and the speedup is frequency-independent. This
+comparison connects measured speed to standalone hardware cost.
 
 Cluster PPA, power, and energy remain unavailable, so these standalone mappings
 do not imply system-level area or throughput. The evidence supports a narrow
@@ -395,6 +386,7 @@ vector cost and standalone mapped SMU area relative to Proposed. Selective
 Offloading therefore concentrates dedicated hardware on the recurrence and
 reuses existing RVV resources for regular elementwise work.
 
+\newpage
 \bibliographystyle{IEEEtran}
 \bibliography{refs}
 \end{document}
