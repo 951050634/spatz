@@ -76,6 +76,8 @@ scalar unit owns quantities whose next value depends on the row's selected
 maximum and normalization state; RVV owns operations that repeat over
 independent vector elements. The handoff therefore preserves software-visible
 memory ordering while narrowing hardware specialization to the recurrence.
+Figure~\ref{fig:proposed-architecture} shows this selective-offload boundary
+and its TCDM-mediated handoff.
 
 \begin{figure*}[t]
 \centering
@@ -131,9 +133,11 @@ multipliers combine the factors with $l_{\mathrm{old}}$ and $l_{\mathrm{tile}}$,
 an accumulator forms $l_{\mathrm{new}}$, and a reciprocal approximation
 normalizes both scaled lengths. Weight generation then emits
 $w_{\mathrm{old}}$ and $w_{\mathrm{tile}}$ for TCDM writeback. The RTL places
-these operations in the scalar states and exposes no vector-update datapath in
-the Proposed path. All intermediate values remain on the scalar path until
-writeback, so the datapath follows the recurrence's data dependencies. The
+these operations in the scalar states. In mode 1, control exits after scalar
+writeback and never enters the engine's \texttt{UPDATE\_VECTOR} state; Proposed
+performs the vector update on existing RVV. All intermediate values remain on
+the scalar path until writeback, so the datapath follows the recurrence's data
+dependencies. The
 resulting interface exports weights as ordinary TCDM state for the next phase.
 
 RTL observer counts establish a fixed per-row scalar schedule:
@@ -144,7 +148,8 @@ communication states; the two compute states occupy the remaining two cycles.
 The 24-cycle count describes the scalar-only FSM schedule. It is neither the
 fitted $C_s=90.28$ nor software-visible or end-to-end latency, which also
 includes command sequencing and completion polling. The observer records these
-states for scalar-only mode, where \texttt{UPDATE\_VECTOR} is absent. The communication
+states only for the four scalar states because mode 1 never enters
+\texttt{UPDATE\_VECTOR}. The communication
 count reflects four reads plus four writes at state-machine handshake
 granularity, while the compute states represent combinational evaluations.
 
