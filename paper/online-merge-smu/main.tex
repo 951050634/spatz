@@ -94,18 +94,14 @@ but its $C_v$ is 3.78$\times$ Proposed and its standalone mapped SMU area is
 
 \section{Selective-Offload Architecture}
 
-Proposed is a Scalar SMU paired with existing RVV: the SMU handles the
-state-dependent scalar recurrence, while the core retains the regular $O[D]$
-vector update. This selective boundary moves normalization control across the
-accelerator interface and leaves the established vector datapath and software
-sequencing in place. Shared TCDM carries the handoff state, so the architecture
-composes an RTL-defined scalar engine with an unchanged RVV update path. The
-scalar unit owns quantities whose next value depends on the row's selected
-maximum and normalization state; RVV owns operations that repeat over
-independent vector elements. The handoff therefore preserves software-visible
-memory ordering while narrowing hardware specialization to the recurrence.
-Figure~\ref{fig:proposed-architecture} shows this selective-offload boundary
-and its TCDM-mediated handoff.
+Proposed is Scalar SMU plus existing RVV: the SMU executes the state-dependent
+scalar recurrence, while existing RVV executes the regular $O[D]$ update.
+Shared TCDM carries scalar inputs, new state, and weights between the
+software-visible phases. Software waits for SMU completion before invoking RVV,
+preserving the existing vector datapath and making
+Figure~\ref{fig:proposed-architecture} the architectural boundary. This split
+keeps state-dependent work local while leaving regular vector work on the
+established core path.
 
 \begin{figure*}[t]
 \centering
@@ -119,8 +115,6 @@ existing RVV for the $O[D]$ update; the diagram has no direct SMU-to-RVV link.}
 
 \subsection{Specialization Boundary}
 
-Online merge separates state selection and normalization from the regular
-elementwise vector update. For one row, the decomposition is
 \begin{align}
 m_{\mathrm{new}} &= \max(m_{\mathrm{old}},m_{\mathrm{tile}}),\\
 s_{\mathrm{old}} &= l_{\mathrm{old}}\exp(m_{\mathrm{old}}-m_{\mathrm{new}}),\\
@@ -131,97 +125,67 @@ w_{\mathrm{tile}} = s_{\mathrm{tile}}/l_{\mathrm{new}},\\
 O_{\mathrm{new}}[j] &= w_{\mathrm{old}}O_{\mathrm{old}}[j]
   +w_{\mathrm{tile}}O_{\mathrm{tile}}[j],\quad 0\leq j<D.
 \end{align}
-The first five lines execute in Scalar SMU, while the final line executes in
-existing RVV. EXP and reciprocal blocks implement RTL approximations, so these
-equations describe the decomposition rather than an IEEE-exact arithmetic
-claim. The index constraint makes the handoff explicit: the SMU produces
-per-row weights and RVV applies them across $D$ elements. These lines reduce
-each row to two weights before any vector element moves. The decomposition also
-separates row-level dependencies from element-level accumulation, which defines
-the architecture's scheduling boundary.
+The first five lines execute in Scalar SMU; the final line executes in existing
+RVV. EXP and reciprocal blocks are RTL approximations, not an IEEE-exact
+arithmetic claim. The scalar lines produce $m_{\mathrm{new}}$,
+$l_{\mathrm{new}}$,
+$w_{\mathrm{old}}$, and $w_{\mathrm{tile}}$; the final line applies those two
+weights independently over $O[j]$ for $0\leq j<D$.
 
-Scalar recurrence belongs on a state-dependent datapath because both
-exponential arguments depend on the selected maximum and the reciprocal
-depends on the newly accumulated length. A regular vector loop excels at
-independent $O[j]$ operations after weights are known, but it does not remove
-the serial decisions that produce those weights. The boundary therefore assigns
-control-sensitive work to Scalar SMU and keeps uniform multiply-add work on
-existing RVV. This division avoids duplicating vector functional units while
-matching each phase to its natural execution granularity. Both decisions
-serialize within a row, whereas elements within one $O$ row share the resulting
-weights and expose regular parallelism. Keeping this distinction explicit lets
-the core reuse its tuned VLSU and FMA sequence.
+The selected maximum controls both exponential arguments, and the newly
+accumulated length controls reciprocal normalization, so these dependencies are
+serial within each row. By contrast, each $O[j]$ update is independent once
+weights are available. Scalar SMU therefore handles state-dependent decisions,
+while existing RVV retains regular element work and reuses its VLSU/FMA
+sequence without duplicating a vector datapath. The selected maximum and new
+length therefore remain outside the element loop.
 
 \subsection{Scalar Datapath and Schedule}
 
-The Scalar SMU implements the recurrence with a compact scalar datapath. A
-comparator selects $m_{\mathrm{new}}$ and forms two deltas; two EXP
-approximation/LUT blocks transform those deltas into scaled factors. Fixed-point
-multipliers combine the factors with $l_{\mathrm{old}}$ and $l_{\mathrm{tile}}$,
-an accumulator forms $l_{\mathrm{new}}$, and a reciprocal approximation
-normalizes both scaled lengths. Weight generation then emits
-$w_{\mathrm{old}}$ and $w_{\mathrm{tile}}$ for TCDM writeback. The RTL places
-these operations in the scalar states. In mode 1, control exits after scalar
-writeback and never enters the engine's \texttt{UPDATE\_VECTOR} state; Proposed
-performs the vector update on existing RVV. All intermediate values remain on
-the scalar path until writeback, so the datapath follows the recurrence's data
-dependencies. The
-resulting interface exports weights as ordinary TCDM state for the next phase.
+The Scalar SMU datapath uses a comparator for maximum selection and forms two
+deltas. Two EXP LUTs transform those deltas into scaled factors; fixed-point
+multipliers combine each factor with $l_{\mathrm{old}}$ or $l_{\mathrm{tile}}$,
+and an accumulator forms $l_{\mathrm{new}}$. A reciprocal block normalizes
+both scaled lengths to generate $w_{\mathrm{old}}$ and $w_{\mathrm{tile}}$.
+These operations follow the recurrence's state dependencies and end in TCDM
+writeback. In mode 1, control exits after scalar writeback and never enters
+the engine's \texttt{UPDATE\_VECTOR} state. The two LUT results stay paired
+with their row lengths until reciprocal normalization produces the weights.
 
-RTL observer counts establish a fixed per-row scalar schedule:
-\texttt{LOAD\_SCALAR} consumes 13 cycles, \texttt{COMPUTE\_SCALAR} 1,
-\texttt{COMPUTE\_WEIGHT} 1, and \texttt{STORE\_SCALAR} 9, for 24 SMU-busy
-cycles per row. LOAD and STORE account for 22 of 24 cycles as TCDM
-communication states; the two compute states occupy the remaining two cycles.
-The 24-cycle count describes the scalar-only FSM schedule. It is neither the
-fitted $C_s=90.28$ nor software-visible or end-to-end latency, which also
-includes command sequencing and completion polling. The observer
-records only the four scalar states because mode 1 never enters
-\texttt{UPDATE\_VECTOR}. The communication
-count reflects four reads plus four writes at state-machine handshake
-granularity, while the compute states represent combinational evaluations.
+RTL observer counts give a fixed per-row schedule: \texttt{LOAD\_SCALAR}
+consumes 13 cycles, \texttt{COMPUTE\_SCALAR} 1, \texttt{COMPUTE\_WEIGHT} 1,
+and \texttt{STORE\_SCALAR} 9, totaling 24 SMU-busy cycles per row. LOAD and
+STORE account for 22 of 24 cycles as TCDM communication states; the two compute
+states are the remaining two cycles. This is the scalar-only FSM schedule, not
+fitted $C_s=90.28$, software-visible latency, or end-to-end latency. Command
+sequencing and completion polling lie outside this busy count. The schedule
+bounds only the scalar engine's busy interval before software observes
+completion and starts the separate vector phase.
 
 \subsection{TCDM-Mediated RVV Handoff}
 
-Mode 1 makes the handoff state explicit in TCDM. For each row, the Scalar SMU
-reads four FP32 scalar inputs, $m_{\mathrm{old}}$, $l_{\mathrm{old}}$,
-$m_{\mathrm{tile}}$, and $l_{\mathrm{tile}}$, from their TCDM arrays. It
-computes the new scalar state and writes $m_{\mathrm{new}}$, $l_{\mathrm{new}}$,
-$w_{\mathrm{old}}$, and $w_{\mathrm{tile}}$ back to TCDM for all rows. The
-output weights are software-visible arrays rather than private accelerator
-state, which gives the core a stable handoff point. Because the weight arrays
-share TCDM with the state, the SMU does not retain a private weight interface
-for the core. The same row indexing keeps scalar outputs aligned with
-subsequent vector rows.
+Mode 1 makes the handoff explicit in TCDM. For each row, Scalar SMU reads four
+FP32 inputs, $m_{\mathrm{old}}$, $l_{\mathrm{old}}$, $m_{\mathrm{tile}}$, and
+$l_{\mathrm{tile}}$, from TCDM, computes the new scalar state, and writes
+$m_{\mathrm{new}}$, $l_{\mathrm{new}}$, $w_{\mathrm{old}}$, and
+$w_{\mathrm{tile}}$ back to TCDM. The weights are software-visible arrays, so
+there is no private weight state or weight bypass. Software programs the MMIO
+command, starts mode 1, waits for done, and then loads both weight arrays from
+TCDM. It invokes existing RVV to load $O_{\mathrm{old}}[D]$ and
+$O_{\mathrm{tile}}[D]$, applies the weights, and stores $O_{\mathrm{new}}[D]$.
+There is no direct SMU-to-RVV path; completion and shared TCDM state mediate
+the transition, and RVV sees only completed rows.
+Rows remain aligned by their shared TCDM indexing.
 
-Software sequences the two engines through status and memory. It programs the
-MMIO command, starts mode 1, polls the status until done, and then reads the two
-weight arrays from TCDM. After completion, software invokes existing RVV to load
-$O_{\mathrm{old}}[D]$ and $O_{\mathrm{tile}}[D]$, apply the weights, and store
-$O_{\mathrm{new}}[D]$. The ordering gives RVV a completed, software-addressable
-weight state; no direct SMU-to-RVV path or weight-register bypass exists.
-Software remains the sequencing agent: it observes completion before exposing
-weights to RVV, so the core never consumes partially written rows. The RVV
-routine retains its existing load, multiply, FMA, and store sequence.
-
-MMIO supplies command and status signals without changing the ISA. The cluster
-peripheral presents the software-selected operation to the Scalar SMU, while
-the engine contributes an independent TCDM requester to the shared interconnect.
-Existing core ports continue to serve RVV loads and stores, so the handoff
-traverses shared TCDM rather than a private engine link. This structure changes
-neither instruction decoding nor the RVV datapath.
-The interconnect arbitrates both requester classes through existing TCDM
-machinery, while MMIO remains the control-plane boundary. This composition adds
-no decoder instruction or custom vector operand.
-
-This boundary fixes the architecture evaluated next: Scalar SMU removes
-state-dependent scalar recurrence work, and existing RVV retains the regular
-vector update through a software-mediated TCDM handoff. The Evaluation section
-measures the resulting cycle behavior and then separates scaling, model-derived
-configurations, and standalone hardware evidence.
-This framing lets the next section attribute cycle changes to the scalar
-recurrence while retaining a fixed vector implementation in the primary
-comparison. It also keeps standalone evidence separate from measured cycles.
+MMIO provides command and status without changing instruction decoding. The
+cluster peripheral presents the selected operation to Scalar SMU, which uses
+an independent TCDM requester for scalar reads and writes. Existing core ports
+continue to serve RVV loads and stores, so the vector path remains unchanged
+and arbitration occurs through shared TCDM rather than a private engine link.
+This implementation changes neither the ISA nor the RVV datapath. The
+resulting boundary is what Evaluation measures:
+scalar recurrence work is specialized, regular vector work is reused, and
+standalone evidence remains separate from measured cycles.
 
 \section{Evaluation}
 
