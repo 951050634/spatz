@@ -444,49 +444,25 @@ ablation.
 
 \section{Related Work}
 
-Dedicated Softmax and attention accelerators offload broader Softmax or
-attention datapaths. Softermax combines unnormalized and normalization hardware
-with online normalization for Transformer softmax \cite{softermax2021}. Hyft
-provides a reconfigurable full-vector Softmax pipeline for training and
-inference \cite{hyft2024}. SoftEx provides the closest shared-TCDM/HWPE
-precedent, but it still offloads the full Softmax path \cite{softex2025}.
-Alexandridis et al. add custom exponent and multiplication
-hardware to FlashAttention, including recurrence-related computation and the
-output-vector update \cite{alexandridis2025expmul}. These designs accelerate a
-complete Softmax or attention stage; they do not isolate the scalar merge
-recurrence from the regular vector update.
+Dedicated Softmax and attention accelerators offload broader datapaths.
+Softermax combines online normalization with unnormalized and normalization
+hardware, while TEA-S implements a compact PLAC-based Softmax architecture
+\cite{softermax2021,teas2023}. SoftEx couples a full-Softmax HWPE to shared TCDM
+\cite{softex2025}. Alexandridis et al. place recurrence-related computation and
+the output-vector update in custom FlashAttention hardware
+\cite{alexandridis2025expmul}. These designs therefore retain more vector work
+in dedicated hardware than Proposed.
 
-Programmable RVV systems expose a different point in the design space. Spatz
-provides the RVV/TCDM substrate used by our cluster \cite{spatz2023}.
-Spatzformer reconfigures a dual-core RVV cluster between split and merge modes,
-using generic mixed scalar-vector resource reconfiguration rather than a
-kernel-specific recurrence unit \cite{spatzformer2024}. VEXP adds BF16
-scalar/SIMD EXP instructions to RISC-V while software FREP, SSR, and SIMD
-support handles the remaining partial Softmax \cite{vexp2025}. Titopoulos et al.
-vectorize
-FlashAttention entirely with standard RVV and software-controlled exponential
-computation, without custom hardware or scalar operations
-\cite{titopoulos2026vectorized}. These approaches retain programmability at the
-ISA or processor level, whereas our boundary places scalar recurrence control
-in a separate SMU and leaves the existing RVV datapath for $O[D]$.
-
-Tightly coupled kernel accelerators target a larger computational unit. RedMulE
-couples a semi-systolic FP16 matrix-multiplication engine to a PULP cluster and
-shared TCDM, covering complete GEMM kernels \cite{redmule2022}. OpenGeMM
-combines a parameterized GEMM array, lightweight RISC-V control, and a tightly
-coupled scratchpad with prefetch and buffering mechanisms \cite{opengemm2024}.
-Both works optimize complete matrix or GEMM execution and its data movement.
-Their accelerators therefore differ from a design that isolates state-dependent
-recurrence work and hands regular $O[D]$ arithmetic back to an existing vector
-core.
-
-Among the reviewed designs, we did not identify an architecture that dedicates
-hardware only to the state-dependent online-merge scalar recurrence and, after
-completion, reuses an existing RVV datapath through a TCDM-mediated weight
-handoff for the regular $O[D]$ update. To our knowledge, this selective-offload
-boundary is distinct from prior full-Softmax or full-attention accelerators,
-programmable-vector or ISA-centered approaches, and tightly coupled full-kernel
-accelerators.
+Programmable approaches keep Softmax on the processor side. Spatz provides the
+RVV/TCDM substrate used here \cite{spatz2023}. VEXP adds BF16 scalar/SIMD
+exponential instructions while software performs the remaining partial Softmax
+\cite{vexp2025}; Titopoulos et al. implement FlashAttention entirely with
+standard RVV instructions \cite{titopoulos2026vectorized}. Among the reviewed
+designs, we did not identify an architecture that dedicates hardware only to
+the state-dependent online-merge scalar recurrence and then reuses an existing
+RVV datapath through a TCDM-mediated weight handoff for regular $O[D]$ work. To
+our knowledge, this selective-offload boundary differs from both full-offload
+and programmable-vector approaches.
 
 \section{Conclusion}
 
