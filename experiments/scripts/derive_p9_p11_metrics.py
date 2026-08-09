@@ -1,15 +1,14 @@
 #!/usr/bin/env python3
-"""P9-P11: cycles -> latency, accelerator throughput, area efficiency.
+"""P9-P11: cycles -> derived iso-frequency latency/throughput/efficiency.
 
-Latency = cycles / f.  Throughput = N*D / Latency (MElements/s).
+Derived latency = cycles / f_iso.  Derived throughput = N*D / latency
+(MElements/s).  These are not measured wall time or system throughput.
 Area efficiency = Throughput / normalized mapped area.
 
-Frequency policy (see P8 report): full-cluster synthesis is not achievable
-with the pinned toolchain, so we use the standalone SMU Fmax (pre-layout ABC)
-as the achievable-frequency estimate.  Main table uses iso-frequency
-f_iso = Fmax(Proposed) = 81.0186 MHz for all three designs so that latency
-differences isolate the architecture (cycle) effect; per-design Fmax columns
-are reported separately.  Area metric = standalone incremental SMU mapped
+Frequency policy (see P8 report): cluster-level timing is unavailable, so the
+common iso-frequency assumption uses the A1 estimated standalone Fmax
+(pre-layout ABC), 81.0186 MHz, for all three designs.  This isolates the
+architecture (cycle) effect.  Area metric = standalone incremental SMU mapped
 area (P0-6, exact); B2R has no SMU increment, so AE is n/a.
 """
 
@@ -64,7 +63,7 @@ def main() -> int:
     fmax = load_fmax()
     area = load_area()
     f_iso = fmax["C1_SCALAR"]
-    f_proposed, f_full = fmax["C1_SCALAR"], fmax["C2_FULL"]
+    f_full = fmax["C2_FULL"]
     a_proposed, a_full = area["C1_SCALAR"], area["C2_FULL"]
     norm_full = a_full / a_proposed
 
@@ -82,11 +81,10 @@ def main() -> int:
             c = cycles[(cfg, wl)]
             # iso-frequency latency (main table)
             lat_iso = c / (f_iso * 1e6) * 1e6  # us
-            f_own = {"baseline": f_iso, "proposed": f_proposed,
-                     "full": f_full}[role]
             thr_iso = elems / (lat_iso * 1e-6) / 1e6  # MElements/s
             lat_rows.append([wl, cfg, n, d, elems, c, f"{f_iso:.4f}",
-                             "iso (Proposed Fmax)", f"{lat_iso:.3f}"])
+                             "derived iso-frequency (A1 estimated standalone Fmax)",
+                             f"{lat_iso:.3f}"])
             thr_rows.append([wl, cfg, elems, c, f"{lat_iso:.3f}",
                              f"{thr_iso:.3f}"])
             if role == "proposed":

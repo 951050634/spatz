@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
-"""P12/P17 Figure 3 — hardware performance-area trade-off.
+"""Hardware performance-area trade-off figure.
 
-x-axis: incremental SMU mapped area (k-cells, Nangate45, P0-6 exact;
-B2R = 0 since it adds no SMU).  y-axis: speedup over B2R at iso-frequency
-(== cycle ratio).  Points per design = geometric mean over BERT/Mistral/Qwen,
-with per-workload markers.  Shows Proposed dominates Full: higher speedup at
-lower area.
+x-axis: standalone SMU mapped area in 10^3 Liberty units (P0-6 exact;
+B2R = 0 since it adds no SMU).  y-axis: cycle speedup over B2R at
+iso-frequency.  Points per design are geometric means over BERT/Mistral/Qwen,
+with per-workload markers.
 """
 from __future__ import annotations
 
@@ -25,8 +24,9 @@ OUT_PNG = ROOT / "experiments" / "plots" / "figure3_hardware_tradeoff.png"
 OUT_PDF = ROOT / "experiments" / "plots" / "figure3_hardware_tradeoff.pdf"
 
 CONFIGS = ("B2R_RVV", "A1_SMU_SCALAR", "A2_SMU_FULL")
-LABELS = {"B2R_RVV": "B2R (RVV SW)", "A1_SMU_SCALAR": "Proposed (Scalar SMU)",
-          "A2_SMU_FULL": "Full SMU"}
+LABELS = {"B2R_RVV": "B2R (RVV SW)",
+          "A1_SMU_SCALAR": "Proposed (Scalar SMU + RVV)",
+          "A2_SMU_FULL": "Full-Offload Ablation"}
 COLORS = {"B2R_RVV": "#55A868", "A1_SMU_SCALAR": "#4C72B0",
           "A2_SMU_FULL": "#C44E52"}
 WORKLOADS = ("BERT", "Mistral", "Qwen14B")
@@ -70,9 +70,9 @@ for cfg in CONFIGS:
                 xytext=(8, 6) if ha == "left" else (0, 8),
                 ha="center", fontsize=9, color=COLORS[cfg], fontweight="bold")
 
-ax.set_xlabel("Incremental SMU mapped area (k-cells, Nangate45)")
-ax.set_ylabel("Speedup over B2R (iso-frequency)")
-ax.set_title("P12/P17 Figure 3 — performance–area trade-off\n"
+ax.set_xlabel("Standalone SMU mapped area (10^3 Liberty units)")
+ax.set_ylabel("Cycle speedup over B2R (iso-frequency)")
+ax.set_title("Performance–area trade-off\n"
              "(×=per workload: BERT / Mistral / Qwen14B; ●=geomean)",
              fontsize=10)
 ax.grid(alpha=0.3)

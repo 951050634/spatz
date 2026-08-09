@@ -1,27 +1,39 @@
-# P8 — Cluster-Level Timing（工具链受限，standalone Fmax 口径）
+# P8 — Cluster-Level Timing Status
 
-## 目标与约束
+## Final STOP evidence and availability
 
-P8-1/2/3 需要 Baseline / Scalar / Full 的 cluster-level `T_critical` / Fmax。
-与 P6 相同，完整 `spatz_cluster` 无法用固定工具链（Yosys + `read_slang` +
-Nangate45）读入（AXI / register_interface 的 `parameter type` 成员访问在
-standalone elaboration 下报错，见 `work-p6/elab_cluster.log`），因此
-**cluster-level timing 无法实测**。
+P8 requires baseline/A1/A2 cluster critical delay and Fmax.  Those values are
+**unavailable**.  The final captured flow passed full SystemVerilog
+elaboration, then completed `proc`, `opt`, and `memory_collect`; it reached
+`18. Executing FLATTEN pass` and exited `137` during resource/OOM pressure.
+The exact scripts, logs, statistics, host-path-specific flist, and concise
+hash-anchored excerpt are preserved in `experiments/synthesis/p6-stop/`.
 
-## 采用的频率口径（P9–P11 依据）
+Consequently, no cluster critical path, cluster Fmax, timing closure, or
+cluster frequency claim is made.  In particular, standalone Fmax does not
+establish a cluster frequency limit or an achievable cluster frequency.
 
-- Proposed（Scalar SMU cluster）可达到频率估计：**81.02 MHz**（standalone SMU
-  Fmax，pre-layout ABC `stime`，P7）。
-- Full（Full SMU cluster）：**75.74 MHz**（P7）。
-- Baseline Spatz cluster 频率：仓库无 cluster 综合，**未测量**；P9–P11 主表采用
-  iso-frequency 口径（三设计同用 81.02 MHz），使 latency 差异只反映 cycle
-  差异（架构效果），与 Fmax 差异分开报告。Full 若按其自身 75.74 MHz 运行，
-  latency 会比 iso-freq 表再高约 6.97%（= 81.02/75.74 − 1）。
+## Available standalone timing evidence
 
-## 结论
+P7 provides only timing-driven standalone SMU estimates:
 
-- 无法声称"Scalar SMU 不进入 cluster critical path"（需要真实 cluster 综合）；
-  只能报告 standalone SMU critical path 在 scalar control/datapath、不在
-  EXP/RECIP LUT（P7），以及 SMU 自身 Fmax ≈ 81 MHz 高于 Full 的 75.7 MHz。
-- 论文口径建议：报告 standalone Fmax 作为 SMU 可达到频率上界，并明确标注
-  pre-layout、无 clock tree/routing 的 ABC 估计性质。
+- A1 Scalar SMU + existing RVV: critical delay **12,342.85 ps**, estimated
+  standalone Fmax **81.0186 MHz**;
+- A2 Full-Offload Ablation: critical delay **13,202.60 ps**, estimated
+  standalone Fmax **75.7427 MHz**.
+
+These estimates are pre-layout ABC `stime` values with no clock tree, routing,
+or output load.  They are not cluster measurements.
+
+## Common derived-performance assumption
+
+P9–P11 use a common **81.0186 MHz iso-frequency assumption** for B2R, A1, and
+A2.  Latency and throughput in those artifacts are derived from measured
+cycles under this assumption; they are not measured wall time or system
+throughput.  The common frequency isolates cycle effects from the separate P7
+standalone timing evidence.
+
+## Data and evidence files
+
+- Timing CSV: `experiments/parsed/p7_timing/p7_timing.csv`
+- Cluster STOP evidence: `experiments/synthesis/p6-stop/`

@@ -1,51 +1,36 @@
-# P6 — Cluster-Level Area Overhead（工具链受限，诚实近似）
+# P6 — Cluster-Level Area Status
 
-## 目标与工具链约束
+## Status and final STOP evidence
 
-P6-1/2/3 需要 C0_CLUSTER / C1_CLUSTER_SCALAR_SMU / C2_CLUSTER_FULL_SMU 的完整
-cluster mapped area。固定工具链（Yosys 0.66 + `read_slang` + Nangate45）无法读入
-`spatz_cluster` 顶层：完整 bender flist 包含 **350 个源文件**（`work-p6/cluster_sources.txt`），
-其中 AXI / register_interface 等第三方 IP 使用 `parameter type axi_req_t = logic`
-并在模块体内做 `.aw` / `.b` 等成员访问；`read_slang` 对每个模块独立 elaboration，
-默认参数类型退化为 `logic`，导致成员访问报错（`work-p6/elab_cluster.log`、
-`work-p6/elab_cluster_patched.log`，lzc.sv 的 replication 常数已用 `'0` 修补后仍失败）。
-逐一修补第三方 RTL 属于大规模兼容性封装，按本阶段原则不做。仓库内也没有 cluster
-综合 flow 或已发布 cluster area 数据，因此**不声称完整 cluster mapped area**。
+Cluster mapped area and cluster overhead are **unavailable**.  The final
+reviewable attempt is preserved under `experiments/synthesis/p6-stop/`:
 
-## 精确的 Standalone 增量面积（P0-6，3-trial 完全确定）
+- full SystemVerilog elaboration passed with the captured host-path-specific
+  Bender flist (`cluster_bb.f`); `elab_bb3.log` and `elab-stat.json` record the
+  `spatz_cluster_wrapper` hierarchy and 467,110 elaborated cells;
+- `proc`, `opt`, and `memory_collect` completed in the synthesis attempt;
+- the attempt reached `18. Executing FLATTEN pass`, then exited with `137`
+  (resource/OOM stop), before mapped cluster PPA was produced;
+- the 108 MB raw log is intentionally not committed.  Its SHA-256 is recorded
+  in `experiments/synthesis/p6-stop/flatten_oom_evidence.txt`.
 
-| Config | Cells | Mapped Area | 说明 |
-| --- | ---: | ---: | ---: |
-| C0 (no SMU) | 0 | 0 | 概念 reference |
-| C1 — Scalar SMU（增量） | 73,505 | 77,103.292 | 相对 C0 的精确增量 |
-| C2 — Full SMU（增量） | 107,372 | 114,713.298 | 相对 C0 的精确增量 |
+This STOP evidence does not provide a cluster area, cluster overhead, cluster
+critical delay, or cluster Fmax result.  No numeric cluster value is inferred.
 
-`Full/Scalar = 1.488`（Full vector datapath 额外 +48.8% standalone）。
+## Exact standalone SMU area (P0-6)
 
-## Cluster overhead 的保守上界
+| Config | Mapped cells (P0-6 standalone) | Mapped area (P0-6 Liberty units) | Cluster area status |
+| --- | ---: | ---: | --- |
+| C0_NONE | 0 | 0.000 | unavailable |
+| A1_SMU_SCALAR — Scalar SMU + existing RVV | 73,505 | 77,103.292 | unavailable |
+| A2_SMU_FULL — Full-Offload Ablation | 107,372 | 114,713.298 | unavailable |
 
-把 standalone SMU 面积直接当作 cluster 内新增逻辑，则
-`Overhead_cluster ≤ A_SMU_incremental / A_cluster`。下表是**参数化的上界**，
-`A_cluster` 是假设的 baseline cluster 逻辑 cell 数（**非实测**，仅用于量级判断）：
+The formal area comparison is standalone and P0-6 only: A2/A1 mapped area is
+1.4878×, A2 is 48.8% larger, and A1 is 32.8% smaller.  These are not
+cluster-level overhead percentages.
 
-| Assumed A_cluster (cells) | Scalar overhead ≤ | Full overhead ≤ |
-| ---: | ---: | ---: |
-| 200k | 38.6% | 57.4% |
-| 500k | 15.4% | 22.9% |
-| 1M | 7.7% | 11.5% |
-| 2M | 3.9% | 5.7% |
+## Data files
 
-## 结论与论文口径建议
-
-- 完整 cluster-level overhead 需要真实 cluster 综合（当前工具链不可行），论文应
-  用 **"incremental SMU mapped area"**（Scalar 77.1k cells / Full 114.7k cells）
-  作为硬件面积声明，并明确标注为 standalone SMU 口径。
-- Scalar 增量（77k cells）比 Full 增量（115k cells）小 33%，且 Full 的 vector
-  datapath 是主要面积来源（P4/P5：+37.6k，+48.8%）。
-- 若后续获得 baseline cluster area（如完整 cluster 综合或厂商数字），可直接用
-  `overhead = 77,103 / A_cluster` 换算，公式已固化在 CSV。
-
-## 数据文件
-- CSV：`experiments/parsed/p6_cluster/p6_cluster_area.csv`
-- 生成脚本：`experiments/scripts/derive_p6_cluster_area.py`
-- 失败证据：`work-p6/elab_cluster.log`、`work-p6/elab_cluster_patched.log`
+- CSV: `experiments/parsed/p6_cluster/p6_cluster_area.csv`
+- Generator: `experiments/scripts/derive_p6_cluster_area.py`
+- STOP evidence: `experiments/synthesis/p6-stop/`

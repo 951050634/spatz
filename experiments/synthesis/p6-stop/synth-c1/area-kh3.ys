@@ -1,0 +1,36 @@
+plugin -i slang
+read_liberty -lib /home/wxt/yosys-sta/pdk/nangate45/lib/Nangate45_typ.lib
+read_slang --std 1800-2017 --single-unit --top spatz_cluster_wrapper --keep-hierarchy --no-proc -j 1 -W no-implicit-port-type-mismatch -F /home/wxt/work-online-merge-supplement/work-p6b/cluster_bb.f
+hierarchy -check -top spatz_cluster_wrapper
+proc_clean
+proc_prune
+proc_init
+proc_arst
+proc_rom
+proc_mux
+proc_dlatch
+proc_dff
+proc_memwr
+proc_clean
+opt_expr -keepdc
+cd spatz_cluster$spatz_cluster_wrapper.i_cluster
+connect -set merge_mode 32'd1
+cd ..
+opt
+memory_collect
+opt_clean
+flatten
+opt -nosdff -nodffe
+opt
+setattr -set fsm_encoding "auto" w:*state_q
+fsm
+opt
+techmap
+opt
+dfflibmap -liberty /home/wxt/yosys-sta/pdk/nangate45/lib/Nangate45_typ.lib
+abc -fast -liberty /home/wxt/yosys-sta/pdk/nangate45/lib/Nangate45_typ.lib
+clean
+check -assert
+tee -q -o mapped-stat.json stat -json -liberty /home/wxt/yosys-sta/pdk/nangate45/lib/Nangate45_typ.lib
+tee -o mapped-stat.txt stat -liberty /home/wxt/yosys-sta/pdk/nangate45/lib/Nangate45_typ.lib
+write_verilog -noattr -noexpr mapped-netlist.v

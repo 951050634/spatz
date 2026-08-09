@@ -1,43 +1,47 @@
-# P9–P11 — Latency / Throughput / Area Efficiency
+# P9–P11 — Derived Latency / Throughput / Area Efficiency
 
-频率口径见 P8：iso-frequency `f_iso = 81.0186 MHz`（= Proposed standalone Fmax，
-pre-layout ABC）。`Latency = cycles / f`；`Throughput = N·D / Latency`；
-`AE = Throughput / normalized area`（面积 = standalone incremental mapped area，
-P0-6 精确值；Proposed = 1.0，Full = 1.4878，B2R 无 SMU 增量 → AE n/a）。
+Cluster-level timing is unavailable (P8).  Therefore `f_iso = 81.0186 MHz`
+is a common iso-frequency **assumption**, equal to the A1 estimated standalone
+Fmax from P7.  `Derived latency = cycles / f_iso` and
+`Derived throughput = N·D / derived latency`; neither is measured wall time or
+system throughput.  Area efficiency uses only incremental standalone SMU area
+from P0-6: A1 = 1.0, A2 = 1.4878, and B2R has no SMU increment.
 
-## P9 — 真实 Latency（iso-frequency，us）
+## P9 — Derived iso-frequency latency (us)
 
-| Workload | Design | Cycles | Latency (us) |
+| Workload | Design | Measured cycles | Derived latency (us) |
 | --- | --- | ---: | ---: |
-| BERT (12,64) | B2R / Proposed / Full | 20,785 / 4,128 / 7,704 | 256.5 / 51.0 / 95.1 |
-| Mistral (32,128) | B2R / Proposed / Full | 59,500 / 12,866 / 34,728 | 734.4 / 158.8 / 428.6 |
-| Qwen14B (40,128) | B2R / Proposed / Full | 75,027 / 15,733 / 43,206 | 926.0 / 194.2 / 533.3 |
+| BERT (12,64) | B2R / A1 / A2 | 20,785 / 4,128 / 7,704 | 256.5 / 51.0 / 95.1 |
+| Mistral (32,128) | B2R / A1 / A2 | 59,500 / 12,866 / 34,728 | 734.4 / 158.8 / 428.6 |
+| Qwen14B (40,128) | B2R / A1 / A2 | 75,027 / 15,733 / 43,206 | 926.0 / 194.2 / 533.3 |
 
-## P10 — Throughput（MElements/s）
+## P10 — Derived iso-frequency throughput (MElements/s)
 
-| Workload | B2R | Proposed | Full |
+| Workload | B2R | A1 Proposed (Scalar SMU + RVV) | A2 Full-Offload Ablation |
 | --- | ---: | ---: | ---: |
 | BERT | 2.99 | **15.07** | 8.08 |
 | Mistral | 5.58 | **25.79** | 9.56 |
 | Qwen14B | 5.53 | **26.37** | 9.60 |
 
-## P11 — Area Efficiency（MElements/s / normalized area）
+## P11 — Incremental-SMU area efficiency
 
-| Workload | Proposed (area=1.0) | Full (area=1.488) | AE 比 |
+| Workload | A1 (area=1.0) | A2 (area=1.488) | A1/A2 efficiency ratio |
 | --- | ---: | ---: | ---: |
 | BERT | **15.07** | 5.43 | 2.78× |
 | Mistral | **25.79** | 6.42 | 4.02× |
 | Qwen14B | **26.37** | 6.45 | 4.09× |
 
-## 结论
+## Conclusion
 
-- Speedup over B2R（iso-frequency = cycle ratio）：Proposed 4.62–5.04×；
-  Full 1.71–2.70×。Proposed 在 BERT 上 5.0×、Mistral/Qwen 约 4.6–4.8×。
-- Proposed 面积更小（1.0 vs 1.488）且更快，area efficiency 比 Full 高
-  **2.8–4.1×**——正是 TCAS-II 期望的"小加速器 + 好划分"证据。
+Speedup over B2R is baseline cycles/design cycles because the common
+iso-frequency factor cancels: A1 is 5.04× / 4.62× / 4.77× on BERT / Mistral /
+Qwen14B, with exact geomean 4.806510911× (display 4.81×).  A1 is smaller and
+faster than A2 in this incremental-SMU comparison; its area-efficiency
+advantage is 2.8–4.1× across the three workloads.
 
-## 数据文件
+## Data files
+
 - `experiments/parsed/p9_p11/p9_latency.csv`
 - `experiments/parsed/p9_p11/p10_throughput.csv`
 - `experiments/parsed/p9_p11/p11_area_efficiency.csv`
-- 生成脚本：`experiments/scripts/derive_p9_p11_metrics.py`
+- Generator: `experiments/scripts/derive_p9_p11_metrics.py`

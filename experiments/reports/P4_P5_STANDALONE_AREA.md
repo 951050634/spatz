@@ -9,7 +9,7 @@ Scalar control/datapath/interface 由 `C1 − EXP − RECIP` 推得；Full vecto
 
 ## Standalone 总面积（P0-6 正式值）
 
-| Config | Cells | Mapped Area | Full/Scalar |
+| Config | Mapped cells (P0-6 standalone) | Mapped area (P0-6 Liberty units) | Full/Scalar |
 | --- | ---: | ---: | ---: |
 | C1 — Scalar SMU | 73,505 | 77,103.292 | 1.000 |
 | C2 — Full SMU | 107,372 | 114,713.298 | 1.488 |

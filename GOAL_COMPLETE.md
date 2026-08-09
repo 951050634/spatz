@@ -94,8 +94,9 @@ Scaling 模型（`C = C0 + Cs*N + Cv*N*D + Cstall`，23 个拟合点）：
 
 | Config | C0 | Cs/row | Cv/element | R² |
 | --- | ---: | ---: | ---: | ---: |
-| B2R_RVV | 153.4774 | 1594.2338 | 2.0867 | 0.999946 |
-| A2_SMU_FULL | 1285.5771 | 19.3173 | 8.0295 | 0.999987 |
+| B2R_RVV | 153.48 | 1594.23 | 2.09 | 0.999946 |
+| A1_SMU_SCALAR | 1382.77 | 90.28 | 2.13 | 0.999276 |
+| A2_SMU_FULL | 1285.58 | 19.32 | 8.03 | 0.999987 |
 
 Break-even（直接测量，A2_SMU_FULL <= B2R_RVV，未混入拟合预测）：
 
@@ -205,7 +206,7 @@ python3 experiments/scripts/analyze_p0_6.py --index-set experiments/manifests/p0
 
 综合结果（`p0_6_synthesis_summary.csv`），与预检基线精确复现：
 
-| config | trials | pass | exact_reproducible | cells | area | normalized (C1=1.0) |
+| config | trials | pass | exact_reproducible | mapped cells | mapped area (Liberty units) | normalized (C1=1.0) |
 | --- | ---: | ---: | --- | ---: | ---: | ---: |
 | C0_NONE | 3 | 3 | True | 0 | 0.0 | 0.0 |
 | C1_SCALAR | 3 | 3 | True | 73505 | 77103.292 | 1.0 |

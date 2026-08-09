@@ -1,11 +1,3 @@
-kind,config,cells,mapped_area,cluster_cells_assumed,cluster_overhead_upper_bound_pct,note
-standalone_increment,C1_SCALAR,73505,77103.292,,,exact P0-6 3-trial mapped area (incremental over C0=0)
-standalone_increment,C2_FULL,107372,114713.298,,,exact P0-6 3-trial mapped area (incremental over C0=0)
-overhead_bound,C1_SCALAR,,,200000,38.55,conservative upper bound: incremental / assumed A_cluster
-overhead_bound,C2_FULL,,,200000,57.36,conservative upper bound: incremental / assumed A_cluster
-overhead_bound,C1_SCALAR,,,500000,15.42,conservative upper bound: incremental / assumed A_cluster
-overhead_bound,C2_FULL,,,500000,22.94,conservative upper bound: incremental / assumed A_cluster
-overhead_bound,C1_SCALAR,,,1000000,7.71,conservative upper bound: incremental / assumed A_cluster
-overhead_bound,C2_FULL,,,1000000,11.47,conservative upper bound: incremental / assumed A_cluster
-overhead_bound,C1_SCALAR,,,2000000,3.86,conservative upper bound: incremental / assumed A_cluster
-overhead_bound,C2_FULL,,,2000000,5.74,conservative upper bound: incremental / assumed A_cluster
+kind,config,mapped_cell_count,mapped_area_liberty_units,cluster_area_status,note
+standalone_increment,C1_SCALAR,73505,77103.292,UNAVAILABLE,exact P0-6 3-trial standalone SMU result; no cluster overhead
+standalone_increment,C2_FULL,107372,114713.298,UNAVAILABLE,exact P0-6 3-trial standalone SMU result; no cluster overhead

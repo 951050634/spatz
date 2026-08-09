@@ -57,3 +57,14 @@ The analyzer reopens every mapped stat file, verifies every raw hash and
 current source/tool/library identity, reconstructs the exact three-process
 matrix, checks the C0/C1/C2 ordering, and emits trial, summary, and cell-type
 CSV files plus a bounded synthesis report and manifest.
+
+## Cluster STOP evidence (P6/P8)
+
+The final cluster attempt is preserved, without rerunning synthesis, in
+`experiments/synthesis/p6-stop/`.  Full SystemVerilog elaboration passed, and
+the captured attempt passed proc/opt/memory_collect before reaching the
+flatten pass and exiting 137 under resource/OOM pressure.  Cluster mapped area,
+cluster overhead, cluster critical delay, and cluster Fmax are therefore
+unavailable.  The Bender flist is an exact host-path-specific capture; the
+108 MB raw synthesis log is omitted and represented by its SHA-256 in
+`p6-stop/flatten_oom_evidence.txt`.

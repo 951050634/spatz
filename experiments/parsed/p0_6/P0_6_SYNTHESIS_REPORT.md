@@ -35,7 +35,7 @@ the default higher-effort script; these are not minimum-area claims.
 
 ## Fixed configurations
 
-| Configuration | Trials | Cells | Total area | Sequential | Normalized to C1 | Eligible |
+| Configuration | Trials | Mapped cells | Mapped area (Liberty units) | Sequential area (Liberty units) | Normalized to C1 | Eligible |
 | --- | ---: | ---: | ---: | ---: | ---: | --- |
 | C0_NONE | 3/3 | 0 | 0.000 | 0.000 | 0.000 | YES |
 | C1_SCALAR | 3/3 | 73505 | 77103.292 | 2766.400 | 1.000 | YES |

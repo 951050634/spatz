@@ -6,13 +6,13 @@
 
 | Design | Points | C0 | Cs / row | Cv / element | R² |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| B2R_RVV | 23 | 153.48 | 1594.23 | 2.087 | 0.999946203 |
-| A1_SMU_SCALAR | 23 | 1382.77 | 90.28 | 2.126 | 0.999275821 |
-| A2_SMU_FULL | 23 | 1285.58 | 19.32 | 8.029 | 0.999987011 |
+| B2R_RVV | 23 | 153.48 | 1594.23 | 2.09 | 0.999946203 |
+| A1_SMU_SCALAR | 23 | 1382.77 | 90.28 | 2.13 | 0.999275821 |
+| A2_SMU_FULL | 23 | 1285.58 | 19.32 | 8.03 | 0.999987011 |
 
 ## 解释
 
-- Proposed A1：`Cs = 90.3` cycles/row，相对 B2R 的 `1594.2` 降低 `17.7×`（SMU-like）。
+- Proposed A1：`Cs = 90.28` cycles/row，相对 B2R 的 `1594.23` 降低 `17.66×`（SMU-like）。
 - Proposed A1：`Cv = 2.13` cycles/element，与 B2R 的 `2.09` 基本一致（RVV-like），而 Full 的 `8.03` 更高。
 - 即 `Cs(A1) ≈ SMU-like` 且 `Cv(A1) ≈ RVV-like`，验证了 Selective scalar offloading 的执行边界。
 

@@ -1,0 +1,27 @@
+P6 final STOP evidence (captured from work-p6b; no rerun)
+
+Stage sequence:
+  elab_bb3.ys: read_liberty -> read_slang -> hierarchy -check -> stat
+               -> write_verilog (full SV elaboration PASS)
+  area-kh3.ys: proc_clean/proc_prune/proc_init/proc_arst/proc_rom/proc_mux/
+               proc_dlatch/proc_dff/proc_memwr -> opt -> memory_collect
+               -> 18. Executing FLATTEN pass
+  area-kh3.time: EXIT=137
+
+Interpretation: proc/opt/memory_collect passed; flatten reached resource/OOM
+pressure and stopped with exit 137.  No cluster mapped PPA was produced.
+Cluster mapped area, cluster overhead, cluster critical delay, and cluster
+Fmax are unavailable.
+
+Retained-file SHA-256:
+  cluster_bb.f                 bf066084b8431198a5f5e3de05e7db1293f791283e66f93813fdabe0068dc1d2
+  elab_bb3.ys                  6a6edf09d7ad6342044c1e20add2a0f5c11829e840d620969198b99b8166c954
+  elab_bb3.log                 1054606ce7522a15f48c22d5af8c241f26007bb45276d4aef280fb73956dc7fb
+  elab-stat.json               35d844ac458f1ddbc4342e7928bd4f9f0519e898be3bb1e642f37ce5f72c6a08
+  synth-c1/area-kh3.ys         b3a734fbd5ab0b6d357ff785d9782b83efed0fce98d515c5272dfe66e7744633
+  synth-c1/area-kh3.time       02d603f1d2b443f94a5419a5107a37c34a824bcd89bc57b0d95fe4d4b3180442
+
+Omitted raw log:
+  work-p6b/synth-c1/area-kh3.log
+  SHA-256 a48a6c0c9054efa6135db2cd56b3de4bae2b637d10d543de32463f7efa3d6b22
+  size 108 MB (not committed)

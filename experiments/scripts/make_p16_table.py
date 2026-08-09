@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """P16 — final hardware results table (CSV) compiled from parsed evidence.
 
-Baseline (B2R) has no SMU increment: cells/area/Fmax are n/a; latency and
-throughput are computed at the same iso-frequency as Proposed so the cycle
-effect is isolated (see P8/P9-P11 reports).
+Baseline (B2R) has no SMU increment: mapped cells/area and standalone timing
+are n/a.  Latency and throughput are derived at a common iso-frequency so the
+cycle effect is isolated (see P8/P9-P11 reports).
 """
 from __future__ import annotations
 
@@ -68,24 +68,26 @@ def main() -> int:
     rows = [
         ("metric", "baseline", "proposed", "full"),
         *[
-            (f"{wl} latency (us, iso-freq)",
+            (f"{wl} derived iso-frequency latency (us)",
              f"{lat_by_wl[wl]['B2R_RVV']:.1f}",
              f"{lat_by_wl[wl]['A1_SMU_SCALAR']:.1f}",
              f"{lat_by_wl[wl]['A2_SMU_FULL']:.1f}")
             for wl in wl_order
         ],
-        ("Mapped cells (SMU)", cells["baseline"], cells["proposed"], cells["full"]),
-        ("Mapped area (SMU, Liberty units)", area["baseline"], area["proposed"], area["full"]),
-        ("Cluster area overhead", "–", "≤ 77.1k cells (bound)",
-         "≤ 114.7k cells (bound)"),
-        ("Critical delay (ps, pre-layout ABC)", crit["baseline"],
+        ("Standalone mapped cells (P0-6, SMU increment)",
+         cells["baseline"], cells["proposed"], cells["full"]),
+        ("Standalone mapped area (P0-6, Liberty units, SMU increment)",
+         area["baseline"], area["proposed"], area["full"]),
+        ("Standalone critical delay (P7, pre-layout ABC, ps)", crit["baseline"],
          f"{float(crit['proposed']):,.1f}", f"{float(crit['full']):,.1f}"),
-        ("Fmax (MHz)", fmax["baseline"], f"{float(fmax['proposed']):.2f}",
+        ("Estimated standalone Fmax (P7, pre-layout ABC, MHz)",
+         fmax["baseline"], f"{float(fmax['proposed']):.2f}",
          f"{float(fmax['full']):.2f}"),
-        ("Throughput geomean (MElements/s)", f"{gmean['baseline']['throughput']:.2f}",
+        ("Derived iso-frequency throughput geomean (MElements/s)",
+         f"{gmean['baseline']['throughput']:.2f}",
          f"{gmean['proposed']['throughput']:.2f}",
          f"{gmean['full']['throughput']:.2f}"),
-        ("Area efficiency geomean (ME/s / norm-area)",
+        ("Incremental-SMU area efficiency geomean (ME/s / norm-area)",
          "n/a", f"{ae['proposed']:.2f}", f"{ae['full']:.2f}"),
     ]
     OUT_DIR.mkdir(parents=True, exist_ok=True)
