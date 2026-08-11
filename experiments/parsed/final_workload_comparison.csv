@@ -1,0 +1,5 @@
+workload,model_id,N,D,B2R_RVV_cycles,A1_SMU_SCALAR_cycles,A2_SMU_FULL_cycles,A1_speedup_over_B2R,A2_speedup_over_B2R,status,speedup_basis
+BERT,google-bert/bert-base-uncased,12,64,19856,4128,7704,4.810077519380,2.577362409138,VERIFIED_M2_MEASURED_CYCLES,B2R cycles / design cycles; no frequency assumption
+Mistral,mistralai/Mistral-7B-v0.1,32,128,56296,12866,34728,4.375563500700,1.621055056439,VERIFIED_M2_MEASURED_CYCLES,B2R cycles / design cycles; no frequency assumption
+Qwen14B,Qwen/Qwen2.5-14B-Instruct,40,128,69348,15733,43206,4.407805250111,1.605054853493,VERIFIED_M2_MEASURED_CYCLES,B2R cycles / design cycles; no frequency assumption
+geomean,,,,,,,4.526920018368,1.885765610308,DERIVED_FROM_M2_MEASURED_CYCLES,geometric mean of the three workload cycle ratios

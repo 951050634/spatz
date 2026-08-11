@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "counter_profiles": ["memory"],
+  "configurations": [
+    "B2R_RVV",
+    "A1_SMU_SCALAR",
+    "A2_SMU_FULL"
+  ],
+  "trials": 3,
+  "shards": [
+    {
+      "suite": "m2-matched-lut-scale-00",
+      "case_file": "p0_scaling_cases.json",
+      "case_ids": ["scale_d64_n1", "scale_d64_n2", "scale_d64_n4"]
+    },
+    {
+      "suite": "m2-matched-lut-scale-01",
+      "case_file": "p0_scaling_cases.json",
+      "case_ids": ["scale_d64_n8", "scale_d64_n16", "scale_d64_n32"]
+    },
+    {
+      "suite": "m2-matched-lut-scale-02",
+      "case_file": "p0_scaling_cases.json",
+      "case_ids": ["scale_n8_d1", "scale_n8_d8", "scale_n8_d16"]
+    },
+    {
+      "suite": "m2-matched-lut-scale-03",
+      "case_file": "p0_scaling_cases.json",
+      "case_ids": ["scale_n8_d32", "scale_n8_d128", "break_even_n1_d1"]
+    },
+    {
+      "suite": "m2-matched-lut-scale-04",
+      "case_file": "p0_scaling_cases.json",
+      "case_ids": ["break_even_n1_d8", "break_even_n1_d16", "break_even_n1_d32"]
+    },
+    {
+      "suite": "m2-matched-lut-scale-05",
+      "case_file": "p0_scaling_cases.json",
+      "case_ids": ["break_even_n2_d1", "break_even_n2_d8", "break_even_n2_d16"]
+    },
+    {
+      "suite": "m2-matched-lut-scale-06",
+      "case_file": "p0_scaling_cases.json",
+      "case_ids": ["break_even_n2_d32", "break_even_n4_d1", "break_even_n4_d8"]
+    },
+    {
+      "suite": "m2-matched-lut-scale-07",
+      "case_file": "p0_scaling_cases.json",
+      "case_ids": ["break_even_n4_d16", "break_even_n4_d32"]
+    },
+    {
+      "suite": "m2-matched-lut-models",
+      "case_file": "p0_model_workload_cases.json",
+      "case_ids": [
+        "model_bert_base_heads",
+        "model_mistral_7b_heads",
+        "model_qwen2_5_14b_heads"
+      ]
+    }
+  ]
+}

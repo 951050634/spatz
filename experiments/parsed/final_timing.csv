@@ -1,0 +1,3 @@
+design,role,category,delay_ps,delay_ns,synchronous_fmax_mhz,status,methodology,startpoint,endpoint
+A1,Proposed Scalar SMU + RVV,reg→reg,12342.85,12.34285,UNAVAILABLE,PARTIAL,pre-layout Nangate45/ABC stime reg→reg combinational-delay proxy; Outcome B,i_variant.gen_engine.i_engine.m_tile_q[22],i_variant.gen_engine.i_engine.l_new_q[12]
+A2,Full-Offload ablation,reg→reg,13202.60,13.20260,UNAVAILABLE,PARTIAL,pre-layout Nangate45/ABC stime reg→reg combinational-delay proxy; Outcome B,i_variant.gen_engine.i_engine.m_old_q[31],i_variant.gen_engine.i_engine.l_new_q[1]

@@ -1,7 +1,7 @@
 stage,cycles_per_row,share_of_smu_busy,notes
-LOAD_SCALAR,13,0.542,
-COMPUTE_SCALAR,1,0.042,
-COMPUTE_WEIGHT,1,0.042,
-STORE_SCALAR,9,0.375,
-SMU busy total,24,1.0,
-software smu_scalar window fixed overhead (N=1 median),1316,,
+LOAD_SCALAR,13,0.542,nominal no-stall state schedule
+COMPUTE_SCALAR,1,0.042,nominal no-stall state schedule
+COMPUTE_WEIGHT,1,0.042,nominal no-stall state schedule
+STORE_SCALAR,9,0.375,nominal no-stall state schedule
+Nominal no-stall SMU busy total,24,1.0,not measured system latency; model-shape observers include TCDM waits
+software smu_scalar window fixed overhead (N=1 median),1316,,separate software command and polling overhead

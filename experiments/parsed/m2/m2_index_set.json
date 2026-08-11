@@ -1,0 +1,79 @@
+{
+  "artifact_bytes": 2098367746,
+  "artifact_count": 1146,
+  "failure_count": 0,
+  "git_commit": "7225d41ad2d1c63376a9fb1ea4e56b3b24a3e97f",
+  "git_dirty_before_indexing": false,
+  "indexed_utc": "2026-08-11T16:26:46+00:00",
+  "indexer_path": "experiments/scripts/index_external_runs.py",
+  "indexer_sha256": "9e76d7c197914b183256b6875b0eb976b87ce6111922040cf8d0c702427e2b2d",
+  "record_count": 234,
+  "run_count": 9,
+  "runs": [
+    {
+      "index_path": "experiments/raw/20260811T100559Z_7225d41a_m2-matched-lut-scale-00.json",
+      "index_sha256": "a4fac5b8a51dbc9667b65970de94d4916f720f0a518ba2636b1bd8ddae542003",
+      "manifest_snapshot_path": "experiments/manifests/20260811T100559Z_7225d41a_m2-matched-lut-scale-00.json",
+      "manifest_snapshot_sha256": "39aec4484ff1f5253b6d820786932c68c374eb9e64af11402f17a9d70f49a356",
+      "run_id": "20260811T100559Z_7225d41a_m2-matched-lut-scale-00"
+    },
+    {
+      "index_path": "experiments/raw/20260811T104215Z_7225d41a_m2-matched-lut-scale-01.json",
+      "index_sha256": "55e90f86628cacedaf54fc64e9df3f27c171860b727c224bc599e5cecd9b265b",
+      "manifest_snapshot_path": "experiments/manifests/20260811T104215Z_7225d41a_m2-matched-lut-scale-01.json",
+      "manifest_snapshot_sha256": "887e859365890fb87b3130ec73af63f8b6978c57944e1de21d03de6838e75d41",
+      "run_id": "20260811T104215Z_7225d41a_m2-matched-lut-scale-01"
+    },
+    {
+      "index_path": "experiments/raw/20260811T104215Z_7225d41a_m2-matched-lut-scale-02.json",
+      "index_sha256": "afeed18709febd5b422c1540456473af1f5ef96d7ca095fb6170042e94265d38",
+      "manifest_snapshot_path": "experiments/manifests/20260811T104215Z_7225d41a_m2-matched-lut-scale-02.json",
+      "manifest_snapshot_sha256": "577e3925f6be83c9a8ad9f71715520d1828ac59f38ff34ff11db0f887d577894",
+      "run_id": "20260811T104215Z_7225d41a_m2-matched-lut-scale-02"
+    },
+    {
+      "index_path": "experiments/raw/20260811T104215Z_7225d41a_m2-matched-lut-scale-03.json",
+      "index_sha256": "5d0d7a545b8048a583e97e039bd99432ac2f7e58ca3557c95ebab338df4eaf85",
+      "manifest_snapshot_path": "experiments/manifests/20260811T104215Z_7225d41a_m2-matched-lut-scale-03.json",
+      "manifest_snapshot_sha256": "d43d4e944354e5584bbd27dd9971a108fcef3e37ce46a03b5a7772c2d842624f",
+      "run_id": "20260811T104215Z_7225d41a_m2-matched-lut-scale-03"
+    },
+    {
+      "index_path": "experiments/raw/20260811T121310Z_7225d41a_m2-matched-lut-scale-04.json",
+      "index_sha256": "8a128d65e485e2de695f4e560ad46b5aff5ab0ee1ddea6effaa4d98e317312ec",
+      "manifest_snapshot_path": "experiments/manifests/20260811T121310Z_7225d41a_m2-matched-lut-scale-04.json",
+      "manifest_snapshot_sha256": "92176e0fcb75ad636d9b65d3aa972b049af100f6f5f76d13ff77ba84f2746982",
+      "run_id": "20260811T121310Z_7225d41a_m2-matched-lut-scale-04"
+    },
+    {
+      "index_path": "experiments/raw/20260811T121310Z_7225d41a_m2-matched-lut-scale-05.json",
+      "index_sha256": "ffd11dd9d88f5a1ccb5054705de76afc6df20e833c357dda84e29dfd6dac4606",
+      "manifest_snapshot_path": "experiments/manifests/20260811T121310Z_7225d41a_m2-matched-lut-scale-05.json",
+      "manifest_snapshot_sha256": "54531c131cd5ed9fb657cd2f18ec18a7726c8a10d9da587d8582c14094d784ec",
+      "run_id": "20260811T121310Z_7225d41a_m2-matched-lut-scale-05"
+    },
+    {
+      "index_path": "experiments/raw/20260811T121310Z_7225d41a_m2-matched-lut-scale-06.json",
+      "index_sha256": "098cc837c52d561d2d4c91cb8349f48fd39f18242336bec13f856af087ac1f00",
+      "manifest_snapshot_path": "experiments/manifests/20260811T121310Z_7225d41a_m2-matched-lut-scale-06.json",
+      "manifest_snapshot_sha256": "9fb6f6ad6170ad92d9775a07faa51d8e140ba7f9e22745ae1ccb1fceb9a585ef",
+      "run_id": "20260811T121310Z_7225d41a_m2-matched-lut-scale-06"
+    },
+    {
+      "index_path": "experiments/raw/20260811T124812Z_7225d41a_m2-matched-lut-scale-07.json",
+      "index_sha256": "3bfde9eafa7ee8651158381590d02e00ae826faca8bb19fcf0bbdc24de4ba120",
+      "manifest_snapshot_path": "experiments/manifests/20260811T124812Z_7225d41a_m2-matched-lut-scale-07.json",
+      "manifest_snapshot_sha256": "2c5baa9a0a55b0ee80efe6f63c36aa7a91a3168f0294690be0e4a13d7d8010ad",
+      "run_id": "20260811T124812Z_7225d41a_m2-matched-lut-scale-07"
+    },
+    {
+      "index_path": "experiments/raw/20260811T124812Z_7225d41a_m2-matched-lut-models.json",
+      "index_sha256": "9edbcdee62abc7f98948937ff2f3d3dc9d2f3308c76a06d3a1c9dc77dff6df41",
+      "manifest_snapshot_path": "experiments/manifests/20260811T124812Z_7225d41a_m2-matched-lut-models.json",
+      "manifest_snapshot_sha256": "18f0f2de3a4a947c132075c01f31e392387cabe0688f92d7f2384d8dea773502",
+      "run_id": "20260811T124812Z_7225d41a_m2-matched-lut-models"
+    }
+  ],
+  "schema_version": 1,
+  "set_name": "m2_matched_lut"
+}

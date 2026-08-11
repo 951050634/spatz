@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""P2: Fit the final Proposed A1 scaling model and joint B2R/A1/Full crossovers.
+"""Fit the frozen M2 scaling model and joint B2R/A1/Full crossovers.
 
 Reuses the exact least-squares fit_model from
-util/online_softmax_merge/analyze_scaling.py on the P0-4 paper-eligible
-scaling points (one row per (N,D); three trials are bit-identical so the
-median row is deterministic).  Outputs:
+util/online_softmax_merge/analyze_scaling.py on the Sol-reviewed M2
+matched-LUT scaling points.  Outputs the historical CSV schema consumed by
+the existing Figure 2/3 scripts:
 
   experiments/parsed/final_scaling_model.csv
   experiments/reports/final_scaling_model.md
@@ -26,8 +26,8 @@ if str(REPO_ROOT) not in sys.path:
 from util.online_softmax_merge import analyze_scaling as scaling_math
 
 CONFIGS = ("B2R_RVV", "A1_SMU_SCALAR", "A2_SMU_FULL")
-SCALING_CSV = REPO_ROOT / "experiments/parsed/p0_4/p0_4_scaling_points.csv"
-WORKLOAD_CSV = REPO_ROOT / "experiments/parsed/p0_5/p0_5_workload_comparison.csv"
+SCALING_CSV = REPO_ROOT / "experiments/parsed/m2/m2_scaling.csv"
+WORKLOAD_CSV = REPO_ROOT / "experiments/parsed/m2/m2_workloads.csv"
 OUT_CSV = REPO_ROOT / "experiments/parsed/final_scaling_model.csv"
 OUT_MD = REPO_ROOT / "experiments/reports/final_scaling_model.md"
 
@@ -46,7 +46,7 @@ def load_points(path: Path) -> dict[str, list[dict]]:
             cfg = row["config"]
             if cfg not in CONFIGS:
                 continue
-            if row["status"] != "PASS" or row["paper_eligible"] != "YES":
+            if row["kind"] != "point":
                 continue
             n, d = int(row["N"]), int(row["D"])
             key = (cfg, n, d)
@@ -57,7 +57,7 @@ def load_points(path: Path) -> dict[str, list[dict]]:
                 "case_id": row["case_id"],
                 "N": n,
                 "D": d,
-                "cycles_median": int(float(row["kernel_cycles_median"])),
+                "cycles_median": int(float(row["measured_cycles"])),
             })
     for cfg in CONFIGS:
         points[cfg].sort(key=lambda p: (p["N"], p["D"]))
@@ -88,7 +88,7 @@ def load_measured_workload(path: Path) -> dict[str, dict]:
     measured: dict[str, dict] = {}
     with path.open(newline="") as f:
         for row in csv.DictReader(f):
-            if row.get("disposition") != "MEASURED":
+            if row.get("disposition") != "MEASURED" or row.get("paper_eligible") != "YES":
                 continue
             key = row["case_id"]
             measured[key] = {
@@ -131,7 +131,7 @@ def main() -> int:
             })
 
     with OUT_CSV.open("w", newline="") as f:
-        w = csv.writer(f)
+        w = csv.writer(f, lineterminator="\n")
         w.writerow(["kind", "config", "N", "D", "C0", "Cs", "Cv", "R_squared",
                     "measured_cycles", "fitted_cycles", "Cstall_cycles",
                     "crossover_pair", "crossover_D", "workload", "note"])
@@ -139,9 +139,9 @@ def main() -> int:
             fit = fits[cfg]
             p = fit["parameters_cycles"]
             w.writerow(["parameter", cfg, "", "",
-                        f"{p['C0']['decimal']:.6f}",
-                        f"{p['Cs']['decimal']:.6f}",
-                        f"{p['Cv']['decimal']:.6f}",
+                        f"{p['C0']['decimal']:.17g}",
+                        f"{p['Cs']['decimal']:.17g}",
+                        f"{p['Cv']['decimal']:.17g}",
                         f"{fit['R_squared']['decimal']:.12f}",
                         "", "", "", "", "", "", ""])
         for cfg in CONFIGS:
@@ -172,11 +172,13 @@ def main() -> int:
                             "", "", name, ""])
 
     lines = []
-    lines.append("# Final Scaling Model (P2)")
+    lines.append("# Final Scaling Model (M3 frozen M2 evidence)")
     lines.append("")
-    lines.append("来源：P0-4 正式 scaling 数据（`experiments/parsed/p0_4/p0_4_scaling_points.csv`），"
-                 "每条 `(N,D)` 取一个确定 median（三次 trial 完全一致）。"
-                 "拟合形式 `C(N,D) = C0 + Cs·N + Cv·N·D`，复用 `analyze_scaling.fit_model`（精确最小二乘）。")
+    lines.append("来源：Sol 审查通过的 M2 matched-LUT 正式数据 "
+                 "（`experiments/parsed/m2/m2_scaling.csv`、"
+                 "`experiments/parsed/m2/m2_workloads.csv`）。每条 `(N,D)` 使用 M2 "
+                 "正式 measured cycle row；拟合形式 `C(N,D) = C0 + Cs·N + Cv·N·D`，"
+                 "复用 `analyze_scaling.fit_model`（精确最小二乘）。")
     lines.append("")
     lines.append("## 拟合参数")
     lines.append("")
@@ -196,13 +198,13 @@ def main() -> int:
     b2r = fits["B2R_RVV"]["parameters_cycles"]
     full = fits["A2_SMU_FULL"]["parameters_cycles"]
     lines.append(
-        f"- Proposed A1：`Cs = {a1['Cs']['decimal']:.1f}` cycles/row，"
-        f"相对 B2R 的 `{b2r['Cs']['decimal']:.1f}` 降低 "
-        f"`{b2r['Cs']['decimal'] / a1['Cs']['decimal']:.1f}×`（SMU-like）。")
+        f"- Proposed A1：`Cs = {a1['Cs']['decimal']:.6f}` cycles/row，"
+        f"相对 B2R 的 `{b2r['Cs']['decimal']:.6f}` 降低 "
+        f"`{b2r['Cs']['decimal'] / a1['Cs']['decimal']:.6f}×`（SMU-like）。")
     lines.append(
-        f"- Proposed A1：`Cv = {a1['Cv']['decimal']:.2f}` cycles/element，"
-        f"与 B2R 的 `{b2r['Cv']['decimal']:.2f}` 基本一致（RVV-like），"
-        f"而 Full 的 `{full['Cv']['decimal']:.2f}` 更高。")
+        f"- Proposed A1：`Cv = {a1['Cv']['decimal']:.6f}` cycles/element，"
+        f"与 B2R 的 `{b2r['Cv']['decimal']:.6f}` 基本一致（RVV-like），"
+        f"而 Full 的 `{full['Cv']['decimal']:.6f}` 更高。")
     lines.append(
         f"- 即 `Cs(A1) ≈ SMU-like` 且 `Cv(A1) ≈ RVV-like`，验证了 "
         "Selective scalar offloading 的执行边界。")
@@ -219,7 +221,7 @@ def main() -> int:
             lines.append(f"| {x} vs {y} | {n} | "
                          + ("—" if d is None else f"{d:.1f}") + " |")
     lines.append("")
-    lines.append("## Model-derived workload 预测 vs 实测（P0-5）")
+    lines.append("## Model-derived workload 预测 vs 实测（M2）")
     lines.append("")
     lines.append("| Workload | N | D | Config | 实测 cycles | 模型预测 | 残差 |")
     lines.append("| --- | ---: | ---: | --- | ---: | ---: | ---: |")

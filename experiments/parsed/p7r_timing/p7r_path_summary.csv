@@ -1,0 +1,9 @@
+design,category,status,longest_delay_ps,fmax_mhz,startpoint,endpoint,reason
+A1,reg→reg,verified,12342.85,,$auto$dfflibmap.cc:539:dfflibmap$334459,$auto$rtlil.cc:3501:MuxGate$333741,ABC stime critical path resolves to DFF Q/QN→D.
+A1,PI→reg,unavailable,,,,,P7 stime output does not enumerate this category.
+A1,reg→PO,unavailable,,,,,P7 stime output does not enumerate this category.
+A1,PI→PO,unavailable,,,,,P7 stime output does not enumerate this category.
+A2,reg→reg,verified,13202.6,,\i_variant.gen_engine.i_engine.m_old_q [31],$auto$rtlil.cc:3501:MuxGate$476330,ABC stime critical path resolves to DFF Q/QN→D.
+A2,PI→reg,unavailable,,,,,P7 stime output does not enumerate this category.
+A2,reg→PO,unavailable,,,,,P7 stime output does not enumerate this category.
+A2,PI→PO,unavailable,,,,,P7 stime output does not enumerate this category.

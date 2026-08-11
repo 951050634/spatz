@@ -1,0 +1,4 @@
+case_id,model_id,N,D,source_audit,disposition,B2R_RVV_cycles,B2R_RVV_status,B2R_RVV_reproducible,A1_SMU_SCALAR_cycles,A1_SMU_SCALAR_status,A1_SMU_SCALAR_reproducible,A2_SMU_FULL_cycles,A2_SMU_FULL_status,A2_SMU_FULL_reproducible,A1_vs_B2R_speedup,A2_vs_B2R_speedup,paper_eligible
+model_bert_base_heads,google-bert/bert-base-uncased,12,64,PASS,MEASURED,19856,PASS,YES,4128,PASS,YES,7704,PASS,YES,4.810077519379845,2.57736240913811,YES
+model_mistral_7b_heads,mistralai/Mistral-7B-v0.1,32,128,PASS,MEASURED,56296,PASS,YES,12866,PASS,YES,34728,PASS,YES,4.375563500699518,1.6210550564386086,YES
+model_qwen2_5_14b_heads,Qwen/Qwen2.5-14B-Instruct,40,128,PASS,MEASURED,69348,PASS,YES,15733,PASS,YES,43206,PASS,YES,4.407805250111231,1.6050548534925704,YES

@@ -1,0 +1,98 @@
+{
+  "active_outputs": [
+    {
+      "path": "experiments/parsed/final_scaling_model.csv",
+      "sha256": "2e6ba4378bab06238de7250a11eba449eaa1d1bc22f964d19b1c09261f9b2631"
+    },
+    {
+      "path": "experiments/parsed/final_workload_comparison.csv",
+      "sha256": "faecf75127454915e1337e1f44e0d6cdb54393d79ace4656cf28120ab5b678d5"
+    },
+    {
+      "path": "experiments/parsed/final_area.csv",
+      "sha256": "a50b8ce4e8efdefa5838e2417bc0d89ff3f99949167925311a3002a9dc0468ce"
+    },
+    {
+      "path": "experiments/parsed/final_timing.csv",
+      "sha256": "28bd72f31dc78881f2803e595a5629a1089f613c2c6deb95148637915c262331"
+    },
+    {
+      "path": "experiments/parsed/final_hardware_results.csv",
+      "sha256": "b1431e4f737af0d71d9c459c05725d9c25f32c71768a7aa3ff34600f0a3229d4"
+    }
+  ],
+  "analysis_head": "7225d41ad2d1c63376a9fb1ea4e56b3b24a3e97f",
+  "evidence_status": {
+    "M2_matched_LUT": "VERIFIED_SOL_REVIEWED",
+    "P0_6_standalone_area": "VERIFIED",
+    "P3_scalar_SMU_breakdown": "VERIFIED",
+    "P7R_timing": "PARTIAL_REG_TO_REG_PROXY_ONLY",
+    "cluster_area_timing_power_energy": "UNAVAILABLE",
+    "end_to_end_inference": "UNAVAILABLE",
+    "synchronous_Fmax": "UNAVAILABLE"
+  },
+  "expected_head": "7225d41ad2d1c63376a9fb1ea4e56b3b24a3e97f",
+  "generation": {
+    "deterministic": true,
+    "scripts": [
+      {
+        "path": "experiments/scripts/fit_final_scaling_model.py",
+        "sha256": "cad13628cad7e9d2203bd85393a86701af003b9c03843a084600278f98f47183"
+      },
+      {
+        "path": "experiments/scripts/freeze_final_evidence.py",
+        "sha256": "2579fd4ff4fc420c55fdc39b4210ae6190c13f4216b91cd6d4fae8b0d9755408"
+      }
+    ],
+    "timestamp": null,
+    "workflow": [
+      "python3 experiments/scripts/fit_final_scaling_model.py",
+      "python3 experiments/scripts/freeze_final_evidence.py"
+    ]
+  },
+  "inputs": [
+    {
+      "path": "experiments/parsed/m2/m2_scaling.csv",
+      "sha256": "04039d69f87c846b268d215a68a9484ec89c90235f2f50f859a5e7bc6ef995f9"
+    },
+    {
+      "path": "experiments/parsed/m2/m2_workloads.csv",
+      "sha256": "a835e507eb1f70dffe901a5a37c60d12a7cf3b25ba0007df99c4f00b6c63584b"
+    },
+    {
+      "path": "experiments/parsed/p0_6/p0_6_synthesis_summary.csv",
+      "sha256": "3b806ea0ed90515cec7d9fdd7f27bf100c956a38b5940b37d38db54c26fe5a11"
+    },
+    {
+      "path": "experiments/parsed/p7r_timing/p7r_path_summary.csv",
+      "sha256": "95302ccfd336db842f8cd8dfc11bb1feb0538287dcccb680af891af253346fa1"
+    },
+    {
+      "path": "experiments/parsed/p7r_timing/p7r_path_details.json",
+      "sha256": "aa5a0ef0219eee66e454d7df45aeaf5a4e4703aa3d1721041bdd5a9e54b05e15"
+    },
+    {
+      "path": "experiments/parsed/p3_smu_latency_breakdown.csv",
+      "sha256": "b326f794b881f2f6037d6e153544080809a065af3c93aa8645ae74352a14b03a"
+    }
+  ],
+  "manifest_self_hash": "excluded_to_avoid_self-referential_hash",
+  "schema_version": "m3-final-evidence-freeze-v1",
+  "source_policy": {
+    "active_numbers_must_come_from": [
+      "experiments/parsed/final_scaling_model.csv",
+      "experiments/parsed/final_workload_comparison.csv",
+      "experiments/parsed/final_area.csv",
+      "experiments/parsed/final_timing.csv",
+      "experiments/parsed/final_hardware_results.csv"
+    ],
+    "full": "A2 Full-Offload ablation only",
+    "proposed": "A1 Scalar SMU + existing RVV",
+    "superseded_numbers_must_not_be_used": [
+      "81.0186/75.7427 MHz",
+      "old progressive baseline values",
+      "old P0-5 workload/scaling values",
+      "absolute latency/throughput derived from withdrawn Fmax"
+    ]
+  }
+}

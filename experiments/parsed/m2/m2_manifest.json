@@ -1,0 +1,130 @@
+{
+  "analysis_git": {
+    "branch": "exp/online-softmax-supplement",
+    "commit": "7225d41ad2d1c63376a9fb1ea4e56b3b24a3e97f",
+    "dirty": true
+  },
+  "analysis_tool": {
+    "path": "experiments/scripts/analyze_m2_models.py",
+    "python": "3.12.3",
+    "sha256": "d3fbf54f6e5af66b8007f12004c8bbf9dc6d7ce4cea42eb19c0b27fa0fe51511"
+  },
+  "inputs": [
+    {
+      "path": "experiments/configs/m2_matched_lut_shards.json",
+      "sha256": "3547769945adb0c7a259e8a2f0d8ebeebdd870e08cec1b2c3317033b1d6d1419"
+    },
+    {
+      "path": "experiments/configs/m2_matched_lut_policy.json",
+      "sha256": "82af464584b3bf1cd166a2d2dc8911e1554c7e56230af36bf33bb53a58369fc3"
+    },
+    {
+      "path": "experiments/manifests/m2_matched_lut_index_set.json",
+      "sha256": "a3235bb7666bd24b0dd96e425adb25b70e9587a05e060f61fa36b552bf52fb76"
+    },
+    {
+      "path": "experiments/parsed/final_scaling_model.csv",
+      "sha256": "a052e9b2c8846b969c150509754e119d7a1776ee90d6d6c6b9b15b40890a6ff3"
+    },
+    {
+      "path": "experiments/parsed/p0_5/p0_5_workload_comparison.csv",
+      "sha256": "774439ed57b6d76ecbc8842557451047f7ce97cf2f206fcf2a878b1200807363"
+    },
+    {
+      "path": "experiments/configs/p0_model_workload_cases.json",
+      "sha256": "ba485b6cb12fa73a8a4af4bf8af5a2257c0d8f83f45d96f201c4be56a4f350f1"
+    },
+    {
+      "path": "experiments/configs/p0_scaling_cases.json",
+      "sha256": "c25969a671056d0581c02d78b64aca6f12bc6f0589ab4a000975bc5e19d90e51"
+    }
+  ],
+  "outputs": [
+    {
+      "bytes": 747,
+      "path": "experiments/parsed/m2/m2_workloads.csv",
+      "sha256": "a835e507eb1f70dffe901a5a37c60d12a7cf3b25ba0007df99c4f00b6c63584b"
+    },
+    {
+      "bytes": 1489911,
+      "path": "experiments/parsed/m2/m2_all_records.json",
+      "sha256": "cbc56491988ca4bb4533f2b44883ccb7c9f4a5930e2ced01dc099d739e5c57c4"
+    },
+    {
+      "bytes": 76497,
+      "path": "experiments/parsed/m2/m2_analysis.json",
+      "sha256": "19f0043b7112e692eddfe9a9cbe74667f6924196f5cca7ee41f25407bd62ed34"
+    },
+    {
+      "bytes": 2255,
+      "path": "experiments/parsed/m2/m2_model_source_audit.json",
+      "sha256": "1961c744e858c5c2b5acf367c2733afdad40b7355c92fa8defcad8ad00eb228c"
+    },
+    {
+      "bytes": 9645,
+      "path": "experiments/parsed/m2/m2_root_audit.json",
+      "sha256": "a3dd6f7e3e85f5f3b2ad2a8651ef979af58f7bd1500852b5faddc2d2e237d16b"
+    },
+    {
+      "bytes": 731876,
+      "path": "experiments/parsed/m2/m2_all_records.csv",
+      "sha256": "6e4f72ccb5796d211e5ab3bca76f9dcee4917bf40abc0d432e501ac7a05b201b"
+    },
+    {
+      "bytes": 5978,
+      "path": "experiments/parsed/m2/m2_scaling_residuals.csv",
+      "sha256": "7a3de09cb8dcf1463206b01a06e37d22dc404dccd231e9cd948912f17dedff80"
+    },
+    {
+      "bytes": 6228,
+      "path": "experiments/parsed/m2/m2_root_audit.csv",
+      "sha256": "d01d154290d5427d674ab8ffa293ea74eddf79c1961209db382c9a0c4d616258"
+    },
+    {
+      "bytes": 3,
+      "path": "experiments/parsed/m2/m2_failure_entries.json",
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+    },
+    {
+      "bytes": 89497,
+      "path": "experiments/parsed/m2/m2_trial_summary.json",
+      "sha256": "7e261e5d44dba36d087a180d4a65069ffdcb249f172b3756f51d41729a68a197"
+    },
+    {
+      "bytes": 1869,
+      "path": "experiments/parsed/m2/M2_MATCHED_LUT_REVALIDATION.md",
+      "sha256": "cb9e7a1e3a5406eead945d133fafe2207c489c7fd4859b5426889a6146c20f24"
+    },
+    {
+      "bytes": 6291,
+      "path": "experiments/parsed/m2/m2_scaling.csv",
+      "sha256": "04039d69f87c846b268d215a68a9484ec89c90235f2f50f859a5e7bc6ef995f9"
+    },
+    {
+      "bytes": 2674,
+      "path": "experiments/parsed/m2/m2_comparison.csv",
+      "sha256": "c3db5b0b5a023e3c358a46107118e3483d2f44560c1a91e60bd147971231eac8"
+    },
+    {
+      "bytes": 1312,
+      "path": "experiments/parsed/m2/m2_model_source_audit.csv",
+      "sha256": "5c33d677b817c7b461a83974bb23b5cc97c3d6ffe8fb3726dab1b333380d9fa8"
+    },
+    {
+      "bytes": 34700,
+      "path": "experiments/parsed/m2/m2_trial_summary.csv",
+      "sha256": "c55995280df6fe550e96c9070adb7a6ffc188eef95f7ac91e7b1f77518a995b1"
+    },
+    {
+      "bytes": 4796,
+      "path": "experiments/parsed/m2/m2_index_set.json",
+      "sha256": "a3235bb7666bd24b0dd96e425adb25b70e9587a05e060f61fa36b552bf52fb76"
+    },
+    {
+      "bytes": 1869,
+      "path": "experiments/reports/M2_MATCHED_LUT_REVALIDATION.md",
+      "sha256": "cb9e7a1e3a5406eead945d133fafe2207c489c7fd4859b5426889a6146c20f24"
+    }
+  ],
+  "schema_version": 1
+}

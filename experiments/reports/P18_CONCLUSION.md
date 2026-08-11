@@ -1,35 +1,48 @@
-# P18 — 论文结论支撑
+# P18 — Final Conclusion Support
 
-核心论点：**Online Softmax Merge 中真正值得专用化的是 state-dependent scalar
-recurrence，而非整个 kernel**。
+The active evidence supports one architectural conclusion: in Online
+Softmax Merge, the valuable specialization is the state-dependent scalar
+recurrence, not replacement of the complete kernel.
 
-证据链（全部来自本阶段新产出）：
+1. **Scaling model.** M2 matched-LUT data fit
+   `C(N,D) = C0 + Cs·N + Cv·N·D`. Here `Cs` is the fitted N-dependent
+   cycles/row coefficient and `Cv` is the fitted ND-dependent cycles/element
+   coefficient. B2R has `Cs=1471.8187127369117`, A1 has
+   `Cs=90.27815541344518`, and A2 has `Cs=19.317262422475853`. A1 retains a
+   fitted `Cv=2.126010148452419`, within 6.22% of B2R `2.2670632230803`, while
+   A2 has `Cv=8.029464672201952`.
+2. **Measured workloads.** M2 measured BERT/Mistral/Qwen2.5-14B-Instruct cycles as
+   B2R/A1/A2 = `19856/4128/7704`, `56296/12866/34728`, and
+   `69348/15733/43206`.  A1's geometric-mean speedup is
+   `4.526920018368`; A2's is `1.885765610308`.  These are cycle ratios, not
+   end-to-end inference or wall-time throughput.
+3. **Hardware cost.** A1 is `73,505` mapped cells and `77,103.292`
+   Nangate45 Liberty units.  A2 is `107,372` cells and `114,713.298` units,
+   or `1.487787291884×` A1 area (`+48.778729%`).
+4. **Scalar SMU behavior.** The existing P3 FSM reports a nominal no-stall
+   schedule of 24 SMU busy cycles per scalar row (`13+1+1+9`). Model-shape
+   observers report 289/769/962 busy cycles for BERT/Mistral/Qwen2.5-14B-Instruct,
+   including one or two TCDM waits. These observations remain separate from
+   fitted `Cs` and system latency.
+5. **Timing boundary.** A1 and A2 have PARTIAL P7-R reg→reg combinational
+   delay proxies of `12.34285 ns` and `13.20260 ns`. Synchronous `F_max` is
+   UNAVAILABLE because the flow excludes clock-to-Q, setup/hold, skew, I/O
+   constraints, and physical buffering/load semantics.
 
-1. **软件分析**：B2R（SW recurrence + RVV）的 Cs = 1594.233808
-   cycles/row（`final_scaling_model.md`）——recurrence 的软件指令序列开销主导总成本。
-2. **硬件分析**：A1 Scalar SMU 把拟合 Cs 降到 90.278155 cycles/row（约
-   17.66× 下降，P2）。SMU busy/row 为 24 cycles，其中 EXP/Recip 是单周期
-   组合 LUT（P3）；24 cycles 不等同于拟合 Cs。
-3. **vector 分析**：RVV 的 B2R Cv = 2.086684，A1 Cv = 2.126010；A2 的自建
-   vector datapath Cv = 8.029465（P2）——现有 RVV 已是更高效的 vector 路径。
-4. **性能**：A1 在 BERT / Mistral / Qwen14B 上相对 B2R 为 5.04× / 4.62× /
-   4.77×（exact geomean 4.806510911×，display 4.81×）。这些 latency /
-   throughput 是 common 81.0186 MHz iso-frequency 下由 measured cycles 推导，
-   不是 wall-time 或 system-throughput measurement（P9–P11）。
-5. **硬件代价**：A1 为 **73,505 mapped cells / 77,103.3 Liberty units**；
-   A2 为 **107,372 mapped cells / 114,713.3 Liberty units**（P0-6 standalone）。
-   P7 additionally estimates A1 standalone Fmax 81.0186 MHz；cluster Fmax 不可用。
-   Incremental-SMU area efficiency 比 A2 高 3.57×（P16）。
-6. **Full ablation**：A2 vector datapath 增加 +48.8% standalone mapped area
-   且 derived throughput 低于 A1（P13）。
+Therefore, the defensible claim is: **Selective scalar offloading (Scalar SMU
++ existing RVV) removes the recurrence software cost while preserving the
+efficient RVV vector update, with less standalone hardware than Full-Offload.**
+Full remains an ablation, not the primary architecture.
 
-结论表述建议："Selective scalar offloading（Scalar SMU + existing RVV）优于
-Full kernel offloading：它以最小专用硬件消除 recurrence 软件开销，同时保留
-RVV 的高效 vector update。"
+Cluster mapped area/overhead, cluster timing/$F_{max}$, physical/layout area, power,
+energy, absolute latency, throughput, and end-to-end inference performance are
+UNAVAILABLE and must not be inferred.
 
-Cluster mapped area/overhead、cluster timing/Fmax、physical/layout area、
-signoff timing、power、energy 均 unavailable；它们不用于上述结论。
+## Active evidence
 
-配套最终图：`experiments/plots/figure2_scaling.png`（scaling mechanism）、
-`experiments/plots/figure3_hardware_tradeoff.png`（performance–area trade-off）；
-最终表：`experiments/parsed/p16/p16_hardware_results.csv`。
+- `experiments/parsed/final_scaling_model.csv`
+- `experiments/parsed/final_workload_comparison.csv`
+- `experiments/parsed/final_area.csv`
+- `experiments/parsed/final_timing.csv`
+- `experiments/parsed/final_hardware_results.csv`
+- `experiments/reports/FINAL_EVIDENCE_FREEZE.md`

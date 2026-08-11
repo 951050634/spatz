@@ -1,0 +1,16 @@
+{
+  "artifact_bytes": 125428484,
+  "artifact_count": 132,
+  "artifact_manifest_sha256": "37114ae2dde49c06695c102fdf8d3c7c72689e12957bc94b2baf487ec34cb396",
+  "artifact_root": "/home/wxt/m1-matched-lut.7wqexi/artifacts/work-online-merge-m2-matched-lut-scale-05-r1",
+  "artifact_verification": "PASS",
+  "commands_sha256": "43162fffbe70e737dffa25e231f66d53c56067433327aff39ff8ff74aea64259",
+  "failure_count": 0,
+  "failures_sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+  "record_count": 27,
+  "records_csv_sha256": "7fcd9f4e53e3005684c8105c3ef2e84c811bdd88b3f01e5828f648de25a6b2fd",
+  "records_sha256": "d4edc7407595be5d00f00b663b3525fbd92f7f33659ea5104e955cb0dba82e73",
+  "run_id": "20260811T121310Z_7225d41a_m2-matched-lut-scale-05",
+  "run_manifest_sha256": "54531c131cd5ed9fb657cd2f18ec18a7726c8a10d9da587d8582c14094d784ec",
+  "schema_version": 1
+}

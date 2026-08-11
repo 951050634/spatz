@@ -1,0 +1,3 @@
+design,role,mapped_cells,liberty_area,relative_area_to_A1,reg→reg_delay_proxy_ps,reg→reg_delay_proxy_ns,timing_status
+A1,Proposed Scalar SMU + RVV,73505,77103.292,1.000000000000,12342.85,12.34285,PARTIAL_ONLY
+A2,Full-Offload ablation,107372,114713.298,1.487787291884,13202.60,13.20260,PARTIAL_ONLY

@@ -1,4 +1,10 @@
-# Progressive Baseline Report
+# SUPERSEDED — Progressive Baseline Report (Do Not Use for Paper)
+
+This historical progressive-baseline report is retained for provenance only.
+Its old workload rows and labels are not the active M2 matched-LUT evidence.
+Use `experiments/parsed/final_workload_comparison.csv` and
+`experiments/parsed/final_scaling_model.csv`; see
+`experiments/parsed/SUPERSEDED_EVIDENCE.md`.
 
 `A0` is an alias of `B2R_RVV`; `B3` is the current raw label for `A2_SMU_FULL`.  Aliases are not duplicated below.
 

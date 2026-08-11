@@ -1,39 +1,37 @@
-# P8 — Cluster-Level Timing Status
+# P8 — Cluster Timing Status
 
 ## Final STOP evidence and availability
 
 P8 requires baseline/A1/A2 cluster critical delay and Fmax.  Those values are
-**unavailable**.  The final captured flow passed full SystemVerilog
-elaboration, then completed `proc`, `opt`, and `memory_collect`; it reached
-`18. Executing FLATTEN pass` and exited `137` during resource/OOM pressure.
-The exact scripts, logs, statistics, host-path-specific flist, and concise
-hash-anchored excerpt are preserved in `experiments/synthesis/p6-stop/`.
+**UNAVAILABLE**.  The captured flow elaborated the full SystemVerilog design,
+then reached flatten/resource pressure and exited `137`; the exact STOP
+evidence remains under `experiments/synthesis/p6-stop/`.
 
-Consequently, no cluster critical path, cluster Fmax, timing closure, or
-cluster frequency claim is made.  In particular, standalone Fmax does not
-establish a cluster frequency limit or an achievable cluster frequency.
+No cluster critical path, cluster Fmax, timing closure, physical area, power,
+or energy claim is made.  Standalone delay does not establish a cluster
+frequency limit or achievable cluster frequency.
 
-## Available standalone timing evidence
+## Active standalone timing boundary
 
-P7 provides only timing-driven standalone SMU estimates:
+P7-R supplies only PARTIAL pre-layout Nangate45/ABC reg→reg combinational-delay
+proxies:
 
-- A1 Scalar SMU + existing RVV: critical delay **12,342.85 ps**, estimated
-  standalone Fmax **81.0186 MHz**;
-- A2 Full-Offload Ablation: critical delay **13,202.60 ps**, estimated
-  standalone Fmax **75.7427 MHz**.
+| Design | Delay proxy | Synchronous Fmax |
+| --- | ---: | --- |
+| A1 Scalar SMU + existing RVV | 12,342.85 ps | UNAVAILABLE |
+| A2 Full-Offload ablation | 13,202.60 ps | UNAVAILABLE |
 
-These estimates are pre-layout ABC `stime` values with no clock tree, routing,
-or output load.  They are not cluster measurements.
+The P7-R paths are recovered from DFF Q/QN to D ownership, while ABC's `pi`/`po`
+labels are not physical top-level ports.  Clock-to-Q, setup/hold, skew,
+input/output constraints, and physical buffering/load are not modeled.
 
-## Common derived-performance assumption
+Absolute latency and throughput are not inferred from these delays.  Active
+cycle and speedup evidence is in
+`experiments/parsed/final_workload_comparison.csv`; active units and status are
+frozen in `experiments/reports/FINAL_EVIDENCE_FREEZE.md`.
 
-P9–P11 use a common **81.0186 MHz iso-frequency assumption** for B2R, A1, and
-A2.  Latency and throughput in those artifacts are derived from measured
-cycles under this assumption; they are not measured wall time or system
-throughput.  The common frequency isolates cycle effects from the separate P7
-standalone timing evidence.
+## Evidence files
 
-## Data and evidence files
-
-- Timing CSV: `experiments/parsed/p7_timing/p7_timing.csv`
-- Cluster STOP evidence: `experiments/synthesis/p6-stop/`
+- Cluster STOP: `experiments/synthesis/p6-stop/`
+- P7-R audit: `experiments/reports/P7R_SYNCHRONOUS_TIMING_AUDIT.md`
+- Active timing: `experiments/parsed/final_timing.csv`
