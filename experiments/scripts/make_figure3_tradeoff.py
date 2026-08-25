@@ -57,7 +57,7 @@ mpl.rcParams.update(
 CONFIGS = ("B2R_RVV", "A1_SMU_SCALAR", "A2_SMU_FULL")
 LABELS = {"B2R_RVV": "B2R (matched RVV)",
           "A1_SMU_SCALAR": "Proposed",
-          "A2_SMU_FULL": "Full-Offload ablation"}
+          "A2_SMU_FULL": "Full-Offload design point"}
 COLORS = {"B2R_RVV": "#55A868", "A1_SMU_SCALAR": "#4C72B0",
           "A2_SMU_FULL": "#C44E52"}
 WORKLOADS = ("BERT", "Mistral", "Qwen14B")
@@ -132,27 +132,16 @@ for cfg in CONFIGS:
                 (28, 8) if cfg == "A1_SMU_SCALAR" else (0, 8),
                 ha=ha, fontsize=9, color=COLORS[cfg], fontweight="bold")
 
-ax.annotate(
-    "zero incremental SMU area\n(not zero cluster area)",
-    (x["B2R_RVV"], 1.0),
-    xytext=(14, 28),
-    textcoords="offset points",
-    ha="left",
-    va="bottom",
-    fontsize=7,
-    color="#444444",
-    arrowprops={"arrowstyle": "-", "color": "#777777", "lw": 0.7},
-)
 ax.set_xticks([x[cfg] for cfg in CONFIGS])
 ax.set_xticklabels([
     "0\nB2R",
     f"{x['A1_SMU_SCALAR']:.3f}\nProposed",
-    f"{x['A2_SMU_FULL']:.3f}\nFull ablation",
+    f"{x['A2_SMU_FULL']:.3f}\nFull-Offload",
 ], fontsize=7, linespacing=1.1)
 ax.set_xlabel(r"Standalone block area "
               r"($10^3$ Nangate45 Liberty units)", fontsize=8)
 ax.set_ylabel("Merge-kernel cycle-count ratio over B2R", fontsize=8)
-ax.set_title("Merge-kernel cycle-count ratio", fontsize=8.5, pad=2)
+ax.set_title("Specialization tradeoff", fontsize=8.5, pad=2)
 ax.grid(alpha=0.3)
 ax.spines[["top", "right"]].set_visible(False)
 ax.tick_params(labelsize=7)

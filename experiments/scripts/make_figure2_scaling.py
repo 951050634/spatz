@@ -50,10 +50,10 @@ mpl.rcParams.update(
 
 LABELS = {"B2R_RVV": "B2R (matched RVV)",
           "A1_SMU_SCALAR": "Proposed (Scalar SMU + RVV)",
-          "A2_SMU_FULL": "Full-Offload Ablation"}
+          "A2_SMU_FULL": "Full-Offload design point"}
 DISPLAY_LABELS = {"B2R_RVV": "B2R\nmatched RVV",
                   "A1_SMU_SCALAR": "Proposed\nScalar SMU + RVV",
-                  "A2_SMU_FULL": "Full-Offload\nablation"}
+                  "A2_SMU_FULL": "Full-Offload\ndesign point"}
 COLORS = {"B2R_RVV": "#55A868", "A1_SMU_SCALAR": "#4C72B0",
           "A2_SMU_FULL": "#C44E52"}
 ORDER = ("B2R_RVV", "A1_SMU_SCALAR", "A2_SMU_FULL")

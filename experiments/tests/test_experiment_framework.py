@@ -738,6 +738,7 @@ class ExperimentFrameworkTest(unittest.TestCase):
             + json.dumps(
                 {
                     "invocation": invocation,
+                    "mode": 0,
                     "terminal_state": "DONE",
                 }
             )
@@ -750,6 +751,23 @@ class ExperimentFrameworkTest(unittest.TestCase):
 
         self.assertEqual(errors, [])
         self.assertEqual(measured["invocation"], 1)
+
+        wrong_warmup = "\n".join(
+            "OM_FSM "
+            + json.dumps(
+                {
+                    "invocation": invocation,
+                    "mode": 1 if invocation == 0 else 0,
+                    "terminal_state": "DONE",
+                }
+            )
+            for invocation in (0, 1)
+        )
+        _, wrong_errors = matrix.measured_fsm(
+            wrong_warmup, "A2_SMU_FULL"
+        )
+        self.assertEqual(len(wrong_errors), 1)
+        self.assertIn("warm-up SMU FSM mode", wrong_errors[0]["message"])
 
     def test_reproducibility_requires_exact_cycles(self) -> None:
         records = [

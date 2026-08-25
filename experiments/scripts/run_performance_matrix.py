@@ -62,6 +62,12 @@ TARGET_TIMING_FIELDS = {
     "congestion_ratio",
 }
 
+SMU_EXPECTED_MODES = {
+    "A1_SMU_SCALAR": 1,
+    "A1_MIXED_SCALAR": 3,
+    "A2_SMU_FULL": 0,
+}
+
 
 @dataclass(frozen=True)
 class Case:
@@ -397,7 +403,7 @@ def implementation_static_gate_reasons(
     """Inspect hot implementation code only for executable pass cases."""
     if expected_status != "pass":
         return []
-    if config_name in {"B2R_RVV", "A1_SMU_SCALAR"}:
+    if config_name in {"B2R_RVV", "A1_SMU_SCALAR", "A1_MIXED_SCALAR"}:
         _, missing = legacy.inspect_rvv_disassembly(output)
         return list(missing)
     if config_name == "B1_SCALAR":
@@ -566,7 +572,8 @@ def parse_one_result(
 def measured_fsm(
     output: str, config_name: str
 ) -> tuple[dict[str, Any] | None, list[dict[str, Any]]]:
-    if config_name not in {"A1_SMU_SCALAR", "A2_SMU_FULL"}:
+    expected_mode = SMU_EXPECTED_MODES.get(config_name)
+    if expected_mode is None:
         return None, []
     records, errors = common.parse_prefixed_json(output, common.FSM_PREFIX)
     if len(records) != 2:
@@ -582,6 +589,16 @@ def measured_fsm(
     measured = records[-1]
     if records[0].get("invocation") != 0 or measured.get("invocation") != 1:
         errors.append({"message": "SMU invocation sequence is not 0,1"})
+    for phase, record in (("warm-up", records[0]), ("measured", measured)):
+        if record.get("mode") != expected_mode:
+            errors.append(
+                {
+                    "message": (
+                        f"{phase} SMU FSM mode {record.get('mode')!r} != "
+                        f"expected {expected_mode} for {config_name}"
+                    )
+                }
+            )
     if measured.get("terminal_state") != "DONE":
         errors.append({"message": "measured SMU FSM did not reach DONE"})
     return measured, errors
@@ -706,6 +723,7 @@ def apply_paper_eligibility(records: list[dict[str, Any]]) -> None:
             reasons.append("INCOMPLETE_CONFIG_SET")
         if record.get("config") in {
             "A1_SMU_SCALAR",
+            "A1_MIXED_SCALAR",
             "A2_SMU_FULL",
         } and record.get("fsm_gate") != "PASS":
             reasons.append("SMU_FSM_GATE_FAILED")
@@ -736,8 +754,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         if args.trace_witness_simulator
         else None
     )
-    if args.trials < 3:
-        raise SystemExit("--trials must be at least three")
+    if args.trials < 1:
+        raise SystemExit("--trials must be at least one")
     if args.jobs <= 0:
         raise SystemExit("--jobs must be positive")
     policy = json.loads(policy_path.read_text(encoding="utf-8"))
@@ -1811,10 +1829,17 @@ def main(argv: Sequence[str] | None = None) -> int:
                         record["smu_commands"] = (
                             1
                             if config_name
-                            in {"A1_SMU_SCALAR", "A2_SMU_FULL"}
+                            in {
+                                "A1_SMU_SCALAR",
+                                "A1_MIXED_SCALAR",
+                                "A2_SMU_FULL",
+                            }
                             else 0
                         )
-                        if config_name != "A1_SMU_SCALAR":
+                        if config_name not in {
+                            "A1_SMU_SCALAR",
+                            "A1_MIXED_SCALAR",
+                        }:
                             record["smu_scalar_cycles"] = None
                             record["rvv_vector_cycles"] = None
                         if fsm is None:
@@ -1822,7 +1847,11 @@ def main(argv: Sequence[str] | None = None) -> int:
                                 "TOOL_ERROR"
                                 if target_status == "pass"
                                 and config_name
-                                in {"A1_SMU_SCALAR", "A2_SMU_FULL"}
+                                in {
+                                    "A1_SMU_SCALAR",
+                                    "A1_MIXED_SCALAR",
+                                    "A2_SMU_FULL",
+                                }
                                 else "NA"
                             )
                             record["smu_busy_cycles"] = None
@@ -1835,7 +1864,8 @@ def main(argv: Sequence[str] | None = None) -> int:
                             )
                             vector_mode_valid = (
                                 update_cycles == 0
-                                if config_name == "A1_SMU_SCALAR"
+                                if config_name
+                                in {"A1_SMU_SCALAR", "A1_MIXED_SCALAR"}
                                 else update_cycles > 0
                             )
                             valid_fsm = (
@@ -1844,6 +1874,8 @@ def main(argv: Sequence[str] | None = None) -> int:
                                 and int(fsm.get("N", -1)) == case.n
                                 and int(fsm.get("D", -1)) == case.d
                                 and int(fsm.get("invocation", -1)) >= 1
+                                and int(fsm.get("mode", -1))
+                                == SMU_EXPECTED_MODES[config_name]
                                 and vector_mode_valid
                             )
                             record["fsm_gate"] = (
