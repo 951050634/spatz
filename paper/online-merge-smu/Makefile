@@ -1,12 +1,12 @@
 PAPER := main
-PYTHON ?= /usr/bin/python3
+PYTHON ?= python3
 
 .PHONY: all clean check figures
 
 all: $(PAPER).pdf
 
 figures:
-	$(PYTHON) figures/generate_figures.py
+	$(PYTHON) ../../experiments/scripts/make_paper_architecture_figures.py
 
 $(PAPER).pdf: $(PAPER).tex refs.bib figures
 

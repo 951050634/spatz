@@ -7,279 +7,449 @@
 \usepackage{graphicx}
 \usepackage{url}
 \usepackage[hidelinks]{hyperref}
-\hypersetup{pdftitle={A Scalar Softmax Merge Unit With Selective Offloading for RISC-V Vector Clusters}}
+\hypersetup{pdftitle={Selective Recurrence Offloading for Online Softmax Merge on RISC-V Vector Clusters}}
 
 \newcommand{\smu}{\mbox{SMU}}
-\newcommand{\bthree}{\mbox{B3}}
-\newcommand{\btwo}{\mbox{B2-R}}
+\newcommand{\btor}{\mbox{B2R}}
 
-\title{A Scalar Softmax Merge Unit With Selective Offloading for RISC-V Vector Clusters}
+\title{Selective Recurrence Offloading for Online Softmax Merge on RISC-V Vector Clusters}
 \author{Anonymous Author(s)}
 
 \begin{document}
 \maketitle
 
 \begin{abstract}
-Blockwise attention repeatedly merges a compact $(m,l,O)$ state after each
-tile. Each online Softmax merge combines a state-dependent scalar recurrence
-with a regular $O[D]$ vector update. The Full-Offload ablation also assigns the
-vector update to dedicated hardware, which changes the specialization boundary.
-B2R is the matched-arithmetic RVV baseline: software executes the scalar
-recurrence while existing RVV executes the vector update. Proposed combines a Scalar
-Softmax Merge Unit (SMU) for the recurrence with existing RVV for the vector
-update. The SMU returns two weights through a tightly coupled data memory
-(TCDM)-mediated handoff; memory-mapped I/O (MMIO) starts the SMU and reports
-completion.
-Across three model-derived one-position merge shapes, Proposed reaches a
-4.53$\times$ geometric-mean measured RTL/Verilator cycle-count ratio over B2R,
-reduces fitted $C_s$ by 16.30$\times$, while fitted $C_v$ remains within 6.22\%
-of B2R.
-The standalone Scalar SMU block uses 73,505 mapped cells and 77,103.3
-Nangate45 Liberty cell-area units. The Full-Offload block requires 48.8\% more
-standalone mapped Liberty area than the standalone Scalar SMU block. The timing flow
-supplies only PARTIAL pre-layout reg-to-reg
-combinational-delay proxies, so it cannot support a synchronous $F_{\max}$ claim.
-The evidence supports selective scalar offloading within the measured
-merge-kernel and standalone SMU block scope.
+Blockwise attention repeatedly combines tile results through Online Softmax
+Merge. Each merge contains two different forms of computation: a
+state-dependent scalar recurrence over the maximum and normalization state,
+and a regular $O[D]$ vector update. The recurrence forms a short dependency
+chain with maximum, exponential, accumulation, and reciprocal operations. The
+vector phase applies two ready weights independently across $D$ elements. We
+identify this recurrence--vector computational asymmetry and propose selective
+recurrence offloading: a Scalar Softmax Merge Unit (SMU) specializes the
+recurrence, while an existing vector datapath retains the element-wise update.
+A shared scratchpad transfers the updated state and weights between phases. We
+instantiate this architecture on the open-source Spatz RISC-V vector cluster
+without modifying its instruction set or RVV datapath. Across three
+model-derived merge shapes, the prototype achieves a 4.53$\times$
+geometric-mean RTL/Verilator cycle-count ratio over a matched-arithmetic RVV
+baseline. Fitting $C=C_0+C_sN+C_vND$ shows a 16.30$\times$ reduction in the
+N-dependent coefficient while preserving the baseline's vector-scaling
+behavior. The standalone Scalar SMU maps to 77,103.3 Nangate45 Liberty area
+units; the evaluated Full-Offload design point requires 48.8\% more area.
+These results show that the specialization boundary inside Online Softmax
+Merge matters: specializing the recurrence retains an efficient existing
+vector path and avoids adding standalone vector-update capability.
 \end{abstract}
 
 \begin{IEEEkeywords}
-online softmax, attention, RISC-V vector processor, scratchpad, accelerator
+online Softmax merge, attention, selective offloading, RISC-V vector,
+scratchpad, accelerator
 \end{IEEEkeywords}
 
 \section{Introduction}
 
-Tiled attention avoids materializing the full score matrix by updating online
-Softmax merge state after each tile \cite{milakov2018online,dao2022flashattention}.
-Each merge produces $m_{\mathrm{new}}$, $l_{\mathrm{new}}$, $w_{\mathrm{old}}$,
-and $w_{\mathrm{tile}}$ before the regular $O[D]$ vector update. The recurrence
-contains row-level dependencies; each vector element update remains independent
-after the two weights become available. This split creates a scalar recurrence
-cost and a regular vector-update cost with different hardware requirements.
+Tiled and blockwise attention reduce data movement by processing the score
+matrix in tiles and maintaining a compact Online Softmax state
+\cite{milakov2018online,dao2022flashattention}. After each tile, a merge updates
+the running maximum $m$, normalization term $l$, and output vector $O$. This
+$(m,l,O)$ state lets the computation preserve exact online-normalization
+structure without materializing the complete score matrix.
 
-Existing designs occupy broad/full-offload and programmable/vector endpoints.
-Full designs assign normalization and vector work to dedicated datapaths,
-whereas programmable and RVV approaches retain processor-side execution
-\cite{softermax2021,softex2025,vexp2025,titopoulos2026vectorized,sun2026vfa}.
-This paper evaluates the intermediate boundary that specializes only the
-state-dependent recurrence while preserving the existing RVV update. The
-recurrence equations and EXP/reciprocal LUTs are implementation ingredients;
-the contribution is their dependency-aligned hardware placement.
+Online Softmax Merge is not a uniform computation. Its scalar component
+updates $m$ and $l$, rescales the old and tile contributions, and generates two
+normalization weights. Maximum selection, exponentials, accumulation, and a
+reciprocal form a state-dependent chain with little data-level parallelism. Its
+vector component then applies the two weights to $O[D]$. Once the weights are
+ready, every element in this update is independent and follows the same
+multiply-add pattern. We call this split the \emph{recurrence--vector
+computational asymmetry}.
 
-Spatz provides RISC-V Vector (RVV) execution and shared tightly coupled data
-memory (TCDM) for the regular vector update \cite{spatz2023}. B2R uses the
-matched-arithmetic software recurrence and existing RVV as the comparison
-baseline. The Full-Offload ablation assigns both phases to dedicated hardware
-and therefore duplicates the regular vector path.
+The asymmetry exposes an architectural choice between two familiar execution
+endpoints. Programmable vector execution preserves flexibility and maps the
+regular $O[D]$ update onto existing SIMD resources, but it also executes the
+dependency-bound recurrence through general-purpose instructions. Broad
+hardware offload specializes the complete merge, including vector work that an
+existing vector datapath already handles well. This raises the central
+question of this paper: must hardware specialize the complete merge, or can it
+isolate the recurrence while retaining the existing vector engine for regular
+element-wise work?
 
-Proposed assigns only the state-dependent recurrence to a Scalar SMU and keeps
-the existing RVV datapath for $O[D]$. The SMU writes the new scalar state and
-two weights to shared TCDM. Software waits for completion, loads the weights,
-and invokes existing RVV for the vector update (Figure~\ref{fig:proposed-architecture}).
-This boundary leaves the ISA and RVV datapath unchanged.
+We propose a \emph{selective recurrence-offloading architecture}. Its design
+principle is to specialize the recurrence while reusing the existing vector
+datapath. A Scalar SMU computes the new scalar state and two weights. It commits
+these values to a shared scratchpad, after which the vector engine performs the
+$O[D]$ update. The shared-memory boundary keeps the recurrence engine narrow
+and avoids a second dedicated vector-update path.
 
-Across three model-derived one-position merge shapes, Proposed reaches a
-4.53$\times$ geometric-mean measured cycle-count ratio over B2R. Proposed
-reduces fitted $C_s$ by 16.30$\times$, while fitted $C_v$ remains within 6.22\%
-of B2R. The Full-Offload ablation has 3.78$\times$ Proposed $C_v$ and requires
-48.8\% more standalone mapped Liberty area. We make three contributions:
+We instantiate this architecture on the open-source Spatz RISC-V vector
+cluster \cite{spatz2023}. The prototype attaches the Scalar SMU as a
+cluster-local engine with an independent tightly coupled data memory (TCDM)
+requester. Memory-mapped I/O (MMIO) supplies command and status. Software
+starts the recurrence phase, observes completion, and then invokes the
+existing RISC-V Vector (RVV) path. The prototype changes neither instruction
+decoding nor the RVV datapath.
+
+The measured results connect the architectural partition to its scaling and
+hardware consequences. Across three representative model-derived $(N,D)$
+shapes, Proposed achieves a 4.53$\times$ geometric-mean cycle-count ratio over
+the matched-arithmetic \btor{} baseline. Proposed reduces fitted $C_s$ by
+16.30$\times$ and changes fitted $C_v$ by only 6.22\% relative to \btor{}.
+The Full-Offload design point lowers $C_s$ further, but its $C_v$ is
+3.78$\times$ Proposed and its standalone mapped area is 48.8\% larger. This
+paper makes three contributions:
 
 \begin{itemize}
-  \item \textbf{Scalar SMU.} Proposed assigns maximum selection, exponential
-  rescaling, length accumulation, reciprocal normalization, and weight
-  generation to a recurrence-only Scalar SMU with a nominal no-stall
-  $13+1+1+9$ state schedule.
+  \item \textbf{Architectural observation and specialization boundary.} We
+  identify the recurrence--vector computational asymmetry in Online Softmax
+  Merge and use it to define a selective specialization opportunity.
 
-  \item \textbf{Unchanged-ISA integration.} Proposed retains the regular
-  $O[D]$ update on existing RVV. TCDM provides the post-completion weight
-  handoff without a direct SMU-to-RVV path.
+  \item \textbf{Selective recurrence-offloading architecture.} We combine a
+  recurrence-only Scalar SMU with an existing vector datapath and exchange
+  completed state through a shared scratchpad, avoiding additional dedicated
+  vector-update hardware in the proposed design.
 
-  \item \textbf{Measured boundary result.} The fitted N-dependent coefficient
-  falls by 16.30$\times$ while the fitted ND-dependent coefficient remains
-  within 6.22\% of B2R; Full-Offload remains an internal ablation.
+  \item \textbf{Prototype and quantitative evaluation.} We implement the
+  architecture on Spatz without ISA or RVV datapath changes and compare the
+  matched-arithmetic RVV, Proposed, and Full-Offload points using cycle
+  scaling, model-shape, FSM, and standalone-area evidence.
 \end{itemize}
 
-\section{Selective-Offload Architecture}
+\section{Background and Motivation}
 
-Proposed is Scalar SMU plus existing RVV. The SMU executes the state-dependent
-online Softmax merge recurrence, while existing RVV executes the regular $O[D]$
-update. Shared TCDM carries scalar inputs, new state, and weights between the
-software-visible phases. MMIO starts the SMU and reports completion; software
-then loads the weights and invokes RVV. Figure~\ref{fig:proposed-architecture}
-shows this boundary and its TCDM-mediated handoff.
+\subsection{Online Softmax Merge}
+
+Blockwise attention produces a tile-local maximum $m_{\mathrm{tile}}$, a
+normalization term $l_{\mathrm{tile}}$, and an output contribution
+$O_{\mathrm{tile}}$. The running state contains the corresponding
+$m_{\mathrm{old}}$, $l_{\mathrm{old}}$, and $O_{\mathrm{old}}$. One merge row
+computes
+\begin{align}
+m_{\mathrm{new}} &= \max(m_{\mathrm{old}},m_{\mathrm{tile}}),\label{eq:mnew}\\
+s_{\mathrm{old}} &= l_{\mathrm{old}}
+  \exp(m_{\mathrm{old}}-m_{\mathrm{new}}),\label{eq:sold}\\
+s_{\mathrm{tile}} &= l_{\mathrm{tile}}
+  \exp(m_{\mathrm{tile}}-m_{\mathrm{new}}),\label{eq:stile}\\
+l_{\mathrm{new}} &= s_{\mathrm{old}}+s_{\mathrm{tile}},\label{eq:lnew}\\
+w_{\mathrm{old}} &= s_{\mathrm{old}}/l_{\mathrm{new}},\quad
+w_{\mathrm{tile}} = s_{\mathrm{tile}}/l_{\mathrm{new}},\label{eq:weights}\\
+O_{\mathrm{new}}[j] &= w_{\mathrm{old}}O_{\mathrm{old}}[j]
+  +w_{\mathrm{tile}}O_{\mathrm{tile}}[j],\quad 0\leq j<D.
+  \label{eq:vector-update}
+\end{align}
+Equations~\eqref{eq:mnew}--\eqref{eq:weights} produce the updated scalar state
+and two weights. Equation~\eqref{eq:vector-update} applies the weights across
+the output dimension.
+
+\subsection{Recurrence--Vector Computational Asymmetry}
+
+The scalar equations form a dependency chain. The maximum determines both
+exponential arguments. The scaled lengths determine $l_{\mathrm{new}}$, and
+$l_{\mathrm{new}}$ determines the reciprocal used by both weights. The chain
+combines control-sensitive maximum selection with nonlinear exponential and
+reciprocal operations. It performs little work per state update, but each step
+depends on values produced earlier in the same row.
+
+The vector equation has the opposite structure. After weight generation,
+$O_{\mathrm{new}}[j]$ has no dependence on
+$O_{\mathrm{new}}[j']$ for $j\neq j'$. Every element executes regular
+multiply-add arithmetic with unit-stride vector accesses. Its work scales as
+$O[D]$ and matches a vector load/store and arithmetic pipeline. Figure~\ref{fig:motivation}
+summarizes this computational split.
 
 \begin{figure*}[t]
 \centering
-\includegraphics[width=\textwidth]{../../experiments/plots/figure1_proposed_architecture.pdf}
-\caption{Proposed architecture. Scalar SMU reads scalar state and writes
-$m_{\mathrm{new}}$, $l_{\mathrm{new}}$, $w_{\mathrm{old}}$, and
-$w_{\mathrm{tile}}$ to shared TCDM. Software waits for completion, then invokes
-existing RVV for the $O[D]$ update. The TCDM-mediated handoff has no direct
-SMU-to-RVV link.}
-\label{fig:proposed-architecture}
+\includegraphics[width=\textwidth]{../../experiments/plots/figure1_computation_decomposition.pdf}
+\caption{\textbf{Online Softmax Merge contains a dependency-bound recurrence
+and a data-parallel vector update.} The scalar chain produces two weights;
+the ready weights expose independent multiply-add work across $D$ elements.}
+\label{fig:motivation}
 \end{figure*}
 
-\subsection{Specialization Boundary}
+\subsection{Execution Alternatives and Specialization Boundary}
 
-\begin{align}
-m_{\mathrm{new}} &= \max(m_{\mathrm{old}},m_{\mathrm{tile}}),\\
-s_{\mathrm{old}} &= l_{\mathrm{old}}\exp(m_{\mathrm{old}}-m_{\mathrm{new}}),\\
-s_{\mathrm{tile}} &= l_{\mathrm{tile}}\exp(m_{\mathrm{tile}}-m_{\mathrm{new}}),\\
-l_{\mathrm{new}} &= s_{\mathrm{old}}+s_{\mathrm{tile}},\\
-w_{\mathrm{old}} &= s_{\mathrm{old}}/l_{\mathrm{new}},\quad
-w_{\mathrm{tile}} = s_{\mathrm{tile}}/l_{\mathrm{new}},\\
-O_{\mathrm{new}}[j] &= w_{\mathrm{old}}O_{\mathrm{old}}[j]
-  +w_{\mathrm{tile}}O_{\mathrm{tile}}[j],\quad 0\leq j<D.
-\end{align}
-The first five scalar equations execute in Scalar SMU; existing RVV executes
-the final $O[D]$ update. They cover maximum selection, two exponential
-rescalings, length accumulation, and reciprocal weight generation. EXP and
-reciprocal LUTs approximate the arithmetic in RTL; the equations define the
-dataflow, not IEEE-exact arithmetic. Scalar SMU returns the new state and two
-weights, and RVV applies those weights independently for $0\leq j<D$.
+Programmable execution maps the vector phase efficiently when a processor
+already provides vector loads, stores, and arithmetic. The same route retains
+the scalar recurrence in software, where dependency, control, and nonlinear
+operations limit useful vectorization. The matched-arithmetic \btor{} baseline
+in this paper represents this endpoint: software executes the recurrence, and
+RVV executes the output update.
 
-The selected maximum controls both exponential arguments, and the new length
-controls reciprocal normalization. These dependencies serialize scalar work
-within each row. Each $O[j]$ update becomes independent after weight writeback.
-Scalar SMU therefore handles state-dependent decisions, while existing RVV
-retains regular element work and reuses its vector load/store unit (VLSU) and
-fused multiply-add (FMA) sequence. The selected
-maximum and new length stay outside the element loop.
+Full offload places both phases in dedicated hardware. This endpoint can
+specialize the recurrence and integrate the complete merge behind one command.
+It also builds standalone vector-update capability alongside an existing
+vector engine. Our Full-Offload design point represents this alternative. The
+computational asymmetry suggests an intermediate boundary that dedicates
+hardware to the recurrence and preserves the vector phase on the existing
+datapath.
 
-\subsection{Scalar Datapath and Schedule}
+\section{Selective Recurrence-Offloading Architecture}
 
-The Scalar SMU datapath compares the two maxima and forms two deltas. Two EXP
-LUTs transform the deltas into scaled factors. Fixed-point multipliers combine
-each factor with $l_{\mathrm{old}}$ or $l_{\mathrm{tile}}$, and an accumulator
-forms $l_{\mathrm{new}}$. A reciprocal block generates
-$w_{\mathrm{old}}$ and $w_{\mathrm{tile}}$. The scalar-only mode (mode 1) writes
-the scalar results to TCDM and exits before \texttt{UPDATE\_VECTOR}; the two LUT results stay paired
-with their row lengths through normalization.
+\subsection{Architecture Overview}
 
-RTL observer counts define a nominal no-stall state schedule:
-\texttt{LOAD\_SCALAR}=13, \texttt{COMPUTE\_SCALAR}=1,
-\texttt{COMPUTE\_WEIGHT}=1, and \texttt{STORE\_SCALAR}=9. The nominal total is
-24 SMU-busy cycles per row, with 22/24 cycles in TCDM communication states and
-2/24 cycles in compute states. Model-shape observers record 289, 769, and 962
-busy cycles for BERT, Mistral, and Qwen2.5-14B-Instruct, respectively, showing
-one or two TCDM wait cycles beyond the nominal schedule. These counts exclude
-software-visible command and completion overhead, the separate RVV phase, and
-the fitted $C_s$ coefficient; they are not system latency.
+Selective recurrence offloading separates the merge at the point where the
+weights become ready. Figure~\ref{fig:selective-architecture} shows four
+platform-independent components: a control plane, a recurrence engine, an
+existing vector datapath, and a shared scratchpad. The Scalar SMU is the only
+new compute engine. The architecture retains the vector datapath and its
+memory path.
 
-\subsection{TCDM-Mediated RVV Handoff}
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{../../experiments/plots/figure2_selective_architecture.pdf}
+\caption{\textbf{Selective recurrence offloading adds a narrow recurrence
+engine and reuses the existing vector datapath.} Shared scratchpad state forms
+the phase boundary and removes the need for a separate vector-update path.}
+\label{fig:selective-architecture}
+\end{figure*}
 
-The scalar-only mode makes the handoff explicit in TCDM. For each row, Scalar
-SMU reads four
-FP32 inputs, $m_{\mathrm{old}}$, $l_{\mathrm{old}}$, $m_{\mathrm{tile}}$, and
-$l_{\mathrm{tile}}$, from TCDM, computes the new scalar state, and writes
-$m_{\mathrm{new}}$, $l_{\mathrm{new}}$, $w_{\mathrm{old}}$, and
-$w_{\mathrm{tile}}$ back to TCDM. The weights are software-visible arrays, so
-there is no private weight state or weight bypass. Software programs the MMIO
-command, starts the scalar-only mode, waits for done, and then loads both weight arrays from
-TCDM. It invokes existing RVV to load $O_{\mathrm{old}}[D]$ and
-$O_{\mathrm{tile}}[D]$, applies the weights, and stores $O_{\mathrm{new}}[D]$.
-There is no direct SMU-to-RVV path; completion and shared TCDM state mediate
-the transition, and RVV sees only completed rows.
-Rows remain aligned by their shared TCDM indexing.
+\subsection{Execution Partition}
 
-MMIO provides command and status without changing instruction decoding. The
-cluster peripheral presents the selected operation to Scalar SMU, which uses
-an independent TCDM requester for scalar reads and writes. Existing core ports
-continue to serve RVV loads and stores, so the vector path remains unchanged
-and shared TCDM mediates arbitration without a private engine link. The ISA and
-RVV datapath remain unchanged. The evaluation separates measured cycles from
-standalone SMU evidence.
+The Scalar SMU executes Eqs.~\eqref{eq:mnew}--\eqref{eq:weights}. This
+partition places maximum selection, two exponential rescalings, length
+accumulation, reciprocal normalization, and weight generation in a short
+scalar datapath. The engine accepts one or more independent merge rows and
+produces $m_{\mathrm{new}}$, $l_{\mathrm{new}}$,
+$w_{\mathrm{old}}$, and $w_{\mathrm{tile}}$ for each row.
+
+The existing vector engine executes Eq.~\eqref{eq:vector-update}. It loads the
+two output vectors and the completed weights, performs the element-wise
+multiply-add sequence, and stores $O_{\mathrm{new}}$. This assignment keeps
+the $O[D]$ work on the datapath whose width, memory interfaces, and arithmetic
+lanes already target regular data parallelism.
+
+\subsection{Shared-State Handoff and Execution Sequence}
+
+The architecture uses shared scratchpad state to decouple the two phases. The
+control plane first makes the old and tile recurrence state visible to the
+Scalar SMU. The engine reads that state, computes the recurrence, and commits
+the new state and two weights. Completion establishes that the shared values
+are ready. The control plane then invokes the vector phase, which consumes the
+weights and updates $O[D]$.
+
+This handoff keeps the two engines independent at the datapath level. It does
+not require a private Scalar-SMU-to-vector bypass or a second vector register
+interface. The shared scratchpad also exposes the state to software and lets
+the implementation reuse its normal memory arbitration. Platform-specific
+command registers, requester ports, and memory names belong to the prototype
+and appear in Section~V.
+
+\section{Scalar SMU Microarchitecture}
+
+\subsection{Scalar Datapath}
+
+The Scalar SMU follows the recurrence dependencies directly. Figure~\ref{fig:smu-datapath}
+maps the implemented RTL dataflow. A comparator selects $m_{\mathrm{new}}$,
+and two subtractors form the old and tile deltas. Two distinct EXP LUT paths
+evaluate the rescaling factors in parallel. Two multipliers scale
+$l_{\mathrm{old}}$ and $l_{\mathrm{tile}}$, and an adder forms
+$l_{\mathrm{new}}$. The implementation registers the scaled lengths and
+$l_{\mathrm{new}}$ before the next FSM state. A single reciprocal path then
+feeds two weight multipliers to produce $w_{\mathrm{old}}$ and
+$w_{\mathrm{tile}}$.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{../../experiments/plots/figure3_scalar_smu_datapath.pdf}
+\caption{\textbf{The Scalar SMU mirrors the recurrence dependency chain.}
+Two EXP paths operate in parallel; registered $l_{\mathrm{new}}$ then enters
+one reciprocal path that generates both normalized weights.}
+\label{fig:smu-datapath}
+\end{figure*}
+
+The RTL receives and writes FP32 values at the scratchpad interface. Internal
+helpers convert maxima and lengths to signed or unsigned 48-bit fixed point
+with 32 fractional bits. EXP and reciprocal LUT outputs use Q1.23. The two
+length-scaling products, $l_{\mathrm{new}}$, and the weights use the 48-bit
+Q16.32 representation before conversion back to FP32 for writeback. The Scalar
+SMU contains no $O[D]$ datapath in the proposed scalar-only configuration.
+
+\subsection{EXP and Reciprocal Approximation}
+
+The EXP block implements a 257-entry LUT over the supported interval
+$[-8,0]$ with linear interpolation. Non-positive inputs inside the interval
+produce a Q1.23 factor; values below $-8$ saturate to zero, and positive values
+saturate to one. Online Softmax Merge produces non-positive deltas because
+$m_{\mathrm{new}}$ is the maximum of the two inputs.
+
+The reciprocal block uses a 257-entry mantissa LUT with linear interpolation.
+It returns a Q1.23 mantissa and a signed exponent adjustment derived from the
+FP32 exponent of $l_{\mathrm{new}}$. The weight multipliers apply this scaled
+reciprocal to the two registered lengths. This structure implements the
+arithmetic used by the RTL and by the matched software reference in the
+evaluation.
+
+\subsection{Controller and Execution Schedule}
+
+The scalar-only controller uses a four-state sequence. \texttt{LOAD\_SCALAR}
+issues four scalar scratchpad reads. \texttt{COMPUTE\_SCALAR} evaluates the
+maximum, EXP paths, and length update. \texttt{COMPUTE\_WEIGHT} evaluates the
+reciprocal and weight generation. \texttt{STORE\_SCALAR} writes the new
+maximum, new length, and two weights. Scalar-only execution then advances to
+the next row or completion; it skips the RTL's Full-Offload
+\texttt{UPDATE\_VECTOR} state.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{../../experiments/plots/figure4_smu_schedule.pdf}
+\caption{\textbf{The nominal scalar-only FSM requires 24 busy cycles per
+row:} 13 load, one scalar-compute, one weight-compute, and nine store cycles.
+The timeline assumes no TCDM stalls.}
+\label{fig:smu-schedule}
+\end{figure}
+
+RTL observer counts give the nominal no-stall schedule in
+Figure~\ref{fig:smu-schedule}: $13+1+1+9=24$ busy cycles per row. TCDM
+handshakes account for 22 cycles, while the two combinational compute stages
+account for one cycle each. Model-shape observers record 289, 769, and 962
+busy cycles for the BERT, Mistral, and Qwen2.5-14B-Instruct shapes, adding one
+or two wait cycles to $24N$. The schedule describes the SMU busy interval; the
+measured kernel cycles also include software command and completion handling
+and the later RVV phase.
+
+\section{Spatz-Based Prototype Integration}
+
+\subsection{Relevant Spatz Cluster Organization}
+
+Spatz supplies the vector resources that selective recurrence offloading
+reuses \cite{spatz2023}. The evaluated default cluster contains two
+Snitch--Spatz core complexes and a shared 128-KiB, 16-bank TCDM. Each Spatz
+vector unit provides a vector arithmetic unit and a vector load/store unit
+(VLSU) connected to TCDM. The prototype keeps these vector units and their
+existing TCDM ports unchanged.
+
+\subsection{SMU Attachment and TCDM Interface}
+
+Figure~\ref{fig:spatz-integration}a shows the concrete attachment. The cluster
+peripheral holds the command, buffer offsets, dimensions, mode, and status
+fields. It drives the Scalar SMU's control interface. The SMU adds one
+independent TCDM requester to the cluster interconnect, alongside the existing
+core, RVV, and system requesters. This requester performs the scalar reads and
+writes described in Section~IV.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{../../experiments/plots/figure5_spatz_integration.pdf}
+\caption{\textbf{Spatz instantiates selective recurrence offloading through
+its existing peripheral and shared-memory structure.} (a) The Scalar SMU adds
+an MMIO-controlled TCDM requester; RVV retains its ports. (b) Completion and
+shared weights sequence the recurrence and vector phases.}
+\label{fig:spatz-integration}
+\end{figure*}
+
+The Scalar SMU reads FP32 arrays for $m_{\mathrm{old}}$,
+$l_{\mathrm{old}}$, $m_{\mathrm{tile}}$, and $l_{\mathrm{tile}}$. It writes
+arrays for $m_{\mathrm{new}}$, $l_{\mathrm{new}}$,
+$w_{\mathrm{old}}$, and $w_{\mathrm{tile}}$. The shared TCDM indexes rows
+consistently across these arrays. The interconnect arbitrates the requester
+with the existing memory ports, so the design needs no dedicated physical
+link from the SMU to Spatz.
+
+\subsection{MMIO Control and Software--Hardware Execution Flow}
+
+Software programs TCDM offsets, $N$, $D$, stride, and scalar-only mode through
+MMIO, clears prior completion state, and asserts start. It then polls the
+busy, done, and error status bits. On completion, the new scalar state and
+weights already reside in TCDM. Software loads the two weight arrays and calls
+the existing RVV kernel for each $O[D]$ row. Figure~\ref{fig:spatz-integration}b
+shows this sequence.
+
+The integration preserves the architectural boundary in a concrete cluster.
+The Scalar SMU communicates through MMIO and shared TCDM, while the vector
+phase uses normal RVV instructions and memory accesses. The implementation
+adds no instruction and changes no RVV arithmetic, load/store, or register
+path.
 
 \section{Evaluation}
 
-The evaluation measures the selective boundary at two levels. RTL/Verilator
-cycles quantify the merge-kernel path, and Yosys/ABC quantifies standalone SMU
-hardware. Proposed combines Scalar SMU with existing RVV; B2R is the
-matched-arithmetic RVV baseline; Full-Offload is an internal ablation.
-Speedup always means B2R measured cycles divided by design measured cycles.
+The evaluation asks four architectural questions. Does selective offloading
+remove the recurrence-related scaling cost? What cycle-count ratios result at
+representative merge dimensions? What standalone hardware does recurrence
+specialization require? How does the selected boundary compare with full
+offload?
 
-\subsection{Experimental Setup}
+\subsection{Methodology and Baselines}
 
-We evaluate FP32 merge state on a Spatz cluster with $(m,l,O)$ arrays resident
-in TCDM. The software reciprocal reference uses the same LUT scale as RTL.
-The matrix contains 26 deterministic cases, 3 configurations, and 3 reruns
-(234 records). Every record passes the matched-LUT scale-aware functional
-check at $10^{-3}$, produces no nonfinite values, and reproduces the same
-result on rerun. These checks do not establish formal verification, IEEE-exact
-arithmetic, or model-level accuracy. Each cycle count measures one logical
-query-position merge-kernel work item in RTL/Verilator. For selected rows,
-$N$ is query-head count and $D$ is hidden width per query head; GQA uses query
-heads rather than KV heads. The rows use BERT $(12,64)$, Mistral $(32,128)$,
-and Qwen2.5-14B-Instruct $(40,128)$ with deterministic generated states, not
-captured activations or end-to-end inference.
+We evaluate FP32 merge kernels with arrays resident in the default Spatz
+TCDM. The active matrix contains 26 deterministic cases, three configurations,
+and three independent simulator runs, for 234 records. Each run measures one
+logical query-position merge in RTL/Verilator. The matched software reference
+uses the same EXP and reciprocal LUT arithmetic as the RTL. All records pass a
+scale-aware $10^{-3}$ functional check, contain finite outputs, and reproduce
+the same cycle count across the three runs.
 
-Standalone hardware evidence uses Yosys/ABC with the Nangate45 library. The
-area flow uses \texttt{abc -fast} to report mapped cells and Liberty cell-area
-units. A separate timing-driven flow reports a PARTIAL pre-layout Nangate45/ABC
-reg-to-reg combinational-delay proxy. The two mappings answer separate
-questions, so timing-flow cells and area do not enter the formal area result.
-The records contain no cluster PPA, power, energy, or synchronous $F_{\max}$ evidence.
+The comparison contains three execution points. \btor{} executes the scalar
+recurrence in matched-arithmetic software and the vector update on existing
+RVV. Proposed executes the recurrence in the Scalar SMU and retains the same
+RVV vector update. Full-Offload executes both phases in the dedicated engine.
+We report cycle-count ratio as \btor{} measured cycles divided by design
+measured cycles, without a frequency conversion.
 
-\subsection{Matched-Arithmetic RVV Baseline and Full-Offload Ablation}
+The model-derived rows use deterministic generated states and dimensions from
+BERT, Mistral-7B, and Qwen2.5-14B-Instruct configurations. They represent one
+attention position across all query heads. $N$ is the query-head count, and
+$D$ is hidden width per query head. Grouped-query attention therefore uses
+query heads for $N$. Standalone hardware results use Yosys/ABC and Nangate45.
+The area flow reports mapped cells and Liberty cell-area units. A separate
+pre-layout register-to-register timing flow provides a combinational-delay
+proxy; the available flow does not define a synchronous $F_{\max}$ or cluster
+PPA result.
 
-B2R supplies the matched-arithmetic RVV comparison because it and Proposed use
-the same regular RVV update. Software executes the scalar recurrence in B2R;
-Proposed moves only that recurrence to Scalar SMU. The Full-Offload ablation
-moves the vector update as well. The B2R/Proposed cycle ratio compares this
-specified implementation boundary and does not establish an optimized-software
-lower bound.
+\subsection{Recurrence and Vector Scaling Decomposition}
 
-\subsection{Scaling Mechanism}
-
-We fit $C=C_0+C_sN+C_vND$ to 23 measured RTL/Verilator shapes for each design.
-Here $C_0$ is the fitted intercept, $C_s$ is the fitted N-dependent
-cycles/row coefficient, and $C_v$ is the fitted ND-dependent cycles/element
-coefficient. Fits have $R^2$ values from 0.99928 to 0.99999. Figure~\ref{fig:scaling-decomposition}
-plots these coefficients with $C_s$ on a logarithmic axis and $C_v$ on a linear
-axis. The fit describes cycle growth; the nominal FSM schedule measures a
-separate scalar-engine busy interval.
+We fit the measured cycles for each design to
+\begin{equation}
+C(N,D)=C_0+C_sN+C_vND
+\label{eq:scaling-model}
+\end{equation}
+using 23 measured $(N,D)$ shapes. $C_s$ captures the N-dependent,
+recurrence-related scaling component in cycles per row. $C_v$ captures the
+ND-dependent, vector-related component in cycles per element. $C_0$ is the
+fitted intercept and includes fixed effects in this implementation. The three
+fits have $R^2$ values between 0.99928 and 0.99999.
 
 \begin{figure*}[t]
 \centering
 \includegraphics[width=\textwidth]{../../experiments/plots/figure2_scaling.pdf}
-\caption{Fitted N-dependent $C_s$ and ND-dependent $C_v$ coefficients from
-RTL/Verilator cycles. $C_s$ uses a logarithmic axis; the nominal FSM schedule
-is a separate busy interval.}
+\caption{\textbf{Selective recurrence offloading changes the N-dependent
+scaling component and retains the RVV-like ND-dependent component.} The bars
+show fitted $C_s$ and $C_v$ from 23 measured RTL/Verilator shapes per design.}
 \label{fig:scaling-decomposition}
 \end{figure*}
 
-B2R fits $C_0/C_s/C_v=161.353823/1471.818713/2.267063$, while Proposed fits
-$1382.770246/90.278155/2.126010$. The Full-Offload ablation fits
-$1285.577085/19.317262/8.029465$. Proposed reduces fitted $C_s$ by
-16.30$\times$; its fitted $C_v$ remains within 6.22\% of B2R. The fitted
-coefficients describe cycle growth and do not represent FSM busy cycles or
-system latency.
+Figure~\ref{fig:scaling-decomposition} shows the fitted coefficients. For
+\btor{}, $C_0=161.353823$, $C_s=1471.818713$, and $C_v=2.267063$. For
+Proposed, $C_0=1382.770246$, $C_s=90.278155$, and $C_v=2.126010$. Proposed
+therefore reduces $C_s$ by 16.30$\times$, while its $C_v$ is 6.22\% lower than
+\btor{}. This combination
+matches the intended partition: hardware removes most recurrence-related
+cycle growth, and the reused RVV path continues to determine vector scaling.
 
-The Full-Offload ablation lowers $C_s$ further, but its fitted $C_v$ reaches
-3.78$\times$ Proposed. The component comparison places the larger ND-dependent
-coefficient on the implementation that assigns regular vector work to
-dedicated hardware, while Proposed retains existing RVV.
+For Full-Offload, $C_0=1285.577085$, $C_s=19.317262$, and $C_v=8.029465$.
+Its lower $C_s$ shows that broader specialization reduces the remaining
+row-dependent term. Its $C_v$ is 3.78$\times$ Proposed, placing a larger
+per-element cost on the design point that replaces the existing RVV update.
+The scaling result identifies the architectural effect of the boundary:
+Proposed combines a hardware-like recurrence term with an RVV-like vector
+term.
 
-\subsection{Model-Derived Shapes}
+\subsection{Representative Model-Derived Shapes}
 
-We evaluate three deterministic generated one-position merge shapes: BERT
-$(N,D)=(12,64)$, Mistral $(32,128)$, and Qwen2.5-14B-Instruct
-$(40,128)$. Table~\ref{tab:model-cycles}
-reports measured RTL/Verilator merge-kernel cycles for B2R, Proposed,
-and the Full-Offload ablation. The table records one logical query position,
-not captured activations or end-to-end inference. Each role executes the same
-recurrence and vector-update shape.
+Table~\ref{tab:model-cycles} reports the three model-derived dimensions and
+measured merge-kernel cycles. The dimensions span BERT $(12,64)$, Mistral
+$(32,128)$, and Qwen2.5-14B-Instruct $(40,128)$. Each configuration processes
+the same generated state for a given row.
 
 \begin{table*}[t]
 \centering
-\caption{Deterministic generated one-position shapes and measured merge-kernel
-cycles. $N$ is query-head count and $D$ is per-head width; speedup is B2R
-cycles divided by Proposed cycles.}
+\caption{Measured RTL/Verilator merge-kernel cycles for deterministic states
+at representative model-derived dimensions. Ratio is \btor{} cycles divided
+by Proposed cycles.}
 \label{tab:model-cycles}
 \renewcommand{\arraystretch}{1.08}
 \begin{tabular}{l c c r r r c}
 \toprule
-Workload & $N$ & $D$ & B2R & Proposed & Full-Offload & B2R/Proposed\\
+Model-derived shape & $N$ & $D$ & \btor{} & Proposed & Full-Offload & \btor{}/Proposed\\
 \midrule
 BERT & 12 & 64 & 19,856 & 4,128 & 7,704 & 4.81$\times$\\
 Mistral & 32 & 128 & 56,296 & 12,866 & 34,728 & 4.38$\times$\\
@@ -289,114 +459,127 @@ Geomean & -- & -- & -- & -- & -- & 4.53$\times$\\
 \end{tabular}
 \end{table*}
 
-The measured ratios are 4.81$\times$ for BERT, 4.38$\times$ for Mistral, and
-4.41$\times$ for Qwen2.5-14B-Instruct, with a 4.53$\times$ geometric mean.
+Proposed achieves ratios of 4.81$\times$, 4.38$\times$, and 4.41$\times$ for
+the three shapes, with a 4.53$\times$ geometric mean. Full-Offload achieves a
+1.89$\times$ geometric mean over the same rows. The larger evaluated $D=128$
+shapes amplify the vector-related coefficient, so retaining the existing RVV
+path gives Proposed its largest advantage over the Full-Offload point.
 
-\subsection{Hardware Cost and Full-Offload Ablation}
+\subsection{Hardware Cost}
 
-Table~\ref{tab:standalone-hardware} separates area and timing evidence. The
-area flow reports standalone mapped cells and unconstrained pre-layout Nangate45
-Liberty cell-area units with \texttt{abc -fast}. The separate timing flow reports
-a PARTIAL pre-layout reg$\to$reg proxy; it excludes clock-to-Q, setup/hold,
-skew, I/O constraints, and physical buffering/load semantics. The proxy cannot
-support synchronous $F_{\max}$ or rank the designs by timing.
+Table~\ref{tab:standalone-hardware} reports standalone block mappings. The
+Scalar SMU maps to 73,505 cells and 77,103.3 Nangate45 Liberty cell-area
+units. The Full-Offload block maps to 107,372 cells and 114,713.3 units. Full
+offload therefore adds 37,610.0 Liberty units relative to the Scalar SMU, an
+increase of 48.8\%.
 
-\begin{table*}[t]
+\begin{table}[t]
 \centering
-\caption{Standalone Scalar SMU and Full-Offload blocks from separate flows.
-Area values use Nangate45 Liberty cell-area units; delay values are PARTIAL
-pre-layout reg$\to$reg proxies. Full-Offload is an internal ablation.}
+\caption{Standalone mapped hardware. Area and the pre-layout delay proxy come
+from separate Nangate45/ABC flows.}
 \label{tab:standalone-hardware}
 \renewcommand{\arraystretch}{1.08}
 \begin{tabular}{l r r}
 \toprule
-Metric & Scalar SMU block & Full-Offload block\\
+Metric & Scalar SMU & Full-Offload\\
 \midrule
 Mapped cells & 73,505 & 107,372\\
-Mapped Liberty area (Nangate45 Liberty cell-area units) & 77,103.3 & 114,713.3\\
-Relative Liberty area to Scalar SMU block & 1.000$\times$ & 1.488$\times$ (+48.8\%)\\
-PARTIAL reg$\to$reg delay proxy & 12.34\,ns & 13.20\,ns\\
+Liberty area units & 77,103.3 & 114,713.3\\
+Relative area & 1.000$\times$ & 1.488$\times$\\
+Reg-to-reg delay proxy & 12.34\,ns & 13.20\,ns\\
 \bottomrule
 \end{tabular}
-\end{table*}
+\end{table}
 
-The area flow maps the standalone Scalar SMU block to 73,505 cells and
-77,103.3 Nangate45 Liberty cell-area units. The Full-Offload block maps to
-107,372 cells and 114,713.3 units, 48.8\% more than the Scalar SMU block.
+The Full-Offload block includes dedicated vector-update support as well as a
+complete control and memory path. Proposed
+keeps that capability in Spatz and pays only for the recurrence engine. The
+standalone comparison therefore quantifies the hardware consequence of the
+specialization boundary at the added-block level.
 
-Figure~\ref{fig:hardware-tradeoff} compares merge-kernel cycle-count ratios
-with standalone accelerator-block area. The axes are separately scoped
-evidence, not cluster PPA or area efficiency. B2R has ratio 1.00$\times$ and
-zero incremental Scalar SMU block area; Proposed reaches 4.53$\times$ at
-77.103\,k units; Full-Offload reaches 1.89$\times$ at 114.713\,k units.
-The ratio makes no frequency assumption.
+\subsection{Specialization Tradeoff}
+
+Figure~\ref{fig:hardware-tradeoff} places the three execution points on the
+same cycle-count-ratio and standalone-added-area view. \btor{} adds no SMU or
+accelerator block. Proposed reaches a 4.53$\times$ geometric-mean ratio at
+77.103 thousand Liberty units. Full-Offload reaches 1.89$\times$ at 114.713
+thousand units.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=\columnwidth]{../../experiments/plots/figure3_hardware_tradeoff.pdf}
-\caption{Merge-kernel cycle-count ratio versus standalone accelerator-block
-area. The axes are separately scoped evidence, not cluster PPA or area
-efficiency. B2R at zero denotes zero incremental Scalar SMU block area. B, M,
-and Q identify BERT, Mistral, and Qwen2.5-14B-Instruct; circles are geomeans.}
+\caption{\textbf{Proposed provides the strongest measured cycle-count and
+standalone-area tradeoff among the evaluated points.} \btor{} at zero denotes
+zero incremental accelerator-block area; B, M, and Q mark the three shapes.}
 \label{fig:hardware-tradeoff}
 \end{figure}
 
-Cluster PPA, power, and energy remain unavailable. These mappings bound the
-hardware claim to standalone block area; timing remains a PARTIAL combinational
-proxy. Full-Offload requires 48.8\% more standalone mapped Liberty area and
-reaches a 1.89$\times$ geomean ratio versus Proposed's 4.53$\times$.
+More specialization is therefore not the better measured boundary for this
+kernel. Full-Offload reduces the recurrence coefficient, but it combines a
+larger vector coefficient with 48.8\% more standalone mapped area. Selective
+recurrence offloading retains the favorable vector scaling of RVV and uses
+less dedicated hardware in the evaluated design.
 
 \section{Related Work}
 
-Dedicated Softmax accelerators assign broad normalization work to specialized
-datapaths. Softermax combines unnormalized and normalization hardware, while
-TEA-S implements a compact PLAC-based full-Softmax architecture
-\cite{softermax2021,teas2023}. SoftEx couples a full-Softmax/GELU HWPE to shared
-TCDM \cite{softex2025}. Fairoose and Mishra likewise realize parallel online
-normalization inside a full Softmax accelerator \cite{fairoose2026parallel}.
-Even the cluster-local TCDM coupling in SoftEx does not isolate the
-state-dependent blockwise merge recurrence from the rest of Softmax. These
-designs therefore establish broad or full-Softmax hardware points, not the
-scalar-recurrence-only boundary evaluated here.
+Programmable and vectorized Softmax implementations keep most computation on
+the processor side. Titopoulos et al. vectorize FlashAttention with standard
+RVV instructions \cite{titopoulos2026vectorized}, and Lai et al. use RVV
+intrinsics for Softmax \cite{lai2026rvvsoftmax}. VFA changes the
+FlashAttention schedule through global-maximum pre-computation to reduce
+vector work \cite{sun2026vfa}. These approaches preserve programmability and
+vector reuse. Our architecture retains that vector endpoint while moving the
+state-dependent merge recurrence to dedicated hardware.
 
-Full-attention hardware follows a second specialization boundary.
-Alexandridis et al. fuse exponential and vector multiplication operators in
-custom FlashAttention hardware \cite{alexandridis2025expmul}. This path keeps
-the output-vector work in dedicated hardware alongside recurrence-related
-computation. Its operator fusion reduces software work, but it does not reuse
-an existing RVV datapath through a scalar-only merge engine.
-This is a full-attention boundary with dedicated vector work.
-The boundary differs from a small recurrence engine because attention output
-production remains part of the hardware path.
+ISA and operator-level acceleration place specialization inside the
+programmable path. VEXP adds scalar and SIMD exponential operations to RISC-V
+\cite{vexp2025}. Alexandridis et al. fuse exponential and multiplication
+operators for FlashAttention hardware \cite{alexandridis2025expmul}. These
+designs accelerate selected arithmetic operations. Selective recurrence
+offloading instead treats the complete dependency-bound recurrence as the
+unit of specialization and leaves the vector ISA unchanged.
 
-Programmable and vectorized approaches retain the processor-side boundary.
-Spatz provides the RVV/TCDM substrate used here \cite{spatz2023}. VEXP adds BF16
-scalar/SIMD exponential ISA operations while the remaining Softmax stays in
-software \cite{vexp2025}. Titopoulos et al. fully vectorize FlashAttention with
-standard RVV instructions and no custom instructions
-\cite{titopoulos2026vectorized}. Lai et al. use standard RVV intrinsics for
-Softmax acceleration and explicitly provide no specialized accelerator
-\cite{lai2026rvvsoftmax}. VFA relieves FlashAttention vector operations through
-global-maximum pre-computation \cite{sun2026vfa}. It changes the update schedule,
-whereas this work retains the established recurrence and specializes only its
-state-dependent hardware boundary. The evaluated boundary combines a
-recurrence-only Scalar SMU, a TCDM-mediated weight handoff, and reuse of the
-existing RVV update.
+Dedicated Softmax accelerators choose a broader boundary. Softermax combines
+unnormalized and normalization hardware \cite{softermax2021}. TEA-S implements
+a compact PLAC-based Softmax architecture \cite{teas2023}. SoftEx attaches a
+Softmax/GELU hardware processing engine to shared TCDM \cite{softex2025}, and
+Fairoose and Mishra implement parallel online normalization inside a Softmax
+accelerator \cite{fairoose2026parallel}. These systems demonstrate several
+useful points on the dedicated-normalization spectrum. Their specialization
+scope includes broader Softmax computation than the blockwise recurrence
+isolated here.
+
+Full-attention accelerators extend specialization across normalization,
+output production, and surrounding attention operators. Such integration can
+remove software coordination and exploit operator fusion. It also places the
+output-vector path within dedicated hardware. The Full-Offload point in our
+evaluation captures this direction at the merge-kernel level.
+
+Selective recurrence offloading lies between fully programmable vector
+execution and broad accelerator offload. It specializes the dependency-bound
+state transition, communicates completed state through a shared scratchpad,
+and reuses an existing vector datapath for the regular $O[D]$ phase. The Spatz
+prototype demonstrates this position without defining the architecture around
+a specific cluster interface.
 
 \section{Conclusion}
 
-Selective scalar offloading assigns the state-dependent online Softmax merge
-recurrence to Scalar SMU and retains the regular $O[D]$ update on existing RVV.
-Across three deterministic one-position shapes, Proposed reaches a 4.53$\times$
-geometric-mean merge-kernel cycle-count ratio over matched-arithmetic B2R and
-reduces fitted $C_s$ by 16.30$\times$ while fitted $C_v$ remains within 6.22\%
-of B2R.
-The standalone Scalar SMU block uses 73,505 mapped cells and 77,103.3 Nangate45
-Liberty cell-area units. Full-Offload is an internal ablation with 48.8\% more
-standalone mapped area and a 1.89$\times$ geomean ratio. Timing remains a
-PARTIAL pre-layout reg$\to$reg proxy and cannot establish $F_{\max}$ or cluster
-performance. These results support selective scalar offloading within the
-measured merge-kernel and standalone block scope.
+Online Softmax Merge combines heterogeneous scalar and vector phases. The
+maximum, exponential rescaling, normalization accumulation, and weight
+generation form a dependency-bound recurrence. The $O[D]$ update becomes
+regular data-parallel work once the two weights are ready. Selective recurrence
+offloading uses this asymmetry to place only the recurrence in a Scalar SMU
+and retain the existing vector datapath.
+
+The Spatz prototype implements this partition through MMIO control and a
+shared-TCDM handoff without modifying the ISA or RVV datapath. The measured
+scaling evidence shows a 16.30$\times$ reduction in the recurrence-related
+$C_s$ term while preserving the RVV-like $C_v$ term. Model-derived shapes
+reach a 4.53$\times$ geometric-mean cycle-count ratio over \btor{}. Compared
+with the Full-Offload point, Proposed also avoids the larger vector coefficient
+and 48.8\% additional standalone mapped area. These results establish
+selective recurrence offloading as a meaningful execution boundary for the
+evaluated Online Softmax Merge kernel.
 
 \bibliographystyle{IEEEtran}
 \bibliography{refs}

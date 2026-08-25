@@ -1,4 +1,4 @@
-# Cluster-Local Softmax Merge Unit Paper
+# Selective Recurrence Offloading Paper
 
 This directory contains an anonymous IEEE conference-format manuscript.
 
@@ -8,13 +8,13 @@ Build it with:
 make
 ```
 
-`make` regenerates the SVG, PDF, PNG, and TIFF figure bundle from the recorded
-experiment artifacts before compiling the manuscript. The primary scaling and
-bottleneck figure appears in the paper; the concurrency/proxy figure remains a
-supplementary asset because its resource and toggle panels are nonphysical
-proxies.
+`make` regenerates the platform-independent architecture figures, the
+RTL-grounded Scalar SMU diagrams, and the quantitative scaling/tradeoff plots
+before compiling the manuscript. The quantitative plots read only the frozen
+CSV evidence under `experiments/parsed/`; the architecture scripts do not run
+simulation or synthesis.
 
-The manuscript draws its experimental values from the versioned CSV and JSON
-artifacts under `data_process/attnres/` and `work-artifacts/`. It distinguishes
-RTL cycle measurements, LUT-model accuracy, and nonphysical resource or toggle
-proxies.
+The manuscript draws its experimental values from the active final evidence
+listed in `experiments/reports/FINAL_EVIDENCE_FREEZE.md`. It distinguishes
+RTL/Verilator cycle measurements, standalone mapped area, and the pre-layout
+register-to-register timing proxy.
