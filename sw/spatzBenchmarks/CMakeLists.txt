@@ -189,6 +189,10 @@ add_online_merge_benchmark(online-softmax-merge-b1 1)
 add_online_merge_benchmark(online-softmax-merge-b2r 2)
 add_online_merge_benchmark(online-softmax-merge-a2 3)
 add_online_merge_benchmark(online-softmax-merge-a1 4)
+add_online_merge_benchmark(online-softmax-merge-a1-mixed 6)
+# Focused integration test: one frozen scalar-interface vector is sent
+# through legacy Scalar mode (1) and proposed mixed Scalar mode (3).
+add_online_merge_benchmark(online-softmax-merge-mode-compare 5)
 
 add_snitch_test(online-softmax-merge-concurrency
     online-softmax-merge/concurrency.c

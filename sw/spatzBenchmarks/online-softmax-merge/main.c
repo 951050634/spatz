@@ -10,13 +10,19 @@
 #include <stdio.h>
 
 #include "online_merge_case_data.h"
+#include <online_merge_mode.h>
 #include "rtl_reference.h"
 #include "rvv_update.h"
 
 #undef PRINTF
 #define PRINTF(...) printf(__VA_ARGS__)
 
+#if defined(ONLINE_MERGE_IMPLEMENTATION_SELECT) && \
+    ONLINE_MERGE_IMPLEMENTATION_SELECT == 6
+#define ONLINE_MERGE_TOL 1.5e-2f
+#else
 #define ONLINE_MERGE_TOL 1.0e-3f
+#endif
 #define ONLINE_MERGE_MAX_REPEATS 16u
 #define ONLINE_MERGE_MAX_POLLS 1000000u
 #define ONLINE_MERGE_ALLOC_ALIGN 256u
@@ -41,9 +47,8 @@
 #define ONLINE_MERGE_IMPLEMENTATION_B2_R 2u
 #define ONLINE_MERGE_IMPLEMENTATION_B3 3u
 #define ONLINE_MERGE_IMPLEMENTATION_A1 4u
-
-#define ONLINE_MERGE_MODE_FULL 0u
-#define ONLINE_MERGE_MODE_SCALAR_ONLY 1u
+#define ONLINE_MERGE_IMPLEMENTATION_MODE_COMPARE 5u
+#define ONLINE_MERGE_IMPLEMENTATION_A1_MIXED 6u
 
 #define ONLINE_MERGE_COUNTER_MEMORY 0
 #define ONLINE_MERGE_COUNTER_INSTRUCTIONS 1
@@ -64,7 +69,7 @@ _Static_assert(ONLINE_MERGE_CASE_REPEATS == 1u,
 _Static_assert(ONLINE_MERGE_CASE_REPEATS <= ONLINE_MERGE_MAX_REPEATS,
                "online merge repeat count exceeds local sample storage");
 _Static_assert(ONLINE_MERGE_IMPLEMENTATION_SELECT <=
-                   ONLINE_MERGE_IMPLEMENTATION_A1,
+                   ONLINE_MERGE_IMPLEMENTATION_A1_MIXED,
                "invalid online merge implementation selector");
 _Static_assert(ONLINE_MERGE_COUNTER_PROFILE == ONLINE_MERGE_COUNTER_MEMORY ||
                    ONLINE_MERGE_COUNTER_PROFILE ==
@@ -285,6 +290,27 @@ static void load_case(online_merge_buffers_t *buffers) {
   copy_bits(buffers->o_ref, online_merge_golden_o_bits, vectors);
 }
 
+static void load_mode_compare_vector(online_merge_buffers_t *buffers) {
+  buffers->m_old[0] = bits_float(0x3f800000u);
+  buffers->l_old[0] = bits_float(0x3f800000u);
+  buffers->o_old[0] = bits_float(0x3f800000u);
+  buffers->m_tile[0] = bits_float(0x00000000u);
+  buffers->l_tile[0] = bits_float(0x3f800000u);
+  buffers->o_tile[0] = bits_float(0x40400000u);
+}
+
+static void set_mode_compare_reference(online_merge_buffers_t *buffers,
+                                        online_merge_mode_t mode) {
+  buffers->m_ref[0] = bits_float(0x3f800000u);
+  if (mode == ONLINE_MERGE_MODE_LEGACY_SCALAR) {
+    buffers->l_ref[0] = bits_float(0x3faf16acu);
+    buffers->o_ref[0] = bits_float(0x3fc4d968u);
+  } else {
+    buffers->l_ref[0] = bits_float(0x3fafd400u);
+    buffers->o_ref[0] = bits_float(0x3fc5a000u);
+  }
+}
+
 static void clear_output(online_merge_buffers_t *buffers) {
   uint32_t vectors = buffers->n * buffers->d;
   for (uint32_t i = 0; i < buffers->n; i++) {
@@ -298,7 +324,8 @@ static void clear_output(online_merge_buffers_t *buffers) {
   }
 }
 
-static void smu_start(const online_merge_buffers_t *buffers, uint32_t mode) {
+static void online_merge_start_mode(const online_merge_buffers_t *buffers,
+                                    online_merge_mode_t mode) {
   *cluster_reg(SPATZ_CLUSTER_PERIPHERAL_MERGE_SRC_M_OLD_REG_OFFSET) =
       tcdm_offset(buffers->m_old);
   *cluster_reg(SPATZ_CLUSTER_PERIPHERAL_MERGE_SRC_L_OLD_REG_OFFSET) =
@@ -321,7 +348,8 @@ static void smu_start(const online_merge_buffers_t *buffers, uint32_t mode) {
   *cluster_reg(SPATZ_CLUSTER_PERIPHERAL_MERGE_D_REG_OFFSET) = buffers->d;
   *cluster_reg(SPATZ_CLUSTER_PERIPHERAL_MERGE_STRIDE_REG_OFFSET) =
       buffers->stride;
-  *cluster_reg(SPATZ_CLUSTER_PERIPHERAL_MERGE_MODE_REG_OFFSET) = mode;
+  *cluster_reg(SPATZ_CLUSTER_PERIPHERAL_MERGE_MODE_REG_OFFSET) =
+      (uint32_t)mode;
   *cluster_reg(SPATZ_CLUSTER_PERIPHERAL_MERGE_DST_WEIGHT_OLD_REG_OFFSET) =
       tcdm_offset(buffers->old_weight);
   *cluster_reg(SPATZ_CLUSTER_PERIPHERAL_MERGE_DST_WEIGHT_TILE_REG_OFFSET) =
@@ -330,6 +358,13 @@ static void smu_start(const online_merge_buffers_t *buffers, uint32_t mode) {
       1u << SPATZ_CLUSTER_PERIPHERAL_MERGE_CTRL_CLEAR_DONE_BIT;
   *cluster_reg(SPATZ_CLUSTER_PERIPHERAL_MERGE_CTRL_REG_OFFSET) =
       1u << SPATZ_CLUSTER_PERIPHERAL_MERGE_CTRL_START_BIT;
+}
+
+// Compatibility entry point for the original callers.  New code should use
+// the typed mode-aware entry point above so mode 3 is explicit at the call
+// site while the register ordering remains unchanged.
+static void smu_start(const online_merge_buffers_t *buffers, uint32_t mode) {
+  online_merge_start_mode(buffers, (online_merge_mode_t)mode);
 }
 
 static uint32_t smu_status(void) {
@@ -515,6 +550,50 @@ static online_merge_metrics_t check_output(
   return metrics;
 }
 
+static void require_exact_value(online_merge_metrics_t *metrics,
+                                uint32_t component, uint32_t row,
+                                uint32_t col, float actual, float expected) {
+  if (float_bits(actual) != float_bits(expected)) {
+    record_failure(metrics, component, row, col, actual, expected);
+  }
+}
+
+static void check_mode_compare_exact(
+    const online_merge_buffers_t *buffers, online_merge_metrics_t *metrics,
+    online_merge_mode_t mode) {
+  uint32_t expected_l_bits = mode == ONLINE_MERGE_MODE_LEGACY_SCALAR
+                                 ? 0x3faf16acu
+                                 : 0x3fafd400u;
+  uint32_t expected_o_bits = mode == ONLINE_MERGE_MODE_LEGACY_SCALAR
+                                 ? 0x3fc4d968u
+                                 : 0x3fc5a000u;
+  uint32_t expected_old_weight_bits =
+      mode == ONLINE_MERGE_MODE_LEGACY_SCALAR ? 0x3f3b26b8u : 0x3f3a6000u;
+  uint32_t expected_tile_weight_bits =
+      mode == ONLINE_MERGE_MODE_LEGACY_SCALAR ? 0x3e89b2bbu : 0x3e8b4000u;
+
+  record_value(metrics, 0, 0, 0, buffers->m_out[0],
+               bits_float(0x3f800000u));
+  require_exact_value(metrics, 0, 0, 0, buffers->m_out[0],
+                      bits_float(0x3f800000u));
+  record_value(metrics, 1, 0, 0, buffers->l_out[0],
+               bits_float(expected_l_bits));
+  require_exact_value(metrics, 1, 0, 0, buffers->l_out[0],
+                      bits_float(expected_l_bits));
+  record_value(metrics, 2, 0, 0, buffers->o_out[0],
+               bits_float(expected_o_bits));
+  require_exact_value(metrics, 2, 0, 0, buffers->o_out[0],
+                      bits_float(expected_o_bits));
+  record_value(metrics, 3, 0, 0, buffers->old_weight[0],
+               bits_float(expected_old_weight_bits));
+  require_exact_value(metrics, 3, 0, 0, buffers->old_weight[0],
+                      bits_float(expected_old_weight_bits));
+  record_value(metrics, 4, 0, 0, buffers->tile_weight[0],
+               bits_float(expected_tile_weight_bits));
+  require_exact_value(metrics, 4, 0, 0, buffers->tile_weight[0],
+                      bits_float(expected_tile_weight_bits));
+}
+
 static void run_b1(online_merge_buffers_t *buffers,
                    online_merge_sample_t *samples,
                    online_merge_metrics_t *metrics) {
@@ -591,11 +670,13 @@ static const char *wait_status(online_merge_wait_t wait_result) {
   return "pass";
 }
 
-static int run_a1(online_merge_buffers_t *buffers,
-                  online_merge_sample_t *samples,
-                  online_merge_metrics_t *metrics) {
+static int run_a1_mode(online_merge_buffers_t *buffers,
+                       online_merge_sample_t *samples,
+                       online_merge_metrics_t *metrics,
+                       online_merge_mode_t mode,
+                       uint32_t implementation) {
   clear_output(buffers);
-  smu_start(buffers, ONLINE_MERGE_MODE_SCALAR_ONLY);
+  online_merge_start_mode(buffers, mode);
   int warmup_busy;
   online_merge_wait_t warmup = smu_wait(&warmup_busy);
   if (warmup == ONLINE_MERGE_WAIT_OK) {
@@ -611,9 +692,9 @@ static int run_a1(online_merge_buffers_t *buffers,
   for (uint32_t repeat = 0; repeat < ONLINE_MERGE_CASE_REPEATS; repeat++) {
     clear_output(buffers);
     start_perf_counters();
-    trace_marker_start(ONLINE_MERGE_IMPLEMENTATION_A1, repeat);
+    trace_marker_start(implementation, repeat);
     uint64_t start = benchmark_get_cycle64();
-    smu_start(buffers, ONLINE_MERGE_MODE_SCALAR_ONLY);
+    online_merge_start_mode(buffers, mode);
     int saw_busy;
     online_merge_wait_t wait_result = smu_wait(&saw_busy);
     uint64_t scalar_end = benchmark_get_cycle64();
@@ -621,7 +702,7 @@ static int run_a1(online_merge_buffers_t *buffers,
       run_rvv_weighted_update(buffers);
     }
     uint64_t end = benchmark_get_cycle64();
-    trace_marker_stop(ONLINE_MERGE_IMPLEMENTATION_A1, repeat);
+    trace_marker_stop(implementation, repeat);
     samples[repeat].cycles = end - start;
     samples[repeat].smu_scalar_cycles = scalar_end - start;
     samples[repeat].rvv_vector_cycles = end - scalar_end;
@@ -635,6 +716,23 @@ static int run_a1(online_merge_buffers_t *buffers,
     metrics[repeat] = check_output(buffers);
   }
   return 0;
+}
+
+// Preserve the historical A1 entry point and default mode exactly.
+static int run_a1(online_merge_buffers_t *buffers,
+                  online_merge_sample_t *samples,
+                  online_merge_metrics_t *metrics) {
+  return run_a1_mode(buffers, samples, metrics,
+                     ONLINE_MERGE_MODE_LEGACY_SCALAR,
+                     ONLINE_MERGE_IMPLEMENTATION_A1);
+}
+
+static int run_a1_mixed(online_merge_buffers_t *buffers,
+                        online_merge_sample_t *samples,
+                        online_merge_metrics_t *metrics) {
+  return run_a1_mode(buffers, samples, metrics,
+                     ONLINE_MERGE_MODE_MIXED_SCALAR,
+                     ONLINE_MERGE_IMPLEMENTATION_A1_MIXED);
 }
 
 static int run_b3(online_merge_buffers_t *buffers,
@@ -681,7 +779,10 @@ static const char *component_name(uint32_t component) {
   if (component == 1) {
     return "l";
   }
-  return "O";
+  if (component == 2) {
+    return "O";
+  }
+  return component == 3 ? "weight_old" : "weight_tile";
 }
 
 static void print_failure(const char *implementation, int repeat,
@@ -801,6 +902,12 @@ static void print_terminal_status(const online_merge_buffers_t *buffers,
           ? "B2-R"
       : ONLINE_MERGE_IMPLEMENTATION_SELECT == ONLINE_MERGE_IMPLEMENTATION_A1
           ? "A1"
+      : ONLINE_MERGE_IMPLEMENTATION_SELECT ==
+                ONLINE_MERGE_IMPLEMENTATION_A1_MIXED
+          ? "A1-mixed"
+      : ONLINE_MERGE_IMPLEMENTATION_SELECT ==
+                ONLINE_MERGE_IMPLEMENTATION_MODE_COMPARE
+          ? "A1/mode-compare"
           : "B3";
   print_result(implementation, -1, buffers, &sample, &metrics, status);
 #endif
@@ -852,6 +959,19 @@ int main(void) {
   }
   load_case(&buffers);
 
+#if ONLINE_MERGE_IMPLEMENTATION_SELECT == \
+    ONLINE_MERGE_IMPLEMENTATION_MODE_COMPARE
+  // Selector 5 intentionally uses one allocated row/vector even when this
+  // target shares a paper-build case header with larger N/D.  The allocation
+  // above has already reserved the full generated case, so narrowing the
+  // runtime view cannot expose an out-of-bounds access.
+  buffers.n = 1u;
+  buffers.d = 1u;
+  buffers.stride = sizeof(float);
+  load_mode_compare_vector(&buffers);
+  set_mode_compare_reference(&buffers, ONLINE_MERGE_MODE_LEGACY_SCALAR);
+#endif
+
   if (ONLINE_MERGE_CASE_UNSUPPORTED) {
     print_terminal_status(&buffers, "unsupported");
     PRINTF("online-softmax-merge PASS status=unsupported\n");
@@ -860,6 +980,68 @@ int main(void) {
   }
 
 #if ONLINE_MERGE_IMPLEMENTATION_SELECT != 0
+  if (ONLINE_MERGE_IMPLEMENTATION_SELECT ==
+      ONLINE_MERGE_IMPLEMENTATION_MODE_COMPARE) {
+    online_merge_sample_t legacy_samples[ONLINE_MERGE_MAX_REPEATS] = {0};
+    online_merge_sample_t mixed_samples[ONLINE_MERGE_MAX_REPEATS] = {0};
+    online_merge_metrics_t legacy_metrics[ONLINE_MERGE_MAX_REPEATS] = {0};
+    online_merge_metrics_t mixed_metrics[ONLINE_MERGE_MAX_REPEATS] = {0};
+
+    // Both launches consume the same frozen scalar-interface vector.  Only
+    // the output/state buffers are cleared between launches, so this is a
+    // direct software-visible mode comparison rather than two generated
+    // cases.
+    load_mode_compare_vector(&buffers);
+    set_mode_compare_reference(&buffers, ONLINE_MERGE_MODE_LEGACY_SCALAR);
+    int legacy_result =
+        run_a1_mode(&buffers, legacy_samples, legacy_metrics,
+                    ONLINE_MERGE_MODE_LEGACY_SCALAR,
+                    ONLINE_MERGE_IMPLEMENTATION_A1);
+    if (legacy_result == 0) {
+      check_mode_compare_exact(&buffers, &legacy_metrics[0],
+                               ONLINE_MERGE_MODE_LEGACY_SCALAR);
+    }
+
+    set_mode_compare_reference(&buffers, ONLINE_MERGE_MODE_MIXED_SCALAR);
+    int mixed_result = run_a1_mode(
+        &buffers, mixed_samples, mixed_metrics,
+        ONLINE_MERGE_MODE_MIXED_SCALAR,
+        ONLINE_MERGE_IMPLEMENTATION_MODE_COMPARE);
+    if (mixed_result == 0) {
+      check_mode_compare_exact(&buffers, &mixed_metrics[0],
+                               ONLINE_MERGE_MODE_MIXED_SCALAR);
+    }
+
+    if (legacy_result == 0) {
+      print_result("A1", 0, &buffers, &legacy_samples[0],
+                   &legacy_metrics[0], 0);
+    } else {
+      const char *status = legacy_samples[0].status != 0
+                               ? legacy_samples[0].status
+                               : "tool_error";
+      print_result("A1", legacy_result < 0 ? -1 : 0, &buffers,
+                   &legacy_samples[0], &legacy_metrics[0], status);
+    }
+    if (mixed_result == 0) {
+      print_result("A1-mixed", 0, &buffers, &mixed_samples[0],
+                   &mixed_metrics[0], 0);
+    } else {
+      const char *status = mixed_samples[0].status != 0
+                               ? mixed_samples[0].status
+                               : "tool_error";
+      print_result("A1-mixed", mixed_result < 0 ? -1 : 0, &buffers,
+                   &mixed_samples[0], &mixed_metrics[0], status);
+    }
+    print_first_failure("A1", &buffers, legacy_metrics);
+    print_first_failure("A1-mixed", &buffers, mixed_metrics);
+
+    int result = legacy_result == 0 && mixed_result == 0 &&
+                 metrics_pass(legacy_metrics) && metrics_pass(mixed_metrics);
+    PRINTF("online-softmax-merge %s\n", result ? "PASS" : "FAILURE");
+    snrt_cluster_hw_barrier();
+    return result ? 0 : -1;
+  }
+
   online_merge_sample_t samples[ONLINE_MERGE_MAX_REPEATS] = {0};
   online_merge_metrics_t metrics[ONLINE_MERGE_MAX_REPEATS] = {0};
   const char *implementation;
@@ -876,6 +1058,10 @@ int main(void) {
              ONLINE_MERGE_IMPLEMENTATION_A1) {
     implementation = "A1";
     run_result = run_a1(&buffers, samples, metrics);
+  } else if (ONLINE_MERGE_IMPLEMENTATION_SELECT ==
+             ONLINE_MERGE_IMPLEMENTATION_A1_MIXED) {
+    implementation = "A1-mixed";
+    run_result = run_a1_mixed(&buffers, samples, metrics);
   } else {
     implementation = "B3";
     run_result = run_b3(&buffers, samples, metrics);
