@@ -1,0 +1,61 @@
+{
+  "git_dirty": true,
+  "git_head": "4d92e82265db7f4496902a4969afe1a598f85624",
+  "liberty": "/home/wxt/yosys-sta/pdk/nangate45/lib/Nangate45_typ.lib",
+  "roles": {
+    "DUAL_SCALAR": "online_merge_dual_scalar_mapped_top",
+    "LEGACY_FULL": "online_merge_legacy_full_mapped_top",
+    "LEGACY_SCALAR": "online_merge_legacy_scalar_mapped_top",
+    "MIXED_SCALAR_ONLY": "online_merge_mixed_scalar_mapped_top"
+  },
+  "source_sha256": {
+    "/home/wxt/work-online-merge-supplement/hw/ip/online_merge/src/online_merge_exp_approx.sv": {
+      "exists": true,
+      "sha256": "05ffa836746856b82949db7dfd83ac71ea1b7683dc9276e62d1448b702f411ae"
+    },
+    "/home/wxt/work-online-merge-supplement/hw/ip/online_merge/src/online_merge_fp32_helpers.sv": {
+      "exists": true,
+      "sha256": "db103cae7692fafe1fd9d0c9632211cca21504a608b468e1c561b96c90c52df5"
+    },
+    "/home/wxt/work-online-merge-supplement/hw/ip/online_merge/src/online_merge_recip_approx.sv": {
+      "exists": true,
+      "sha256": "13590b295a4c567e0fa69179b2c11969ab46debd22f8e7b86107a77d58b2ff1f"
+    },
+    "/home/wxt/work-online-merge-supplement/hw/ip/online_merge/src/online_merge_update_engine.sv": {
+      "exists": true,
+      "sha256": "631464b475bdf268d2aeba012dc39798dbf6ff0a4591e915c2d11e8d577e647e"
+    },
+    "/home/wxt/work-online-merge-supplement/hw/ip/online_merge/synth/nangate45_area.ys.in": {
+      "exists": true,
+      "sha256": "364f72e7b990ec300bad18c7f05afdef87df46ebd5aac241058b6e31e99c64b9"
+    },
+    "/home/wxt/work-online-merge-supplement/hw/ip/online_merge/synth/online_merge_mapped_wrapper.sv": {
+      "exists": true,
+      "sha256": "2a9ed36e9122544468b8856c282cef92571f8db7bcc0368dc3d1901682918e17"
+    },
+    "/home/wxt/work-online-merge-supplement/hw/ip/online_merge/synth/online_merge_resource_wrapper.sv": {
+      "exists": true,
+      "sha256": "53f464891016a2cd6f4e137648e8ce52a09f2007ff4c2fb11311fd8cfd2e4754"
+    },
+    "/home/wxt/yosys-sta/oss-cad-suite/bin/yosys": {
+      "exists": true,
+      "sha256": "7c3e3396b38c129dd7485be5a0a0f0da8e495a94c8fd486059e3bea043a588d6"
+    },
+    "/home/wxt/yosys-sta/oss-cad-suite/libexec/yosys": {
+      "exists": true,
+      "sha256": "a5ebaa9fe453c5b9094421b2710d806e3e9a85f8fd16c955d97e12d2085bd308"
+    },
+    "/home/wxt/yosys-sta/oss-cad-suite/share/yosys/plugins/slang.so": {
+      "exists": true,
+      "sha256": "97581993656bbf4a7c1c491fd0dfbf5ead120ece05afea78b4d6b1e723a9afe8"
+    },
+    "/home/wxt/yosys-sta/pdk/nangate45/lib/Nangate45_typ.lib": {
+      "exists": true,
+      "sha256": "2efd0b32eb580e4e60e72fc0575bb3bc69aac907c91d908442e4ae6d7fe55895"
+    }
+  },
+  "stage": "timing",
+  "timing_target_ps": 1500,
+  "yosys": "/home/wxt/yosys-sta/oss-cad-suite/bin/yosys",
+  "yosys_version": "Yosys 0.66+4 (git sha1 8125af88d, clang++ 18.1.8 -fPIC -O3)"
+}

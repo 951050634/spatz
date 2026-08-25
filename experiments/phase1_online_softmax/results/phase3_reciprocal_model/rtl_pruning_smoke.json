@@ -1,0 +1,48 @@
+{
+  "formal_or_area_claim": false,
+  "mixed_rom": {
+    "source": "online_merge_exp_approx.sv MixedExpLut",
+    "storage_bits": 4096,
+    "word_bits": 16,
+    "words": 256
+  },
+  "note": "Names are checked in pre-flatten elaborated Verilog because flatten/techmap can erase module boundaries; this is not a formal multi-trial area result.",
+  "schema_version": 1,
+  "scope": "pre-flatten Yosys elaboration/synthesis smoke",
+  "tops": {
+    "online_merge_dual_scalar_mapped_top": {
+      "fp16_divider": true,
+      "legacy_math": true,
+      "mixed_lut": true,
+      "mixed_lut_hierarchy_paths": 1,
+      "num_cells_pre_flatten": 6254,
+      "num_wire_bits_pre_flatten": 214734,
+      "precision_support": 2
+    },
+    "online_merge_legacy_full_mapped_top": {
+      "fp16_divider": false,
+      "legacy_math": true,
+      "mixed_lut": false,
+      "num_cells_pre_flatten": 1076,
+      "num_wire_bits_pre_flatten": 28615,
+      "precision_support": 0
+    },
+    "online_merge_legacy_scalar_mapped_top": {
+      "fp16_divider": false,
+      "legacy_math": true,
+      "mixed_lut": false,
+      "num_cells_pre_flatten": 1102,
+      "num_wire_bits_pre_flatten": 28814,
+      "precision_support": 0
+    },
+    "online_merge_mixed_scalar_mapped_top": {
+      "fp16_divider": true,
+      "legacy_math": false,
+      "mixed_lut": true,
+      "mixed_lut_hierarchy_paths": 1,
+      "num_cells_pre_flatten": 5622,
+      "num_wire_bits_pre_flatten": 196009,
+      "precision_support": 1
+    }
+  }
+}

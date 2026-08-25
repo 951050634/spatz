@@ -1,0 +1,5 @@
+stage,role,top,trial,status,elapsed_s,mapped_cell_count,mapped_cell_area,sequential_cell_area,combinational_cell_area,critical_delay_ps,delay_target_ps,target_met,exact_signature
+elab,LEGACY_SCALAR,online_merge_legacy_scalar_mapped_top,1,PASS,12.1,,,,,,,,
+elab,MIXED_SCALAR_ONLY,online_merge_mixed_scalar_mapped_top,1,PASS,23.1,,,,,,,,
+elab,DUAL_SCALAR,online_merge_dual_scalar_mapped_top,1,PASS,23.6,,,,,,,,
+elab,LEGACY_FULL,online_merge_legacy_full_mapped_top,1,PASS,13.1,,,,,,,,

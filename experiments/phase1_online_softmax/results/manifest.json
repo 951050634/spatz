@@ -1,0 +1,189 @@
+{
+  "base_seed": 20260823,
+  "command": [
+    "/usr/bin/python3",
+    "experiments/phase1_online_softmax/run_validation.py",
+    "--output-dir",
+    "experiments/phase1_online_softmax/results"
+  ],
+  "experiment": "phase1_online_softmax",
+  "lut_sweep": {
+    "entries": [
+      64,
+      128,
+      256
+    ],
+    "q_bits": [
+      10,
+      12,
+      14
+    ],
+    "rom_cost": "entries * 16 bits for every q format",
+    "seed_splits": {
+      "calibration": 1,
+      "final_test": 4,
+      "matrix": 3,
+      "validation": 2
+    },
+    "selection": {
+      "calibration_worst_case_error": 0.01658453654073455,
+      "entries": 256,
+      "final_test_mean_case_error": 0.009288115203787795,
+      "final_test_worst_case_error": 0.014776505807496556,
+      "input_scale_entries_per_unit": 32.0,
+      "output_scale": 16384,
+      "q_bits": 14,
+      "rom_bits": 4096,
+      "rom_sha256_raw_little_endian_int16": "3ea4629839c7341f1d40b388b444d1d4ae8adf4fefccd2d36e5876f6eb49df30",
+      "status": "target_met",
+      "validation_mean_case_error": 0.009534070032619234,
+      "validation_threshold": 0.015,
+      "validation_worst_case_error": 0.013673907648908096
+    },
+    "threshold": 0.015
+  },
+  "matrix": {
+    "head_dimensions": [
+      64,
+      128
+    ],
+    "qktv_score_generation": "common FP32 QK^T/sqrt(D); kernel precision starts after score generation",
+    "random_score_distribution": "independent normal(mean=0, std=1)",
+    "sequence_lengths": [
+      128,
+      256,
+      512,
+      1024
+    ]
+  },
+  "metrics": {
+    "oracle": "independent FP64 softmax and attention",
+    "probability_sum_error": "abs(sum(probability)-1)",
+    "stable_relative_error": "sum(abs(actual-reference)) / max(sum(abs(reference)), 1e-12)"
+  },
+  "models": {
+    "fp16": {
+      "exp": "FP16 exp",
+      "length_recurrence": "FP16",
+      "role": "primary",
+      "summary_state": "FP16 m/l/O",
+      "vector_update": "FP16",
+      "weight_normalization": "FP16 numerator/denominator/divide"
+    },
+    "fp32": {
+      "exp": "FP32 exp",
+      "length_recurrence": "FP32",
+      "role": "primary",
+      "summary_state": "FP32 m/l/O",
+      "vector_update": "FP32",
+      "weight_normalization": "FP32"
+    },
+    "mixed": {
+      "exp": "direct signed-INT16 LUT over [-8,0]",
+      "role": "primary",
+      "summary_state": "FP16 m/max/delta; FP32 l/scaled-l",
+      "vector_update": "FP32 after widening FP16 weights; V/O remain FP32",
+      "weight_normalization": "FP16 numerator/denominator/divide"
+    },
+    "mixed_exact_exp": {
+      "contract": "identical to mixed except exact FP32 exp(FP16 delta) replaces LUT",
+      "role": "diagnostic"
+    },
+    "mixed_rtl_exact": {
+      "contract": "FP16 m/max/delta and direct LUT with Q16.32 conversion/product truncation/addition/fixed-to-FP32 length recurrence plus FP16 divide; local tile construction is a system-level assumption",
+      "role": "diagnostic",
+      "scalar_interface_vectors": "see summary.json"
+    }
+  },
+  "outputs": [
+    "results.csv",
+    "results.json",
+    "lut_sweep.csv",
+    "lut_sweep.json",
+    "lut_sweep_cases.csv",
+    "lut_sweep_cases.json",
+    "boundary.csv",
+    "boundary.json",
+    "summary.json",
+    "manifest.json",
+    "report.md",
+    "rtl_pruning_smoke.json"
+  ],
+  "rtl_exact_scalar_vectors": [
+    {
+      "expected": {
+        "l_new_fp32_bits": 1068487680,
+        "l_new_q16_32": 5899812864,
+        "m_new_fp32_bits": 1065353216,
+        "old_exp_q1_14": 16384,
+        "old_scaled_l_q16_32": 4294967296,
+        "old_weight_fp16_bits": 14803,
+        "old_weight_fp32_bits": 1060790272,
+        "tile_exp_q1_14": 6122,
+        "tile_scaled_l_q16_32": 1604845568,
+        "tile_weight_fp16_bits": 13402,
+        "tile_weight_fp32_bits": 1049313280
+      },
+      "inputs": {
+        "l_old_fp32_bits": 1065353216,
+        "l_tile_fp32_bits": 1065353216,
+        "m_old_fp32_bits": 1065353216,
+        "m_tile_fp32_bits": 0
+      },
+      "matches": true,
+      "name": "engine_mode3_1_0",
+      "python_reference": {
+        "l_new_fp32_bits": 1068487680,
+        "l_new_q16_32": 5899812864,
+        "m_new_fp32_bits": 1065353216,
+        "old_exp_q1_14": 16384,
+        "old_scaled_l_q16_32": 4294967296,
+        "old_weight_fp16_bits": 14803,
+        "old_weight_fp32_bits": 1060790272,
+        "tile_exp_q1_14": 6122,
+        "tile_scaled_l_q16_32": 1604845568,
+        "tile_weight_fp16_bits": 13402,
+        "tile_weight_fp32_bits": 1049313280
+      }
+    },
+    {
+      "expected": {
+        "l_new_fp32_bits": 1082130432,
+        "l_new_q16_32": 17179869184,
+        "m_new_fp32_bits": 1065353216,
+        "old_exp_q1_14": 16384,
+        "old_scaled_l_q16_32": 4294967296,
+        "old_weight_fp16_bits": 13312,
+        "old_weight_fp32_bits": 1048576000,
+        "tile_exp_q1_14": 16384,
+        "tile_scaled_l_q16_32": 12884901888,
+        "tile_weight_fp16_bits": 14848,
+        "tile_weight_fp32_bits": 1061158912
+      },
+      "inputs": {
+        "l_old_fp32_bits": 1065353216,
+        "l_tile_fp32_bits": 1077936128,
+        "m_old_fp32_bits": 1065353216,
+        "m_tile_fp32_bits": 1065353216
+      },
+      "matches": true,
+      "name": "equal_max_1_3",
+      "python_reference": {
+        "l_new_fp32_bits": 1082130432,
+        "l_new_q16_32": 17179869184,
+        "m_new_fp32_bits": 1065353216,
+        "old_exp_q1_14": 16384,
+        "old_scaled_l_q16_32": 4294967296,
+        "old_weight_fp16_bits": 13312,
+        "old_weight_fp32_bits": 1048576000,
+        "tile_exp_q1_14": 16384,
+        "tile_scaled_l_q16_32": 12884901888,
+        "tile_weight_fp16_bits": 14848,
+        "tile_weight_fp32_bits": 1061158912
+      }
+    }
+  ],
+  "schema_version": 3,
+  "smoke": false,
+  "tile_size": 32
+}

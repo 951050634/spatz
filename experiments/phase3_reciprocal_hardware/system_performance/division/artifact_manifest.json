@@ -1,0 +1,284 @@
+[
+  {
+    "bytes": 82635,
+    "kind": "runner_script",
+    "path": "/home/wxt/work-online-merge-supplement/experiments/scripts/run_performance_matrix.py",
+    "sha256": "624613184e9695c5abc8fc99c56f21d913a549508a9a0a7c36507906c738ae81"
+  },
+  {
+    "bytes": 2875,
+    "kind": "cluster_cfg",
+    "path": "/home/wxt/work-online-merge-supplement/hw/system/spatz_cluster/cfg/spatz_cluster.default.dram.hjson",
+    "sha256": "120fa0c30199e54e6e9b5c60d8da40913eae8526640992cc5d4f130bef159775"
+  },
+  {
+    "bytes": 495,
+    "kind": "case_file",
+    "path": "/home/wxt/work-online-merge-supplement/experiments/configs/p0_anchor_cases.json",
+    "sha256": "7eb15301d30441c1fc90f7f1bfbf48ad7dca2a935d505ec8e47d30270c5ba77b"
+  },
+  {
+    "bytes": 1336,
+    "kind": "measurement_policy",
+    "path": "/home/wxt/work-online-merge-supplement/experiments/phase3_reciprocal_hardware/performance_policy_mixed.json",
+    "sha256": "63c271ff19fce1bbf5f79d2c66e2ad540519f36c1f824352d6bdb9e449cc7c12"
+  },
+  {
+    "bytes": 18044264,
+    "kind": "simulator",
+    "path": "/home/wxt/work-online-merge-phase3-div-sim/spatz_cluster.vlt",
+    "sha256": "6c8f2a3efe7fd588cbb10f038c0c756889b9dbfcebe309673d90ac9daada8151"
+  },
+  {
+    "bytes": 5394,
+    "kind": "configure_log",
+    "path": "N8_D32_S1_main/memory/configure.log",
+    "sha256": "48e96025e01a6ea58b82a0c27e2b2f44ad42d1009945190b37e1d16840e80468"
+  },
+  {
+    "bytes": 5218,
+    "kind": "build_log",
+    "path": "N8_D32_S1_main/memory/A1_SMU_SCALAR/build.log",
+    "sha256": "e834b792b66d1c72c5acfdcf6abfeec977a06e7ab5eb16400f18c046b82a2ab0"
+  },
+  {
+    "bytes": 190776,
+    "kind": "elf",
+    "path": "N8_D32_S1_main/memory/A1_SMU_SCALAR/online-softmax-merge.elf",
+    "sha256": "73a50ad97e7e5937942a40f1e33b566597ef880d01a7f58bbc90aed8128b3236"
+  },
+  {
+    "bytes": 12288,
+    "kind": "generated_input_header",
+    "path": "N8_D32_S1_main/memory/A1_SMU_SCALAR/online_merge_case_data.h",
+    "sha256": "a6729cab23284a7f45ea5d928850fbd01099cf12ada8eff06df8d75f5ac1cb70"
+  },
+  {
+    "bytes": 151358,
+    "kind": "disassembly",
+    "path": "N8_D32_S1_main/memory/A1_SMU_SCALAR/objdump.txt",
+    "sha256": "db91fe03b7d3fae95a1eb57c0d1d95b0c61c5dc674113ad320fc4ddf1b68d560"
+  },
+  {
+    "bytes": 1510,
+    "kind": "hot_symbol_disassembly",
+    "path": "N8_D32_S1_main/memory/A1_SMU_SCALAR/online_merge_rvv_update.disasm",
+    "sha256": "0b667c06e19442ca12fd8fae343d839ae6897b334380f4efc7fcfeca401a8ac2"
+  },
+  {
+    "bytes": 15436,
+    "kind": "symbol_table",
+    "path": "N8_D32_S1_main/memory/A1_SMU_SCALAR/symbols.txt",
+    "sha256": "fbe9dc1fc18c0872103c32c8b33dd3cdd66af0cdee5cf943c9143af654815cd4"
+  },
+  {
+    "bytes": 1438,
+    "kind": "section_sizes",
+    "path": "N8_D32_S1_main/memory/A1_SMU_SCALAR/sections.txt",
+    "sha256": "07bc6265cb5f9fcd62d903259a382fcf6249625cebf732e1856f79eb7c26d5bb"
+  },
+  {
+    "bytes": 4815,
+    "kind": "compile_commands",
+    "path": "N8_D32_S1_main/memory/A1_SMU_SCALAR/compile_commands.json",
+    "sha256": "607ee0f4e2dfc5e49fe0e8338e6359341e078c840879da6de801af7add8ef64b"
+  },
+  {
+    "bytes": 952,
+    "kind": "link_command",
+    "path": "N8_D32_S1_main/memory/A1_SMU_SCALAR/link_command.txt",
+    "sha256": "2136a76ced11c20e27bc6f89d0dea06fd3db4875760378554febabbd1019bdeb"
+  },
+  {
+    "bytes": 1453,
+    "kind": "simulator_log",
+    "path": "N8_D32_S1_main/memory/A1_SMU_SCALAR/trial-0/simulator.log",
+    "sha256": "ba644ea1529145516cb6c16ba740cd932bf46f4dfbeca0cb71e1769312eaced3"
+  },
+  {
+    "bytes": 644,
+    "kind": "build_log",
+    "path": "N8_D32_S1_main/memory/A1_MIXED_SCALAR/build.log",
+    "sha256": "aea6a2195c9516fc7171578804cc60b2f481f7fcd57c3d5c29408fdeba29e56f"
+  },
+  {
+    "bytes": 190780,
+    "kind": "elf",
+    "path": "N8_D32_S1_main/memory/A1_MIXED_SCALAR/online-softmax-merge.elf",
+    "sha256": "0e06b48437183af699fc48b5b7ee4cb307b001ce5f6472c19e56956b8463e7fd"
+  },
+  {
+    "bytes": 12288,
+    "kind": "generated_input_header",
+    "path": "N8_D32_S1_main/memory/A1_MIXED_SCALAR/online_merge_case_data.h",
+    "sha256": "a6729cab23284a7f45ea5d928850fbd01099cf12ada8eff06df8d75f5ac1cb70"
+  },
+  {
+    "bytes": 151326,
+    "kind": "disassembly",
+    "path": "N8_D32_S1_main/memory/A1_MIXED_SCALAR/objdump.txt",
+    "sha256": "025a91619115a29f7008cdc67dd7050db6c6e1881e4fe26114ecacdeca9a2b61"
+  },
+  {
+    "bytes": 1510,
+    "kind": "hot_symbol_disassembly",
+    "path": "N8_D32_S1_main/memory/A1_MIXED_SCALAR/online_merge_rvv_update.disasm",
+    "sha256": "0b667c06e19442ca12fd8fae343d839ae6897b334380f4efc7fcfeca401a8ac2"
+  },
+  {
+    "bytes": 15436,
+    "kind": "symbol_table",
+    "path": "N8_D32_S1_main/memory/A1_MIXED_SCALAR/symbols.txt",
+    "sha256": "2c39d89a86e6ef801c66f7fb1742eb883a860227560556109dd3a4a4e390f4ce"
+  },
+  {
+    "bytes": 1440,
+    "kind": "section_sizes",
+    "path": "N8_D32_S1_main/memory/A1_MIXED_SCALAR/sections.txt",
+    "sha256": "20a2f1bf76f130aca13912ccbbed2cfc3bffb13e3842bd7541900141191f6b2f"
+  },
+  {
+    "bytes": 4851,
+    "kind": "compile_commands",
+    "path": "N8_D32_S1_main/memory/A1_MIXED_SCALAR/compile_commands.json",
+    "sha256": "ba7399a7569ce9dd1951eca3bdf24538366691cba9c80df7116f952a1fdcf2bc"
+  },
+  {
+    "bytes": 976,
+    "kind": "link_command",
+    "path": "N8_D32_S1_main/memory/A1_MIXED_SCALAR/link_command.txt",
+    "sha256": "b8660990cd9e07ecc7177c166fe64d7ecbe8db07312f6d6df2ad3b2540f468b7"
+  },
+  {
+    "bytes": 1466,
+    "kind": "simulator_log",
+    "path": "N8_D32_S1_main/memory/A1_MIXED_SCALAR/trial-0/simulator.log",
+    "sha256": "d9848b51c7e0aa5d8c2060520c12d44f48f58ab6196cad7f5a0759980fb8d9b7"
+  },
+  {
+    "bytes": 4943,
+    "kind": "configure_log",
+    "path": "N16_D64_S1_main/memory/configure.log",
+    "sha256": "42d69d8296902a98c7027d4fe4d95e80244993f57b568cce4ec1c1db5265330b"
+  },
+  {
+    "bytes": 5219,
+    "kind": "build_log",
+    "path": "N16_D64_S1_main/memory/A1_SMU_SCALAR/build.log",
+    "sha256": "5a4efc5d0704b0d6301d932403abccedffa4ccdd4e5873101ae2edc8072570c2"
+  },
+  {
+    "bytes": 201860,
+    "kind": "elf",
+    "path": "N16_D64_S1_main/memory/A1_SMU_SCALAR/online-softmax-merge.elf",
+    "sha256": "e7c7f9382bac03a69d497ff555028d5fa4aac99d721bd66e57325905c7fca613"
+  },
+  {
+    "bytes": 44436,
+    "kind": "generated_input_header",
+    "path": "N16_D64_S1_main/memory/A1_SMU_SCALAR/online_merge_case_data.h",
+    "sha256": "2e988bc21ef578d746579ad77c2ec9aebf503112367514ae34f3dd01d95e8fd7"
+  },
+  {
+    "bytes": 156942,
+    "kind": "disassembly",
+    "path": "N16_D64_S1_main/memory/A1_SMU_SCALAR/objdump.txt",
+    "sha256": "c4a29bec89dde9b0a6d849d8afa29d63836f5bcd20c594e25cd3a02ffe183411"
+  },
+  {
+    "bytes": 1510,
+    "kind": "hot_symbol_disassembly",
+    "path": "N16_D64_S1_main/memory/A1_SMU_SCALAR/online_merge_rvv_update.disasm",
+    "sha256": "d769594e843f68ae95df68e0889a1a20fba326d79fd9ffd0f2a4865b56088c89"
+  },
+  {
+    "bytes": 15436,
+    "kind": "symbol_table",
+    "path": "N16_D64_S1_main/memory/A1_SMU_SCALAR/symbols.txt",
+    "sha256": "70264758718bacba9b242ea2efc0f5b62c4e0099a50c2d8f0c80b85460dd029e"
+  },
+  {
+    "bytes": 1439,
+    "kind": "section_sizes",
+    "path": "N16_D64_S1_main/memory/A1_SMU_SCALAR/sections.txt",
+    "sha256": "0853e21289d9d4e1f58e514082e4ef4093cc0320554be2ebbc1519b444139deb"
+  },
+  {
+    "bytes": 4599,
+    "kind": "compile_commands",
+    "path": "N16_D64_S1_main/memory/A1_SMU_SCALAR/compile_commands.json",
+    "sha256": "56fe97e8393262ee79d552d67dfdf145a62050d03382ba693ab5b1b0ee9fe175"
+  },
+  {
+    "bytes": 859,
+    "kind": "link_command",
+    "path": "N16_D64_S1_main/memory/A1_SMU_SCALAR/link_command.txt",
+    "sha256": "472b7f28ce7dbcdafb4d243dff0d90742564eb07aa3460b77b3adce1487697a9"
+  },
+  {
+    "bytes": 1467,
+    "kind": "simulator_log",
+    "path": "N16_D64_S1_main/memory/A1_SMU_SCALAR/trial-0/simulator.log",
+    "sha256": "d7734d30c622025a05003176faacf9ee474c990600559d4213220d2323a137c1"
+  },
+  {
+    "bytes": 644,
+    "kind": "build_log",
+    "path": "N16_D64_S1_main/memory/A1_MIXED_SCALAR/build.log",
+    "sha256": "aea6a2195c9516fc7171578804cc60b2f481f7fcd57c3d5c29408fdeba29e56f"
+  },
+  {
+    "bytes": 201868,
+    "kind": "elf",
+    "path": "N16_D64_S1_main/memory/A1_MIXED_SCALAR/online-softmax-merge.elf",
+    "sha256": "0a3123d2c8071d875caa3eb7c71e48d7db25a302e73f03de9861833c63fe17c1"
+  },
+  {
+    "bytes": 44436,
+    "kind": "generated_input_header",
+    "path": "N16_D64_S1_main/memory/A1_MIXED_SCALAR/online_merge_case_data.h",
+    "sha256": "2e988bc21ef578d746579ad77c2ec9aebf503112367514ae34f3dd01d95e8fd7"
+  },
+  {
+    "bytes": 156911,
+    "kind": "disassembly",
+    "path": "N16_D64_S1_main/memory/A1_MIXED_SCALAR/objdump.txt",
+    "sha256": "de95adbb45e17cc9d4dd759491dd760df60a5c61f50e8a08ecc028bf2411aaf9"
+  },
+  {
+    "bytes": 1510,
+    "kind": "hot_symbol_disassembly",
+    "path": "N16_D64_S1_main/memory/A1_MIXED_SCALAR/online_merge_rvv_update.disasm",
+    "sha256": "d769594e843f68ae95df68e0889a1a20fba326d79fd9ffd0f2a4865b56088c89"
+  },
+  {
+    "bytes": 15436,
+    "kind": "symbol_table",
+    "path": "N16_D64_S1_main/memory/A1_MIXED_SCALAR/symbols.txt",
+    "sha256": "613ee39af4a07b9d6769d235606c11d70e1b74b565369f31f543c83e7d4cabd4"
+  },
+  {
+    "bytes": 1441,
+    "kind": "section_sizes",
+    "path": "N16_D64_S1_main/memory/A1_MIXED_SCALAR/sections.txt",
+    "sha256": "77ee30e7d426c627b09ec401f427b49467dc614b7daea051884831f3b65bc7d3"
+  },
+  {
+    "bytes": 4635,
+    "kind": "compile_commands",
+    "path": "N16_D64_S1_main/memory/A1_MIXED_SCALAR/compile_commands.json",
+    "sha256": "f638f8eec323bdfb13dd782df3ea5f5234b2b37bc4979cdf25f2031f05ff1414"
+  },
+  {
+    "bytes": 883,
+    "kind": "link_command",
+    "path": "N16_D64_S1_main/memory/A1_MIXED_SCALAR/link_command.txt",
+    "sha256": "8064163282a7555974dd504d6a768d81e04a963fe904e7330d743354942e3ec7"
+  },
+  {
+    "bytes": 1482,
+    "kind": "simulator_log",
+    "path": "N16_D64_S1_main/memory/A1_MIXED_SCALAR/trial-0/simulator.log",
+    "sha256": "0264ccc048c3abeffcb5ed0ee4dbc69765a654a4788c56a5bb5b9e57af5cb4c9"
+  }
+]

@@ -1,0 +1,757 @@
+{
+  "all_trials_reproducible": true,
+  "case_catalog_count": 3,
+  "case_file": "experiments/configs/p0_anchor_cases.json",
+  "case_file_sha256": "7eb15301d30441c1fc90f7f1bfbf48ad7dca2a935d505ec8e47d30270c5ba77b",
+  "cfg_path": "hw/system/spatz_cluster/cfg/spatz_cluster.default.dram.hjson",
+  "cfg_sha256": "120fa0c30199e54e6e9b5c60d8da40913eae8526640992cc5d4f130bef159775",
+  "configurations": [
+    "A1_SMU_SCALAR",
+    "A1_MIXED_SCALAR"
+  ],
+  "counter_profiles": [
+    "memory"
+  ],
+  "end_to_end_reason": "NO_EXPLICIT_TRANSFER_PHASE",
+  "end_utc": "2026-08-24T07:06:06+00:00",
+  "failure_count": 0,
+  "git_branch": "exp/online-softmax-supplement",
+  "git_commit": "4d92e82265db7f4496902a4969afe1a598f85624",
+  "git_dirty": true,
+  "measured_samples_per_process": 1,
+  "measurement_window": "inputs resident in TCDM through final output completion; includes command, wait, RVV, and synchronization",
+  "policy": "experiments/phase3_reciprocal_hardware/performance_policy_mixed.json",
+  "policy_sha256": "63c271ff19fce1bbf5f79d2c66e2ad540519f36c1f824352d6bdb9e449cc7c12",
+  "record_count": 4,
+  "run_id": "20260824T065652Z_4d92e822_phase3_division_correct",
+  "runner_argv": [
+    "/usr/bin/python3",
+    "/home/wxt/work-online-merge-supplement/experiments/scripts/run_performance_matrix.py",
+    "--repo-root",
+    "/home/wxt/work-online-merge-supplement",
+    "--case-file",
+    "experiments/configs/p0_anchor_cases.json",
+    "--policy",
+    "experiments/phase3_reciprocal_hardware/performance_policy_mixed.json",
+    "--source-dir",
+    "hw/system/spatz_cluster/sw",
+    "--cfg",
+    "hw/system/spatz_cluster/cfg/spatz_cluster.default.dram.hjson",
+    "--simulator",
+    "/home/wxt/work-online-merge-phase3-div-sim/spatz_cluster.vlt",
+    "--artifact-root",
+    "/home/wxt/work-online-merge-phase3-division-correct",
+    "--build-dir",
+    "/home/wxt/work-online-merge-phase3-division-correct-build",
+    "--suite",
+    "phase3_division_correct",
+    "--case-ids",
+    "N8_D32_S1_main,N16_D64_S1_main",
+    "--configs",
+    "A1_SMU_SCALAR,A1_MIXED_SCALAR",
+    "--profiles",
+    "memory",
+    "--trials",
+    "1",
+    "--jobs",
+    "1",
+    "--build-timeout-seconds",
+    "1800",
+    "--no-index"
+  ],
+  "runner_sha256": "624613184e9695c5abc8fc99c56f21d913a549508a9a0a7c36507906c738ae81",
+  "schema_version": 1,
+  "selected_case_count": 2,
+  "selected_case_ids": [
+    "N8_D32_S1_main",
+    "N16_D64_S1_main"
+  ],
+  "simulator": "/home/wxt/work-online-merge-phase3-div-sim/spatz_cluster.vlt",
+  "simulator_sha256": "6c8f2a3efe7fd588cbb10f038c0c756889b9dbfcebe309673d90ac9daada8151",
+  "start_utc": "2026-08-24T06:56:53+00:00",
+  "tool_versions": {
+    "cmake": {
+      "returncode": 0,
+      "status": "PASS",
+      "version": "cmake version 3.28.3 | CMake suite maintained and supported by Kitware (kitware.com/cmake)."
+    },
+    "compiler": {
+      "returncode": 0,
+      "status": "PASS",
+      "version": "clang version 14.0.6 (git@github.com:pulp-platform/llvm-project.git b494f2d8dde88723026db8ec16ac6c7ee1e140ca) | Target: riscv32-unknown-unknown-elf | Thread model: posix"
+    },
+    "objdump": {
+      "returncode": 0,
+      "status": "PASS",
+      "version": "LLVM (http://llvm.org/): | LLVM version 14.0.6 | Optimized build."
+    },
+    "simulator": {
+      "path": "/home/wxt/work-online-merge-phase3-div-sim/spatz_cluster.vlt",
+      "sha256": "6c8f2a3efe7fd588cbb10f038c0c756889b9dbfcebe309673d90ac9daada8151"
+    },
+    "trace_witness_simulator": {
+      "path": null,
+      "sha256": null
+    },
+    "verilator": {
+      "returncode": 0,
+      "status": "PASS",
+      "version": "Verilator 5.034 2025-02-24 rev v5.034"
+    }
+  },
+  "trace_witness_policy": null,
+  "trace_witness_simulator": null,
+  "trace_witness_simulator_sha256": null,
+  "trials": 1,
+  "warmups_per_process": 1,
+  "worktree_snapshot": {
+    "entries": [
+      {
+        "path": "experiments/phase1_online_softmax/README.md",
+        "sha256": "bf5d0c8e1cd22d329b446a9a68a50a2babb1b19bdc414c090a2e30ddf969c244",
+        "state": "present"
+      },
+      {
+        "path": "experiments/phase1_online_softmax/results/boundary.csv",
+        "sha256": "607af1cdf2d07f0216cb975723886514455edcbf15ef307489f0d50c7860a7cd",
+        "state": "present"
+      },
+      {
+        "path": "experiments/phase1_online_softmax/results/boundary.json",
+        "sha256": "d52711790e64d03008deb6935d0dceb20c68ba79ac3236baf3d31f29b71a444a",
+        "state": "present"
+      },
+      {
+        "path": "experiments/phase1_online_softmax/results/lut_sweep.csv",
+        "sha256": "dcd38cb74e3505ed3976e7bb1dbfcf688a1ef2bf4db80fb683f72a7a42ad9c9c",
+        "state": "present"
+      },
+      {
+        "path": "experiments/phase1_online_softmax/results/lut_sweep.json",
+        "sha256": "87f4f0235b2be564837134416db93dbbf7fb08a81790ca2ff2fc4c0921b1a6cd",
+        "state": "present"
+      },
+      {
+        "path": "experiments/phase1_online_softmax/results/lut_sweep_cases.csv",
+        "sha256": "2eb871918cc5696d7bb234873ebacc8fb1b4cae9537085c6f24145ed15c0a0e5",
+        "state": "present"
+      },
+      {
+        "path": "experiments/phase1_online_softmax/results/lut_sweep_cases.json",
+        "sha256": "0793b6318ec002fd48e36b1980a4c4947a05435964b614c217ea2f4d3db8fbe2",
+        "state": "present"
+      },
+      {
+        "path": "experiments/phase1_online_softmax/results/manifest.json",
+        "sha256": "3e0bf29577d4926260af18b0d8ecac811255414523c65856df4bd7d4fa5d5d30",
+        "state": "present"
+      },
+      {
+        "path": "experiments/phase1_online_softmax/results/phase3_reciprocal_model/boundary.csv",
+        "sha256": "5d235b341e1818e90d8b765d6ff5a5c4298394a66d86b1b46a81cc5346cc586c",
+        "state": "present"
+      },
+      {
+        "path": "experiments/phase1_online_softmax/results/phase3_reciprocal_model/boundary.json",
+        "sha256": "e1726e23b64d30b13f37bf43cba3b42c30418af0ced46dc8b29a4195df659b42",
+        "state": "present"
+      },
+      {
+        "path": "experiments/phase1_online_softmax/results/phase3_reciprocal_model/lut_sweep.csv",
+        "sha256": "dcd38cb74e3505ed3976e7bb1dbfcf688a1ef2bf4db80fb683f72a7a42ad9c9c",
+        "state": "present"
+      },
+      {
+        "path": "experiments/phase1_online_softmax/results/phase3_reciprocal_model/lut_sweep.json",
+        "sha256": "87f4f0235b2be564837134416db93dbbf7fb08a81790ca2ff2fc4c0921b1a6cd",
+        "state": "present"
+      },
+      {
+        "path": "experiments/phase1_online_softmax/results/phase3_reciprocal_model/lut_sweep_cases.csv",
+        "sha256": "9b669ed6c5431ea56b5307a8f26826d2a873de9f2d258466501b7ea65c538243",
+        "state": "present"
+      },
+      {
+        "path": "experiments/phase1_online_softmax/results/phase3_reciprocal_model/lut_sweep_cases.json",
+        "sha256": "aba142177666ee728b326659767ef21df75d71eea1846e3bb41a4f53063619ef",
+        "state": "present"
+      },
+      {
+        "path": "experiments/phase1_online_softmax/results/phase3_reciprocal_model/manifest.json",
+        "sha256": "db6ba4b17288c9222c09231375aafe885b79b640f8bf3eae624d99ec7ec1c3db",
+        "state": "present"
+      },
+      {
+        "path": "experiments/phase1_online_softmax/results/phase3_reciprocal_model/reciprocal_probe.csv",
+        "sha256": "45cdbb5a0419e1a08b13844fdc3580c05a730f5b09b3daac2d6d03948c23cf61",
+        "state": "present"
+      },
+      {
+        "path": "experiments/phase1_online_softmax/results/phase3_reciprocal_model/reciprocal_probe.json",
+        "sha256": "c060eefa7c1ac180eb2d2a1237445fd19dad8509523da1146fb3e71f0de20074",
+        "state": "present"
+      },
+      {
+        "path": "experiments/phase1_online_softmax/results/phase3_reciprocal_model/reciprocal_sweep.csv",
+        "sha256": "9bf5f9120c24efd0a67a35e3b658e0fe0584141d0a04c0b14ede6db614345329",
+        "state": "present"
+      },
+      {
+        "path": "experiments/phase1_online_softmax/results/phase3_reciprocal_model/reciprocal_sweep.json",
+        "sha256": "084186071cba7d7c41acc88c7a97214d6d9b872e6e9cae375138912495d8dc21",
+        "state": "present"
+      },
+      {
+        "path": "experiments/phase1_online_softmax/results/phase3_reciprocal_model/reciprocal_sweep_cases.csv",
+        "sha256": "31d7dec624a56f6eb2cd2c34e332ad12f975236f268e07e0b91b0179fa3478af",
+        "state": "present"
+      },
+      {
+        "path": "experiments/phase1_online_softmax/results/phase3_reciprocal_model/reciprocal_sweep_cases.json",
+        "sha256": "224e79f8369eca045120d1d09964950f7e6286c7fa91d7b4dd1da72427c6225c",
+        "state": "present"
+      },
+      {
+        "path": "experiments/phase1_online_softmax/results/phase3_reciprocal_model/reciprocal_vectors.csv",
+        "sha256": "670ced3a2a50608a8abd1deea2b72192faf636f6e5101985ee6bedd0f17a6ea4",
+        "state": "present"
+      },
+      {
+        "path": "experiments/phase1_online_softmax/results/phase3_reciprocal_model/reciprocal_vectors.json",
+        "sha256": "91538a8d8d36abd7a6b61b1a906efd290d488ad793986e19b6aca4bc98e57a67",
+        "state": "present"
+      },
+      {
+        "path": "experiments/phase1_online_softmax/results/phase3_reciprocal_model/report.md",
+        "sha256": "7d33d402c0d32c00a0c2714d680f758d0f65f64c05d6884f708b42b5eed4d416",
+        "state": "present"
+      },
+      {
+        "path": "experiments/phase1_online_softmax/results/phase3_reciprocal_model/results.csv",
+        "sha256": "95d74cf2e5d2b569530bb38e61aa50187b5cc449b6a54a0ad80363c33831d3bc",
+        "state": "present"
+      },
+      {
+        "path": "experiments/phase1_online_softmax/results/phase3_reciprocal_model/results.json",
+        "sha256": "5e2d051ce654a48b08e4816410748d282eb6da685ce391346359bc32627a517d",
+        "state": "present"
+      },
+      {
+        "path": "experiments/phase1_online_softmax/results/phase3_reciprocal_model/rtl_pruning_smoke.json",
+        "sha256": "ed146f12d0d895937816a0fce5e64eb1f1973e1fb05cc587d19abd98c19a1e16",
+        "state": "present"
+      },
+      {
+        "path": "experiments/phase1_online_softmax/results/phase3_reciprocal_model/summary.json",
+        "sha256": "2538e8b527e466e91e5da0164912d45eb35cee431163da994934500ebc9c14c2",
+        "state": "present"
+      },
+      {
+        "path": "experiments/phase1_online_softmax/results/report.md",
+        "sha256": "63475bba299e408b2660160919f6007bd762d0dbe219a47e161a51883b39f48f",
+        "state": "present"
+      },
+      {
+        "path": "experiments/phase1_online_softmax/results/results.csv",
+        "sha256": "55af532d9ed1676a6a4ef27586b315a9c5b6974c5eaead0621b1213bbe149e69",
+        "state": "present"
+      },
+      {
+        "path": "experiments/phase1_online_softmax/results/results.json",
+        "sha256": "010516da0d93c20759e494d797bc56a2753654e77b65246a7593f14afe01210a",
+        "state": "present"
+      },
+      {
+        "path": "experiments/phase1_online_softmax/results/rtl_pruning_smoke.json",
+        "sha256": "bfe9396e19ef5e198b69ba7ee82607f591d5400c4cdddbaba03f994e449c6ab0",
+        "state": "present"
+      },
+      {
+        "path": "experiments/phase1_online_softmax/results/summary.json",
+        "sha256": "89fba4aade95c59eab701c42edd3c2f08762de39ffca2f3bd37c2b36560d2311",
+        "state": "present"
+      },
+      {
+        "path": "experiments/phase1_online_softmax/run_validation.py",
+        "sha256": "46f09f3fbe57e077516793396ba0003cfca74468beea18852b30c99eb9a65178",
+        "state": "present"
+      },
+      {
+        "path": "experiments/phase2_mixed_precision/area_trials.csv",
+        "sha256": "4c42710313a397a48c9e8afcf4777ca67d252bc2f7491cd7dac85a52b9069125",
+        "state": "present"
+      },
+      {
+        "path": "experiments/phase2_mixed_precision/area_trials.json",
+        "sha256": "4c5571321419c181caf8173b06a8a40043a874ef3bd9174553b969fd9e3ef650",
+        "state": "present"
+      },
+      {
+        "path": "experiments/phase2_mixed_precision/corrected_area/area_manifest.json",
+        "sha256": "c9eb0f2710c87f7886f24c1d27b7442a5d31ef3700ed1d762be169388ebcdadb",
+        "state": "present"
+      },
+      {
+        "path": "experiments/phase2_mixed_precision/corrected_area/area_trials.csv",
+        "sha256": "d09a91448dc6cdefcac2a24b6fa96ca1387781198b6ca62bbc4343ae91397836",
+        "state": "present"
+      },
+      {
+        "path": "experiments/phase2_mixed_precision/corrected_area/area_trials.json",
+        "sha256": "6497730dd5f62e8043a550971ac3d25b9ce6b95767145ae9226a58204a5baf61",
+        "state": "present"
+      },
+      {
+        "path": "experiments/phase2_mixed_precision/elab_guarded/elab_manifest.json",
+        "sha256": "37e73dad18c3d6282c1748d82089c35269aff6056af4ccd209ca0541515685a6",
+        "state": "present"
+      },
+      {
+        "path": "experiments/phase2_mixed_precision/elab_guarded/elab_trials.csv",
+        "sha256": "5c8f902710ce726d4bbbf86d466eaf282bd882ce1eeeff4d66d865f2589ce311",
+        "state": "present"
+      },
+      {
+        "path": "experiments/phase2_mixed_precision/elab_guarded/elab_trials.json",
+        "sha256": "97cb146765b4ffc1255a1124738691c924a305400cb18d2608fe546650cd20f6",
+        "state": "present"
+      },
+      {
+        "path": "experiments/phase2_mixed_precision/final_area/area_manifest.json",
+        "sha256": "80ded07ab78913037c74f93438d73fab2d34b1be56123b46bb63dcb965f07633",
+        "state": "present"
+      },
+      {
+        "path": "experiments/phase2_mixed_precision/final_area/area_trials.csv",
+        "sha256": "72df6239797fbdde5ee34721fcd555edb06cfcec9334b67d3916dc1d3dc6b44b",
+        "state": "present"
+      },
+      {
+        "path": "experiments/phase2_mixed_precision/final_area/area_trials.json",
+        "sha256": "bc7fb61e2b1b50d5ca7a0a19e285333eaa8f3971347dac349ddaced849f26971",
+        "state": "present"
+      },
+      {
+        "path": "experiments/phase2_mixed_precision/final_timing/timing_manifest.json",
+        "sha256": "2ddf78f0c5814f1e35a745c74b625c2207ecbf24556db168fdcf3d426bfc2b50",
+        "state": "present"
+      },
+      {
+        "path": "experiments/phase2_mixed_precision/final_timing/timing_trials.csv",
+        "sha256": "426a3c39f9ff90da08c4803cd09adb34ca9efbfa616c3573c4d2b92daaf8d10f",
+        "state": "present"
+      },
+      {
+        "path": "experiments/phase2_mixed_precision/final_timing/timing_trials.json",
+        "sha256": "7187f4c6a76086d15b394c19636803259c5eeac5fa8e330c67cb3938b8087247",
+        "state": "present"
+      },
+      {
+        "path": "experiments/phase2_mixed_precision/fused_delta_area/area_manifest.json",
+        "sha256": "80ded07ab78913037c74f93438d73fab2d34b1be56123b46bb63dcb965f07633",
+        "state": "present"
+      },
+      {
+        "path": "experiments/phase2_mixed_precision/fused_delta_area/area_trials.csv",
+        "sha256": "26b73f2e9b14e1c159c07984d8ece77271d07357908ffc6515a63b94a3a550bf",
+        "state": "present"
+      },
+      {
+        "path": "experiments/phase2_mixed_precision/fused_delta_area/area_trials.json",
+        "sha256": "3c691baa562e7cc001c17d829a1b3ff21912d03eafef2bd9a37e5a89b6acee1a",
+        "state": "present"
+      },
+      {
+        "path": "experiments/phase2_mixed_precision/fused_dual_area/area_manifest.json",
+        "sha256": "80ded07ab78913037c74f93438d73fab2d34b1be56123b46bb63dcb965f07633",
+        "state": "present"
+      },
+      {
+        "path": "experiments/phase2_mixed_precision/fused_dual_area/area_trials.csv",
+        "sha256": "e51aba146960fcc752854846aaf4b83ec1cb69a281ec965baa98916b72bb0ac7",
+        "state": "present"
+      },
+      {
+        "path": "experiments/phase2_mixed_precision/fused_dual_area/area_trials.json",
+        "sha256": "29806e0818097b06c62d1b565d96702612908b4391f65af926c5f6ae05bc98fd",
+        "state": "present"
+      },
+      {
+        "path": "experiments/phase2_mixed_precision/matched_scalar_policy.json",
+        "sha256": "6adcb8d263fbd52a98ce3317102abb34c1385a8c3412f0be962894fddcf91bc8",
+        "state": "present"
+      },
+      {
+        "path": "experiments/phase2_mixed_precision/narrow_divider_area/area_manifest.json",
+        "sha256": "12141bb2dd82f72e73670f61460dc3a7f745f91156950f96a0fa191859d98b1e",
+        "state": "present"
+      },
+      {
+        "path": "experiments/phase2_mixed_precision/narrow_divider_area/area_trials.csv",
+        "sha256": "29b4bd560642a2d1aedf3b1ecf2a49e142fb7a6bc67e4108e278dbb821d3c281",
+        "state": "present"
+      },
+      {
+        "path": "experiments/phase2_mixed_precision/narrow_divider_area/area_trials.json",
+        "sha256": "a285f0b56ef3b30c1f840761903c9b61243dcdc8fb62bbbb0f9562a076921bd8",
+        "state": "present"
+      },
+      {
+        "path": "experiments/phase2_mixed_precision/report.md",
+        "sha256": "5eecb682696a8869d902677574e24351a92d3e8298a178b8d28f109826c40e31",
+        "state": "present"
+      },
+      {
+        "path": "experiments/phase2_mixed_precision/run_fixed_role_synthesis.py",
+        "sha256": "86ae773ed7eb65249a6f3843537dfddb38efd854854e3a6bc1d24d0d85009c1e",
+        "state": "present"
+      },
+      {
+        "path": "experiments/phase2_mixed_precision/verify_divider_equivalence.py",
+        "sha256": "3c66f9b2dd308702ceffb97d21cdfc9fb920b0939d53b55b19c3675524ef7dc0",
+        "state": "present"
+      },
+      {
+        "path": "experiments/phase3_reciprocal_hardware/area/area_manifest.json",
+        "sha256": "b04ce99fe6cedce02b9e959ca11cab93ba2b6ec1d17284b60c24726e5cb5030d",
+        "state": "present"
+      },
+      {
+        "path": "experiments/phase3_reciprocal_hardware/area/area_trials.csv",
+        "sha256": "10d3086221b66fff9a5f65f0228bf10092138c14c560349c75da5d84558e7c85",
+        "state": "present"
+      },
+      {
+        "path": "experiments/phase3_reciprocal_hardware/area/area_trials.json",
+        "sha256": "9f96254caa5b9b128eef558d1ff6ff70f4a0ee9ae54b896ab6610bfc67b26e55",
+        "state": "present"
+      },
+      {
+        "path": "experiments/phase3_reciprocal_hardware/performance_policy_mixed.json",
+        "sha256": "63c271ff19fce1bbf5f79d2c66e2ad540519f36c1f824352d6bdb9e449cc7c12",
+        "state": "present"
+      },
+      {
+        "path": "experiments/phase3_reciprocal_hardware/performance_policy_reciprocal.json",
+        "sha256": "d61622cbc413d4c221008578de33030f6954692f8a4518e77603f85627c08283",
+        "state": "present"
+      },
+      {
+        "path": "experiments/phase3_reciprocal_hardware/timing/timing_manifest.json",
+        "sha256": "1395fac7c420d6a8f7174d0ab779d476be2f99b05309a834a378e4f945f093cc",
+        "state": "present"
+      },
+      {
+        "path": "experiments/phase3_reciprocal_hardware/timing/timing_trials.csv",
+        "sha256": "1e7d7a11a282e768394a1f38b287808f1df240e3350ddadd04e709f737b640c9",
+        "state": "present"
+      },
+      {
+        "path": "experiments/phase3_reciprocal_hardware/timing/timing_trials.json",
+        "sha256": "76ec90a327eb7e83d43e9b429a8460b4b9fa830eb4ab76df0c9d3a75efd6f5f7",
+        "state": "present"
+      },
+      {
+        "path": "experiments/plots/figure1_computation_decomposition.pdf",
+        "sha256": "c87fcf8efa049f70337732d63bbde0304ffdb49047e5ef999d186495876aafe3",
+        "state": "present"
+      },
+      {
+        "path": "experiments/plots/figure1_computation_decomposition.png",
+        "sha256": "cab102a714c05793168816e50d464f20b130e663cc19136cb10a80fcf92cedc1",
+        "state": "present"
+      },
+      {
+        "path": "experiments/plots/figure1_computation_decomposition.svg",
+        "sha256": "5b97550831a4122142d6f61526cd48813c30cd80c1350aebea61baff4bff7c7b",
+        "state": "present"
+      },
+      {
+        "path": "experiments/plots/figure1_computation_decomposition.tiff",
+        "sha256": "5aa619a7b18d1906261695fefefbdf51c78900bb8fe7b077c767a1d3b642ff2f",
+        "state": "present"
+      },
+      {
+        "path": "experiments/plots/figure2_scaling.pdf",
+        "sha256": "ec758f969b512af39d0245e23fe00ec67585f693e150f8afd22af26cfface69a",
+        "state": "present"
+      },
+      {
+        "path": "experiments/plots/figure2_scaling.png",
+        "sha256": "87f4a68a56690a265f0da9d8022b9c0f3b4e40bee5e52c5f883580721311572d",
+        "state": "present"
+      },
+      {
+        "path": "experiments/plots/figure2_scaling.svg",
+        "sha256": "93dc9df5855ccbf19910538cdb7e28993a5b3ba251d7d10f0546dc8a13d0b163",
+        "state": "present"
+      },
+      {
+        "path": "experiments/plots/figure2_scaling.tiff",
+        "sha256": "707f28c74fa5504dff86b730b8687787516a841370a57faf94dcbcdbc19d64b8",
+        "state": "present"
+      },
+      {
+        "path": "experiments/plots/figure2_selective_architecture.pdf",
+        "sha256": "10b511d8a99832fd08d50246c773aca6b4ad48aa7f5d43df3f269a98d1617c4e",
+        "state": "present"
+      },
+      {
+        "path": "experiments/plots/figure2_selective_architecture.png",
+        "sha256": "b4e059d24e56c924985e3d57f06c88ed97e4a3890da26c42355a9e192de21ac5",
+        "state": "present"
+      },
+      {
+        "path": "experiments/plots/figure2_selective_architecture.svg",
+        "sha256": "ce11c19758f7405b3fb2e0060c442d492e1d5a4410c4cf37f170dcf3a89eaf1a",
+        "state": "present"
+      },
+      {
+        "path": "experiments/plots/figure2_selective_architecture.tiff",
+        "sha256": "56a8b4af001abf91c5f2b562d6b325b4df9a713807fda37e1e1d37dd06f97c55",
+        "state": "present"
+      },
+      {
+        "path": "experiments/plots/figure3_hardware_tradeoff.pdf",
+        "sha256": "9b22ee1c8526a6d1ea71e858710727ba62cad5b4898df18c5227bd77fae312e5",
+        "state": "present"
+      },
+      {
+        "path": "experiments/plots/figure3_hardware_tradeoff.png",
+        "sha256": "69078fadafa747987f335a7baf1a3cec3eff8a3c18487f2518f8294ac69dfacb",
+        "state": "present"
+      },
+      {
+        "path": "experiments/plots/figure3_hardware_tradeoff.svg",
+        "sha256": "bb0323cdd06bdfc01f9caf76a13ef600d3b80185a343a3cda3f514e7e4ebc0d4",
+        "state": "present"
+      },
+      {
+        "path": "experiments/plots/figure3_hardware_tradeoff.tiff",
+        "sha256": "1e6c49f43dbe6a6828a32762f3627ef8c4ae26e50d5905ccda173b521ddda731",
+        "state": "present"
+      },
+      {
+        "path": "experiments/plots/figure3_scalar_smu_datapath.pdf",
+        "sha256": "0797d7a0fc348a1492738196478c7a7231bc6d4d0cf26cbf20f8bd36f3ad63ef",
+        "state": "present"
+      },
+      {
+        "path": "experiments/plots/figure3_scalar_smu_datapath.png",
+        "sha256": "219d6cc6e6600fd1f156de2dbe582a2b83585118ddec1b91289aa89230e339fc",
+        "state": "present"
+      },
+      {
+        "path": "experiments/plots/figure3_scalar_smu_datapath.svg",
+        "sha256": "260a7f8582579800dc11a4811bead111fdd6aebdc1b6970c825613837241e3ec",
+        "state": "present"
+      },
+      {
+        "path": "experiments/plots/figure3_scalar_smu_datapath.tiff",
+        "sha256": "c1d2c621b858d41d8e99a06c25ff2c0d683e0fdc020bf550fb153c34498f209d",
+        "state": "present"
+      },
+      {
+        "path": "experiments/plots/figure4_smu_schedule.pdf",
+        "sha256": "c40e85229d7ce4dee41c565bcd79a7e8419077cc4d00f3c362b39a4b8fda378b",
+        "state": "present"
+      },
+      {
+        "path": "experiments/plots/figure4_smu_schedule.png",
+        "sha256": "1b3c25aa29be035d45f487c673d847502352c7fe1056ec2e75a58df43f211dd7",
+        "state": "present"
+      },
+      {
+        "path": "experiments/plots/figure4_smu_schedule.svg",
+        "sha256": "b210cf9113027015269356c17da053072b5242e53bd4025239906ea9e25a0f10",
+        "state": "present"
+      },
+      {
+        "path": "experiments/plots/figure4_smu_schedule.tiff",
+        "sha256": "167e8a8cead8ad7efff5b0f004134103fb5245f21b76b6e6e366407533ceda74",
+        "state": "present"
+      },
+      {
+        "path": "experiments/plots/figure5_spatz_integration.pdf",
+        "sha256": "479702ed6a5051408cca7b0ef47c5b0112a28b4f5f10d87b0f94f40493fa3e8d",
+        "state": "present"
+      },
+      {
+        "path": "experiments/plots/figure5_spatz_integration.png",
+        "sha256": "6ada8c0756c81eb3fde84a0c04649798893f90b04f01644e08be9f21e7320533",
+        "state": "present"
+      },
+      {
+        "path": "experiments/plots/figure5_spatz_integration.svg",
+        "sha256": "02469b6ed24908d7c4934fea4dba4701cb1eede6619d4d5211e5d8c0f080e2d8",
+        "state": "present"
+      },
+      {
+        "path": "experiments/plots/figure5_spatz_integration.tiff",
+        "sha256": "0a6d48844274339ac3ce00751ecb971ef230ba0727b03966e64ea31f83f268e5",
+        "state": "present"
+      },
+      {
+        "path": "experiments/scripts/make_figure2_scaling.py",
+        "sha256": "91490c0d4f0029a303b025ded21495a5c44ba330d28b4333a1e3e12a042f31ee",
+        "state": "present"
+      },
+      {
+        "path": "experiments/scripts/make_figure3_tradeoff.py",
+        "sha256": "fd63672220974f4f87020498f3f0f12caa717fe28c61456cbb5e64fe62658e21",
+        "state": "present"
+      },
+      {
+        "path": "experiments/scripts/make_paper_architecture_figures.py",
+        "sha256": "db6c40f30017ad8f66e78650d0837d54af3d7c468f977d550026ce4721b04d99",
+        "state": "present"
+      },
+      {
+        "path": "experiments/scripts/run_performance_matrix.py",
+        "sha256": "624613184e9695c5abc8fc99c56f21d913a549508a9a0a7c36507906c738ae81",
+        "state": "present"
+      },
+      {
+        "path": "experiments/tests/test_experiment_framework.py",
+        "sha256": "4dd6a2ec20c5e1e01474f6a8c141dec40e7eb6917457240e48610dfd5ff242be",
+        "state": "present"
+      },
+      {
+        "path": "hw/ip/online_merge/src/online_merge_exp_approx.sv",
+        "sha256": "05ffa836746856b82949db7dfd83ac71ea1b7683dc9276e62d1448b702f411ae",
+        "state": "present"
+      },
+      {
+        "path": "hw/ip/online_merge/src/online_merge_fp32_helpers.sv",
+        "sha256": "50f11f68818b06d5382bb32dc36f5c5790dabd48390de184c3a5e20336658f20",
+        "state": "present"
+      },
+      {
+        "path": "hw/ip/online_merge/src/online_merge_recip_approx.sv",
+        "sha256": "19b7316fde698fce10e4d885cccf17e455b2c77b596d46329929eacab3d3b801",
+        "state": "present"
+      },
+      {
+        "path": "hw/ip/online_merge/src/online_merge_update_engine.sv",
+        "sha256": "d09c58aeaf8bdebf8056eac5ae4265785fbacac7479479332a8af4f77782d1a4",
+        "state": "present"
+      },
+      {
+        "path": "hw/ip/online_merge/synth/nangate45_area.ys.in",
+        "sha256": "15488ba17ccabfe127739d4c25463424b267654c482f47b818c87477e235da57",
+        "state": "present"
+      },
+      {
+        "path": "hw/ip/online_merge/synth/online_merge_mapped_wrapper.sv",
+        "sha256": "365a5e9fbcb05219f4e09a3f2d28e22ffe3a81b6adf0922d982aaa9c41807de2",
+        "state": "present"
+      },
+      {
+        "path": "hw/ip/online_merge/test/online_merge_engine_mixed_tb.sv",
+        "sha256": "3c6d6c65121babf7c31f6d2b0276f7134516974c4441adcdef7187e5044eb3b7",
+        "state": "present"
+      },
+      {
+        "path": "hw/ip/online_merge/test/online_merge_engine_reciprocal_tb.sv",
+        "sha256": "00a2d90739ec8ce39b6899b57b681c5902f8a763298ad62891f660f04d381b78",
+        "state": "present"
+      },
+      {
+        "path": "hw/ip/online_merge/test/online_merge_mixed_tb.sv",
+        "sha256": "9cbb1dded30f98bcf77329889f53c88e15555fbe815c7b6f73d4e35e7185c81b",
+        "state": "present"
+      },
+      {
+        "path": "hw/ip/online_merge/test/online_merge_precision_support_tb.sv",
+        "sha256": "ae844aad4287a1710b166b56511215e6c4e146c45a280bce42182e5c70f98d40",
+        "state": "present"
+      },
+      {
+        "path": "hw/ip/online_merge/test/online_merge_recip_q1_15_tb.sv",
+        "sha256": "c566bce48f493e8deca7775bfcd1702c89f51b0816d94ee6e2759c56852805d2",
+        "state": "present"
+      },
+      {
+        "path": "hw/system/spatz_cluster/src/spatz_cluster.sv",
+        "sha256": "73afab7c7251ec0d6e59b93e593969c7260c120b8213947a4f9a6189c5991ebe",
+        "state": "present"
+      },
+      {
+        "path": "logs/.rtlbinary",
+        "sha256": "b6b024a088df4687074e6a1e34968a45879faa5de27f7006bcabb7801d418995",
+        "state": "present"
+      },
+      {
+        "path": "paper/online-merge-smu/.gitignore",
+        "sha256": "7ffd02e929b9ab52a54f86a62ab50c9c261db64598b245ef49fa1b163d2d457b",
+        "state": "present"
+      },
+      {
+        "path": "paper/online-merge-smu/Makefile",
+        "sha256": "c4c62d49824e9111e38754c3da054c094986b2969faae4baccef494b7c738d07",
+        "state": "present"
+      },
+      {
+        "path": "paper/online-merge-smu/README.md",
+        "sha256": "6826ad3cbcc35755424928ef590bc6ae622bf53b5345726bc82ef13e5a121380",
+        "state": "present"
+      },
+      {
+        "path": "paper/online-merge-smu/figures/figure_spec_architecture.md",
+        "sha256": "e73031c805b63b3c1c39e50363e339b56748ca0031ac2d455f9fda185bbec0f4",
+        "state": "present"
+      },
+      {
+        "path": "paper/online-merge-smu/figures/figure_spec_motivation.md",
+        "sha256": "76f8f4fcfb1de373e00a158787eb8529ca96bb7e320593fc01082bd9a65ec4ac",
+        "state": "present"
+      },
+      {
+        "path": "paper/online-merge-smu/figures/figure_spec_schedule.md",
+        "sha256": "68b7d5612c4255bcbeaa470c154bbbdce8b3ae53206cb12bd512f64c1df34ddd",
+        "state": "present"
+      },
+      {
+        "path": "paper/online-merge-smu/figures/figure_spec_smu_datapath.md",
+        "sha256": "932d15696be266a88ae0309f435203b421d79af0d1119d2594021586a1b20b9f",
+        "state": "present"
+      },
+      {
+        "path": "paper/online-merge-smu/figures/figure_spec_spatz_integration.md",
+        "sha256": "d152a0d9b36b4ae21e678c478344a20f9be4b92c7d0895c7307679ca8785e1bf",
+        "state": "present"
+      },
+      {
+        "path": "paper/online-merge-smu/main.pdf",
+        "sha256": "ee1a74669ae1b7ed99c1c6514a5045c540009de093fad29a4631c158ba5b87d0",
+        "state": "present"
+      },
+      {
+        "path": "paper/online-merge-smu/main.tex",
+        "sha256": "6c900edd90b1afddaff37dd6780c024b3495f2403ae06eef8fef333fff731271",
+        "state": "present"
+      },
+      {
+        "path": "sw/snRuntime/include/online_merge_mode.h",
+        "sha256": "bd7c36818049ff1bc9648fc430f05205f92bff6e665d1474db5552a405ea0039",
+        "state": "present"
+      },
+      {
+        "path": "sw/spatzBenchmarks/CMakeLists.txt",
+        "sha256": "3a9d0e6a272c0269d8ba152ba178b5681125a35cd41c7393577357021ed20771",
+        "state": "present"
+      },
+      {
+        "path": "sw/spatzBenchmarks/online-softmax-merge/__pycache__/generate_case.cpython-312.pyc",
+        "sha256": "a8f8049792ef559b047437f8fa87eb55bf7ef37fb1a73d44dd084bbe2c70230f",
+        "state": "present"
+      },
+      {
+        "path": "sw/spatzBenchmarks/online-softmax-merge/main.c",
+        "sha256": "a18ee660fb4d55f6dd59367ca18d42507fac3318448be47258f544c51c93f7d4",
+        "state": "present"
+      }
+    ],
+    "sha256": "13d30f118b48518cee41c1608db60b5e4368fda0aa81d93c1f79c12a6aaa657c"
+  }
+}

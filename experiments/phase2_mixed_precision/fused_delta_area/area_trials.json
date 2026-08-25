@@ -1,0 +1,60 @@
+[
+  {
+    "artifacts": {
+      "mapped-netlist.json": "bf80daa6a96e04c2901432181c3c97b4851c9ecf79662f265c963315a4d48637",
+      "mapped-netlist.v": "f196978a0774817dbc0a7a76470394ba67532b631122fa746bdb2134e102d4e6",
+      "mapped-stat.json": "7c74762a12780472dd72aa7bdfc517a18cb77f9908a18138299ccc2eb0838440",
+      "mapped-stat.txt": "8c9a5279793f39ef56a735f565af6fdaf767c0721ce6724ae379832abd5fbed3"
+    },
+    "cell_types": {
+      "AND2_X1": 1125,
+      "AND3_X1": 579,
+      "AND4_X1": 462,
+      "AOI211_X1": 506,
+      "AOI21_X1": 4406,
+      "AOI221_X4": 1,
+      "AOI22_X1": 162,
+      "DFFR_X1": 661,
+      "DFFS_X1": 1,
+      "INV_X1": 5459,
+      "MUX2_X1": 960,
+      "NAND2_X1": 9737,
+      "NAND3_X1": 3485,
+      "NAND4_X1": 2812,
+      "NOR2_X1": 5645,
+      "NOR3_X1": 1802,
+      "NOR4_X1": 888,
+      "OAI211_X1": 1262,
+      "OAI21_X1": 4596,
+      "OAI221_X1": 96,
+      "OAI22_X1": 109,
+      "OR2_X1": 535,
+      "OR3_X1": 126,
+      "OR4_X1": 47,
+      "XNOR2_X1": 3736,
+      "XOR2_X1": 1769
+    },
+    "combinational_cell_area": 52261.818,
+    "command": [
+      "/home/wxt/yosys-sta/oss-cad-suite/bin/yosys",
+      "-Q",
+      "-m",
+      "slang",
+      "-p",
+      "read_liberty -lib /home/wxt/yosys-sta/pdk/nangate45/lib/Nangate45_typ.lib; read_slang --std 1800-2017 /home/wxt/work-online-merge-supplement/hw/ip/online_merge/src/online_merge_fp32_helpers.sv /home/wxt/work-online-merge-supplement/hw/ip/online_merge/src/online_merge_exp_approx.sv /home/wxt/work-online-merge-supplement/hw/ip/online_merge/src/online_merge_recip_approx.sv /home/wxt/work-online-merge-supplement/hw/ip/online_merge/src/online_merge_update_engine.sv /home/wxt/work-online-merge-supplement/hw/ip/online_merge/synth/online_merge_resource_wrapper.sv /home/wxt/work-online-merge-supplement/hw/ip/online_merge/synth/online_merge_mapped_wrapper.sv; hierarchy -check -top online_merge_mixed_scalar_mapped_top; script flow.ys"
+    ],
+    "elapsed_s": 40.8,
+    "error": null,
+    "exact_signature": "cc4d1accf370b014ae5f74466578f55c07a8aa838094b3ef33c76c77dbbaf371",
+    "flow_sha256": "5ef989169a0cf4691430f8150bb519d3210407b97e2df5bbf2f2e219b263ba7e",
+    "log_sha256": "1ca1754e741f72f75112de973b5cf31494a29bd2a6f867c3dbb9573427e1ce97",
+    "mapped_cell_area": 55783.658,
+    "mapped_cell_count": 50967,
+    "role": "MIXED_SCALAR_ONLY",
+    "sequential_cell_area": 3521.84,
+    "stage": "area",
+    "status": "PASS",
+    "top": "online_merge_mixed_scalar_mapped_top",
+    "trial": 1
+  }
+]

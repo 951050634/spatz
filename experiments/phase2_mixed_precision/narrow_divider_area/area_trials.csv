@@ -1,0 +1,2 @@
+stage,role,top,trial,status,elapsed_s,mapped_cell_count,mapped_cell_area,sequential_cell_area,combinational_cell_area,critical_delay_ps,delay_target_ps,target_met,exact_signature
+area,MIXED_SCALAR_ONLY,online_merge_mixed_scalar_mapped_top,1,PASS,405.3,222094,231181.398,3521.84,227659.558,,,,a99de287e429aaf05721be637688738cef5a7267a0b8857b278241afa242a199

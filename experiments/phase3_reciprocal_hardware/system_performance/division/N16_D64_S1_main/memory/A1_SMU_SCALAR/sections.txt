@@ -1,0 +1,34 @@
+/home/wxt/work-online-merge-phase3-division-correct/N16_D64_S1_main/memory/A1_SMU_SCALAR/online-softmax-merge.elf  :
+section                  size         addr
+.text                  0x4a18   0x80000000
+.rodata                0x37b0   0x80004a18
+.eh_frame                0x2c   0x800081c8
+.htif                    0x48   0x80008200
+.got                      0xc   0x80008248
+.tdata                      0   0x80008254
+.tbss                     0xc   0x80008254
+.tbssend                    0   0x80008260
+.sdata                   0xb8   0x80008260
+.data                       0   0x80008318
+.sbss                     0x4   0x80008318
+.bss                        0   0x8000831c
+.dram                       0   0x8000831c
+.debug_loclists        0x3de7            0
+.debug_abbrev          0x154f            0
+.debug_info            0x67d1            0
+.debug_rnglists         0x65e            0
+.debug_str_offsets      0xd3c            0
+.debug_str             0x26e0            0
+.debug_addr             0x60c            0
+.comment                 0x9c            0
+.riscv.attributes       0x1e3            0
+.debug_frame            0x77c            0
+.debug_line            0x66bf            0
+.debug_line_str         0xc24            0
+.debug_aranges           0x78            0
+.debug_loc              0xbf5            0
+.debug_ranges            0xf0            0
+.Pulp_Chip.Info          0xea            0
+Total                 0x209c2
+
+

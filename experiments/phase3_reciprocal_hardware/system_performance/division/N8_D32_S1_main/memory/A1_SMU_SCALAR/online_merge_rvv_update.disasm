@@ -1,0 +1,42 @@
+80002310 <online_merge_rvv_update>:
+80002310:      	beqz	a3, 0x80002364 <online_merge_rvv_update+0x54>
+80002314:      	mv	a4, a2
+80002318:      	mv	a5, a1
+8000231c:      	mv	a6, a0
+80002320:      	or	a7, a5, a4
+80002324:      	or	a7, a7, a6
+80002328:      	andi	a7, a7, 7
+8000232c:      	beqz	a7, 0x800023a0 <online_merge_rvv_update+0x90>
+80002330:      	flw	ft0, 0(a0)
+80002334:      	flw	ft1, 0(a1)
+80002338:      	addi	a0, a0, 4
+8000233c:      	addi	a1, a1, 4
+80002340:      	fmul.s	ft0, ft0, fa0
+80002344:      	fmadd.s	ft0, ft1, fa1, ft0
+80002348:      	fsw	ft0, 0(a2)
+8000234c:      	addi	a2, a2, 4
+80002350:      	addi	a3, a3, -1
+80002354:      	addi	a6, a6, 4
+80002358:      	addi	a5, a5, 4
+8000235c:      	addi	a4, a4, 4
+80002360:      	bnez	a3, 0x80002320 <online_merge_rvv_update+0x10>
+80002364:      	ret
+80002368:      	nop
+8000236c:      	nop
+80002370:      	vsetvli	a5, a4, e32, m8, ta, ma
+80002374:      	vle32.v	v8, (a0)
+80002378:      	vle32.v	v16, (a1)
+8000237c:      	vfmul.vf	v8, v8, fa0
+80002380:      	vfmacc.vf	v8, fa1, v16
+80002384:      	vse32.v	v8, (a2)
+80002388:      	slli	a4, a5, 2
+8000238c:      	add	a0, a0, a4
+80002390:      	add	a1, a1, a4
+80002394:      	add	a2, a2, a4
+80002398:      	sub	a3, a3, a5
+8000239c:      	beqz	a3, 0x80002364 <online_merge_rvv_update+0x54>
+800023a0:      	li	a5, 8
+800023a4:      	mv	a4, a3
+800023a8:      	bltu	a3, a5, 0x80002370 <online_merge_rvv_update+0x60>
+800023ac:      	li	a4, 8
+800023b0:      	j	0x80002370 <online_merge_rvv_update+0x60>

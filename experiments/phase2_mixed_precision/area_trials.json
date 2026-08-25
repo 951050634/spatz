@@ -1,0 +1,60 @@
+[
+  {
+    "artifacts": {
+      "mapped-netlist.json": "ed48ebfe238f95a259de3be966cf8dea0034309a03ede6bd8881bccc6f49c7ee",
+      "mapped-netlist.v": "c736a3ad0b4950b6e5e8841e716639b89762462f78e84361d1b3970f1a4ea29f",
+      "mapped-stat.json": "a4b5a390b3eb34f2b7d83b7b13c258822f665835afb43f6c4cfa62040af01d35",
+      "mapped-stat.txt": "0e6f480e741e8630213265a82153e692921702dbb5993429a21feb18e91af867"
+    },
+    "cell_types": {
+      "AND2_X1": 1819,
+      "AND3_X1": 838,
+      "AND4_X1": 249,
+      "AOI211_X1": 347,
+      "AOI21_X1": 11663,
+      "AOI22_X1": 373,
+      "DFFR_X1": 619,
+      "DFFS_X1": 1,
+      "INV_X1": 11039,
+      "MUX2_X1": 1057,
+      "NAND2_X1": 22354,
+      "NAND3_X1": 4588,
+      "NAND4_X1": 1453,
+      "NOR2_X1": 13703,
+      "NOR3_X1": 2357,
+      "NOR4_X1": 535,
+      "OAI211_X1": 2243,
+      "OAI21_X1": 11179,
+      "OAI221_X1": 91,
+      "OAI22_X1": 136,
+      "OR2_X1": 711,
+      "OR3_X1": 65,
+      "OR4_X1": 29,
+      "XNOR2_X1": 12766,
+      "XOR2_X1": 7304
+    },
+    "combinational_cell_area": 111587.0,
+    "command": [
+      "/home/wxt/yosys-sta/oss-cad-suite/bin/yosys",
+      "-Q",
+      "-m",
+      "slang",
+      "-p",
+      "read_liberty -lib /home/wxt/yosys-sta/pdk/nangate45/lib/Nangate45_typ.lib; read_slang --std 1800-2017 /home/wxt/work-online-merge-supplement/hw/ip/online_merge/src/online_merge_fp32_helpers.sv /home/wxt/work-online-merge-supplement/hw/ip/online_merge/src/online_merge_exp_approx.sv /home/wxt/work-online-merge-supplement/hw/ip/online_merge/src/online_merge_recip_approx.sv /home/wxt/work-online-merge-supplement/hw/ip/online_merge/src/online_merge_update_engine.sv /home/wxt/work-online-merge-supplement/hw/ip/online_merge/synth/online_merge_resource_wrapper.sv /home/wxt/work-online-merge-supplement/hw/ip/online_merge/synth/online_merge_mapped_wrapper.sv; hierarchy -check -top online_merge_legacy_scalar_mapped_top; script flow.ys"
+    ],
+    "elapsed_s": 53.6,
+    "error": null,
+    "exact_signature": "15d638676e1bc3da06c4752f0aa7cc09c955e5a9284fbfb937adf55c4bddf041",
+    "flow_sha256": "5ef989169a0cf4691430f8150bb519d3210407b97e2df5bbf2f2e219b263ba7e",
+    "log_sha256": "4908f599c8002d405542c81c89924b354e4fd1f0ced37ec452325f6420ac17c8",
+    "mapped_cell_area": 114885.4,
+    "mapped_cell_count": 107519,
+    "role": "LEGACY_SCALAR",
+    "sequential_cell_area": 3298.4,
+    "stage": "area",
+    "status": "INVALID_DIAGNOSTIC_latched_mode_not_pruned",
+    "invalid_reason": "The latched mode was not elaboration-pruned; vector/O state remained in this pre-ScalarOnly smoke.",
+    "top": "online_merge_legacy_scalar_mapped_top",
+    "trial": 1
+  }
+]

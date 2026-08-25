@@ -1,0 +1,90 @@
+[
+  {
+    "artifacts": {
+      "elab-netlist.v": "c5404a576e74e985c7c1a2b0acbd7c7ea9e9f2132c7156d4cb2043d1bdd42a5d"
+    },
+    "command": [
+      "/home/wxt/yosys-sta/oss-cad-suite/bin/yosys",
+      "-Q",
+      "-m",
+      "slang",
+      "-p",
+      "read_liberty -lib /home/wxt/yosys-sta/pdk/nangate45/lib/Nangate45_typ.lib; read_slang --std 1800-2017 /home/wxt/work-online-merge-supplement/hw/ip/online_merge/src/online_merge_fp32_helpers.sv /home/wxt/work-online-merge-supplement/hw/ip/online_merge/src/online_merge_exp_approx.sv /home/wxt/work-online-merge-supplement/hw/ip/online_merge/src/online_merge_recip_approx.sv /home/wxt/work-online-merge-supplement/hw/ip/online_merge/src/online_merge_update_engine.sv /home/wxt/work-online-merge-supplement/hw/ip/online_merge/synth/online_merge_resource_wrapper.sv /home/wxt/work-online-merge-supplement/hw/ip/online_merge/synth/online_merge_mapped_wrapper.sv; hierarchy -check -top online_merge_legacy_scalar_mapped_top; script flow.ys"
+    ],
+    "elapsed_s": 12.1,
+    "error": null,
+    "flow_sha256": "4c9558580c863094b477b78bf1869d450e2513389527c1cd9f879f0f8d42cbe3",
+    "log_sha256": "960754b80858e6bf4025bd469e12723f5e96ca0a80b6f7bc197b368acca90397",
+    "role": "LEGACY_SCALAR",
+    "stage": "elab",
+    "status": "PASS",
+    "top": "online_merge_legacy_scalar_mapped_top",
+    "trial": 1
+  },
+  {
+    "artifacts": {
+      "elab-netlist.v": "74599115f82bfc42833e95d52c77936fc9f897f67306f71e3e6397aefdd4b211"
+    },
+    "command": [
+      "/home/wxt/yosys-sta/oss-cad-suite/bin/yosys",
+      "-Q",
+      "-m",
+      "slang",
+      "-p",
+      "read_liberty -lib /home/wxt/yosys-sta/pdk/nangate45/lib/Nangate45_typ.lib; read_slang --std 1800-2017 /home/wxt/work-online-merge-supplement/hw/ip/online_merge/src/online_merge_fp32_helpers.sv /home/wxt/work-online-merge-supplement/hw/ip/online_merge/src/online_merge_exp_approx.sv /home/wxt/work-online-merge-supplement/hw/ip/online_merge/src/online_merge_recip_approx.sv /home/wxt/work-online-merge-supplement/hw/ip/online_merge/src/online_merge_update_engine.sv /home/wxt/work-online-merge-supplement/hw/ip/online_merge/synth/online_merge_resource_wrapper.sv /home/wxt/work-online-merge-supplement/hw/ip/online_merge/synth/online_merge_mapped_wrapper.sv; hierarchy -check -top online_merge_mixed_scalar_mapped_top; script flow.ys"
+    ],
+    "elapsed_s": 23.1,
+    "error": null,
+    "flow_sha256": "4c9558580c863094b477b78bf1869d450e2513389527c1cd9f879f0f8d42cbe3",
+    "log_sha256": "e8f590c6a1524cd6fbb177352bcaebb430b8d15b79cf88735bef8ca1d6f3be44",
+    "role": "MIXED_SCALAR_ONLY",
+    "stage": "elab",
+    "status": "PASS",
+    "top": "online_merge_mixed_scalar_mapped_top",
+    "trial": 1
+  },
+  {
+    "artifacts": {
+      "elab-netlist.v": "16d69deb15634287143fb0a2a3cecf6ea9ed34528626e157755243787438304b"
+    },
+    "command": [
+      "/home/wxt/yosys-sta/oss-cad-suite/bin/yosys",
+      "-Q",
+      "-m",
+      "slang",
+      "-p",
+      "read_liberty -lib /home/wxt/yosys-sta/pdk/nangate45/lib/Nangate45_typ.lib; read_slang --std 1800-2017 /home/wxt/work-online-merge-supplement/hw/ip/online_merge/src/online_merge_fp32_helpers.sv /home/wxt/work-online-merge-supplement/hw/ip/online_merge/src/online_merge_exp_approx.sv /home/wxt/work-online-merge-supplement/hw/ip/online_merge/src/online_merge_recip_approx.sv /home/wxt/work-online-merge-supplement/hw/ip/online_merge/src/online_merge_update_engine.sv /home/wxt/work-online-merge-supplement/hw/ip/online_merge/synth/online_merge_resource_wrapper.sv /home/wxt/work-online-merge-supplement/hw/ip/online_merge/synth/online_merge_mapped_wrapper.sv; hierarchy -check -top online_merge_dual_scalar_mapped_top; script flow.ys"
+    ],
+    "elapsed_s": 23.6,
+    "error": null,
+    "flow_sha256": "4c9558580c863094b477b78bf1869d450e2513389527c1cd9f879f0f8d42cbe3",
+    "log_sha256": "eca578e6b6fe3205b4cb513f3ed61349fb33334e47cf3cd306b6159f49fa7f42",
+    "role": "DUAL_SCALAR",
+    "stage": "elab",
+    "status": "PASS",
+    "top": "online_merge_dual_scalar_mapped_top",
+    "trial": 1
+  },
+  {
+    "artifacts": {
+      "elab-netlist.v": "ff7579942193089ce2e108803e9abd68bf4864e7edb841a810515c0394428b1e"
+    },
+    "command": [
+      "/home/wxt/yosys-sta/oss-cad-suite/bin/yosys",
+      "-Q",
+      "-m",
+      "slang",
+      "-p",
+      "read_liberty -lib /home/wxt/yosys-sta/pdk/nangate45/lib/Nangate45_typ.lib; read_slang --std 1800-2017 /home/wxt/work-online-merge-supplement/hw/ip/online_merge/src/online_merge_fp32_helpers.sv /home/wxt/work-online-merge-supplement/hw/ip/online_merge/src/online_merge_exp_approx.sv /home/wxt/work-online-merge-supplement/hw/ip/online_merge/src/online_merge_recip_approx.sv /home/wxt/work-online-merge-supplement/hw/ip/online_merge/src/online_merge_update_engine.sv /home/wxt/work-online-merge-supplement/hw/ip/online_merge/synth/online_merge_resource_wrapper.sv /home/wxt/work-online-merge-supplement/hw/ip/online_merge/synth/online_merge_mapped_wrapper.sv; hierarchy -check -top online_merge_legacy_full_mapped_top; script flow.ys"
+    ],
+    "elapsed_s": 13.1,
+    "error": null,
+    "flow_sha256": "4c9558580c863094b477b78bf1869d450e2513389527c1cd9f879f0f8d42cbe3",
+    "log_sha256": "5221a736ea39ef26b6f664f867bb6a6c2e0957cbaa3d5348a40ce1625f3c2a9e",
+    "role": "LEGACY_FULL",
+    "stage": "elab",
+    "status": "PASS",
+    "top": "online_merge_legacy_full_mapped_top",
+    "trial": 1
+  }
+]

@@ -1,0 +1,66 @@
+{
+  "schema_version": 1,
+  "description": "Matched legacy Scalar versus mixed Scalar performance only.",
+  "case_file": "experiments/configs/p0_anchor_cases.json",
+  "case_ids": [
+    "N1_D1_S1_main",
+    "N8_D32_S1_main",
+    "N16_D64_S1_main"
+  ],
+  "profiles": ["memory"],
+  "jobs": 1,
+  "configurations": {
+    "A1_SMU_SCALAR": {
+      "internal_implementation": "A1",
+      "aliases": [],
+      "build_target": "test-spatzBenchmarks-online-softmax-merge-a1"
+    },
+    "A1_MIXED_SCALAR": {
+      "internal_implementation": "A1-mixed",
+      "aliases": [],
+      "build_target": "test-spatzBenchmarks-online-softmax-merge-a1-mixed"
+    }
+  },
+  "trials": 3,
+  "samples_per_simulator_process": 1,
+  "warmups_per_simulator_process": 1,
+  "require_exact_cycle_reproducibility": true,
+  "correctness": {
+    "absolute_scale_tolerance": 0.001,
+    "per_configuration_absolute_scale_tolerance": {
+      "A1_SMU_SCALAR": 0.001,
+      "A1_MIXED_SCALAR": 0.015
+    },
+    "mixed_tolerance_semantics":
+      "max(abs(actual-reference))/max(abs(reference),1); report raw max_abs and max scale-relative error",
+    "reject_nan": true,
+    "reject_infinity": true,
+    "retain_bit_equal_ratio": true
+  },
+  "timing": {
+    "primary": "kernel_cycles",
+    "fields": [
+      "kernel_cycles",
+      "smu_scalar_cycles",
+      "rvv_vector_cycles"
+    ],
+    "end_to_end_cycles": null,
+    "end_to_end_reason": "NO_EXPLICIT_TRANSFER_PHASE"
+  },
+  "hardware": {
+    "tile_size": null,
+    "effective_vector_granularity_fp32": 8,
+    "interface_alignment_bytes": 4,
+    "allocation_alignment_bytes": 256,
+    "tcdm_capacity_bytes": 131072,
+    "cluster_cores": 2,
+    "stack_log2_bytes_per_core": 13,
+    "stack_bank_skew_bytes_per_core": 8,
+    "snruntime_team_bytes": 112,
+    "runtime_reserved_bytes": 16512,
+    "formal_tcdm_fraction": 0.8,
+    "formal_total_footprint_limit_bytes": 104857
+  },
+  "counter_profiles": ["memory"],
+  "missing_value": null
+}

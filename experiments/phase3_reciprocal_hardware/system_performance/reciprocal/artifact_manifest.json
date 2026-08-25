@@ -1,0 +1,164 @@
+[
+  {
+    "bytes": 82635,
+    "kind": "runner_script",
+    "path": "/home/wxt/work-online-merge-supplement/experiments/scripts/run_performance_matrix.py",
+    "sha256": "624613184e9695c5abc8fc99c56f21d913a549508a9a0a7c36507906c738ae81"
+  },
+  {
+    "bytes": 2875,
+    "kind": "cluster_cfg",
+    "path": "/home/wxt/work-online-merge-supplement/hw/system/spatz_cluster/cfg/spatz_cluster.default.dram.hjson",
+    "sha256": "120fa0c30199e54e6e9b5c60d8da40913eae8526640992cc5d4f130bef159775"
+  },
+  {
+    "bytes": 495,
+    "kind": "case_file",
+    "path": "/home/wxt/work-online-merge-supplement/experiments/configs/p0_anchor_cases.json",
+    "sha256": "7eb15301d30441c1fc90f7f1bfbf48ad7dca2a935d505ec8e47d30270c5ba77b"
+  },
+  {
+    "bytes": 1161,
+    "kind": "measurement_policy",
+    "path": "/home/wxt/work-online-merge-supplement/experiments/phase3_reciprocal_hardware/performance_policy_reciprocal.json",
+    "sha256": "d61622cbc413d4c221008578de33030f6954692f8a4518e77603f85627c08283"
+  },
+  {
+    "bytes": 18061368,
+    "kind": "simulator",
+    "path": "/home/wxt/work-online-merge-phase3-recip-sim/spatz_cluster.vlt",
+    "sha256": "8f85b204d064f1ced29d2fc27518754f8b018db0530cf2328a3a1062687c9138"
+  },
+  {
+    "bytes": 5398,
+    "kind": "configure_log",
+    "path": "N8_D32_S1_main/memory/configure.log",
+    "sha256": "48f7d7e66c9ebef00a64c46ebabdc62196af88fc24ba53c79ff1e43a223bb532"
+  },
+  {
+    "bytes": 5248,
+    "kind": "build_log",
+    "path": "N8_D32_S1_main/memory/A1_MIXED_SCALAR/build.log",
+    "sha256": "58032e60143271ef4c935f8c0324fb9c55e6db1781dfbc75b301a7bdf303ca93"
+  },
+  {
+    "bytes": 190800,
+    "kind": "elf",
+    "path": "N8_D32_S1_main/memory/A1_MIXED_SCALAR/online-softmax-merge.elf",
+    "sha256": "fe8742e2a53b77aed12b7f58f24c88a0efaa9bf59bfb5fa1113b09b81c397c3f"
+  },
+  {
+    "bytes": 12288,
+    "kind": "generated_input_header",
+    "path": "N8_D32_S1_main/memory/A1_MIXED_SCALAR/online_merge_case_data.h",
+    "sha256": "a6729cab23284a7f45ea5d928850fbd01099cf12ada8eff06df8d75f5ac1cb70"
+  },
+  {
+    "bytes": 151328,
+    "kind": "disassembly",
+    "path": "N8_D32_S1_main/memory/A1_MIXED_SCALAR/objdump.txt",
+    "sha256": "c7f05624603239f7393b07c17c10ca92b0676c4d25fa20fa3c2ed85ba3a70fab"
+  },
+  {
+    "bytes": 1510,
+    "kind": "hot_symbol_disassembly",
+    "path": "N8_D32_S1_main/memory/A1_MIXED_SCALAR/online_merge_rvv_update.disasm",
+    "sha256": "0b667c06e19442ca12fd8fae343d839ae6897b334380f4efc7fcfeca401a8ac2"
+  },
+  {
+    "bytes": 15436,
+    "kind": "symbol_table",
+    "path": "N8_D32_S1_main/memory/A1_MIXED_SCALAR/symbols.txt",
+    "sha256": "32de58123d5aaf83a7974a34bb7876362cd55c161980510a37b317635a480cd5"
+  },
+  {
+    "bytes": 1442,
+    "kind": "section_sizes",
+    "path": "N8_D32_S1_main/memory/A1_MIXED_SCALAR/sections.txt",
+    "sha256": "f93555fdfc765f329dab50def887a292574e6efa6ceb08e91fc574a37fc63a26"
+  },
+  {
+    "bytes": 4863,
+    "kind": "compile_commands",
+    "path": "N8_D32_S1_main/memory/A1_MIXED_SCALAR/compile_commands.json",
+    "sha256": "a8391e615d2d59d3415b039aec4246cea630628e523b8ca52362d5e7d931343b"
+  },
+  {
+    "bytes": 978,
+    "kind": "link_command",
+    "path": "N8_D32_S1_main/memory/A1_MIXED_SCALAR/link_command.txt",
+    "sha256": "f16f8730abc92e6ca5f64d1964d174c923bef6ab5b2762008d5eb7fa83edeb1b"
+  },
+  {
+    "bytes": 1463,
+    "kind": "simulator_log",
+    "path": "N8_D32_S1_main/memory/A1_MIXED_SCALAR/trial-0/simulator.log",
+    "sha256": "13f7a4e283ad6f9ed2294e1fcc4c59be2f7bcd5dba953769751e29133249725f"
+  },
+  {
+    "bytes": 4947,
+    "kind": "configure_log",
+    "path": "N16_D64_S1_main/memory/configure.log",
+    "sha256": "678e70a2ea696badd5272faebf8ffbd69a2dae2555ec686d6dbd5bd202246c8b"
+  },
+  {
+    "bytes": 5249,
+    "kind": "build_log",
+    "path": "N16_D64_S1_main/memory/A1_MIXED_SCALAR/build.log",
+    "sha256": "7a23e44ee95193b70afa5714a184a18feef70ef1aa658983c9d41f5fbcc2ff27"
+  },
+  {
+    "bytes": 201880,
+    "kind": "elf",
+    "path": "N16_D64_S1_main/memory/A1_MIXED_SCALAR/online-softmax-merge.elf",
+    "sha256": "16d54476e465f0a240386b303fc66ce2de77a00537efa6dcbb7a6a38c4d53c0b"
+  },
+  {
+    "bytes": 44436,
+    "kind": "generated_input_header",
+    "path": "N16_D64_S1_main/memory/A1_MIXED_SCALAR/online_merge_case_data.h",
+    "sha256": "2e988bc21ef578d746579ad77c2ec9aebf503112367514ae34f3dd01d95e8fd7"
+  },
+  {
+    "bytes": 156913,
+    "kind": "disassembly",
+    "path": "N16_D64_S1_main/memory/A1_MIXED_SCALAR/objdump.txt",
+    "sha256": "71d584cd3abb435053c9c8c13f923da2b1cfff02c55be5967ffa8dd3015df35e"
+  },
+  {
+    "bytes": 1510,
+    "kind": "hot_symbol_disassembly",
+    "path": "N16_D64_S1_main/memory/A1_MIXED_SCALAR/online_merge_rvv_update.disasm",
+    "sha256": "d769594e843f68ae95df68e0889a1a20fba326d79fd9ffd0f2a4865b56088c89"
+  },
+  {
+    "bytes": 15436,
+    "kind": "symbol_table",
+    "path": "N16_D64_S1_main/memory/A1_MIXED_SCALAR/symbols.txt",
+    "sha256": "ab45d6569b63842c2a551226250d8d12cf9812d1241f3d5b6bc958430467f3be"
+  },
+  {
+    "bytes": 1443,
+    "kind": "section_sizes",
+    "path": "N16_D64_S1_main/memory/A1_MIXED_SCALAR/sections.txt",
+    "sha256": "0e5b333792b4d5fecffe94cb5e4dd3f7abf0e02639085d56acc9e41bc4f19b06"
+  },
+  {
+    "bytes": 4647,
+    "kind": "compile_commands",
+    "path": "N16_D64_S1_main/memory/A1_MIXED_SCALAR/compile_commands.json",
+    "sha256": "a5fe0aaed764542374501eef502999f8af108eece8d1c9df5198e6566a905e4a"
+  },
+  {
+    "bytes": 885,
+    "kind": "link_command",
+    "path": "N16_D64_S1_main/memory/A1_MIXED_SCALAR/link_command.txt",
+    "sha256": "953d5f8ef64e59b22e0f1ff64e94bed2eb4c06ba94bb1dcadda217d83ad1bed7"
+  },
+  {
+    "bytes": 1476,
+    "kind": "simulator_log",
+    "path": "N16_D64_S1_main/memory/A1_MIXED_SCALAR/trial-0/simulator.log",
+    "sha256": "91783b146b752ea6981848f1963875dc8e1d43473719bf0550bb4c0aa75fd9e2"
+  }
+]

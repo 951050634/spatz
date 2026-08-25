@@ -1,0 +1,10 @@
+stage,role,top,trial,status,elapsed_s,mapped_cell_count,mapped_cell_area,sequential_cell_area,combinational_cell_area,critical_delay_ps,delay_target_ps,target_met,exact_signature
+timing,LEGACY_SCALAR,online_merge_legacy_scalar_mapped_top,1,PASS,96.8,59642,65825.69,2761.08,63064.61,12517.79,1500,False,013ac48136594762824c5d65ca5540442444f9e3485930a9f3b6685c4ea20ba6
+timing,MIXED_SCALAR_DIVISION,online_merge_mixed_division_scalar_mapped_top,1,PASS,66.4,31205,36274.686,3521.84,32752.846,14619.73,1500,False,76f5f8a92804054629e2a16edbd2a1d0c82e79bd27462d44727bb396fab659d2
+timing,MIXED_SCALAR_RECIPROCAL,online_merge_mixed_reciprocal_scalar_mapped_top,1,PASS,70.8,31502,35994.588,2824.92,33169.668000000005,15539.55,1500,False,f4ef573889e1a52891d7ec3be2b5e6b1642a2304c05371ca1671daf59ec599c7
+timing,LEGACY_SCALAR,online_merge_legacy_scalar_mapped_top,2,PASS,95.9,59642,65825.69,2761.08,63064.61,12517.79,1500,False,013ac48136594762824c5d65ca5540442444f9e3485930a9f3b6685c4ea20ba6
+timing,MIXED_SCALAR_DIVISION,online_merge_mixed_division_scalar_mapped_top,2,PASS,68.3,31205,36274.686,3521.84,32752.846,14619.73,1500,False,76f5f8a92804054629e2a16edbd2a1d0c82e79bd27462d44727bb396fab659d2
+timing,MIXED_SCALAR_RECIPROCAL,online_merge_mixed_reciprocal_scalar_mapped_top,2,PASS,70.4,31502,35994.588,2824.92,33169.668000000005,15539.55,1500,False,f4ef573889e1a52891d7ec3be2b5e6b1642a2304c05371ca1671daf59ec599c7
+timing,LEGACY_SCALAR,online_merge_legacy_scalar_mapped_top,3,PASS,96.1,59642,65825.69,2761.08,63064.61,12517.79,1500,False,013ac48136594762824c5d65ca5540442444f9e3485930a9f3b6685c4ea20ba6
+timing,MIXED_SCALAR_DIVISION,online_merge_mixed_division_scalar_mapped_top,3,PASS,68.3,31205,36274.686,3521.84,32752.846,14619.73,1500,False,76f5f8a92804054629e2a16edbd2a1d0c82e79bd27462d44727bb396fab659d2
+timing,MIXED_SCALAR_RECIPROCAL,online_merge_mixed_reciprocal_scalar_mapped_top,3,PASS,76.7,31502,35994.588,2824.92,33169.668000000005,15539.55,1500,False,f4ef573889e1a52891d7ec3be2b5e6b1642a2304c05371ca1671daf59ec599c7
