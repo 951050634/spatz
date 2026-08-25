@@ -127,3 +127,390 @@ module online_merge_exp_approx (
   end
 
 endmodule
+
+// Direct-address mixed-precision exponential ROM.  The table is the frozen
+// Phase-1 256-entry signed-INT16 Q1.14 image (raw little-endian hash
+// 3ea4629839c7341f1d40b388b444d1d4ae8adf4fefccd2d36e5876f6eb49df30).
+// Addressing is floor((delta + 8) * 32), with bin-center codes and no
+// interpolation.  A zero/positive delta is the exact winner identity.
+module online_merge_exp_mixed_rom (
+  input  logic [7:0]  index_i,
+  input  logic        unity_i,
+  input  logic        zero_i,
+  input  logic        valid_i,
+  input  logic        saturated_i,
+  input  logic        unsupported_i,
+  output logic [15:0] exp_q1_14_o,
+  output logic        valid_o,
+  output logic        saturated_o,
+  output logic        unsupported_o
+);
+
+  import online_merge_fp32_helpers::*;
+
+  localparam logic signed [15:0] MixedExpLut [0:255] = '{
+    16'sd6, 16'sd6, 16'sd6, 16'sd6, 16'sd6, 16'sd7, 16'sd7, 16'sd7,
+    16'sd7, 16'sd7, 16'sd8, 16'sd8, 16'sd8, 16'sd8, 16'sd9, 16'sd9,
+    16'sd9, 16'sd9, 16'sd10, 16'sd10, 16'sd10, 16'sd11, 16'sd11, 16'sd11,
+    16'sd12, 16'sd12, 16'sd13, 16'sd13, 16'sd13, 16'sd14, 16'sd14, 16'sd15,
+    16'sd15, 16'sd16, 16'sd16, 16'sd17, 16'sd17, 16'sd18, 16'sd18, 16'sd19,
+    16'sd19, 16'sd20, 16'sd21, 16'sd21, 16'sd22, 16'sd23, 16'sd24, 16'sd24,
+    16'sd25, 16'sd26, 16'sd27, 16'sd27, 16'sd28, 16'sd29, 16'sd30, 16'sd31,
+    16'sd32, 16'sd33, 16'sd34, 16'sd35, 16'sd36, 16'sd38, 16'sd39, 16'sd40,
+    16'sd41, 16'sd43, 16'sd44, 16'sd45, 16'sd47, 16'sd48, 16'sd50, 16'sd51,
+    16'sd53, 16'sd55, 16'sd56, 16'sd58, 16'sd60, 16'sd62, 16'sd64, 16'sd66,
+    16'sd68, 16'sd70, 16'sd72, 16'sd75, 16'sd77, 16'sd80, 16'sd82, 16'sd85,
+    16'sd87, 16'sd90, 16'sd93, 16'sd96, 16'sd99, 16'sd102, 16'sd105, 16'sd109,
+    16'sd112, 16'sd116, 16'sd119, 16'sd123, 16'sd127, 16'sd131, 16'sd135, 16'sd140,
+    16'sd144, 16'sd149, 16'sd153, 16'sd158, 16'sd163, 16'sd168, 16'sd174, 16'sd179,
+    16'sd185, 16'sd191, 16'sd197, 16'sd203, 16'sd209, 16'sd216, 16'sd223, 16'sd230,
+    16'sd237, 16'sd245, 16'sd253, 16'sd261, 16'sd269, 16'sd278, 16'sd286, 16'sd295,
+    16'sd305, 16'sd314, 16'sd324, 16'sd335, 16'sd345, 16'sd356, 16'sd368, 16'sd379,
+    16'sd391, 16'sd404, 16'sd417, 16'sd430, 16'sd443, 16'sd458, 16'sd472, 16'sd487,
+    16'sd503, 16'sd518, 16'sd535, 16'sd552, 16'sd569, 16'sd588, 16'sd606, 16'sd625,
+    16'sd645, 16'sd666, 16'sd687, 16'sd709, 16'sd731, 16'sd754, 16'sd778, 16'sd803,
+    16'sd829, 16'sd855, 16'sd882, 16'sd910, 16'sd939, 16'sd969, 16'sd999, 16'sd1031,
+    16'sd1064, 16'sd1098, 16'sd1133, 16'sd1168, 16'sd1206, 16'sd1244, 16'sd1283, 16'sd1324,
+    16'sd1366, 16'sd1409, 16'sd1454, 16'sd1500, 16'sd1548, 16'sd1597, 16'sd1648, 16'sd1700,
+    16'sd1754, 16'sd1810, 16'sd1867, 16'sd1926, 16'sd1988, 16'sd2051, 16'sd2116, 16'sd2183,
+    16'sd2252, 16'sd2324, 16'sd2398, 16'sd2474, 16'sd2552, 16'sd2633, 16'sd2717, 16'sd2803,
+    16'sd2892, 16'sd2984, 16'sd3078, 16'sd3176, 16'sd3277, 16'sd3381, 16'sd3488, 16'sd3599,
+    16'sd3713, 16'sd3831, 16'sd3953, 16'sd4078, 16'sd4208, 16'sd4341, 16'sd4479, 16'sd4621,
+    16'sd4768, 16'sd4919, 16'sd5076, 16'sd5237, 16'sd5403, 16'sd5574, 16'sd5751, 16'sd5934,
+    16'sd6122, 16'sd6317, 16'sd6517, 16'sd6724, 16'sd6937, 16'sd7158, 16'sd7385, 16'sd7619,
+    16'sd7861, 16'sd8111, 16'sd8368, 16'sd8634, 16'sd8908, 16'sd9191, 16'sd9482, 16'sd9783,
+    16'sd10094, 16'sd10414, 16'sd10745, 16'sd11086, 16'sd11438, 16'sd11801, 16'sd12176, 16'sd12562,
+    16'sd12961, 16'sd13372, 16'sd13797, 16'sd14235, 16'sd14687, 16'sd15153, 16'sd15634, 16'sd16130
+  };
+
+  always_comb begin
+    exp_q1_14_o = 16'h0000;
+    valid_o = valid_i;
+    saturated_o = saturated_i;
+    unsupported_o = unsupported_i;
+    if (unsupported_i || !valid_i) begin
+      exp_q1_14_o = 16'h0000;
+    end else if (unity_i) begin
+      exp_q1_14_o = 16'h4000;
+    end else if (zero_i) begin
+      exp_q1_14_o = 16'h0000;
+    end else begin
+      exp_q1_14_o = MixedExpLut[index_i];
+    end
+  end
+
+endmodule
+
+// Compatibility wrapper for direct FP16 delta users and the existing unit
+// test.  The engine uses the fused ordered-pair module below, so this wrapper
+// is not present in its mixed datapath.
+module online_merge_exp_mixed (
+  input  online_merge_fp32_helpers::fp16_bits_t x_i,
+  output logic [15:0]                           exp_q1_14_o,
+  output logic                                  valid_o,
+  output logic                                  saturated_o,
+  output logic                                  unsupported_o
+);
+
+  import online_merge_fp32_helpers::*;
+
+  logic [7:0] index;
+  logic [10:0] significand;
+  int signed value_exp;
+  logic [63:0] scaled_abs;
+  logic [63:0] abs_value_x32;
+  int signed shift;
+  logic unity, zero, valid, saturated, unsupported;
+
+  always_comb begin
+    index = '0;
+    significand = (x_i[14:10] == 0) ? {1'b0, x_i[9:0]} :
+        {1'b1, x_i[9:0]};
+    value_exp = (x_i[14:10] == 0) ? -24 : int'(x_i[14:10]) - 25;
+    abs_value_x32 = '0;
+    shift = int'(value_exp) + 5;
+    if (shift >= 0) begin
+      abs_value_x32 = {53'd0, significand} << shift;
+    end else if (-shift >= 64) begin
+      abs_value_x32 = (significand != 0) ? 64'd1 : 64'd0;
+    end else begin
+      // ceil(|x|*32) turns floor((x+8)*32) into 256-ceil(|x|*32).
+      abs_value_x32 = ({53'd0, significand} + (64'd1 << (-shift)) - 1) >>
+          (-shift);
+    end
+    if (abs_value_x32 >= 256) begin
+      index = 8'd0;
+    end else begin
+      index = 8'(256 - abs_value_x32);
+    end
+
+    valid = 1'b0;
+    unity = 1'b0;
+    zero = 1'b0;
+    saturated = 1'b0;
+    unsupported = 1'b0;
+    if (fp16_is_nan_or_inf(x_i)) begin
+      unsupported = 1'b1;
+    end else begin
+      valid = 1'b1;
+      if (!x_i[15] || fp16_is_zero(x_i)) begin
+        unity = 1'b1;
+        saturated = !fp16_is_zero(x_i);
+      end else if (fp16_lt(x_i, FP16_NEG_EIGHT)) begin
+        zero = 1'b1;
+        saturated = 1'b1;
+      end
+    end
+  end
+
+  online_merge_exp_mixed_rom i_rom (
+    .index_i       (index),
+    .unity_i       (unity),
+    .zero_i        (zero),
+    .valid_i       (valid),
+    .saturated_i   (saturated),
+    .unsupported_i (unsupported),
+    .exp_q1_14_o   (exp_q1_14_o),
+    .valid_o       (valid_o),
+    .saturated_o   (saturated_o),
+    .unsupported_o (unsupported_o)
+  );
+endmodule
+
+// Fused ordered finite FP16 loser/winner -> direct LUT address.  It mirrors
+// fp16_sub's three guard bits, sticky alignment and RNE result, but retains
+// only the 15-bit aligned magnitude needed to form ceil(|delta|*32).  The ROM
+// itself remains single-copy in online_merge_exp_mixed_rom.
+module online_merge_fp16_delta_exp (
+  input  online_merge_fp32_helpers::fp16_bits_t loser_i,
+  input  online_merge_fp32_helpers::fp16_bits_t winner_i,
+  output logic [7:0]                            address_o,
+  output logic [15:0]                           exp_q1_14_o,
+  output logic                                  valid_o,
+  output logic                                  saturated_o,
+  output logic                                  unsupported_o
+);
+
+  import online_merge_fp32_helpers::*;
+
+  logic [7:0] lut_index;
+  logic lut_unity, lut_zero, lut_valid, lut_saturated, lut_unsupported;
+  logic sign_loser, sign_winner;
+  logic [4:0] exp_loser, exp_winner;
+  logic [9:0] frac_loser, frac_winner;
+  logic [10:0] sig_loser, sig_winner, sig_hi, sig_lo;
+  logic signed [6:0] e_loser, e_winner, e_hi, e_lo, e_norm;
+  logic [14:0] raw_hi, raw_lo, aligned_lo, magnitude;
+  logic [5:0] align_shift;
+  logic [15:0] rounded_sig, rounded_subnormal;
+  logic [4:0] out_exp;
+  logic [9:0] out_frac;
+  logic [10:0] address_sig;
+  logic signed [6:0] address_exp;
+  logic signed [7:0] address_shift;
+  logic [31:0] scaled_abs;
+
+  function automatic logic [15:0] round_shift_15(
+    input logic [14:0] value,
+    input int unsigned shift
+  );
+    logic [15:0] base, remainder, halfway, mask;
+    begin
+      if (shift == 0) begin
+        round_shift_15 = {1'b0, value};
+      end else if (shift >= 16) begin
+        round_shift_15 = 16'd0;
+      end else begin
+        mask = (16'd1 << shift) - 16'd1;
+        base = {1'b0, value} >> shift;
+        remainder = {1'b0, value} & mask;
+        halfway = 16'd1 << (shift - 1);
+        if ((remainder > halfway) ||
+            ((remainder == halfway) && base[0])) begin
+          round_shift_15 = base + 16'd1;
+        end else begin
+          round_shift_15 = base;
+        end
+      end
+    end
+  endfunction
+
+  always_comb begin
+    lut_index = 8'd0;
+    lut_unity = 1'b0;
+    lut_zero = 1'b0;
+    lut_valid = 1'b0;
+    lut_saturated = 1'b0;
+    lut_unsupported = 1'b0;
+    sign_loser = loser_i[15];
+    sign_winner = winner_i[15];
+    exp_loser = loser_i[14:10];
+    exp_winner = winner_i[14:10];
+    frac_loser = loser_i[9:0];
+    frac_winner = winner_i[9:0];
+    sig_loser = (exp_loser == 0) ? {1'b0, frac_loser} :
+        {1'b1, frac_loser};
+    sig_winner = (exp_winner == 0) ? {1'b0, frac_winner} :
+        {1'b1, frac_winner};
+    e_loser = (exp_loser == 0) ? -7'sd24 : $signed({1'b0, exp_loser}) -
+        7'sd25;
+    e_winner = (exp_winner == 0) ? -7'sd24 : $signed({1'b0, exp_winner}) -
+        7'sd25;
+    sig_hi = '0;
+    sig_lo = '0;
+    e_hi = '0;
+    e_lo = '0;
+    e_norm = '0;
+    raw_hi = '0;
+    raw_lo = '0;
+    aligned_lo = '0;
+    magnitude = '0;
+    align_shift = '0;
+    rounded_sig = '0;
+    rounded_subnormal = '0;
+    out_exp = '0;
+    out_frac = '0;
+    address_sig = '0;
+    address_exp = '0;
+    address_shift = '0;
+    scaled_abs = '0;
+
+    if (fp16_is_nan_or_inf(loser_i) || fp16_is_nan_or_inf(winner_i) ||
+        fp16_lt(winner_i, loser_i)) begin
+      // The fused interface is intentionally restricted to ordered finite
+      // inputs.  This is the same unsupported result as an FP16 overflow or
+      // NaN/Inf entering the existing mixed LUT.
+      lut_unsupported = 1'b1;
+    end else if (fp16_is_zero(loser_i) && fp16_is_zero(winner_i) ||
+                 loser_i == winner_i) begin
+      // Equal maxima, including +0/-0, bypass the ROM with exact unity.
+      lut_valid = 1'b1;
+      lut_unity = 1'b1;
+    end else begin
+      lut_valid = 1'b1;
+      if ((e_loser > e_winner) ||
+          ((e_loser == e_winner) && (sig_loser >= sig_winner))) begin
+        sig_hi = sig_loser;
+        sig_lo = sig_winner;
+        e_hi = e_loser;
+        e_lo = e_winner;
+      end else begin
+        sig_hi = sig_winner;
+        sig_lo = sig_loser;
+        e_hi = e_winner;
+        e_lo = e_loser;
+      end
+      raw_hi = {1'b0, sig_hi, 3'b000};
+      raw_lo = {1'b0, sig_lo, 3'b000};
+      align_shift = 6'(e_hi - e_lo);
+      if (align_shift == 0) begin
+        aligned_lo = raw_lo;
+      end else if (align_shift >= 15) begin
+        aligned_lo = (raw_lo != 0) ? 15'd1 : 15'd0;
+      end else begin
+        aligned_lo = raw_lo >> align_shift;
+        if ((raw_lo & ((15'd1 << align_shift) - 15'd1)) != 0) begin
+          aligned_lo[0] = 1'b1;
+        end
+      end
+      // Original same-sign operands subtract magnitudes; opposite signs
+      // add them after b's sign is inverted by fp16_sub.
+      if (sign_loser == sign_winner) begin
+        magnitude = raw_hi - aligned_lo;
+      end else begin
+        magnitude = raw_hi + aligned_lo;
+      end
+      e_norm = e_hi;
+      if (magnitude == 0) begin
+        lut_unity = 1'b1;
+      end else begin
+        if (magnitude >= 15'd16384) begin
+          magnitude = (magnitude >> 1) |
+              (magnitude[0] ? 15'd1 : 15'd0);
+          e_norm = e_norm + 1'b1;
+        end
+        for (int unsigned norm_iter = 0; norm_iter < 15; norm_iter++) begin
+          if ((magnitude < 15'd8192) && (e_norm > -7'sd40)) begin
+            magnitude = magnitude << 1;
+            e_norm = e_norm - 1'b1;
+          end
+        end
+        rounded_sig = round_shift_15(magnitude, 3);
+        if (rounded_sig >= 16'd2048) begin
+          rounded_sig = rounded_sig >> 1;
+          e_norm = e_norm + 1'b1;
+        end
+        if (e_norm > 7'sd5) begin
+          // A finite pair whose difference overflows FP16 maps to the same
+          // unsupported state as online_merge_exp_mixed(-Inf).
+          lut_valid = 1'b0;
+          lut_unsupported = 1'b1;
+        end else if (e_norm >= -7'sd24) begin
+          out_exp = 5'(e_norm + 7'sd25);
+          out_frac = rounded_sig[9:0];
+        end else begin
+          rounded_subnormal = round_shift_15(magnitude,
+              3 + (-int'(e_norm) - 24));
+          if (rounded_subnormal >= 16'd1024) begin
+            out_exp = 5'd1;
+            out_frac = 10'd0;
+          end else begin
+            out_exp = 5'd0;
+            out_frac = rounded_subnormal[9:0];
+          end
+        end
+
+        if (lut_valid && !lut_unsupported) begin
+          if ((out_exp == 0) && (out_frac == 0)) begin
+            // fp16_sub may produce signed zero after underflow; both signs
+            // are exact winner identities in the existing LUT path.
+            lut_unity = 1'b1;
+          end else begin
+            address_sig = (out_exp == 0) ? {1'b0, out_frac} :
+                {1'b1, out_frac};
+            address_exp = (out_exp == 0) ? -7'sd24 :
+                $signed({1'b0, out_exp}) - 7'sd25;
+            address_shift = address_exp + 7'sd5;
+            if (address_shift >= 0) begin
+              scaled_abs = {21'd0, address_sig} << address_shift;
+            end else begin
+              if (-address_shift >= 32) begin
+                scaled_abs = (address_sig != 0) ? 32'd1 : 32'd0;
+              end else begin
+                scaled_abs = ({21'd0, address_sig} +
+                    (32'd1 << (-address_shift)) - 32'd1) >>
+                    (-address_shift);
+              end
+            end
+            if (scaled_abs >= 256) begin
+              lut_index = 8'd0;
+            end else begin
+              lut_index = 8'(256 - scaled_abs);
+            end
+            // -8 exactly is LUT[0]; only a rounded result strictly greater
+            // than eight is saturated to zero.
+            if ((out_exp > 5'd18) ||
+                ((out_exp == 5'd18) && (out_frac != 0))) begin
+              lut_zero = 1'b1;
+              lut_saturated = 1'b1;
+            end
+          end
+        end
+      end
+    end
+  end
+
+  online_merge_exp_mixed_rom i_rom (
+    .index_i       (lut_index),
+    .unity_i       (lut_unity),
+    .zero_i        (lut_zero),
+    .valid_i       (lut_valid),
+    .saturated_i   (lut_saturated),
+    .unsupported_i (lut_unsupported),
+    .exp_q1_14_o   (exp_q1_14_o),
+    .valid_o       (valid_o),
+    .saturated_o   (saturated_o),
+    .unsupported_o (unsupported_o)
+  );
+  assign address_o = lut_index;
+endmodule

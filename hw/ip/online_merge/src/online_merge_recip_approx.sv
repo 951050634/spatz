@@ -112,3 +112,102 @@ module online_merge_recip_approx (
   end
 
 endmodule
+
+// Mixed-normalization reciprocal image.  The physical ROM contains exactly
+// code[0:255] in unsigned Q1.15; code[256] is the terminal value 0x4000 and is
+// hardwired for the final interpolation bin.  The input is the FP32 widening
+// of the already-RNE-quantized FP16 denominator.
+module online_merge_recip_approx_q1_15 (
+  input  online_merge_fp32_helpers::fp32_bits_t x_i,
+  output online_merge_fp32_helpers::q1_15_t     recip_q1_15_o,
+  output logic signed [9:0]                     scale_exp_o,
+  output logic                                  valid_o,
+  output logic                                  unsupported_o,
+  output logic [7:0]                            index_o,
+  output logic [14:0]                           frac_o,
+  output online_merge_fp32_helpers::q1_15_t     lut_lo_o,
+  output online_merge_fp32_helpers::q1_15_t     lut_hi_o,
+  output logic [31:0]                            interp_product_o,
+  output logic [15:0]                            interp_step_o
+);
+
+  import online_merge_fp32_helpers::*;
+
+  localparam q1_15_t RecipLut [0:255] = '{
+    16'h8000, 16'h7f80, 16'h7f02, 16'h7e84, 16'h7e08, 16'h7d8c, 16'h7d12, 16'h7c98,
+    16'h7c1f, 16'h7ba7, 16'h7b30, 16'h7aba, 16'h7a45, 16'h79d0, 16'h795d, 16'h78ea,
+    16'h7878, 16'h7808, 16'h7797, 16'h7728, 16'h76ba, 16'h764c, 16'h75df, 16'h7573,
+    16'h7507, 16'h749d, 16'h7433, 16'h73ca, 16'h7361, 16'h72fa, 16'h7293, 16'h722d,
+    16'h71c7, 16'h7162, 16'h70fe, 16'h709b, 16'h7038, 16'h6fd6, 16'h6f75, 16'h6f14,
+    16'h6eb4, 16'h6e54, 16'h6df6, 16'h6d98, 16'h6d3a, 16'h6cdd, 16'h6c81, 16'h6c25,
+    16'h6bca, 16'h6b70, 16'h6b16, 16'h6abc, 16'h6a64, 16'h6a0c, 16'h69b4, 16'h695d,
+    16'h6907, 16'h68b1, 16'h685b, 16'h6807, 16'h67b2, 16'h675e, 16'h670b, 16'h66b9,
+    16'h6666, 16'h6615, 16'h65c4, 16'h6573, 16'h6523, 16'h64d3, 16'h6484, 16'h6435,
+    16'h63e7, 16'h6399, 16'h634c, 16'h62ff, 16'h62b3, 16'h6267, 16'h621c, 16'h61d1,
+    16'h6186, 16'h613c, 16'h60f2, 16'h60a9, 16'h6060, 16'h6018, 16'h5fd0, 16'h5f89,
+    16'h5f41, 16'h5efb, 16'h5eb5, 16'h5e6f, 16'h5e29, 16'h5de4, 16'h5d9f, 16'h5d5b,
+    16'h5d17, 16'h5cd4, 16'h5c91, 16'h5c4e, 16'h5c0c, 16'h5bca, 16'h5b88, 16'h5b47,
+    16'h5b06, 16'h5ac5, 16'h5a85, 16'h5a45, 16'h5a06, 16'h59c6, 16'h5988, 16'h5949,
+    16'h590b, 16'h58cd, 16'h5890, 16'h5853, 16'h5816, 16'h57da, 16'h579d, 16'h5762,
+    16'h5726, 16'h56eb, 16'h56b0, 16'h5676, 16'h563b, 16'h5601, 16'h55c8, 16'h558e,
+    16'h5555, 16'h551d, 16'h54e4, 16'h54ac, 16'h5474, 16'h543d, 16'h5405, 16'h53ce,
+    16'h5398, 16'h5361, 16'h532b, 16'h52f5, 16'h52bf, 16'h528a, 16'h5255, 16'h5220,
+    16'h51ec, 16'h51b7, 16'h5183, 16'h514f, 16'h511c, 16'h50e9, 16'h50b6, 16'h5083,
+    16'h5050, 16'h501e, 16'h4fec, 16'h4fba, 16'h4f89, 16'h4f57, 16'h4f26, 16'h4ef6,
+    16'h4ec5, 16'h4e95, 16'h4e64, 16'h4e35, 16'h4e05, 16'h4dd5, 16'h4da6, 16'h4d77,
+    16'h4d48, 16'h4d1a, 16'h4cec, 16'h4cbd, 16'h4c90, 16'h4c62, 16'h4c34, 16'h4c07,
+    16'h4bda, 16'h4bad, 16'h4b81, 16'h4b54, 16'h4b28, 16'h4afc, 16'h4ad0, 16'h4aa4,
+    16'h4a79, 16'h4a4e, 16'h4a23, 16'h49f8, 16'h49cd, 16'h49a3, 16'h4979, 16'h494e,
+    16'h4925, 16'h48fb, 16'h48d1, 16'h48a8, 16'h487f, 16'h4856, 16'h482d, 16'h4805,
+    16'h47dc, 16'h47b4, 16'h478c, 16'h4764, 16'h473c, 16'h4715, 16'h46ed, 16'h46c6,
+    16'h469f, 16'h4678, 16'h4651, 16'h462b, 16'h4604, 16'h45de, 16'h45b8, 16'h4592,
+    16'h456c, 16'h4547, 16'h4521, 16'h44fc, 16'h44d7, 16'h44b2, 16'h448d, 16'h4469,
+    16'h4444, 16'h4420, 16'h43fc, 16'h43d8, 16'h43b4, 16'h4390, 16'h436d, 16'h4349,
+    16'h4326, 16'h4303, 16'h42e0, 16'h42bd, 16'h429a, 16'h4277, 16'h4255, 16'h4233,
+    16'h4211, 16'h41ee, 16'h41cd, 16'h41ab, 16'h4189, 16'h4168, 16'h4146, 16'h4125,
+    16'h4104, 16'h40e3, 16'h40c2, 16'h40a2, 16'h4081, 16'h4061, 16'h4040, 16'h4020
+  };
+
+  logic [7:0]  idx;
+  logic [14:0] frac;
+  q1_15_t lut_lo, lut_hi;
+  logic [16:0] lut_delta;
+  logic [31:0] interp_product;
+  logic [15:0] interp_step;
+
+  always_comb begin
+    idx = x_i[22:15];
+    frac = x_i[14:0];
+    lut_lo = RecipLut[idx];
+    lut_hi = (idx == 8'd255) ? Q1_15_HALF : RecipLut[idx + 8'd1];
+    lut_delta = {1'b0, lut_lo} - {1'b0, lut_hi};
+    interp_product = lut_delta * frac;
+    // Q1.15 interpolation deliberately truncates the low 15 product bits.
+    interp_step = interp_product[30:15];
+    recip_q1_15_o = Q1_15_ZERO;
+    scale_exp_o = '0;
+    valid_o = 1'b0;
+    unsupported_o = 1'b0;
+    index_o = idx;
+    frac_o = frac;
+    lut_lo_o = lut_lo;
+    lut_hi_o = lut_hi;
+    interp_product_o = interp_product;
+    interp_step_o = interp_step;
+
+    if (!fp32_is_positive_finite_normal(x_i)) begin
+      index_o = '0;
+      frac_o = '0;
+      lut_lo_o = Q1_15_ZERO;
+      lut_hi_o = Q1_15_ZERO;
+      interp_product_o = '0;
+      interp_step_o = '0;
+      unsupported_o = 1'b1;
+    end else begin
+      valid_o = 1'b1;
+      recip_q1_15_o = lut_lo - interp_step;
+      scale_exp_o = 10'sd127 - $signed({2'b00, x_i[30:23]});
+    end
+  end
+
+endmodule

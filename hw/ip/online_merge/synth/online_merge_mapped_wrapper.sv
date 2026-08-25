@@ -23,6 +23,7 @@ package online_merge_mapped_types_pkg;
     logic [31:0] n;
     logic [31:0] d;
     logic [31:0] stride;
+    logic [31:0] mode;
     logic        start;
     logic        clear_done;
   } engine_cfg_t;
@@ -52,7 +53,11 @@ endpackage
 
 module online_merge_mapped_variant #(
   parameter bit          EnginePresent = 1'b1,
-  parameter logic [31:0] FixedMode = 32'd0
+  parameter logic [31:0] FixedMode = 32'd0,
+  parameter bit          RuntimeScalarPrecision = 1'b0,
+  parameter int unsigned PrecisionSupport = 2,
+  parameter bit          ScalarOnly = 1'b0,
+  parameter bit          MixedNormalizationReciprocal = 1'b0
 ) (
   input  logic                                                 clk_i,
   input  logic                                                 rst_ni,
@@ -86,6 +91,9 @@ module online_merge_mapped_variant #(
     online_merge_update_engine #(
       .AddrWidth  (AddrWidth),
       .DataWidth  (DataWidth),
+      .PrecisionSupport (PrecisionSupport),
+      .ScalarOnly (ScalarOnly),
+      .MixedNormalizationReciprocal (MixedNormalizationReciprocal),
       .tcdm_req_t (tcdm_req_t),
       .tcdm_rsp_t (tcdm_rsp_t)
     ) i_engine (
@@ -105,7 +113,10 @@ module online_merge_mapped_variant #(
       .n_i                 (cfg_i.n),
       .d_i                 (cfg_i.d),
       .stride_i            (cfg_i.stride),
-      .mode_i              (FixedMode),
+      // Dual runtime mode is scalar-only: bit 0 is forced and cfg_i.mode[1]
+      // selects legacy (0) versus mixed (1) precision.
+      .mode_i              (RuntimeScalarPrecision ?
+                            {30'd0, cfg_i.mode[1], 1'b1} : FixedMode),
       .start_i             (cfg_i.start),
       .clear_done_i        (cfg_i.clear_done),
       .busy_o              (status_o.busy),
@@ -145,8 +156,10 @@ module online_merge_c1_scalar_mapped_top (
   output online_merge_mapped_types_pkg::tcdm_req_flat_t        req_o
 );
   online_merge_mapped_variant #(
-    .EnginePresent (1'b1),
-    .FixedMode     (32'd1)
+    .EnginePresent    (1'b1),
+    .FixedMode        (32'd1),
+    .PrecisionSupport (0),
+    .ScalarOnly       (1'b1)
   ) i_variant (.*);
 endmodule
 
@@ -159,7 +172,110 @@ module online_merge_c2_full_mapped_top (
   output online_merge_mapped_types_pkg::tcdm_req_flat_t        req_o
 );
   online_merge_mapped_variant #(
-    .EnginePresent (1'b1),
-    .FixedMode     (32'd0)
+    .EnginePresent    (1'b1),
+    .FixedMode        (32'd0),
+    .PrecisionSupport (0)
+  ) i_variant (.*);
+endmodule
+
+// Phase-2 synthesis points.  They share the packed interface above and are
+// intentionally outside the existing P0-6 C0/C1/C2 runner.
+module online_merge_legacy_scalar_mapped_top (
+  input  logic                                                 clk_i,
+  input  logic                                                 rst_ni,
+  input  online_merge_mapped_types_pkg::engine_cfg_t           cfg_i,
+  input  online_merge_mapped_types_pkg::tcdm_rsp_flat_t        rsp_i,
+  output online_merge_mapped_types_pkg::engine_status_t        status_o,
+  output online_merge_mapped_types_pkg::tcdm_req_flat_t        req_o
+);
+  online_merge_mapped_variant #(
+    .EnginePresent    (1'b1),
+    .FixedMode        (32'd1),
+    .PrecisionSupport (0),
+    .ScalarOnly       (1'b1)
+  ) i_variant (.*);
+endmodule
+
+module online_merge_mixed_scalar_mapped_top (
+  input  logic                                                 clk_i,
+  input  logic                                                 rst_ni,
+  input  online_merge_mapped_types_pkg::engine_cfg_t           cfg_i,
+  input  online_merge_mapped_types_pkg::tcdm_rsp_flat_t        rsp_i,
+  output online_merge_mapped_types_pkg::engine_status_t        status_o,
+  output online_merge_mapped_types_pkg::tcdm_req_flat_t        req_o
+);
+  online_merge_mapped_variant #(
+    .EnginePresent    (1'b1),
+    .FixedMode        (32'd3),
+    .PrecisionSupport (1),
+    .ScalarOnly       (1'b1)
+  ) i_variant (.*);
+endmodule
+
+// Constantized mixed normalization comparison points.  Both are scalar-only
+// and keep the Dual runtime deployment top above unchanged.
+module online_merge_mixed_division_scalar_mapped_top (
+  input  logic                                                 clk_i,
+  input  logic                                                 rst_ni,
+  input  online_merge_mapped_types_pkg::engine_cfg_t           cfg_i,
+  input  online_merge_mapped_types_pkg::tcdm_rsp_flat_t        rsp_i,
+  output online_merge_mapped_types_pkg::engine_status_t        status_o,
+  output online_merge_mapped_types_pkg::tcdm_req_flat_t        req_o
+);
+  online_merge_mapped_variant #(
+    .EnginePresent                 (1'b1),
+    .FixedMode                     (32'd3),
+    .PrecisionSupport              (1),
+    .ScalarOnly                    (1'b1),
+    .MixedNormalizationReciprocal (1'b0)
+  ) i_variant (.*);
+endmodule
+
+module online_merge_mixed_reciprocal_scalar_mapped_top (
+  input  logic                                                 clk_i,
+  input  logic                                                 rst_ni,
+  input  online_merge_mapped_types_pkg::engine_cfg_t           cfg_i,
+  input  online_merge_mapped_types_pkg::tcdm_rsp_flat_t        rsp_i,
+  output online_merge_mapped_types_pkg::engine_status_t        status_o,
+  output online_merge_mapped_types_pkg::tcdm_req_flat_t        req_o
+);
+  online_merge_mapped_variant #(
+    .EnginePresent                 (1'b1),
+    .FixedMode                     (32'd3),
+    .PrecisionSupport              (1),
+    .ScalarOnly                    (1'b1),
+    .MixedNormalizationReciprocal (1'b1)
+  ) i_variant (.*);
+endmodule
+
+module online_merge_dual_scalar_mapped_top (
+  input  logic                                                 clk_i,
+  input  logic                                                 rst_ni,
+  input  online_merge_mapped_types_pkg::engine_cfg_t           cfg_i,
+  input  online_merge_mapped_types_pkg::tcdm_rsp_flat_t        rsp_i,
+  output online_merge_mapped_types_pkg::engine_status_t        status_o,
+  output online_merge_mapped_types_pkg::tcdm_req_flat_t        req_o
+);
+  online_merge_mapped_variant #(
+    .EnginePresent          (1'b1),
+    .FixedMode              (32'd1),
+    .RuntimeScalarPrecision (1'b1),
+    .PrecisionSupport       (2),
+    .ScalarOnly             (1'b1)
+  ) i_variant (.*);
+endmodule
+
+module online_merge_legacy_full_mapped_top (
+  input  logic                                                 clk_i,
+  input  logic                                                 rst_ni,
+  input  online_merge_mapped_types_pkg::engine_cfg_t           cfg_i,
+  input  online_merge_mapped_types_pkg::tcdm_rsp_flat_t        rsp_i,
+  output online_merge_mapped_types_pkg::engine_status_t        status_o,
+  output online_merge_mapped_types_pkg::tcdm_req_flat_t        req_o
+);
+  online_merge_mapped_variant #(
+    .EnginePresent    (1'b1),
+    .FixedMode        (32'd0),
+    .PrecisionSupport (0)
   ) i_variant (.*);
 endmodule

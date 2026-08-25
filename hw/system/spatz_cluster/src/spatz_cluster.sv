@@ -159,6 +159,12 @@ module spatz_cluster
   localparam int unsigned BanksPerSuperBank = AxiDataWidth / DataWidth;
   localparam int unsigned NrSuperBanks      = NrBanks / BanksPerSuperBank;
 
+`ifdef ONLINE_MERGE_MIXED_RECIPROCAL
+  localparam bit MixedNormalizationReciprocalCfg = 1'b1;
+`else
+  localparam bit MixedNormalizationReciprocalCfg = 1'b0;
+`endif
+
   function automatic int unsigned get_tcdm_ports(int unsigned core);
     return NumSpatzTCDMPorts[core] + 1;
   endfunction
@@ -702,6 +708,7 @@ module spatz_cluster
   online_merge_update_engine #(
     .AddrWidth  (TCDMAddrWidth),
     .DataWidth  (NarrowDataWidth),
+    .MixedNormalizationReciprocal (MixedNormalizationReciprocalCfg),
     .tcdm_req_t (tcdm_req_t),
     .tcdm_rsp_t (tcdm_rsp_t)
   ) i_online_merge_update_engine (

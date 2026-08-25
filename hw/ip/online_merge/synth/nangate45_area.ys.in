@@ -21,6 +21,7 @@ opt -nosdff -nodffe
 setattr -set fsm_encoding "auto" w:*state_q
 fsm
 opt
+wreduce
 techmap
 opt
 dfflibmap -liberty @LIBERTY@
