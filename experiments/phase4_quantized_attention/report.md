@@ -243,6 +243,9 @@ division counterpart; Phase 4 does not overturn that result.
 
 ## 9. Paper-Supported Claims
 
+Sol Gate2 status: **GO / VERIFIED**; no P0/P1 blockers remain for this
+snapshot.
+
 Supported by this Phase 4 evidence:
 
 - the complete quantized linear, scale propagation, key-major QK, explicit-P,
@@ -266,9 +269,14 @@ Not supported by this report:
 
 ## 10. Blocked / Deferred
 
-- A clean, paper-frozen multi-trial snapshot and larger-shape sweep remain
-  deferred; the manifest intentionally records `git_dirty=true` for this
-  collaborative Phase 4 worktree.
+- The clean final two-anchor measurement has been completed at implementation
+  commit `ad7cf8b5476d8eeeed026a7a2c1431965568e970`.  The simulator started
+  from a clean worktree; the runner's manifest records `git_dirty=true`
+  because it checks status after writing tracked CSV outputs with its default
+  CRLF terminator.  Those CSVs were normalized back to LF and their contents
+  match the implementation snapshot.  Multi-trial confirmation and a
+  larger-shape sweep remain deferred because they are not required for this
+  Phase 4 snapshot.
 - Error B stress behavior remains a Phase 3 limitation and needs a dedicated
   future numerical study; no new Phase 4 stress claim is made.
 - QKV and P x V are not optimized or fused in this experiment.  P is
@@ -297,17 +305,25 @@ make -C /home/wxt/work-online-merge-supplement/hw/system/spatz_cluster \
 
 Simulator SHA256 is
 `8f85b204d064f1ced29d2fc27518754f8b018db0530cf2328a3a1062687c9138`.
-The final manifest was produced by re-parsing both standard logs (no simulator
-rerun in this snapshot):
+The final measurement was a no-reuse two-anchor simulator run from the clean
+implementation snapshot.  It rebuilt and ran both standard logs, then wrote
+the final manifest with measurement commit
+`ad7cf8b5476d8eeeed026a7a2c1431965568e970`.  The manifest's
+`git_dirty=true` is the runner's post-output observation described in Section
+10; the simulator launch itself occurred at the clean implementation
+snapshot:
 
 ```text
 python3 experiments/phase4_quantized_attention/run_system.py \
   --case 8x32 --case 16x64 \
-  --reuse-log 8x32=/home/wxt/work-online-merge-supplement/experiments/phase4_quantized_attention/results/system_logs/N8_D32.log \
-  --reuse-log 16x64=/home/wxt/work-online-merge-supplement/experiments/phase4_quantized_attention/results/system_logs/N16_D64.log \
   --simulator /home/wxt/work-phase4-recip-sim/spatz_cluster.vlt \
   --timeout 7200
 ```
+
+No additional simulator rerun is required after this final command.  The two
+raw logs are archived as `results/system_logs/N8_D32.log` and
+`results/system_logs/N16_D64.log`; the manifest command list contains no
+`reuse-log` entry.
 
 ELF SHA256 values are N8/D32
 `93760cf287b3d4eb4f57b0f9057c86b65d79f9dd340d04495459b2a79868c28c` and
