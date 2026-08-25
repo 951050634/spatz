@@ -1,0 +1,242 @@
+[
+  {
+    "argv": [
+      "cmake",
+      "-S",
+      "/home/wxt/work-online-merge-supplement/hw/system/spatz_cluster/sw",
+      "-B",
+      "/home/wxt/work-online-merge-phase3-reciprocal-correct-build",
+      "-DBUILD_TESTS=ON",
+      "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+      "-DLLVM_PATH=/home/wxt/work-online-merge-supplement/install/llvm",
+      "-DGCC_PATH=/home/wxt/work-online-merge-supplement/install/riscv-gcc",
+      "-DELEN=64",
+      "-DMEM_DRAM_ORIGIN=2147483648",
+      "-DMEM_DRAM_SIZE=2147483648",
+      "-DSNRT_BASE_HARTID=0",
+      "-DSNRT_CLUSTER_CORE_NUM=2",
+      "-DSNRT_CLUSTER_OFFSET=0",
+      "-DSNRT_NFPU_PER_CORE=4",
+      "-DSNRT_TCDM_SIZE=131072",
+      "-DSNRT_TCDM_START_ADDR=1048576",
+      "-DPLATFORM_SOURCE_FOLDER=src/platforms/standalone",
+      "-DSPATZ_CLUSTER_CFG=spatz_cluster.default.dram.hjson",
+      "-DONLINE_MERGE_N=8",
+      "-DONLINE_MERGE_D=32",
+      "-DONLINE_MERGE_SEED=1",
+      "-DONLINE_MERGE_CASE_KIND=main",
+      "-DONLINE_MERGE_REPEATS=1",
+      "-DONLINE_MERGE_COUNTER_PROFILE=memory"
+    ],
+    "command": "cmake -S /home/wxt/work-online-merge-supplement/hw/system/spatz_cluster/sw -B /home/wxt/work-online-merge-phase3-reciprocal-correct-build -DBUILD_TESTS=ON -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DLLVM_PATH=/home/wxt/work-online-merge-supplement/install/llvm -DGCC_PATH=/home/wxt/work-online-merge-supplement/install/riscv-gcc -DELEN=64 -DMEM_DRAM_ORIGIN=2147483648 -DMEM_DRAM_SIZE=2147483648 -DSNRT_BASE_HARTID=0 -DSNRT_CLUSTER_CORE_NUM=2 -DSNRT_CLUSTER_OFFSET=0 -DSNRT_NFPU_PER_CORE=4 -DSNRT_TCDM_SIZE=131072 -DSNRT_TCDM_START_ADDR=1048576 -DPLATFORM_SOURCE_FOLDER=src/platforms/standalone -DSPATZ_CLUSTER_CFG=spatz_cluster.default.dram.hjson -DONLINE_MERGE_N=8 -DONLINE_MERGE_D=32 -DONLINE_MERGE_SEED=1 -DONLINE_MERGE_CASE_KIND=main -DONLINE_MERGE_REPEATS=1 -DONLINE_MERGE_COUNTER_PROFILE=memory",
+    "cwd": "/home/wxt/work-online-merge-supplement",
+    "end_utc": "2026-08-24T07:07:09+00:00",
+    "log_path": "/home/wxt/work-online-merge-phase3-reciprocal-correct/N8_D32_S1_main/memory/configure.log",
+    "returncode": 0,
+    "start_utc": "2026-08-24T07:07:08+00:00",
+    "status": "PASS",
+    "timeout_seconds": 1800
+  },
+  {
+    "argv": [
+      "cmake",
+      "--build",
+      "/home/wxt/work-online-merge-phase3-reciprocal-correct-build",
+      "--target",
+      "test-spatzBenchmarks-online-softmax-merge-a1-mixed",
+      "--parallel",
+      "1"
+    ],
+    "command": "cmake --build /home/wxt/work-online-merge-phase3-reciprocal-correct-build --target test-spatzBenchmarks-online-softmax-merge-a1-mixed --parallel 1",
+    "cwd": "/home/wxt/work-online-merge-supplement",
+    "end_utc": "2026-08-24T07:07:10+00:00",
+    "log_path": "/home/wxt/work-online-merge-phase3-reciprocal-correct/N8_D32_S1_main/memory/A1_MIXED_SCALAR/build.log",
+    "returncode": 0,
+    "start_utc": "2026-08-24T07:07:09+00:00",
+    "status": "PASS",
+    "timeout_seconds": 1800
+  },
+  {
+    "argv": [
+      "/home/wxt/work-online-merge-supplement/install/llvm/bin/llvm-objdump",
+      "-d",
+      "--no-show-raw-insn",
+      "--mattr=+v",
+      "/home/wxt/work-online-merge-phase3-reciprocal-correct/N8_D32_S1_main/memory/A1_MIXED_SCALAR/online-softmax-merge.elf"
+    ],
+    "command": "/home/wxt/work-online-merge-supplement/install/llvm/bin/llvm-objdump -d --no-show-raw-insn --mattr=+v /home/wxt/work-online-merge-phase3-reciprocal-correct/N8_D32_S1_main/memory/A1_MIXED_SCALAR/online-softmax-merge.elf",
+    "cwd": "/home/wxt/work-online-merge-phase3-reciprocal-correct/N8_D32_S1_main/memory/A1_MIXED_SCALAR",
+    "end_utc": "2026-08-24T07:07:10+00:00",
+    "log_path": "/home/wxt/work-online-merge-phase3-reciprocal-correct/N8_D32_S1_main/memory/A1_MIXED_SCALAR/objdump.txt",
+    "returncode": 0,
+    "start_utc": "2026-08-24T07:07:10+00:00",
+    "status": "PASS",
+    "timeout_seconds": 1800
+  },
+  {
+    "argv": [
+      "/home/wxt/work-online-merge-supplement/install/llvm/bin/llvm-nm",
+      "-n",
+      "-S",
+      "/home/wxt/work-online-merge-phase3-reciprocal-correct/N8_D32_S1_main/memory/A1_MIXED_SCALAR/online-softmax-merge.elf"
+    ],
+    "command": "/home/wxt/work-online-merge-supplement/install/llvm/bin/llvm-nm -n -S /home/wxt/work-online-merge-phase3-reciprocal-correct/N8_D32_S1_main/memory/A1_MIXED_SCALAR/online-softmax-merge.elf",
+    "cwd": "/home/wxt/work-online-merge-phase3-reciprocal-correct/N8_D32_S1_main/memory/A1_MIXED_SCALAR",
+    "end_utc": "2026-08-24T07:07:10+00:00",
+    "log_path": "/home/wxt/work-online-merge-phase3-reciprocal-correct/N8_D32_S1_main/memory/A1_MIXED_SCALAR/symbols.txt",
+    "returncode": 0,
+    "start_utc": "2026-08-24T07:07:10+00:00",
+    "status": "PASS",
+    "timeout_seconds": 1800
+  },
+  {
+    "argv": [
+      "/home/wxt/work-online-merge-supplement/install/llvm/bin/llvm-size",
+      "-A",
+      "-x",
+      "/home/wxt/work-online-merge-phase3-reciprocal-correct/N8_D32_S1_main/memory/A1_MIXED_SCALAR/online-softmax-merge.elf"
+    ],
+    "command": "/home/wxt/work-online-merge-supplement/install/llvm/bin/llvm-size -A -x /home/wxt/work-online-merge-phase3-reciprocal-correct/N8_D32_S1_main/memory/A1_MIXED_SCALAR/online-softmax-merge.elf",
+    "cwd": "/home/wxt/work-online-merge-phase3-reciprocal-correct/N8_D32_S1_main/memory/A1_MIXED_SCALAR",
+    "end_utc": "2026-08-24T07:07:10+00:00",
+    "log_path": "/home/wxt/work-online-merge-phase3-reciprocal-correct/N8_D32_S1_main/memory/A1_MIXED_SCALAR/sections.txt",
+    "returncode": 0,
+    "start_utc": "2026-08-24T07:07:10+00:00",
+    "status": "PASS",
+    "timeout_seconds": 1800
+  },
+  {
+    "argv": [
+      "/home/wxt/work-online-merge-phase3-recip-sim/spatz_cluster.vlt",
+      "/home/wxt/work-online-merge-phase3-reciprocal-correct/N8_D32_S1_main/memory/A1_MIXED_SCALAR/online-softmax-merge.elf"
+    ],
+    "command": "/home/wxt/work-online-merge-phase3-recip-sim/spatz_cluster.vlt /home/wxt/work-online-merge-phase3-reciprocal-correct/N8_D32_S1_main/memory/A1_MIXED_SCALAR/online-softmax-merge.elf",
+    "cwd": "/home/wxt/work-online-merge-phase3-reciprocal-correct/N8_D32_S1_main/memory/A1_MIXED_SCALAR/trial-0",
+    "end_utc": "2026-08-24T07:08:39+00:00",
+    "log_path": "/home/wxt/work-online-merge-phase3-reciprocal-correct/N8_D32_S1_main/memory/A1_MIXED_SCALAR/trial-0/simulator.log",
+    "returncode": 0,
+    "start_utc": "2026-08-24T07:07:10+00:00",
+    "status": "PASS",
+    "timeout_seconds": 1800
+  },
+  {
+    "argv": [
+      "cmake",
+      "-S",
+      "/home/wxt/work-online-merge-supplement/hw/system/spatz_cluster/sw",
+      "-B",
+      "/home/wxt/work-online-merge-phase3-reciprocal-correct-build",
+      "-DBUILD_TESTS=ON",
+      "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+      "-DLLVM_PATH=/home/wxt/work-online-merge-supplement/install/llvm",
+      "-DGCC_PATH=/home/wxt/work-online-merge-supplement/install/riscv-gcc",
+      "-DELEN=64",
+      "-DMEM_DRAM_ORIGIN=2147483648",
+      "-DMEM_DRAM_SIZE=2147483648",
+      "-DSNRT_BASE_HARTID=0",
+      "-DSNRT_CLUSTER_CORE_NUM=2",
+      "-DSNRT_CLUSTER_OFFSET=0",
+      "-DSNRT_NFPU_PER_CORE=4",
+      "-DSNRT_TCDM_SIZE=131072",
+      "-DSNRT_TCDM_START_ADDR=1048576",
+      "-DPLATFORM_SOURCE_FOLDER=src/platforms/standalone",
+      "-DSPATZ_CLUSTER_CFG=spatz_cluster.default.dram.hjson",
+      "-DONLINE_MERGE_N=16",
+      "-DONLINE_MERGE_D=64",
+      "-DONLINE_MERGE_SEED=1",
+      "-DONLINE_MERGE_CASE_KIND=main",
+      "-DONLINE_MERGE_REPEATS=1",
+      "-DONLINE_MERGE_COUNTER_PROFILE=memory"
+    ],
+    "command": "cmake -S /home/wxt/work-online-merge-supplement/hw/system/spatz_cluster/sw -B /home/wxt/work-online-merge-phase3-reciprocal-correct-build -DBUILD_TESTS=ON -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DLLVM_PATH=/home/wxt/work-online-merge-supplement/install/llvm -DGCC_PATH=/home/wxt/work-online-merge-supplement/install/riscv-gcc -DELEN=64 -DMEM_DRAM_ORIGIN=2147483648 -DMEM_DRAM_SIZE=2147483648 -DSNRT_BASE_HARTID=0 -DSNRT_CLUSTER_CORE_NUM=2 -DSNRT_CLUSTER_OFFSET=0 -DSNRT_NFPU_PER_CORE=4 -DSNRT_TCDM_SIZE=131072 -DSNRT_TCDM_START_ADDR=1048576 -DPLATFORM_SOURCE_FOLDER=src/platforms/standalone -DSPATZ_CLUSTER_CFG=spatz_cluster.default.dram.hjson -DONLINE_MERGE_N=16 -DONLINE_MERGE_D=64 -DONLINE_MERGE_SEED=1 -DONLINE_MERGE_CASE_KIND=main -DONLINE_MERGE_REPEATS=1 -DONLINE_MERGE_COUNTER_PROFILE=memory",
+    "cwd": "/home/wxt/work-online-merge-supplement",
+    "end_utc": "2026-08-24T07:08:40+00:00",
+    "log_path": "/home/wxt/work-online-merge-phase3-reciprocal-correct/N16_D64_S1_main/memory/configure.log",
+    "returncode": 0,
+    "start_utc": "2026-08-24T07:08:39+00:00",
+    "status": "PASS",
+    "timeout_seconds": 1800
+  },
+  {
+    "argv": [
+      "cmake",
+      "--build",
+      "/home/wxt/work-online-merge-phase3-reciprocal-correct-build",
+      "--target",
+      "test-spatzBenchmarks-online-softmax-merge-a1-mixed",
+      "--parallel",
+      "1"
+    ],
+    "command": "cmake --build /home/wxt/work-online-merge-phase3-reciprocal-correct-build --target test-spatzBenchmarks-online-softmax-merge-a1-mixed --parallel 1",
+    "cwd": "/home/wxt/work-online-merge-supplement",
+    "end_utc": "2026-08-24T07:08:41+00:00",
+    "log_path": "/home/wxt/work-online-merge-phase3-reciprocal-correct/N16_D64_S1_main/memory/A1_MIXED_SCALAR/build.log",
+    "returncode": 0,
+    "start_utc": "2026-08-24T07:08:40+00:00",
+    "status": "PASS",
+    "timeout_seconds": 1800
+  },
+  {
+    "argv": [
+      "/home/wxt/work-online-merge-supplement/install/llvm/bin/llvm-objdump",
+      "-d",
+      "--no-show-raw-insn",
+      "--mattr=+v",
+      "/home/wxt/work-online-merge-phase3-reciprocal-correct/N16_D64_S1_main/memory/A1_MIXED_SCALAR/online-softmax-merge.elf"
+    ],
+    "command": "/home/wxt/work-online-merge-supplement/install/llvm/bin/llvm-objdump -d --no-show-raw-insn --mattr=+v /home/wxt/work-online-merge-phase3-reciprocal-correct/N16_D64_S1_main/memory/A1_MIXED_SCALAR/online-softmax-merge.elf",
+    "cwd": "/home/wxt/work-online-merge-phase3-reciprocal-correct/N16_D64_S1_main/memory/A1_MIXED_SCALAR",
+    "end_utc": "2026-08-24T07:08:41+00:00",
+    "log_path": "/home/wxt/work-online-merge-phase3-reciprocal-correct/N16_D64_S1_main/memory/A1_MIXED_SCALAR/objdump.txt",
+    "returncode": 0,
+    "start_utc": "2026-08-24T07:08:41+00:00",
+    "status": "PASS",
+    "timeout_seconds": 1800
+  },
+  {
+    "argv": [
+      "/home/wxt/work-online-merge-supplement/install/llvm/bin/llvm-nm",
+      "-n",
+      "-S",
+      "/home/wxt/work-online-merge-phase3-reciprocal-correct/N16_D64_S1_main/memory/A1_MIXED_SCALAR/online-softmax-merge.elf"
+    ],
+    "command": "/home/wxt/work-online-merge-supplement/install/llvm/bin/llvm-nm -n -S /home/wxt/work-online-merge-phase3-reciprocal-correct/N16_D64_S1_main/memory/A1_MIXED_SCALAR/online-softmax-merge.elf",
+    "cwd": "/home/wxt/work-online-merge-phase3-reciprocal-correct/N16_D64_S1_main/memory/A1_MIXED_SCALAR",
+    "end_utc": "2026-08-24T07:08:41+00:00",
+    "log_path": "/home/wxt/work-online-merge-phase3-reciprocal-correct/N16_D64_S1_main/memory/A1_MIXED_SCALAR/symbols.txt",
+    "returncode": 0,
+    "start_utc": "2026-08-24T07:08:41+00:00",
+    "status": "PASS",
+    "timeout_seconds": 1800
+  },
+  {
+    "argv": [
+      "/home/wxt/work-online-merge-supplement/install/llvm/bin/llvm-size",
+      "-A",
+      "-x",
+      "/home/wxt/work-online-merge-phase3-reciprocal-correct/N16_D64_S1_main/memory/A1_MIXED_SCALAR/online-softmax-merge.elf"
+    ],
+    "command": "/home/wxt/work-online-merge-supplement/install/llvm/bin/llvm-size -A -x /home/wxt/work-online-merge-phase3-reciprocal-correct/N16_D64_S1_main/memory/A1_MIXED_SCALAR/online-softmax-merge.elf",
+    "cwd": "/home/wxt/work-online-merge-phase3-reciprocal-correct/N16_D64_S1_main/memory/A1_MIXED_SCALAR",
+    "end_utc": "2026-08-24T07:08:41+00:00",
+    "log_path": "/home/wxt/work-online-merge-phase3-reciprocal-correct/N16_D64_S1_main/memory/A1_MIXED_SCALAR/sections.txt",
+    "returncode": 0,
+    "start_utc": "2026-08-24T07:08:41+00:00",
+    "status": "PASS",
+    "timeout_seconds": 1800
+  },
+  {
+    "argv": [
+      "/home/wxt/work-online-merge-phase3-recip-sim/spatz_cluster.vlt",
+      "/home/wxt/work-online-merge-phase3-reciprocal-correct/N16_D64_S1_main/memory/A1_MIXED_SCALAR/online-softmax-merge.elf"
+    ],
+    "command": "/home/wxt/work-online-merge-phase3-recip-sim/spatz_cluster.vlt /home/wxt/work-online-merge-phase3-reciprocal-correct/N16_D64_S1_main/memory/A1_MIXED_SCALAR/online-softmax-merge.elf",
+    "cwd": "/home/wxt/work-online-merge-phase3-reciprocal-correct/N16_D64_S1_main/memory/A1_MIXED_SCALAR/trial-0",
+    "end_utc": "2026-08-24T07:11:32+00:00",
+    "log_path": "/home/wxt/work-online-merge-phase3-reciprocal-correct/N16_D64_S1_main/memory/A1_MIXED_SCALAR/trial-0/simulator.log",
+    "returncode": 0,
+    "start_utc": "2026-08-24T07:08:41+00:00",
+    "status": "PASS",
+    "timeout_seconds": 3600
+  }
+]

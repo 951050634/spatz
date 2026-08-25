@@ -33,3 +33,13 @@ work-*/
 # Python caches
 __pycache__/
 *.pyc
+
+# rebuildable build-product outputs (RISC-V ELFs, objdump/symbol dumps, CMake)
+*.elf
+objdump.txt
+symbols.txt
+sections.txt
+compile_commands.json
+link_command.txt
+*.disasm
+.rtlbinary
