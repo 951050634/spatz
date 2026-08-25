@@ -1,0 +1,310 @@
+[
+  {
+    "n": 8,
+    "d": 32,
+    "seed": 1,
+    "scales": {
+      "sX": 0.00393651226374108,
+      "sWQ": 0.001967943324817447,
+      "sWK": 0.0019637372080735334,
+      "sWV": 0.0019675084925073337,
+      "sQ": 0.005218986515172607,
+      "sK": 0.006560995332101494,
+      "sV": 0.005062686972681446,
+      "sScore": 6.0531427281197515e-06
+    },
+    "linear": {
+      "Q": {
+        "mae": 0.0015573909916467002,
+        "stable_relative_error": 0.007769249096999418,
+        "cosine_similarity": 0.9999700683644452,
+        "elements": 256,
+        "saturation_ratio": 0.00390625
+      },
+      "K": {
+        "mae": 0.001852605333288441,
+        "stable_relative_error": 0.009208012370442033,
+        "cosine_similarity": 0.9999601561076328,
+        "elements": 256,
+        "saturation_ratio": 0.00390625
+      },
+      "V": {
+        "mae": 0.0015736551828768714,
+        "stable_relative_error": 0.008795634878688728,
+        "cosine_similarity": 0.999962200826074,
+        "elements": 256,
+        "saturation_ratio": 0.00390625
+      }
+    },
+    "score": {
+      "quantized_vs_fp32": {
+        "mae": 0.00058666884797276,
+        "stable_relative_error": 0.010943028866203377,
+        "cosine_similarity": 0.9999434867120907,
+        "elements": 64
+      },
+      "fused_vs_staged": {
+        "mae": 6.148184183984995e-09,
+        "stable_relative_error": 1.1492310608976615e-07,
+        "cosine_similarity": 0.9999999999999925,
+        "elements": 64
+      }
+    },
+    "probability": {
+      "B-Q_vs_REF": {
+        "mae": 6.826675962656736e-05,
+        "stable_relative_error": 0.0005461340765039119,
+        "cosine_similarity": 0.9999997547248538,
+        "elements": 64
+      },
+      "P-QM_vs_REF": {
+        "mae": 0.0009134546853601933,
+        "stable_relative_error": 0.007307637476075778,
+        "cosine_similarity": 0.9999593889710845,
+        "elements": 64
+      }
+    },
+    "output": {
+      "B-Q_vs_REF": {
+        "mae": 0.0006302640726971731,
+        "stable_relative_error": 0.011021349813444999,
+        "cosine_similarity": 0.9999412320073764,
+        "elements": 256
+      },
+      "P-QM_vs_REF": {
+        "mae": 0.0008859689835389872,
+        "stable_relative_error": 0.015492829933425569,
+        "cosine_similarity": 0.9998803766256594,
+        "elements": 256
+      }
+    },
+    "frozen_vectors": [
+      {
+        "name": "engine_mode3_1_0",
+        "inputs": {
+          "m_old_fp32_bits": 1065353216,
+          "l_old_fp32_bits": 1065353216,
+          "m_tile_fp32_bits": 0,
+          "l_tile_fp32_bits": 1065353216
+        },
+        "expected": {
+          "old_exp_q1_14": 16384,
+          "tile_exp_q1_14": 6122,
+          "old_scaled_l_q16_32": 4294967296,
+          "tile_scaled_l_q16_32": 1604845568,
+          "l_new_q16_32": 5899812864,
+          "m_new_fp32_bits": 1065353216,
+          "l_new_fp32_bits": 1068487680,
+          "old_weight_fp16_bits": 14803,
+          "tile_weight_fp16_bits": 13402,
+          "old_weight_fp32_bits": 1060790272,
+          "tile_weight_fp32_bits": 1049313280
+        },
+        "python_reference": {
+          "old_exp_q1_14": 16384,
+          "tile_exp_q1_14": 6122,
+          "old_scaled_l_q16_32": 4294967296,
+          "tile_scaled_l_q16_32": 1604845568,
+          "l_new_q16_32": 5899812864,
+          "m_new_fp32_bits": 1065353216,
+          "l_new_fp32_bits": 1068487680,
+          "old_weight_fp16_bits": 14803,
+          "tile_weight_fp16_bits": 13402,
+          "old_weight_fp32_bits": 1060790272,
+          "tile_weight_fp32_bits": 1049313280
+        },
+        "matches": true
+      },
+      {
+        "name": "equal_max_1_3",
+        "inputs": {
+          "m_old_fp32_bits": 1065353216,
+          "l_old_fp32_bits": 1065353216,
+          "m_tile_fp32_bits": 1065353216,
+          "l_tile_fp32_bits": 1077936128
+        },
+        "expected": {
+          "old_exp_q1_14": 16384,
+          "tile_exp_q1_14": 16384,
+          "old_scaled_l_q16_32": 4294967296,
+          "tile_scaled_l_q16_32": 12884901888,
+          "l_new_q16_32": 17179869184,
+          "m_new_fp32_bits": 1065353216,
+          "l_new_fp32_bits": 1082130432,
+          "old_weight_fp16_bits": 13312,
+          "tile_weight_fp16_bits": 14848,
+          "old_weight_fp32_bits": 1048576000,
+          "tile_weight_fp32_bits": 1061158912
+        },
+        "python_reference": {
+          "old_exp_q1_14": 16384,
+          "tile_exp_q1_14": 16384,
+          "old_scaled_l_q16_32": 4294967296,
+          "tile_scaled_l_q16_32": 12884901888,
+          "l_new_q16_32": 17179869184,
+          "m_new_fp32_bits": 1065353216,
+          "l_new_fp32_bits": 1082130432,
+          "old_weight_fp16_bits": 13312,
+          "tile_weight_fp16_bits": 14848,
+          "old_weight_fp32_bits": 1048576000,
+          "tile_weight_fp32_bits": 1061158912
+        },
+        "matches": true
+      }
+    ]
+  },
+  {
+    "n": 16,
+    "d": 64,
+    "seed": 1,
+    "scales": {
+      "sX": 0.00393651226374108,
+      "sWQ": 0.001968339672238808,
+      "sWK": 0.0019683882476776602,
+      "sWV": 0.001968480470612293,
+      "sQ": 0.009366892285544038,
+      "sK": 0.009065355738031139,
+      "sV": 0.01195473453795335,
+      "sScore": 1.0614276341034532e-05
+    },
+    "linear": {
+      "Q": {
+        "mae": 0.0026951912841297184,
+        "stable_relative_error": 0.00959530646999181,
+        "cosine_similarity": 0.9999562956347267,
+        "elements": 1024,
+        "saturation_ratio": 0.0009765625
+      },
+      "K": {
+        "mae": 0.0026973476454490177,
+        "stable_relative_error": 0.010084385986839951,
+        "cosine_similarity": 0.9999526015540385,
+        "elements": 1024,
+        "saturation_ratio": 0.0009765625
+      },
+      "V": {
+        "mae": 0.0032471559684015645,
+        "stable_relative_error": 0.012073411419180002,
+        "cosine_similarity": 0.9999331273929727,
+        "elements": 1024,
+        "saturation_ratio": 0.0009765625
+      }
+    },
+    "score": {
+      "quantized_vs_fp32": {
+        "mae": 0.0012382857698867156,
+        "stable_relative_error": 0.013661637744973065,
+        "cosine_similarity": 0.999904442516295,
+        "elements": 256
+      },
+      "fused_vs_staged": {
+        "mae": 1.4222223398974165e-08,
+        "stable_relative_error": 1.5697799732535206e-07,
+        "cosine_similarity": 0.9999999999999831,
+        "elements": 256
+      }
+    },
+    "probability": {
+      "B-Q_vs_REF": {
+        "mae": 7.365575584117323e-05,
+        "stable_relative_error": 0.0011784920937331607,
+        "cosine_similarity": 0.9999988858202989,
+        "elements": 256
+      },
+      "P-QM_vs_REF": {
+        "mae": 0.0004872445861110464,
+        "stable_relative_error": 0.00779591337959187,
+        "cosine_similarity": 0.9999546454868004,
+        "elements": 256
+      }
+    },
+    "output": {
+      "B-Q_vs_REF": {
+        "mae": 0.0008015677116333109,
+        "stable_relative_error": 0.012117339300198001,
+        "cosine_similarity": 0.999910746485696,
+        "elements": 1024
+      },
+      "P-QM_vs_REF": {
+        "mae": 0.0010233474687204591,
+        "stable_relative_error": 0.01546999501167188,
+        "cosine_similarity": 0.9998616715394743,
+        "elements": 1024
+      }
+    },
+    "frozen_vectors": [
+      {
+        "name": "engine_mode3_1_0",
+        "inputs": {
+          "m_old_fp32_bits": 1065353216,
+          "l_old_fp32_bits": 1065353216,
+          "m_tile_fp32_bits": 0,
+          "l_tile_fp32_bits": 1065353216
+        },
+        "expected": {
+          "old_exp_q1_14": 16384,
+          "tile_exp_q1_14": 6122,
+          "old_scaled_l_q16_32": 4294967296,
+          "tile_scaled_l_q16_32": 1604845568,
+          "l_new_q16_32": 5899812864,
+          "m_new_fp32_bits": 1065353216,
+          "l_new_fp32_bits": 1068487680,
+          "old_weight_fp16_bits": 14803,
+          "tile_weight_fp16_bits": 13402,
+          "old_weight_fp32_bits": 1060790272,
+          "tile_weight_fp32_bits": 1049313280
+        },
+        "python_reference": {
+          "old_exp_q1_14": 16384,
+          "tile_exp_q1_14": 6122,
+          "old_scaled_l_q16_32": 4294967296,
+          "tile_scaled_l_q16_32": 1604845568,
+          "l_new_q16_32": 5899812864,
+          "m_new_fp32_bits": 1065353216,
+          "l_new_fp32_bits": 1068487680,
+          "old_weight_fp16_bits": 14803,
+          "tile_weight_fp16_bits": 13402,
+          "old_weight_fp32_bits": 1060790272,
+          "tile_weight_fp32_bits": 1049313280
+        },
+        "matches": true
+      },
+      {
+        "name": "equal_max_1_3",
+        "inputs": {
+          "m_old_fp32_bits": 1065353216,
+          "l_old_fp32_bits": 1065353216,
+          "m_tile_fp32_bits": 1065353216,
+          "l_tile_fp32_bits": 1077936128
+        },
+        "expected": {
+          "old_exp_q1_14": 16384,
+          "tile_exp_q1_14": 16384,
+          "old_scaled_l_q16_32": 4294967296,
+          "tile_scaled_l_q16_32": 12884901888,
+          "l_new_q16_32": 17179869184,
+          "m_new_fp32_bits": 1065353216,
+          "l_new_fp32_bits": 1082130432,
+          "old_weight_fp16_bits": 13312,
+          "tile_weight_fp16_bits": 14848,
+          "old_weight_fp32_bits": 1048576000,
+          "tile_weight_fp32_bits": 1061158912
+        },
+        "python_reference": {
+          "old_exp_q1_14": 16384,
+          "tile_exp_q1_14": 16384,
+          "old_scaled_l_q16_32": 4294967296,
+          "tile_scaled_l_q16_32": 12884901888,
+          "l_new_q16_32": 17179869184,
+          "m_new_fp32_bits": 1065353216,
+          "l_new_fp32_bits": 1082130432,
+          "old_weight_fp16_bits": 13312,
+          "tile_weight_fp16_bits": 14848,
+          "old_weight_fp32_bits": 1048576000,
+          "tile_weight_fp32_bits": 1061158912
+        },
+        "matches": true
+      }
+    ]
+  }
+]

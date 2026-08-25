@@ -1,0 +1,3 @@
+case,n,d,seed,x_maxabs_scale,x_quant,q_linear,k_linear,v_linear,q_requant,k_requant,v_requant,quantize_x,qkv_linear,qkv_requant,qkt,score_rescale,smu_total,smu_scalar_window,smu_probability_update,smu_setup_orchestration,pv,output_rescale,total,dynamic_quant_overhead,dynamic_quant_overhead_fraction,dynamic_quant_overhead_percent
+N8_D32,8,32,1,3129,17198,252526,252406,252396,23081,23046,22845,20327,757328,68972,31757,1436,14629,9693,2446,2490,36272,3383,934272,89299,0.09558137244828059,9.558137244828059
+N16_D64,16,64,1,11309,68290,2043041,2043061,2043055,90847,90813,90859,79599,6129157,272519,281354,5432,48493,24193,14127,10173,303911,14393,7135023,352118,0.049350646802399936,4.935064680239994

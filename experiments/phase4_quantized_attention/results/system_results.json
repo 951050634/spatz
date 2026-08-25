@@ -1,0 +1,631 @@
+{
+  "seed": 1,
+  "cases": [
+    {
+      "log": "/home/wxt/work-online-merge-supplement/experiments/phase4_quantized_attention/results/system_logs/N8_D32.log",
+      "p4_result": {
+        "status": "pass",
+        "n": 8,
+        "d": 32,
+        "seed": 1,
+        "mode": 3,
+        "smu_d": 8,
+        "stride": 32,
+        "scales_bits": {
+          "sX": 998309340,
+          "sWQ": 989919388,
+          "sWK": 989901323,
+          "sWV": 989917521,
+          "sQ": 1001063433,
+          "sK": 1003945375,
+          "sV": 1000727782,
+          "sScore": 919280668
+        },
+        "scales": {
+          "sX": 0.003936512395739555,
+          "sWQ": 0.001967943273484707,
+          "sWK": 0.0019637371879070997,
+          "sWV": 0.001967508578673005,
+          "sQ": 0.005218986887484789,
+          "sK": 0.00656099570915103,
+          "sV": 0.005062687210738659,
+          "sScore": 6.0531438066391274e-06
+        },
+        "maxabs_bits": {
+          "X": 1056962497
+        },
+        "maxabs": {
+          "Q": 85559,
+          "K": 107790,
+          "V": 83015
+        },
+        "linear": {
+          "Q": {
+            "mae_bits": 986456397,
+            "mae": 0.0015573889249935746,
+            "stable_relative_error_bits": 1006540056,
+            "stable_relative_error": 0.007769238203763962,
+            "cosine_similarity_bits": 1065353216,
+            "cosine_similarity": 1.0
+          },
+          "K": {
+            "mae_bits": 988992283,
+            "mae": 0.001852604909799993,
+            "stable_relative_error_bits": 1008131377,
+            "stable_relative_error": 0.009208009578287601,
+            "cosine_similarity_bits": 1065353216,
+            "cosine_similarity": 1.0
+          },
+          "V": {
+            "mae_bits": 986596119,
+            "mae": 0.0015736547065898776,
+            "stable_relative_error_bits": 1007688590,
+            "stable_relative_error": 0.008795632049441338,
+            "cosine_similarity_bits": 1065353216,
+            "cosine_similarity": 1.0
+          },
+          "saturation_count": {
+            "Q": 1,
+            "K": 1,
+            "V": 1
+          }
+        },
+        "score": {
+          "mae_bits": 974768748,
+          "mae": 0.0005866650026291609,
+          "stable_relative_error_bits": 1009994263,
+          "stable_relative_error": 0.010942957364022732,
+          "cosine_similarity_bits": 1065353216,
+          "cosine_similarity": 1.0
+        },
+        "probability": {
+          "vs_ref": {
+            "mae_bits": 980382952,
+            "mae": 0.0009134546853601933,
+            "stable_relative_error_bits": 1005548776,
+            "stable_relative_error": 0.007307637482881546,
+            "cosine_similarity_bits": 1065353216,
+            "cosine_similarity": 1.0
+          },
+          "integration_vs_host_mixed": {
+            "mae_bits": 0,
+            "mae": 0.0,
+            "stable_relative_error_bits": 0,
+            "stable_relative_error": 0.0,
+            "cosine_similarity_bits": 1065353216,
+            "cosine_similarity": 1.0
+          }
+        },
+        "output": {
+          "vs_ref": {
+            "mae_bits": 979910763,
+            "mae": 0.000885969668161124,
+            "stable_relative_error_bits": 1014879664,
+            "stable_relative_error": 0.015492841601371765,
+            "cosine_similarity_bits": 1065353215,
+            "cosine_similarity": 0.9999999403953552
+          },
+          "integration_vs_host_mixed": {
+            "mae_bits": 835631872,
+            "mae": 6.016648512741085e-09,
+            "stable_relative_error_bits": 870395955,
+            "stable_relative_error": 1.0486146351240677e-07,
+            "cosine_similarity_bits": 1065353215,
+            "cosine_similarity": 0.9999999403953552
+          }
+        },
+        "smu": {
+          "commands": 7,
+          "done": 7,
+          "error": 0,
+          "timeout": 0,
+          "saw_busy": 1
+        },
+        "cycles": {
+          "x_maxabs_scale": 3129,
+          "x_quant": 17198,
+          "q_linear": 252526,
+          "k_linear": 252406,
+          "v_linear": 252396,
+          "q_requant": 23081,
+          "k_requant": 23046,
+          "v_requant": 22845,
+          "qkt": 31757,
+          "score_rescale": 1436,
+          "smu_scalar_window": 9693,
+          "smu_probability_update": 2446,
+          "smu_setup_orchestration": 2490,
+          "smu_total": 14629,
+          "pv": 36272,
+          "output_rescale": 3383,
+          "total": 934272
+        },
+        "tcdm": {
+          "data_bytes": 8704,
+          "allocation_bytes": 8704,
+          "runtime_reserved_bytes": 16512,
+          "memory_footprint_bytes": 25216,
+          "capacity_bytes": 131072
+        }
+      },
+      "sim_config": {
+        "schema_version": 1,
+        "profile": "low_perturbation",
+        "dasm_trace_enabled": false,
+        "fsm_observer_enabled": true
+      },
+      "fsm": [
+        {
+          "schema_version": 1,
+          "invocation": 0,
+          "N": 8,
+          "D": 8,
+          "mode": 3,
+          "terminal_state": "DONE",
+          "load_scalar_cycles": 104,
+          "compute_scalar_cycles": 8,
+          "compute_weight_cycles": 24,
+          "store_scalar_cycles": 72,
+          "update_vector_cycles": 0,
+          "busy_cycles": 208
+        },
+        {
+          "schema_version": 1,
+          "invocation": 1,
+          "N": 8,
+          "D": 8,
+          "mode": 3,
+          "terminal_state": "DONE",
+          "load_scalar_cycles": 104,
+          "compute_scalar_cycles": 8,
+          "compute_weight_cycles": 24,
+          "store_scalar_cycles": 72,
+          "update_vector_cycles": 0,
+          "busy_cycles": 208
+        },
+        {
+          "schema_version": 1,
+          "invocation": 2,
+          "N": 8,
+          "D": 8,
+          "mode": 3,
+          "terminal_state": "DONE",
+          "load_scalar_cycles": 104,
+          "compute_scalar_cycles": 8,
+          "compute_weight_cycles": 24,
+          "store_scalar_cycles": 72,
+          "update_vector_cycles": 0,
+          "busy_cycles": 208
+        },
+        {
+          "schema_version": 1,
+          "invocation": 3,
+          "N": 8,
+          "D": 8,
+          "mode": 3,
+          "terminal_state": "DONE",
+          "load_scalar_cycles": 104,
+          "compute_scalar_cycles": 8,
+          "compute_weight_cycles": 24,
+          "store_scalar_cycles": 72,
+          "update_vector_cycles": 0,
+          "busy_cycles": 208
+        },
+        {
+          "schema_version": 1,
+          "invocation": 4,
+          "N": 8,
+          "D": 8,
+          "mode": 3,
+          "terminal_state": "DONE",
+          "load_scalar_cycles": 104,
+          "compute_scalar_cycles": 8,
+          "compute_weight_cycles": 24,
+          "store_scalar_cycles": 72,
+          "update_vector_cycles": 0,
+          "busy_cycles": 208
+        },
+        {
+          "schema_version": 1,
+          "invocation": 5,
+          "N": 8,
+          "D": 8,
+          "mode": 3,
+          "terminal_state": "DONE",
+          "load_scalar_cycles": 104,
+          "compute_scalar_cycles": 8,
+          "compute_weight_cycles": 24,
+          "store_scalar_cycles": 72,
+          "update_vector_cycles": 0,
+          "busy_cycles": 208
+        },
+        {
+          "schema_version": 1,
+          "invocation": 6,
+          "N": 8,
+          "D": 8,
+          "mode": 3,
+          "terminal_state": "DONE",
+          "load_scalar_cycles": 104,
+          "compute_scalar_cycles": 8,
+          "compute_weight_cycles": 24,
+          "store_scalar_cycles": 72,
+          "update_vector_cycles": 0,
+          "busy_cycles": 208
+        }
+      ],
+      "case": "8x32",
+      "elf": "/home/wxt/work-phase4-sw/N8_D32/spatzBenchmarks/test-spatzBenchmarks-quantized-attention",
+      "elf_sha256": "93760cf287b3d4eb4f57b0f9057c86b65d79f9dd340d04495459b2a79868c28c"
+    },
+    {
+      "log": "/home/wxt/work-online-merge-supplement/experiments/phase4_quantized_attention/results/system_logs/N16_D64.log",
+      "p4_result": {
+        "status": "pass",
+        "n": 16,
+        "d": 64,
+        "seed": 1,
+        "mode": 3,
+        "smu_d": 16,
+        "stride": 64,
+        "scales_bits": {
+          "sX": 998309340,
+          "sWQ": 989921091,
+          "sWK": 989921299,
+          "sWV": 989921695,
+          "sQ": 1008301977,
+          "sK": 1007978204,
+          "sV": 1011080651,
+          "sScore": 926028794
+        },
+        "scales": {
+          "sX": 0.003936512395739555,
+          "sWQ": 0.0019683397840708494,
+          "sWK": 0.0019683882128447294,
+          "sWV": 0.0019684804137796164,
+          "sQ": 0.009366893209517002,
+          "sK": 0.009065356105566025,
+          "sV": 0.011954735033214092,
+          "sScore": 1.0614277925924398e-05
+        },
+        "maxabs_bits": {
+          "X": 1056962497
+        },
+        "maxabs": {
+          "Q": 153528,
+          "K": 148582,
+          "V": 195930
+        },
+        "linear": {
+          "Q": {
+            "mae_bits": 993042897,
+            "mae": 0.0026951918844133615,
+            "stable_relative_error_bits": 1008547236,
+            "stable_relative_error": 0.00959530845284462,
+            "cosine_similarity_bits": 1065353216,
+            "cosine_similarity": 1.0
+          },
+          "K": {
+            "mae_bits": 993052155,
+            "mae": 0.002697347430512309,
+            "stable_relative_error_bits": 1009072378,
+            "stable_relative_error": 0.010084385052323341,
+            "cosine_similarity_bits": 1065353214,
+            "cosine_similarity": 0.9999998807907104
+          },
+          "V": {
+            "mae_bits": 995413566,
+            "mae": 0.003247156273573637,
+            "stable_relative_error_bits": 1011208079,
+            "stable_relative_error": 0.012073411606252193,
+            "cosine_similarity_bits": 1065353214,
+            "cosine_similarity": 0.9999998807907104
+          },
+          "saturation_count": {
+            "Q": 1,
+            "K": 1,
+            "V": 1
+          }
+        },
+        "score": {
+          "mae_bits": 983715330,
+          "mae": 0.0012382867280393839,
+          "stable_relative_error_bits": 1012913433,
+          "stable_relative_error": 0.013661646284162998,
+          "cosine_similarity_bits": 1065353215,
+          "cosine_similarity": 0.9999999403953552
+        },
+        "probability": {
+          "vs_ref": {
+            "mae_bits": 973042908,
+            "mae": 0.00048724457155913115,
+            "stable_relative_error_bits": 1006597340,
+            "stable_relative_error": 0.007795913144946098,
+            "cosine_similarity_bits": 1065353217,
+            "cosine_similarity": 1.0000001192092896
+          },
+          "integration_vs_host_mixed": {
+            "mae_bits": 0,
+            "mae": 0.0,
+            "stable_relative_error_bits": 0,
+            "stable_relative_error": 0.0,
+            "cosine_similarity_bits": 1065353215,
+            "cosine_similarity": 0.9999999403953552
+          }
+        },
+        "output": {
+          "vs_ref": {
+            "mae_bits": 981869016,
+            "mae": 0.0010233474895358086,
+            "stable_relative_error_bits": 1014855133,
+            "stable_relative_error": 0.015469995327293873,
+            "cosine_similarity_bits": 1065353216,
+            "cosine_similarity": 1.0
+          },
+          "integration_vs_host_mixed": {
+            "mae_bits": 837079076,
+            "mae": 6.659336193592935e-09,
+            "stable_relative_error_bits": 869812752,
+            "stable_relative_error": 1.007175569611718e-07,
+            "cosine_similarity_bits": 1065353215,
+            "cosine_similarity": 0.9999999403953552
+          }
+        },
+        "smu": {
+          "commands": 15,
+          "done": 15,
+          "error": 0,
+          "timeout": 0,
+          "saw_busy": 1
+        },
+        "cycles": {
+          "x_maxabs_scale": 11309,
+          "x_quant": 68290,
+          "q_linear": 2043041,
+          "k_linear": 2043061,
+          "v_linear": 2043055,
+          "q_requant": 90847,
+          "k_requant": 90813,
+          "v_requant": 90859,
+          "qkt": 281354,
+          "score_rescale": 5432,
+          "smu_scalar_window": 24193,
+          "smu_probability_update": 14127,
+          "smu_setup_orchestration": 10173,
+          "smu_total": 48493,
+          "pv": 303911,
+          "output_rescale": 14393,
+          "total": 7135023
+        },
+        "tcdm": {
+          "data_bytes": 34304,
+          "allocation_bytes": 34304,
+          "runtime_reserved_bytes": 16512,
+          "memory_footprint_bytes": 50816,
+          "capacity_bytes": 131072
+        }
+      },
+      "sim_config": {
+        "schema_version": 1,
+        "profile": "low_perturbation",
+        "dasm_trace_enabled": false,
+        "fsm_observer_enabled": true
+      },
+      "fsm": [
+        {
+          "schema_version": 1,
+          "invocation": 0,
+          "N": 16,
+          "D": 16,
+          "mode": 3,
+          "terminal_state": "DONE",
+          "load_scalar_cycles": 209,
+          "compute_scalar_cycles": 16,
+          "compute_weight_cycles": 48,
+          "store_scalar_cycles": 144,
+          "update_vector_cycles": 0,
+          "busy_cycles": 417
+        },
+        {
+          "schema_version": 1,
+          "invocation": 1,
+          "N": 16,
+          "D": 16,
+          "mode": 3,
+          "terminal_state": "DONE",
+          "load_scalar_cycles": 209,
+          "compute_scalar_cycles": 16,
+          "compute_weight_cycles": 48,
+          "store_scalar_cycles": 144,
+          "update_vector_cycles": 0,
+          "busy_cycles": 417
+        },
+        {
+          "schema_version": 1,
+          "invocation": 2,
+          "N": 16,
+          "D": 16,
+          "mode": 3,
+          "terminal_state": "DONE",
+          "load_scalar_cycles": 209,
+          "compute_scalar_cycles": 16,
+          "compute_weight_cycles": 48,
+          "store_scalar_cycles": 144,
+          "update_vector_cycles": 0,
+          "busy_cycles": 417
+        },
+        {
+          "schema_version": 1,
+          "invocation": 3,
+          "N": 16,
+          "D": 16,
+          "mode": 3,
+          "terminal_state": "DONE",
+          "load_scalar_cycles": 209,
+          "compute_scalar_cycles": 16,
+          "compute_weight_cycles": 48,
+          "store_scalar_cycles": 144,
+          "update_vector_cycles": 0,
+          "busy_cycles": 417
+        },
+        {
+          "schema_version": 1,
+          "invocation": 4,
+          "N": 16,
+          "D": 16,
+          "mode": 3,
+          "terminal_state": "DONE",
+          "load_scalar_cycles": 209,
+          "compute_scalar_cycles": 16,
+          "compute_weight_cycles": 48,
+          "store_scalar_cycles": 144,
+          "update_vector_cycles": 0,
+          "busy_cycles": 417
+        },
+        {
+          "schema_version": 1,
+          "invocation": 5,
+          "N": 16,
+          "D": 16,
+          "mode": 3,
+          "terminal_state": "DONE",
+          "load_scalar_cycles": 209,
+          "compute_scalar_cycles": 16,
+          "compute_weight_cycles": 48,
+          "store_scalar_cycles": 144,
+          "update_vector_cycles": 0,
+          "busy_cycles": 417
+        },
+        {
+          "schema_version": 1,
+          "invocation": 6,
+          "N": 16,
+          "D": 16,
+          "mode": 3,
+          "terminal_state": "DONE",
+          "load_scalar_cycles": 209,
+          "compute_scalar_cycles": 16,
+          "compute_weight_cycles": 48,
+          "store_scalar_cycles": 144,
+          "update_vector_cycles": 0,
+          "busy_cycles": 417
+        },
+        {
+          "schema_version": 1,
+          "invocation": 7,
+          "N": 16,
+          "D": 16,
+          "mode": 3,
+          "terminal_state": "DONE",
+          "load_scalar_cycles": 209,
+          "compute_scalar_cycles": 16,
+          "compute_weight_cycles": 48,
+          "store_scalar_cycles": 144,
+          "update_vector_cycles": 0,
+          "busy_cycles": 417
+        },
+        {
+          "schema_version": 1,
+          "invocation": 8,
+          "N": 16,
+          "D": 16,
+          "mode": 3,
+          "terminal_state": "DONE",
+          "load_scalar_cycles": 209,
+          "compute_scalar_cycles": 16,
+          "compute_weight_cycles": 48,
+          "store_scalar_cycles": 144,
+          "update_vector_cycles": 0,
+          "busy_cycles": 417
+        },
+        {
+          "schema_version": 1,
+          "invocation": 9,
+          "N": 16,
+          "D": 16,
+          "mode": 3,
+          "terminal_state": "DONE",
+          "load_scalar_cycles": 209,
+          "compute_scalar_cycles": 16,
+          "compute_weight_cycles": 48,
+          "store_scalar_cycles": 144,
+          "update_vector_cycles": 0,
+          "busy_cycles": 417
+        },
+        {
+          "schema_version": 1,
+          "invocation": 10,
+          "N": 16,
+          "D": 16,
+          "mode": 3,
+          "terminal_state": "DONE",
+          "load_scalar_cycles": 209,
+          "compute_scalar_cycles": 16,
+          "compute_weight_cycles": 48,
+          "store_scalar_cycles": 144,
+          "update_vector_cycles": 0,
+          "busy_cycles": 417
+        },
+        {
+          "schema_version": 1,
+          "invocation": 11,
+          "N": 16,
+          "D": 16,
+          "mode": 3,
+          "terminal_state": "DONE",
+          "load_scalar_cycles": 209,
+          "compute_scalar_cycles": 16,
+          "compute_weight_cycles": 48,
+          "store_scalar_cycles": 144,
+          "update_vector_cycles": 0,
+          "busy_cycles": 417
+        },
+        {
+          "schema_version": 1,
+          "invocation": 12,
+          "N": 16,
+          "D": 16,
+          "mode": 3,
+          "terminal_state": "DONE",
+          "load_scalar_cycles": 209,
+          "compute_scalar_cycles": 16,
+          "compute_weight_cycles": 48,
+          "store_scalar_cycles": 144,
+          "update_vector_cycles": 0,
+          "busy_cycles": 417
+        },
+        {
+          "schema_version": 1,
+          "invocation": 13,
+          "N": 16,
+          "D": 16,
+          "mode": 3,
+          "terminal_state": "DONE",
+          "load_scalar_cycles": 209,
+          "compute_scalar_cycles": 16,
+          "compute_weight_cycles": 48,
+          "store_scalar_cycles": 144,
+          "update_vector_cycles": 0,
+          "busy_cycles": 417
+        },
+        {
+          "schema_version": 1,
+          "invocation": 14,
+          "N": 16,
+          "D": 16,
+          "mode": 3,
+          "terminal_state": "DONE",
+          "load_scalar_cycles": 209,
+          "compute_scalar_cycles": 16,
+          "compute_weight_cycles": 48,
+          "store_scalar_cycles": 144,
+          "update_vector_cycles": 0,
+          "busy_cycles": 417
+        }
+      ],
+      "case": "16x64",
+      "elf": "/home/wxt/work-phase4-sw/N16_D64/spatzBenchmarks/test-spatzBenchmarks-quantized-attention",
+      "elf_sha256": "5b9a3f28a7461650708d1bf26e53ee8374bf3b2ee6d3dec65c156f5ed7d86c49"
+    }
+  ]
+}

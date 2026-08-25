@@ -215,6 +215,45 @@ target_link_libraries(
 add_snitch_test(attnres-baselines attnres-baselines/main.c)
 target_link_libraries(test-${SNITCH_TEST_PREFIX}attnres-baselines benchmark ${SNITCH_RUNTIME})
 
+# Phase 4 minimal quantized single-head attention integration. The generated
+# header contains deterministic X, static INT8 weights/scales and host
+# goldens; activation scales and INT32 products are computed at runtime.
+set(PHASE4_N "8" CACHE STRING "Phase 4 attention sequence length")
+set(PHASE4_D "32" CACHE STRING "Phase 4 attention head dimension")
+set(PHASE4_SEED "1" CACHE STRING "Phase 4 attention deterministic seed")
+string(CONCAT PHASE4_CASE_SLUG
+    "N${PHASE4_N}_D${PHASE4_D}_S${PHASE4_SEED}")
+set(PHASE4_GENERATED_DIR
+    "${CMAKE_CURRENT_BINARY_DIR}/phase4_generated/${PHASE4_CASE_SLUG}")
+set(PHASE4_CASE_HEADER
+    "${PHASE4_GENERATED_DIR}/phase4_case_data.h")
+add_custom_command(
+  OUTPUT "${PHASE4_CASE_HEADER}"
+  COMMAND "${PYTHON}"
+          "${CMAKE_CURRENT_SOURCE_DIR}/../../experiments/phase4_quantized_attention/generate_case.py"
+          --n ${PHASE4_N}
+          --d ${PHASE4_D}
+          --seed ${PHASE4_SEED}
+          --output "${PHASE4_CASE_HEADER}"
+  DEPENDS
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../experiments/phase4_quantized_attention/attention_model.py"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../experiments/phase4_quantized_attention/generate_case.py"
+  VERBATIM)
+set_source_files_properties("${PHASE4_CASE_HEADER}"
+    PROPERTIES GENERATED TRUE)
+add_snitch_test(quantized-attention
+    quantized-attention/main.c
+    online-softmax-merge/rvv_update.c
+    ${PHASE4_CASE_HEADER})
+target_include_directories(
+  test-${SNITCH_TEST_PREFIX}quantized-attention
+  PRIVATE ${PHASE4_GENERATED_DIR}
+          ${CMAKE_CURRENT_SOURCE_DIR}/quantized-attention
+          ${CMAKE_CURRENT_SOURCE_DIR}/online-softmax-merge)
+target_link_libraries(
+  test-${SNITCH_TEST_PREFIX}quantized-attention
+  benchmark ${SNITCH_RUNTIME})
+
 add_spatz_test_threeParam(dp-fmatmul dp-fmatmul/main.c 64  64  64 )
 add_spatz_test_threeParam(dp-fmatmul dp-fmatmul/main.c 64  128 64 )
 add_spatz_test_threeParam(dp-fmatmul dp-fmatmul/main.c 128 128 128)

@@ -1,0 +1,21 @@
+{
+  "seed": 1,
+  "git_commit": "dacbc0ca45a9c68d333596a510d81b4a3021b693",
+  "git_dirty": true,
+  "simulator_path": "/home/wxt/work-phase4-recip-sim/spatz_cluster.vlt",
+  "simulator_sha256": "8f85b204d064f1ced29d2fc27518754f8b018db0530cf2328a3a1062687c9138",
+  "elf_sha256": {
+    "8x32": "93760cf287b3d4eb4f57b0f9057c86b65d79f9dd340d04495459b2a79868c28c",
+    "16x64": "5b9a3f28a7461650708d1bf26e53ee8374bf3b2ee6d3dec65c156f5ed7d86c49"
+  },
+  "commands": [
+    "cmake -S /home/wxt/work-online-merge-supplement/hw/system/spatz_cluster/sw -B /home/wxt/work-phase4-sw/N8_D32 -DLLVM_PATH=/home/wxt/work-online-merge-supplement/install/llvm -DGCC_PATH=/home/wxt/work-online-merge-supplement/install/riscv-gcc -DPYTHON=python3 -DBUILD_TESTS=ON -DSNITCH_SIMULATOR=/home/wxt/work-phase4-recip-sim/spatz_cluster.vlt -DSPATZ_CLUSTER_CFG=spatz_cluster.default.dram.hjson -DPHASE4_SEED=1 -DPHASE4_N=8 -DPHASE4_D=32 -DCMAKE_C_FLAGS=-DPRINTF_DISABLE_SUPPORT_FLOAT -DMEM_DRAM_ORIGIN=2147483648 -DMEM_DRAM_SIZE=2147483648 -DSNRT_BASE_HARTID=0 -DSNRT_CLUSTER_CORE_NUM=2 -DSNRT_TCDM_START_ADDR=1048576 -DSNRT_CLUSTER_OFFSET=0 -DSNRT_TCDM_SIZE=131072 -DSNRT_NFPU_PER_CORE=4 -DELEN=64",
+    "cmake --build /home/wxt/work-phase4-sw/N8_D32 --target test-spatzBenchmarks-quantized-attention -- -j8",
+    "/home/wxt/work-online-merge-supplement/install/llvm/bin/llvm-objdump --mcpu=snitch --mattr=a --mattr=v --mattr=m --mattr=zfh -d /home/wxt/work-phase4-sw/N8_D32/spatzBenchmarks/test-spatzBenchmarks-quantized-attention",
+    "reuse-log 8x32=/home/wxt/work-online-merge-supplement/experiments/phase4_quantized_attention/results/system_logs/N8_D32.log",
+    "cmake -S /home/wxt/work-online-merge-supplement/hw/system/spatz_cluster/sw -B /home/wxt/work-phase4-sw/N16_D64 -DLLVM_PATH=/home/wxt/work-online-merge-supplement/install/llvm -DGCC_PATH=/home/wxt/work-online-merge-supplement/install/riscv-gcc -DPYTHON=python3 -DBUILD_TESTS=ON -DSNITCH_SIMULATOR=/home/wxt/work-phase4-recip-sim/spatz_cluster.vlt -DSPATZ_CLUSTER_CFG=spatz_cluster.default.dram.hjson -DPHASE4_SEED=1 -DPHASE4_N=16 -DPHASE4_D=64 -DCMAKE_C_FLAGS=-DPRINTF_DISABLE_SUPPORT_FLOAT -DMEM_DRAM_ORIGIN=2147483648 -DMEM_DRAM_SIZE=2147483648 -DSNRT_BASE_HARTID=0 -DSNRT_CLUSTER_CORE_NUM=2 -DSNRT_TCDM_START_ADDR=1048576 -DSNRT_CLUSTER_OFFSET=0 -DSNRT_TCDM_SIZE=131072 -DSNRT_NFPU_PER_CORE=4 -DELEN=64",
+    "cmake --build /home/wxt/work-phase4-sw/N16_D64 --target test-spatzBenchmarks-quantized-attention -- -j8",
+    "/home/wxt/work-online-merge-supplement/install/llvm/bin/llvm-objdump --mcpu=snitch --mattr=a --mattr=v --mattr=m --mattr=zfh -d /home/wxt/work-phase4-sw/N16_D64/spatzBenchmarks/test-spatzBenchmarks-quantized-attention",
+    "reuse-log 16x64=/home/wxt/work-online-merge-supplement/experiments/phase4_quantized_attention/results/system_logs/N16_D64.log"
+  ]
+}
