@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="880" viewBox="0 0 1800 880">
+<rect width="100%" height="100%" fill="white"/>
+<style>text{font-family:Arial,Helvetica,DejaVu Sans,sans-serif}</style>
+<defs>
+<marker id="arrow-dark" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#3F3F3F"/></marker>
+<marker id="arrow-mid" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#747474"/></marker>
+<marker id="arrow-blue" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#4C72B0"/></marker>
+<marker id="arrow-green" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#4E8F65"/></marker>
+<marker id="arrow-orange" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#C47A3A"/></marker>
+<marker id="arrow-purple" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#86649B"/></marker>
+</defs>
+<text x="30.0" y="30.0" font-size="28" font-weight="bold" fill="#3F3F3F" text-anchor="start" dominant-baseline="middle">Spatz prototype integration and execution sequence</text>
+<text x="30.0" y="95.0" font-size="25" font-weight="bold" fill="#3F3F3F" text-anchor="start" dominant-baseline="middle">a</text>
+<text x="75.0" y="95.0" font-size="22" font-weight="bold" fill="#3F3F3F" text-anchor="start" dominant-baseline="middle">Cluster integration</text>
+<rect x="70.0" y="155.0" width="260.0" height="135.0" rx="10" fill="#F2F3F4" stroke="#747474" stroke-width="2"/>
+<text x="200.0" y="210.9" font-size="21" font-weight="bold" fill="#3F3F3F" text-anchor="middle" dominant-baseline="middle"><tspan x="200.0" dy="0.0">RISC-V core</tspan><tspan x="200.0" dy="23.5">software</tspan></text>
+<rect x="420.0" y="170.0" width="285.0" height="105.0" rx="10" fill="#F2F3F4" stroke="#747474" stroke-width="2"/>
+<text x="562.5" y="212.1" font-size="19" font-weight="bold" fill="#3F3F3F" text-anchor="middle" dominant-baseline="middle"><tspan x="562.5" dy="0.0">Cluster peripheral</tspan><tspan x="562.5" dy="21.3">MMIO registers</tspan></text>
+<rect x="810.0" y="150.0" width="285.0" height="145.0" rx="10" fill="#E4ECF7" stroke="#4C72B0" stroke-width="2"/>
+<text x="952.5" y="210.9" font-size="21" font-weight="bold" fill="#3F3F3F" text-anchor="middle" dominant-baseline="middle"><tspan x="952.5" dy="0.0">Scalar SMU</tspan><tspan x="952.5" dy="23.5">recurrence FSM</tspan></text>
+<rect x="825.0" y="160.0" width="85.0" height="28.0" rx="4" fill="#4C72B0" stroke="#4C72B0" stroke-width="1"/>
+<text x="867.5" y="175.0" font-size="16" font-weight="bold" fill="#FFFFFF" text-anchor="middle" dominant-baseline="middle">NEW</text>
+<rect x="1240.0" y="150.0" width="330.0" height="145.0" rx="10" fill="#E5F1E9" stroke="#4E8F65" stroke-width="2"/>
+<text x="1405.0" y="210.9" font-size="21" font-weight="bold" fill="#3F3F3F" text-anchor="middle" dominant-baseline="middle"><tspan x="1405.0" dy="0.0">Spatz RVV</tspan><tspan x="1405.0" dy="23.5">VLSU + arithmetic</tspan></text>
+<rect x="1255.0" y="160.0" width="85.0" height="28.0" rx="4" fill="#4E8F65" stroke="#4E8F65" stroke-width="1"/>
+<text x="1297.5" y="175.0" font-size="16" font-weight="bold" fill="#FFFFFF" text-anchor="middle" dominant-baseline="middle">REUSED</text>
+<rect x="370.0" y="360.0" width="1040.0" height="70.0" rx="10" fill="#FFFFFF" stroke="#747474" stroke-width="2"/>
+<text x="890.0" y="395.0" font-size="22" font-weight="bold" fill="#3F3F3F" text-anchor="middle" dominant-baseline="middle">TCDM interconnect</text>
+<rect x="370.0" y="480.0" width="1040.0" height="70.0" rx="10" fill="#F2F3F4" stroke="#747474" stroke-width="2"/>
+<text x="890.0" y="515.0" font-size="21" font-weight="bold" fill="#3F3F3F" text-anchor="middle" dominant-baseline="middle">128 KiB shared TCDM (16 banks)</text>
+<line x1="330.0" y1="220.0" x2="420.0" y2="220.0" stroke="#747474" stroke-width="2" stroke-dasharray="8 6" marker-end="url(#arrow-mid)"/>
+<text x="375.0" y="198.0" font-size="16" font-weight="normal" fill="#3F3F3F" text-anchor="middle" dominant-baseline="middle">MMIO</text>
+<line x1="705.0" y1="220.0" x2="810.0" y2="220.0" stroke="#747474" stroke-width="2" stroke-dasharray="8 6" marker-end="url(#arrow-mid)"/>
+<text x="758.0" y="198.0" font-size="16" font-weight="normal" fill="#3F3F3F" text-anchor="middle" dominant-baseline="middle">start / status</text>
+<line x1="952.0" y1="295.0" x2="820.0" y2="360.0" stroke="#4C72B0" stroke-width="3" marker-end="url(#arrow-blue)" marker-start="url(#arrow-blue)"/>
+<text x="900.0" y="330.0" font-size="17" font-weight="normal" fill="#4C72B0" text-anchor="middle" dominant-baseline="middle">independent requester</text>
+<line x1="1405.0" y1="295.0" x2="1320.0" y2="360.0" stroke="#4E8F65" stroke-width="3" marker-end="url(#arrow-green)" marker-start="url(#arrow-green)"/>
+<text x="1430.0" y="330.0" font-size="17" font-weight="normal" fill="#4E8F65" text-anchor="middle" dominant-baseline="middle">existing TCDM ports</text>
+<line x1="890.0" y1="430.0" x2="890.0" y2="480.0" stroke="#747474" stroke-width="3" marker-end="url(#arrow-mid)" marker-start="url(#arrow-mid)"/>
+<text x="30.0" y="610.0" font-size="25" font-weight="bold" fill="#3F3F3F" text-anchor="start" dominant-baseline="middle">b</text>
+<text x="75.0" y="610.0" font-size="22" font-weight="bold" fill="#3F3F3F" text-anchor="start" dominant-baseline="middle">Software-hardware sequence</text>
+<text x="300.0" y="655.0" font-size="19" font-weight="bold" fill="#3F3F3F" text-anchor="middle" dominant-baseline="middle">CPU / software</text>
+<line x1="300.0" y1="680.0" x2="300.0" y2="855.0" stroke="#D9DDE1" stroke-width="2" stroke-dasharray="6 5"/>
+<text x="720.0" y="655.0" font-size="19" font-weight="bold" fill="#3F3F3F" text-anchor="middle" dominant-baseline="middle">Scalar SMU</text>
+<line x1="720.0" y1="680.0" x2="720.0" y2="855.0" stroke="#D9DDE1" stroke-width="2" stroke-dasharray="6 5"/>
+<text x="1140.0" y="655.0" font-size="19" font-weight="bold" fill="#3F3F3F" text-anchor="middle" dominant-baseline="middle">Shared TCDM</text>
+<line x1="1140.0" y1="680.0" x2="1140.0" y2="855.0" stroke="#D9DDE1" stroke-width="2" stroke-dasharray="6 5"/>
+<text x="1560.0" y="655.0" font-size="19" font-weight="bold" fill="#3F3F3F" text-anchor="middle" dominant-baseline="middle">RVV</text>
+<line x1="1560.0" y1="680.0" x2="1560.0" y2="855.0" stroke="#D9DDE1" stroke-width="2" stroke-dasharray="6 5"/>
+<line x1="300.0" y1="700.0" x2="720.0" y2="700.0" stroke="#747474" stroke-width="2" stroke-dasharray="8 6" marker-end="url(#arrow-mid)"/>
+<text x="510.0" y="687.0" font-size="16" font-weight="normal" fill="#747474" text-anchor="middle" dominant-baseline="middle">configure + start</text>
+<line x1="720.0" y1="730.0" x2="1140.0" y2="730.0" stroke="#4C72B0" stroke-width="2" marker-end="url(#arrow-blue)"/>
+<text x="930.0" y="717.0" font-size="16" font-weight="normal" fill="#4C72B0" text-anchor="middle" dominant-baseline="middle">read scalar state</text>
+<line x1="720.0" y1="760.0" x2="1140.0" y2="760.0" stroke="#4C72B0" stroke-width="2" marker-end="url(#arrow-blue)"/>
+<text x="930.0" y="747.0" font-size="16" font-weight="normal" fill="#4C72B0" text-anchor="middle" dominant-baseline="middle">write state + weights</text>
+<line x1="720.0" y1="790.0" x2="300.0" y2="790.0" stroke="#747474" stroke-width="2" stroke-dasharray="8 6" marker-end="url(#arrow-mid)"/>
+<text x="510.0" y="777.0" font-size="16" font-weight="normal" fill="#747474" text-anchor="middle" dominant-baseline="middle">done</text>
+<line x1="300.0" y1="820.0" x2="1560.0" y2="820.0" stroke="#4E8F65" stroke-width="2" stroke-dasharray="8 6" marker-end="url(#arrow-green)"/>
+<text x="930.0" y="807.0" font-size="16" font-weight="normal" fill="#4E8F65" text-anchor="middle" dominant-baseline="middle">invoke RVV update</text>
+<line x1="1560.0" y1="850.0" x2="1140.0" y2="850.0" stroke="#4E8F65" stroke-width="2" marker-end="url(#arrow-green)"/>
+<text x="1350.0" y="837.0" font-size="16" font-weight="normal" fill="#4E8F65" text-anchor="middle" dominant-baseline="middle">O[D] loads / stores</text>
+</svg>

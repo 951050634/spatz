@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="880" height="340" viewBox="0 0 880 340">
+<rect width="100%" height="100%" fill="white"/>
+<style>text{font-family:Arial,Helvetica,DejaVu Sans,sans-serif}</style>
+<defs>
+<marker id="arrow-dark" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#3F3F3F"/></marker>
+<marker id="arrow-mid" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#747474"/></marker>
+<marker id="arrow-blue" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#4C72B0"/></marker>
+<marker id="arrow-green" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#4E8F65"/></marker>
+<marker id="arrow-orange" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#C47A3A"/></marker>
+<marker id="arrow-purple" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#86649B"/></marker>
+</defs>
+<text x="25.0" y="30.0" font-size="23" font-weight="bold" fill="#3F3F3F" text-anchor="start" dominant-baseline="middle">Nominal scalar-only FSM schedule</text>
+<text x="855.0" y="30.0" font-size="20" font-weight="bold" fill="#3F3F3F" text-anchor="end" dominant-baseline="middle">24 busy cycles / row</text>
+<rect x="35.0" y="135.0" width="438.8" height="90.0" rx="0" fill="#4C72B0" stroke="#FFFFFF" stroke-width="2"/>
+<text x="254.4" y="170.1" font-size="18" font-weight="bold" fill="#FFFFFF" text-anchor="middle" dominant-baseline="middle"><tspan x="254.4" dy="0.0">LOAD_SCALAR</tspan><tspan x="254.4" dy="20.2">13</tspan></text>
+<rect x="473.8" y="135.0" width="33.8" height="90.0" rx="0" fill="#C47A3A" stroke="#FFFFFF" stroke-width="2"/>
+<text x="490.6" y="180.0" font-size="17" font-weight="bold" fill="#FFFFFF" text-anchor="middle" dominant-baseline="middle">1</text>
+<rect x="507.5" y="135.0" width="33.8" height="90.0" rx="0" fill="#86649B" stroke="#FFFFFF" stroke-width="2"/>
+<text x="524.4" y="180.0" font-size="17" font-weight="bold" fill="#FFFFFF" text-anchor="middle" dominant-baseline="middle">1</text>
+<rect x="541.2" y="135.0" width="303.8" height="90.0" rx="0" fill="#4E8F65" stroke="#FFFFFF" stroke-width="2"/>
+<text x="693.1" y="170.1" font-size="18" font-weight="bold" fill="#FFFFFF" text-anchor="middle" dominant-baseline="middle"><tspan x="693.1" dy="0.0">STORE_SCALAR</tspan><tspan x="693.1" dy="20.2">9</tspan></text>
+<text x="490.6" y="73.2" font-size="16" font-weight="normal" fill="#C47A3A" text-anchor="middle" dominant-baseline="middle"><tspan x="490.6" dy="0.0">COMPUTE</tspan><tspan x="490.6" dy="17.9">SCALAR</tspan></text>
+<line x1="490.6" y1="112.0" x2="490.6" y2="135.0" stroke="#C47A3A" stroke-width="2" marker-end="url(#arrow-orange)"/>
+<text x="524.4" y="261.2" font-size="16" font-weight="normal" fill="#86649B" text-anchor="middle" dominant-baseline="middle"><tspan x="524.4" dy="0.0">COMPUTE</tspan><tspan x="524.4" dy="17.9">WEIGHT</tspan></text>
+<line x1="524.4" y1="238.0" x2="524.4" y2="225.0" stroke="#86649B" stroke-width="2" marker-end="url(#arrow-purple)"/>
+<text x="35.0" y="315.0" font-size="16" font-weight="normal" fill="#747474" text-anchor="start" dominant-baseline="middle">No-stall TCDM handshake; software command/polling and RVV phase excluded</text>
+</svg>

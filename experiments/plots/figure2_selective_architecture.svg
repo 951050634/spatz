@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="620" viewBox="0 0 1800 620">
+<rect width="100%" height="100%" fill="white"/>
+<style>text{font-family:Arial,Helvetica,DejaVu Sans,sans-serif}</style>
+<defs>
+<marker id="arrow-dark" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#3F3F3F"/></marker>
+<marker id="arrow-mid" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#747474"/></marker>
+<marker id="arrow-blue" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#4C72B0"/></marker>
+<marker id="arrow-green" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#4E8F65"/></marker>
+<marker id="arrow-orange" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#C47A3A"/></marker>
+<marker id="arrow-purple" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#86649B"/></marker>
+</defs>
+<text x="30.0" y="32.0" font-size="28" font-weight="bold" fill="#3F3F3F" text-anchor="start" dominant-baseline="middle">Selective recurrence-offloading architecture</text>
+<text x="1770.0" y="32.0" font-size="18" font-weight="normal" fill="#747474" text-anchor="end" dominant-baseline="middle">platform-independent</text>
+<rect x="650.0" y="70.0" width="500.0" height="70.0" rx="10" fill="#F2F3F4" stroke="#747474" stroke-width="2"/>
+<text x="900.0" y="105.0" font-size="22" font-weight="bold" fill="#3F3F3F" text-anchor="middle" dominant-baseline="middle">Software / control plane</text>
+<rect x="100.0" y="190.0" width="650.0" height="230.0" rx="16" fill="#E4ECF7" stroke="#4C72B0" stroke-width="2"/>
+<rect x="1050.0" y="190.0" width="650.0" height="230.0" rx="16" fill="#E5F1E9" stroke="#4E8F65" stroke-width="2"/>
+<rect x="125.0" y="210.0" width="85.0" height="28.0" rx="4" fill="#4C72B0" stroke="#4C72B0" stroke-width="1"/>
+<text x="167.5" y="225.0" font-size="16" font-weight="bold" fill="#FFFFFF" text-anchor="middle" dominant-baseline="middle">NEW</text>
+<rect x="1075.0" y="210.0" width="85.0" height="28.0" rx="4" fill="#4E8F65" stroke="#4E8F65" stroke-width="1"/>
+<text x="1117.5" y="225.0" font-size="16" font-weight="bold" fill="#FFFFFF" text-anchor="middle" dominant-baseline="middle">REUSED</text>
+<text x="425.0" y="250.0" font-size="27" font-weight="bold" fill="#4C72B0" text-anchor="middle" dominant-baseline="middle">Scalar SMU</text>
+<text x="425.0" y="300.0" font-size="20" font-weight="normal" fill="#4C72B0" text-anchor="middle" dominant-baseline="middle">state-dependent recurrence</text>
+<text x="425.0" y="355.0" font-size="19" font-weight="normal" fill="#3F3F3F" text-anchor="middle" dominant-baseline="middle">max → EXP rescaling → l_new → weights</text>
+<text x="1375.0" y="250.0" font-size="27" font-weight="bold" fill="#4E8F65" text-anchor="middle" dominant-baseline="middle">Existing vector datapath</text>
+<text x="1375.0" y="300.0" font-size="20" font-weight="normal" fill="#4E8F65" text-anchor="middle" dominant-baseline="middle">regular O[D] update</text>
+<text x="1375.0" y="355.0" font-size="19" font-weight="normal" fill="#3F3F3F" text-anchor="middle" dominant-baseline="middle">vector load / multiply-add / store</text>
+<rect x="320.0" y="475.0" width="1160.0" height="85.0" rx="10" fill="#F2F3F4" stroke="#747474" stroke-width="2"/>
+<text x="900.0" y="517.5" font-size="23" font-weight="bold" fill="#3F3F3F" text-anchor="middle" dominant-baseline="middle">Shared scratchpad</text>
+<text x="900.0" y="540.0" font-size="18" font-weight="normal" fill="#747474" text-anchor="middle" dominant-baseline="middle">recurrence state • weights • O vectors</text>
+<line x1="775.0" y1="140.0" x2="500.0" y2="190.0" stroke="#747474" stroke-width="2" stroke-dasharray="8 6" marker-end="url(#arrow-mid)"/>
+<line x1="1025.0" y1="140.0" x2="1300.0" y2="190.0" stroke="#747474" stroke-width="2" stroke-dasharray="8 6" marker-end="url(#arrow-mid)"/>
+<text x="565.0" y="155.0" font-size="17" font-weight="normal" fill="#747474" text-anchor="middle" dominant-baseline="middle">start / completion</text>
+<text x="1235.0" y="155.0" font-size="17" font-weight="normal" fill="#747474" text-anchor="middle" dominant-baseline="middle">invoke vector phase</text>
+<line x1="390.0" y1="420.0" x2="520.0" y2="475.0" stroke="#4C72B0" stroke-width="3" marker-end="url(#arrow-blue)" marker-start="url(#arrow-blue)"/>
+<line x1="1410.0" y1="420.0" x2="1280.0" y2="475.0" stroke="#4E8F65" stroke-width="3" marker-end="url(#arrow-green)" marker-start="url(#arrow-green)"/>
+<text x="335.0" y="453.0" font-size="17" font-weight="normal" fill="#4C72B0" text-anchor="middle" dominant-baseline="middle">state + weights</text>
+<text x="1465.0" y="453.0" font-size="17" font-weight="normal" fill="#4E8F65" text-anchor="middle" dominant-baseline="middle">weights + vectors</text>
+<text x="900.0" y="450.0" font-size="19" font-weight="bold" fill="#3F3F3F" text-anchor="middle" dominant-baseline="middle">phase boundary through shared state</text>
+</svg>
