@@ -1,0 +1,1635 @@
+{
+  "seed": 1,
+  "simulator_path": "/home/wxt/work-phase4-recip-sim/spatz_cluster.vlt",
+  "metric_authority": {
+    "device_mae": "direct device_pair_* MAE from the target run",
+    "device_cosine": "diagnostic only; target sqrt/reciprocal approximation",
+    "formal_cosine": "float64 host recomputation in results/numerical.csv"
+  },
+  "backends": {
+    "software": {
+      "8x32": {
+        "log": "/home/wxt/work-online-merge-supplement/experiments/phase4_softmax_ablation/results/system_logs/software_N8_D32.log",
+        "p4_result": {
+          "status": "pass",
+          "backend": "software_softmax",
+          "n": 8,
+          "d": 32,
+          "seed": 1,
+          "mode": 3,
+          "smu_d": 8,
+          "stride": 32,
+          "scales_bits": {
+            "sX": 998309340,
+            "sWQ": 989919388,
+            "sWK": 989901323,
+            "sWV": 989917521,
+            "sQ": 1001063433,
+            "sK": 1003945375,
+            "sV": 1000727782,
+            "sScore": 919280668
+          },
+          "scales": {
+            "sX": 0.003936512395739555,
+            "sWQ": 0.001967943273484707,
+            "sWK": 0.0019637371879070997,
+            "sWV": 0.001967508578673005,
+            "sQ": 0.005218986887484789,
+            "sK": 0.00656099570915103,
+            "sV": 0.005062687210738659,
+            "sScore": 6.0531438066391274e-06
+          },
+          "maxabs_bits": {
+            "X": 1056962497
+          },
+          "maxabs": {
+            "Q": 85559,
+            "K": 107790,
+            "V": 83015
+          },
+          "linear": {
+            "Q": {
+              "mae_bits": 986456397,
+              "mae": 0.0015573889249935746,
+              "stable_relative_error_bits": 1006540056,
+              "stable_relative_error": 0.007769238203763962,
+              "cosine_similarity_bits": 1065353216,
+              "cosine_similarity": 1.0
+            },
+            "K": {
+              "mae_bits": 988992283,
+              "mae": 0.001852604909799993,
+              "stable_relative_error_bits": 1008131377,
+              "stable_relative_error": 0.009208009578287601,
+              "cosine_similarity_bits": 1065353216,
+              "cosine_similarity": 1.0
+            },
+            "V": {
+              "mae_bits": 986596119,
+              "mae": 0.0015736547065898776,
+              "stable_relative_error_bits": 1007688590,
+              "stable_relative_error": 0.008795632049441338,
+              "cosine_similarity_bits": 1065353216,
+              "cosine_similarity": 1.0
+            },
+            "saturation_count": {
+              "Q": 1,
+              "K": 1,
+              "V": 1
+            }
+          },
+          "score": {
+            "mae_bits": 974768748,
+            "mae": 0.0005866650026291609,
+            "stable_relative_error_bits": 1009994263,
+            "stable_relative_error": 0.010942957364022732,
+            "cosine_similarity_bits": 1065353216,
+            "cosine_similarity": 1.0
+          },
+          "probability": {
+            "vs_ref": {
+              "mae_bits": 949001920,
+              "mae": 6.896024569869041e-05,
+              "stable_relative_error_bits": 974167744,
+              "stable_relative_error": 0.0005516819655895233,
+              "cosine_similarity_bits": 1065353216,
+              "cosine_similarity": 1.0
+            },
+            "integration_vs_host_mixed": {
+              "mae_bits": 980187508,
+              "mae": 0.0009020783472806215,
+              "stable_relative_error_bits": 1005352791,
+              "stable_relative_error": 0.007216374855488539,
+              "cosine_similarity_bits": 1065353216,
+              "cosine_similarity": 1.0
+            }
+          },
+          "output": {
+            "vs_ref": {
+              "mae_bits": 975518456,
+              "mae": 0.0006303037516772747,
+              "stable_relative_error_bits": 1010079181,
+              "stable_relative_error": 0.011022043414413929,
+              "cosine_similarity_bits": 1065353215,
+              "cosine_similarity": 0.9999999403953552
+            },
+            "integration_vs_host_mixed": {
+              "mae_bits": 973669189,
+              "mae": 0.0005226622452028096,
+              "stable_relative_error_bits": 1008025330,
+              "stable_relative_error": 0.009109245613217354,
+              "cosine_similarity_bits": 1065353216,
+              "cosine_similarity": 1.0
+            }
+          },
+          "smu": {
+            "commands": 0,
+            "done": 0,
+            "error": 0,
+            "timeout": 0,
+            "saw_busy": 0
+          },
+          "cycles": {
+            "x_maxabs_scale": 3141,
+            "x_quant": 17202,
+            "q_linear": 252594,
+            "k_linear": 252428,
+            "v_linear": 252418,
+            "q_requant": 23066,
+            "k_requant": 23044,
+            "v_requant": 22864,
+            "qkt": 31494,
+            "score_rescale": 1411,
+            "softmax": 12502,
+            "smu_scalar_window": 0,
+            "smu_probability_update": 0,
+            "smu_setup_orchestration": 0,
+            "smu_total": 0,
+            "pv": 36264,
+            "output_rescale": 3363,
+            "total": 931920
+          },
+          "tcdm": {
+            "data_bytes": 8704,
+            "allocation_bytes": 8704,
+            "runtime_reserved_bytes": 16512,
+            "memory_footprint_bytes": 25216,
+            "capacity_bytes": 131072
+          }
+        },
+        "sim_config": {
+          "schema_version": 1,
+          "profile": "low_perturbation",
+          "dasm_trace_enabled": false,
+          "fsm_observer_enabled": true
+        },
+        "fsm": [],
+        "case": "8x32",
+        "backend": "software",
+        "elf": "/home/wxt/work-phase4-softmax-ablation-sw/software/N8_D32/spatzBenchmarks/test-spatzBenchmarks-quantized-attention",
+        "elf_sha256": "7fcd83b6b1139f8d4a0a00cc2abac3954a0d69a0e9225e9719c1f23754af96b1"
+      },
+      "16x64": {
+        "log": "/home/wxt/work-online-merge-supplement/experiments/phase4_softmax_ablation/results/system_logs/software_N16_D64.log",
+        "p4_result": {
+          "status": "pass",
+          "backend": "software_softmax",
+          "n": 16,
+          "d": 64,
+          "seed": 1,
+          "mode": 3,
+          "smu_d": 16,
+          "stride": 64,
+          "scales_bits": {
+            "sX": 998309340,
+            "sWQ": 989921091,
+            "sWK": 989921299,
+            "sWV": 989921695,
+            "sQ": 1008301977,
+            "sK": 1007978204,
+            "sV": 1011080651,
+            "sScore": 926028794
+          },
+          "scales": {
+            "sX": 0.003936512395739555,
+            "sWQ": 0.0019683397840708494,
+            "sWK": 0.0019683882128447294,
+            "sWV": 0.0019684804137796164,
+            "sQ": 0.009366893209517002,
+            "sK": 0.009065356105566025,
+            "sV": 0.011954735033214092,
+            "sScore": 1.0614277925924398e-05
+          },
+          "maxabs_bits": {
+            "X": 1056962497
+          },
+          "maxabs": {
+            "Q": 153528,
+            "K": 148582,
+            "V": 195930
+          },
+          "linear": {
+            "Q": {
+              "mae_bits": 993042897,
+              "mae": 0.0026951918844133615,
+              "stable_relative_error_bits": 1008547236,
+              "stable_relative_error": 0.00959530845284462,
+              "cosine_similarity_bits": 1065353216,
+              "cosine_similarity": 1.0
+            },
+            "K": {
+              "mae_bits": 993052155,
+              "mae": 0.002697347430512309,
+              "stable_relative_error_bits": 1009072378,
+              "stable_relative_error": 0.010084385052323341,
+              "cosine_similarity_bits": 1065353214,
+              "cosine_similarity": 0.9999998807907104
+            },
+            "V": {
+              "mae_bits": 995413566,
+              "mae": 0.003247156273573637,
+              "stable_relative_error_bits": 1011208079,
+              "stable_relative_error": 0.012073411606252193,
+              "cosine_similarity_bits": 1065353214,
+              "cosine_similarity": 0.9999998807907104
+            },
+            "saturation_count": {
+              "Q": 1,
+              "K": 1,
+              "V": 1
+            }
+          },
+          "score": {
+            "mae_bits": 983715330,
+            "mae": 0.0012382867280393839,
+            "stable_relative_error_bits": 1012913433,
+            "stable_relative_error": 0.013661646284162998,
+            "cosine_similarity_bits": 1065353215,
+            "cosine_similarity": 0.9999999403953552
+          },
+          "probability": {
+            "vs_ref": {
+              "mae_bits": 949632082,
+              "mae": 7.354527770075947e-05,
+              "stable_relative_error_bits": 983186514,
+              "stable_relative_error": 0.0011767244432121515,
+              "cosine_similarity_bits": 1065353216,
+              "cosine_similarity": 1.0
+            },
+            "integration_vs_host_mixed": {
+              "mae_bits": 972604351,
+              "mae": 0.0004744808829855174,
+              "stable_relative_error_bits": 1006158124,
+              "stable_relative_error": 0.007591387256979942,
+              "cosine_similarity_bits": 1065353215,
+              "cosine_similarity": 0.9999999403953552
+            }
+          },
+          "output": {
+            "vs_ref": {
+              "mae_bits": 978459865,
+              "mae": 0.000801516289357096,
+              "stable_relative_error_bits": 1011254411,
+              "stable_relative_error": 0.012116561643779278,
+              "cosine_similarity_bits": 1065353216,
+              "cosine_similarity": 1.0
+            },
+            "integration_vs_host_mixed": {
+              "mae_bits": 975247639,
+              "mae": 0.0006145401275716722,
+              "stable_relative_error_bits": 1008224210,
+              "stable_relative_error": 0.00929446704685688,
+              "cosine_similarity_bits": 1065353215,
+              "cosine_similarity": 0.9999999403953552
+            }
+          },
+          "smu": {
+            "commands": 0,
+            "done": 0,
+            "error": 0,
+            "timeout": 0,
+            "saw_busy": 0
+          },
+          "cycles": {
+            "x_maxabs_scale": 11322,
+            "x_quant": 68280,
+            "q_linear": 2043023,
+            "k_linear": 2043043,
+            "v_linear": 2043041,
+            "q_requant": 90859,
+            "k_requant": 90803,
+            "v_requant": 90841,
+            "qkt": 281354,
+            "score_rescale": 5428,
+            "softmax": 48595,
+            "smu_scalar_window": 0,
+            "smu_probability_update": 0,
+            "smu_setup_orchestration": 0,
+            "smu_total": 0,
+            "pv": 302903,
+            "output_rescale": 14376,
+            "total": 7134015
+          },
+          "tcdm": {
+            "data_bytes": 34304,
+            "allocation_bytes": 34304,
+            "runtime_reserved_bytes": 16512,
+            "memory_footprint_bytes": 50816,
+            "capacity_bytes": 131072
+          }
+        },
+        "sim_config": {
+          "schema_version": 1,
+          "profile": "low_perturbation",
+          "dasm_trace_enabled": false,
+          "fsm_observer_enabled": true
+        },
+        "fsm": [],
+        "case": "16x64",
+        "backend": "software",
+        "elf": "/home/wxt/work-phase4-softmax-ablation-sw/software/N16_D64/spatzBenchmarks/test-spatzBenchmarks-quantized-attention",
+        "elf_sha256": "e760e47ae0937f5d293460e164bf7d7f49a45cd784c93a7c26d1aa93cbe66325"
+      }
+    },
+    "mixed": {
+      "8x32": {
+        "log": "/home/wxt/work-online-merge-supplement/experiments/phase4_softmax_ablation/results/system_logs/mixed_N8_D32.log",
+        "p4_result": {
+          "status": "pass",
+          "backend": "mixed_smu",
+          "n": 8,
+          "d": 32,
+          "seed": 1,
+          "mode": 3,
+          "smu_d": 8,
+          "stride": 32,
+          "scales_bits": {
+            "sX": 998309340,
+            "sWQ": 989919388,
+            "sWK": 989901323,
+            "sWV": 989917521,
+            "sQ": 1001063433,
+            "sK": 1003945375,
+            "sV": 1000727782,
+            "sScore": 919280668
+          },
+          "scales": {
+            "sX": 0.003936512395739555,
+            "sWQ": 0.001967943273484707,
+            "sWK": 0.0019637371879070997,
+            "sWV": 0.001967508578673005,
+            "sQ": 0.005218986887484789,
+            "sK": 0.00656099570915103,
+            "sV": 0.005062687210738659,
+            "sScore": 6.0531438066391274e-06
+          },
+          "maxabs_bits": {
+            "X": 1056962497
+          },
+          "maxabs": {
+            "Q": 85559,
+            "K": 107790,
+            "V": 83015
+          },
+          "linear": {
+            "Q": {
+              "mae_bits": 986456397,
+              "mae": 0.0015573889249935746,
+              "stable_relative_error_bits": 1006540056,
+              "stable_relative_error": 0.007769238203763962,
+              "cosine_similarity_bits": 1065353216,
+              "cosine_similarity": 1.0
+            },
+            "K": {
+              "mae_bits": 988992283,
+              "mae": 0.001852604909799993,
+              "stable_relative_error_bits": 1008131377,
+              "stable_relative_error": 0.009208009578287601,
+              "cosine_similarity_bits": 1065353216,
+              "cosine_similarity": 1.0
+            },
+            "V": {
+              "mae_bits": 986596119,
+              "mae": 0.0015736547065898776,
+              "stable_relative_error_bits": 1007688590,
+              "stable_relative_error": 0.008795632049441338,
+              "cosine_similarity_bits": 1065353216,
+              "cosine_similarity": 1.0
+            },
+            "saturation_count": {
+              "Q": 1,
+              "K": 1,
+              "V": 1
+            }
+          },
+          "score": {
+            "mae_bits": 974768748,
+            "mae": 0.0005866650026291609,
+            "stable_relative_error_bits": 1009994263,
+            "stable_relative_error": 0.010942957364022732,
+            "cosine_similarity_bits": 1065353216,
+            "cosine_similarity": 1.0
+          },
+          "probability": {
+            "vs_ref": {
+              "mae_bits": 980382952,
+              "mae": 0.0009134546853601933,
+              "stable_relative_error_bits": 1005548776,
+              "stable_relative_error": 0.007307637482881546,
+              "cosine_similarity_bits": 1065353216,
+              "cosine_similarity": 1.0
+            },
+            "integration_vs_host_mixed": {
+              "mae_bits": 0,
+              "mae": 0.0,
+              "stable_relative_error_bits": 0,
+              "stable_relative_error": 0.0,
+              "cosine_similarity_bits": 1065353216,
+              "cosine_similarity": 1.0
+            }
+          },
+          "output": {
+            "vs_ref": {
+              "mae_bits": 979910763,
+              "mae": 0.000885969668161124,
+              "stable_relative_error_bits": 1014879664,
+              "stable_relative_error": 0.015492841601371765,
+              "cosine_similarity_bits": 1065353215,
+              "cosine_similarity": 0.9999999403953552
+            },
+            "integration_vs_host_mixed": {
+              "mae_bits": 835631872,
+              "mae": 6.016648512741085e-09,
+              "stable_relative_error_bits": 870395955,
+              "stable_relative_error": 1.0486146351240677e-07,
+              "cosine_similarity_bits": 1065353215,
+              "cosine_similarity": 0.9999999403953552
+            }
+          },
+          "smu": {
+            "commands": 7,
+            "done": 7,
+            "error": 0,
+            "timeout": 0,
+            "saw_busy": 1
+          },
+          "cycles": {
+            "x_maxabs_scale": 3130,
+            "x_quant": 17200,
+            "q_linear": 252526,
+            "k_linear": 252406,
+            "v_linear": 252396,
+            "q_requant": 23059,
+            "k_requant": 23035,
+            "v_requant": 22846,
+            "qkt": 31759,
+            "score_rescale": 1429,
+            "softmax": 14812,
+            "smu_scalar_window": 9723,
+            "smu_probability_update": 2512,
+            "smu_setup_orchestration": 2577,
+            "smu_total": 14812,
+            "pv": 36269,
+            "output_rescale": 3386,
+            "total": 934412
+          },
+          "tcdm": {
+            "data_bytes": 8704,
+            "allocation_bytes": 8704,
+            "runtime_reserved_bytes": 16512,
+            "memory_footprint_bytes": 25216,
+            "capacity_bytes": 131072
+          }
+        },
+        "sim_config": {
+          "schema_version": 1,
+          "profile": "low_perturbation",
+          "dasm_trace_enabled": false,
+          "fsm_observer_enabled": true
+        },
+        "fsm": [
+          {
+            "schema_version": 1,
+            "invocation": 0,
+            "N": 8,
+            "D": 8,
+            "mode": 3,
+            "terminal_state": "DONE",
+            "load_scalar_cycles": 104,
+            "compute_scalar_cycles": 8,
+            "compute_weight_cycles": 24,
+            "store_scalar_cycles": 72,
+            "update_vector_cycles": 0,
+            "busy_cycles": 208
+          },
+          {
+            "schema_version": 1,
+            "invocation": 1,
+            "N": 8,
+            "D": 8,
+            "mode": 3,
+            "terminal_state": "DONE",
+            "load_scalar_cycles": 104,
+            "compute_scalar_cycles": 8,
+            "compute_weight_cycles": 24,
+            "store_scalar_cycles": 72,
+            "update_vector_cycles": 0,
+            "busy_cycles": 208
+          },
+          {
+            "schema_version": 1,
+            "invocation": 2,
+            "N": 8,
+            "D": 8,
+            "mode": 3,
+            "terminal_state": "DONE",
+            "load_scalar_cycles": 104,
+            "compute_scalar_cycles": 8,
+            "compute_weight_cycles": 24,
+            "store_scalar_cycles": 72,
+            "update_vector_cycles": 0,
+            "busy_cycles": 208
+          },
+          {
+            "schema_version": 1,
+            "invocation": 3,
+            "N": 8,
+            "D": 8,
+            "mode": 3,
+            "terminal_state": "DONE",
+            "load_scalar_cycles": 104,
+            "compute_scalar_cycles": 8,
+            "compute_weight_cycles": 24,
+            "store_scalar_cycles": 72,
+            "update_vector_cycles": 0,
+            "busy_cycles": 208
+          },
+          {
+            "schema_version": 1,
+            "invocation": 4,
+            "N": 8,
+            "D": 8,
+            "mode": 3,
+            "terminal_state": "DONE",
+            "load_scalar_cycles": 104,
+            "compute_scalar_cycles": 8,
+            "compute_weight_cycles": 24,
+            "store_scalar_cycles": 72,
+            "update_vector_cycles": 0,
+            "busy_cycles": 208
+          },
+          {
+            "schema_version": 1,
+            "invocation": 5,
+            "N": 8,
+            "D": 8,
+            "mode": 3,
+            "terminal_state": "DONE",
+            "load_scalar_cycles": 104,
+            "compute_scalar_cycles": 8,
+            "compute_weight_cycles": 24,
+            "store_scalar_cycles": 72,
+            "update_vector_cycles": 0,
+            "busy_cycles": 208
+          },
+          {
+            "schema_version": 1,
+            "invocation": 6,
+            "N": 8,
+            "D": 8,
+            "mode": 3,
+            "terminal_state": "DONE",
+            "load_scalar_cycles": 104,
+            "compute_scalar_cycles": 8,
+            "compute_weight_cycles": 24,
+            "store_scalar_cycles": 72,
+            "update_vector_cycles": 0,
+            "busy_cycles": 208
+          }
+        ],
+        "case": "8x32",
+        "backend": "mixed",
+        "elf": "/home/wxt/work-phase4-softmax-ablation-sw/mixed/N8_D32/spatzBenchmarks/test-spatzBenchmarks-quantized-attention",
+        "elf_sha256": "8619cef1f02fc97c2d30cffad17ac212bf93066d410a10eb7dc9f7eeed20e2aa"
+      },
+      "16x64": {
+        "log": "/home/wxt/work-online-merge-supplement/experiments/phase4_softmax_ablation/results/system_logs/mixed_N16_D64.log",
+        "p4_result": {
+          "status": "pass",
+          "backend": "mixed_smu",
+          "n": 16,
+          "d": 64,
+          "seed": 1,
+          "mode": 3,
+          "smu_d": 16,
+          "stride": 64,
+          "scales_bits": {
+            "sX": 998309340,
+            "sWQ": 989921091,
+            "sWK": 989921299,
+            "sWV": 989921695,
+            "sQ": 1008301977,
+            "sK": 1007978204,
+            "sV": 1011080651,
+            "sScore": 926028794
+          },
+          "scales": {
+            "sX": 0.003936512395739555,
+            "sWQ": 0.0019683397840708494,
+            "sWK": 0.0019683882128447294,
+            "sWV": 0.0019684804137796164,
+            "sQ": 0.009366893209517002,
+            "sK": 0.009065356105566025,
+            "sV": 0.011954735033214092,
+            "sScore": 1.0614277925924398e-05
+          },
+          "maxabs_bits": {
+            "X": 1056962497
+          },
+          "maxabs": {
+            "Q": 153528,
+            "K": 148582,
+            "V": 195930
+          },
+          "linear": {
+            "Q": {
+              "mae_bits": 993042897,
+              "mae": 0.0026951918844133615,
+              "stable_relative_error_bits": 1008547236,
+              "stable_relative_error": 0.00959530845284462,
+              "cosine_similarity_bits": 1065353216,
+              "cosine_similarity": 1.0
+            },
+            "K": {
+              "mae_bits": 993052155,
+              "mae": 0.002697347430512309,
+              "stable_relative_error_bits": 1009072378,
+              "stable_relative_error": 0.010084385052323341,
+              "cosine_similarity_bits": 1065353214,
+              "cosine_similarity": 0.9999998807907104
+            },
+            "V": {
+              "mae_bits": 995413566,
+              "mae": 0.003247156273573637,
+              "stable_relative_error_bits": 1011208079,
+              "stable_relative_error": 0.012073411606252193,
+              "cosine_similarity_bits": 1065353214,
+              "cosine_similarity": 0.9999998807907104
+            },
+            "saturation_count": {
+              "Q": 1,
+              "K": 1,
+              "V": 1
+            }
+          },
+          "score": {
+            "mae_bits": 983715330,
+            "mae": 0.0012382867280393839,
+            "stable_relative_error_bits": 1012913433,
+            "stable_relative_error": 0.013661646284162998,
+            "cosine_similarity_bits": 1065353215,
+            "cosine_similarity": 0.9999999403953552
+          },
+          "probability": {
+            "vs_ref": {
+              "mae_bits": 973042908,
+              "mae": 0.00048724457155913115,
+              "stable_relative_error_bits": 1006597340,
+              "stable_relative_error": 0.007795913144946098,
+              "cosine_similarity_bits": 1065353217,
+              "cosine_similarity": 1.0000001192092896
+            },
+            "integration_vs_host_mixed": {
+              "mae_bits": 0,
+              "mae": 0.0,
+              "stable_relative_error_bits": 0,
+              "stable_relative_error": 0.0,
+              "cosine_similarity_bits": 1065353215,
+              "cosine_similarity": 0.9999999403953552
+            }
+          },
+          "output": {
+            "vs_ref": {
+              "mae_bits": 981869016,
+              "mae": 0.0010233474895358086,
+              "stable_relative_error_bits": 1014855133,
+              "stable_relative_error": 0.015469995327293873,
+              "cosine_similarity_bits": 1065353216,
+              "cosine_similarity": 1.0
+            },
+            "integration_vs_host_mixed": {
+              "mae_bits": 837079076,
+              "mae": 6.659336193592935e-09,
+              "stable_relative_error_bits": 869812752,
+              "stable_relative_error": 1.007175569611718e-07,
+              "cosine_similarity_bits": 1065353215,
+              "cosine_similarity": 0.9999999403953552
+            }
+          },
+          "smu": {
+            "commands": 15,
+            "done": 15,
+            "error": 0,
+            "timeout": 0,
+            "saw_busy": 1
+          },
+          "cycles": {
+            "x_maxabs_scale": 11309,
+            "x_quant": 68290,
+            "q_linear": 2043041,
+            "k_linear": 2043061,
+            "v_linear": 2043055,
+            "q_requant": 90838,
+            "k_requant": 90804,
+            "v_requant": 90859,
+            "qkt": 281363,
+            "score_rescale": 5441,
+            "softmax": 48534,
+            "smu_scalar_window": 24211,
+            "smu_probability_update": 14144,
+            "smu_setup_orchestration": 10179,
+            "smu_total": 48534,
+            "pv": 303911,
+            "output_rescale": 14391,
+            "total": 7135062
+          },
+          "tcdm": {
+            "data_bytes": 34304,
+            "allocation_bytes": 34304,
+            "runtime_reserved_bytes": 16512,
+            "memory_footprint_bytes": 50816,
+            "capacity_bytes": 131072
+          }
+        },
+        "sim_config": {
+          "schema_version": 1,
+          "profile": "low_perturbation",
+          "dasm_trace_enabled": false,
+          "fsm_observer_enabled": true
+        },
+        "fsm": [
+          {
+            "schema_version": 1,
+            "invocation": 0,
+            "N": 16,
+            "D": 16,
+            "mode": 3,
+            "terminal_state": "DONE",
+            "load_scalar_cycles": 209,
+            "compute_scalar_cycles": 16,
+            "compute_weight_cycles": 48,
+            "store_scalar_cycles": 144,
+            "update_vector_cycles": 0,
+            "busy_cycles": 417
+          },
+          {
+            "schema_version": 1,
+            "invocation": 1,
+            "N": 16,
+            "D": 16,
+            "mode": 3,
+            "terminal_state": "DONE",
+            "load_scalar_cycles": 209,
+            "compute_scalar_cycles": 16,
+            "compute_weight_cycles": 48,
+            "store_scalar_cycles": 144,
+            "update_vector_cycles": 0,
+            "busy_cycles": 417
+          },
+          {
+            "schema_version": 1,
+            "invocation": 2,
+            "N": 16,
+            "D": 16,
+            "mode": 3,
+            "terminal_state": "DONE",
+            "load_scalar_cycles": 209,
+            "compute_scalar_cycles": 16,
+            "compute_weight_cycles": 48,
+            "store_scalar_cycles": 144,
+            "update_vector_cycles": 0,
+            "busy_cycles": 417
+          },
+          {
+            "schema_version": 1,
+            "invocation": 3,
+            "N": 16,
+            "D": 16,
+            "mode": 3,
+            "terminal_state": "DONE",
+            "load_scalar_cycles": 209,
+            "compute_scalar_cycles": 16,
+            "compute_weight_cycles": 48,
+            "store_scalar_cycles": 144,
+            "update_vector_cycles": 0,
+            "busy_cycles": 417
+          },
+          {
+            "schema_version": 1,
+            "invocation": 4,
+            "N": 16,
+            "D": 16,
+            "mode": 3,
+            "terminal_state": "DONE",
+            "load_scalar_cycles": 209,
+            "compute_scalar_cycles": 16,
+            "compute_weight_cycles": 48,
+            "store_scalar_cycles": 144,
+            "update_vector_cycles": 0,
+            "busy_cycles": 417
+          },
+          {
+            "schema_version": 1,
+            "invocation": 5,
+            "N": 16,
+            "D": 16,
+            "mode": 3,
+            "terminal_state": "DONE",
+            "load_scalar_cycles": 209,
+            "compute_scalar_cycles": 16,
+            "compute_weight_cycles": 48,
+            "store_scalar_cycles": 144,
+            "update_vector_cycles": 0,
+            "busy_cycles": 417
+          },
+          {
+            "schema_version": 1,
+            "invocation": 6,
+            "N": 16,
+            "D": 16,
+            "mode": 3,
+            "terminal_state": "DONE",
+            "load_scalar_cycles": 209,
+            "compute_scalar_cycles": 16,
+            "compute_weight_cycles": 48,
+            "store_scalar_cycles": 144,
+            "update_vector_cycles": 0,
+            "busy_cycles": 417
+          },
+          {
+            "schema_version": 1,
+            "invocation": 7,
+            "N": 16,
+            "D": 16,
+            "mode": 3,
+            "terminal_state": "DONE",
+            "load_scalar_cycles": 209,
+            "compute_scalar_cycles": 16,
+            "compute_weight_cycles": 48,
+            "store_scalar_cycles": 144,
+            "update_vector_cycles": 0,
+            "busy_cycles": 417
+          },
+          {
+            "schema_version": 1,
+            "invocation": 8,
+            "N": 16,
+            "D": 16,
+            "mode": 3,
+            "terminal_state": "DONE",
+            "load_scalar_cycles": 209,
+            "compute_scalar_cycles": 16,
+            "compute_weight_cycles": 48,
+            "store_scalar_cycles": 144,
+            "update_vector_cycles": 0,
+            "busy_cycles": 417
+          },
+          {
+            "schema_version": 1,
+            "invocation": 9,
+            "N": 16,
+            "D": 16,
+            "mode": 3,
+            "terminal_state": "DONE",
+            "load_scalar_cycles": 209,
+            "compute_scalar_cycles": 16,
+            "compute_weight_cycles": 48,
+            "store_scalar_cycles": 144,
+            "update_vector_cycles": 0,
+            "busy_cycles": 417
+          },
+          {
+            "schema_version": 1,
+            "invocation": 10,
+            "N": 16,
+            "D": 16,
+            "mode": 3,
+            "terminal_state": "DONE",
+            "load_scalar_cycles": 209,
+            "compute_scalar_cycles": 16,
+            "compute_weight_cycles": 48,
+            "store_scalar_cycles": 144,
+            "update_vector_cycles": 0,
+            "busy_cycles": 417
+          },
+          {
+            "schema_version": 1,
+            "invocation": 11,
+            "N": 16,
+            "D": 16,
+            "mode": 3,
+            "terminal_state": "DONE",
+            "load_scalar_cycles": 209,
+            "compute_scalar_cycles": 16,
+            "compute_weight_cycles": 48,
+            "store_scalar_cycles": 144,
+            "update_vector_cycles": 0,
+            "busy_cycles": 417
+          },
+          {
+            "schema_version": 1,
+            "invocation": 12,
+            "N": 16,
+            "D": 16,
+            "mode": 3,
+            "terminal_state": "DONE",
+            "load_scalar_cycles": 209,
+            "compute_scalar_cycles": 16,
+            "compute_weight_cycles": 48,
+            "store_scalar_cycles": 144,
+            "update_vector_cycles": 0,
+            "busy_cycles": 417
+          },
+          {
+            "schema_version": 1,
+            "invocation": 13,
+            "N": 16,
+            "D": 16,
+            "mode": 3,
+            "terminal_state": "DONE",
+            "load_scalar_cycles": 209,
+            "compute_scalar_cycles": 16,
+            "compute_weight_cycles": 48,
+            "store_scalar_cycles": 144,
+            "update_vector_cycles": 0,
+            "busy_cycles": 417
+          },
+          {
+            "schema_version": 1,
+            "invocation": 14,
+            "N": 16,
+            "D": 16,
+            "mode": 3,
+            "terminal_state": "DONE",
+            "load_scalar_cycles": 209,
+            "compute_scalar_cycles": 16,
+            "compute_weight_cycles": 48,
+            "store_scalar_cycles": 144,
+            "update_vector_cycles": 0,
+            "busy_cycles": 417
+          }
+        ],
+        "case": "16x64",
+        "backend": "mixed",
+        "elf": "/home/wxt/work-phase4-softmax-ablation-sw/mixed/N16_D64/spatzBenchmarks/test-spatzBenchmarks-quantized-attention",
+        "elf_sha256": "75c45491f3e8f09be69641c61f55d545451e6fa0c5073200ac9da632b884c678"
+      }
+    },
+    "device_compare": {
+      "8x32": {
+        "log": "/home/wxt/work-online-merge-supplement/experiments/phase4_softmax_ablation/results/system_logs/device_compare_N8_D32.log",
+        "p4_result": {
+          "status": "pass",
+          "backend": "device_pair_compare",
+          "n": 8,
+          "d": 32,
+          "seed": 1,
+          "mode": 3,
+          "smu_d": 8,
+          "stride": 32,
+          "scales_bits": {
+            "sX": 998309340,
+            "sWQ": 989919388,
+            "sWK": 989901323,
+            "sWV": 989917521,
+            "sQ": 1001063433,
+            "sK": 1003945375,
+            "sV": 1000727782,
+            "sScore": 919280668
+          },
+          "scales": {
+            "sX": 0.003936512395739555,
+            "sWQ": 0.001967943273484707,
+            "sWK": 0.0019637371879070997,
+            "sWV": 0.001967508578673005,
+            "sQ": 0.005218986887484789,
+            "sK": 0.00656099570915103,
+            "sV": 0.005062687210738659,
+            "sScore": 6.0531438066391274e-06
+          },
+          "maxabs_bits": {
+            "X": 1056962497
+          },
+          "maxabs": {
+            "Q": 85559,
+            "K": 107790,
+            "V": 83015
+          },
+          "linear": {
+            "Q": {
+              "mae_bits": 986456397,
+              "mae": 0.0015573889249935746,
+              "stable_relative_error_bits": 1006540056,
+              "stable_relative_error": 0.007769238203763962,
+              "cosine_similarity_bits": 1065353216,
+              "cosine_similarity": 1.0
+            },
+            "K": {
+              "mae_bits": 988992283,
+              "mae": 0.001852604909799993,
+              "stable_relative_error_bits": 1008131377,
+              "stable_relative_error": 0.009208009578287601,
+              "cosine_similarity_bits": 1065353216,
+              "cosine_similarity": 1.0
+            },
+            "V": {
+              "mae_bits": 986596119,
+              "mae": 0.0015736547065898776,
+              "stable_relative_error_bits": 1007688590,
+              "stable_relative_error": 0.008795632049441338,
+              "cosine_similarity_bits": 1065353216,
+              "cosine_similarity": 1.0
+            },
+            "saturation_count": {
+              "Q": 1,
+              "K": 1,
+              "V": 1
+            }
+          },
+          "score": {
+            "mae_bits": 974768748,
+            "mae": 0.0005866650026291609,
+            "stable_relative_error_bits": 1009994263,
+            "stable_relative_error": 0.010942957364022732,
+            "cosine_similarity_bits": 1065353216,
+            "cosine_similarity": 1.0
+          },
+          "probability": {
+            "vs_ref": {
+              "mae_bits": 980382952,
+              "mae": 0.0009134546853601933,
+              "stable_relative_error_bits": 1005548776,
+              "stable_relative_error": 0.007307637482881546,
+              "cosine_similarity_bits": 1065353216,
+              "cosine_similarity": 1.0
+            },
+            "integration_vs_host_mixed": {
+              "mae_bits": 0,
+              "mae": 0.0,
+              "stable_relative_error_bits": 0,
+              "stable_relative_error": 0.0,
+              "cosine_similarity_bits": 1065353216,
+              "cosine_similarity": 1.0
+            }
+          },
+          "output": {
+            "vs_ref": {
+              "mae_bits": 979910763,
+              "mae": 0.000885969668161124,
+              "stable_relative_error_bits": 1014879664,
+              "stable_relative_error": 0.015492841601371765,
+              "cosine_similarity_bits": 1065353215,
+              "cosine_similarity": 0.9999999403953552
+            },
+            "integration_vs_host_mixed": {
+              "mae_bits": 835631872,
+              "mae": 6.016648512741085e-09,
+              "stable_relative_error_bits": 870395955,
+              "stable_relative_error": 1.0486146351240677e-07,
+              "cosine_similarity_bits": 1065353215,
+              "cosine_similarity": 0.9999999403953552
+            }
+          },
+          "device_pair_probability": {
+            "mae_bits": 980187508,
+            "mae": 0.0009020783472806215,
+            "stable_relative_error_bits": 1005353332,
+            "stable_relative_error": 0.007216626778244972,
+            "cosine_similarity_bits": 1065353216,
+            "cosine_similarity": 1.0
+          },
+          "device_pair_output": {
+            "mae_bits": 973669199,
+            "mae": 0.0005226628272794187,
+            "stable_relative_error_bits": 1008032664,
+            "stable_relative_error": 0.009116075932979584,
+            "cosine_similarity_bits": 1065353214,
+            "cosine_similarity": 0.9999998807907104
+          },
+          "smu": {
+            "commands": 7,
+            "done": 7,
+            "error": 0,
+            "timeout": 0,
+            "saw_busy": 1
+          },
+          "cycles": {
+            "x_maxabs_scale": 3145,
+            "x_quant": 17206,
+            "q_linear": 252522,
+            "k_linear": 252415,
+            "v_linear": 252415,
+            "q_requant": 23064,
+            "k_requant": 23043,
+            "v_requant": 22857,
+            "qkt": 31745,
+            "score_rescale": 1423,
+            "softmax": 14937,
+            "smu_scalar_window": 9797,
+            "smu_probability_update": 2474,
+            "smu_setup_orchestration": 2666,
+            "smu_total": 14937,
+            "pv": 36280,
+            "output_rescale": 3386,
+            "total": 985671
+          },
+          "tcdm": {
+            "data_bytes": 8704,
+            "allocation_bytes": 8704,
+            "runtime_reserved_bytes": 16512,
+            "memory_footprint_bytes": 25216,
+            "capacity_bytes": 131072
+          }
+        },
+        "sim_config": {
+          "schema_version": 1,
+          "profile": "low_perturbation",
+          "dasm_trace_enabled": false,
+          "fsm_observer_enabled": true
+        },
+        "fsm": [
+          {
+            "schema_version": 1,
+            "invocation": 0,
+            "N": 8,
+            "D": 8,
+            "mode": 3,
+            "terminal_state": "DONE",
+            "load_scalar_cycles": 105,
+            "compute_scalar_cycles": 8,
+            "compute_weight_cycles": 24,
+            "store_scalar_cycles": 72,
+            "update_vector_cycles": 0,
+            "busy_cycles": 209
+          },
+          {
+            "schema_version": 1,
+            "invocation": 1,
+            "N": 8,
+            "D": 8,
+            "mode": 3,
+            "terminal_state": "DONE",
+            "load_scalar_cycles": 105,
+            "compute_scalar_cycles": 8,
+            "compute_weight_cycles": 24,
+            "store_scalar_cycles": 72,
+            "update_vector_cycles": 0,
+            "busy_cycles": 209
+          },
+          {
+            "schema_version": 1,
+            "invocation": 2,
+            "N": 8,
+            "D": 8,
+            "mode": 3,
+            "terminal_state": "DONE",
+            "load_scalar_cycles": 105,
+            "compute_scalar_cycles": 8,
+            "compute_weight_cycles": 24,
+            "store_scalar_cycles": 72,
+            "update_vector_cycles": 0,
+            "busy_cycles": 209
+          },
+          {
+            "schema_version": 1,
+            "invocation": 3,
+            "N": 8,
+            "D": 8,
+            "mode": 3,
+            "terminal_state": "DONE",
+            "load_scalar_cycles": 105,
+            "compute_scalar_cycles": 8,
+            "compute_weight_cycles": 24,
+            "store_scalar_cycles": 72,
+            "update_vector_cycles": 0,
+            "busy_cycles": 209
+          },
+          {
+            "schema_version": 1,
+            "invocation": 4,
+            "N": 8,
+            "D": 8,
+            "mode": 3,
+            "terminal_state": "DONE",
+            "load_scalar_cycles": 105,
+            "compute_scalar_cycles": 8,
+            "compute_weight_cycles": 24,
+            "store_scalar_cycles": 72,
+            "update_vector_cycles": 0,
+            "busy_cycles": 209
+          },
+          {
+            "schema_version": 1,
+            "invocation": 5,
+            "N": 8,
+            "D": 8,
+            "mode": 3,
+            "terminal_state": "DONE",
+            "load_scalar_cycles": 105,
+            "compute_scalar_cycles": 8,
+            "compute_weight_cycles": 24,
+            "store_scalar_cycles": 72,
+            "update_vector_cycles": 0,
+            "busy_cycles": 209
+          },
+          {
+            "schema_version": 1,
+            "invocation": 6,
+            "N": 8,
+            "D": 8,
+            "mode": 3,
+            "terminal_state": "DONE",
+            "load_scalar_cycles": 105,
+            "compute_scalar_cycles": 8,
+            "compute_weight_cycles": 24,
+            "store_scalar_cycles": 72,
+            "update_vector_cycles": 0,
+            "busy_cycles": 209
+          }
+        ],
+        "case": "8x32",
+        "backend": "device_compare",
+        "elf": "/home/wxt/work-phase4-softmax-ablation-sw/device_compare/spatzBenchmarks/test-spatzBenchmarks-quantized-attention",
+        "elf_sha256": "9cceaa4b9f30cc04369589c3ed26d4ae4f4a3f6e9d59506e46281395e0d82d76"
+      },
+      "16x64": {
+        "log": "/home/wxt/work-online-merge-supplement/experiments/phase4_softmax_ablation/results/system_logs/device_compare_N16_D64.log",
+        "p4_result": {
+          "status": "pass",
+          "backend": "device_pair_compare",
+          "n": 16,
+          "d": 64,
+          "seed": 1,
+          "mode": 3,
+          "smu_d": 16,
+          "stride": 64,
+          "scales_bits": {
+            "sX": 998309340,
+            "sWQ": 989921091,
+            "sWK": 989921299,
+            "sWV": 989921695,
+            "sQ": 1008301977,
+            "sK": 1007978204,
+            "sV": 1011080651,
+            "sScore": 926028794
+          },
+          "scales": {
+            "sX": 0.003936512395739555,
+            "sWQ": 0.0019683397840708494,
+            "sWK": 0.0019683882128447294,
+            "sWV": 0.0019684804137796164,
+            "sQ": 0.009366893209517002,
+            "sK": 0.009065356105566025,
+            "sV": 0.011954735033214092,
+            "sScore": 1.0614277925924398e-05
+          },
+          "maxabs_bits": {
+            "X": 1056962497
+          },
+          "maxabs": {
+            "Q": 153528,
+            "K": 148582,
+            "V": 195930
+          },
+          "linear": {
+            "Q": {
+              "mae_bits": 993042897,
+              "mae": 0.0026951918844133615,
+              "stable_relative_error_bits": 1008547236,
+              "stable_relative_error": 0.00959530845284462,
+              "cosine_similarity_bits": 1065353216,
+              "cosine_similarity": 1.0
+            },
+            "K": {
+              "mae_bits": 993052155,
+              "mae": 0.002697347430512309,
+              "stable_relative_error_bits": 1009072378,
+              "stable_relative_error": 0.010084385052323341,
+              "cosine_similarity_bits": 1065353214,
+              "cosine_similarity": 0.9999998807907104
+            },
+            "V": {
+              "mae_bits": 995413566,
+              "mae": 0.003247156273573637,
+              "stable_relative_error_bits": 1011208079,
+              "stable_relative_error": 0.012073411606252193,
+              "cosine_similarity_bits": 1065353214,
+              "cosine_similarity": 0.9999998807907104
+            },
+            "saturation_count": {
+              "Q": 1,
+              "K": 1,
+              "V": 1
+            }
+          },
+          "score": {
+            "mae_bits": 983715330,
+            "mae": 0.0012382867280393839,
+            "stable_relative_error_bits": 1012913433,
+            "stable_relative_error": 0.013661646284162998,
+            "cosine_similarity_bits": 1065353215,
+            "cosine_similarity": 0.9999999403953552
+          },
+          "probability": {
+            "vs_ref": {
+              "mae_bits": 973042908,
+              "mae": 0.00048724457155913115,
+              "stable_relative_error_bits": 1006597340,
+              "stable_relative_error": 0.007795913144946098,
+              "cosine_similarity_bits": 1065353217,
+              "cosine_similarity": 1.0000001192092896
+            },
+            "integration_vs_host_mixed": {
+              "mae_bits": 0,
+              "mae": 0.0,
+              "stable_relative_error_bits": 0,
+              "stable_relative_error": 0.0,
+              "cosine_similarity_bits": 1065353215,
+              "cosine_similarity": 0.9999999403953552
+            }
+          },
+          "output": {
+            "vs_ref": {
+              "mae_bits": 981869016,
+              "mae": 0.0010233474895358086,
+              "stable_relative_error_bits": 1014855133,
+              "stable_relative_error": 0.015469995327293873,
+              "cosine_similarity_bits": 1065353216,
+              "cosine_similarity": 1.0
+            },
+            "integration_vs_host_mixed": {
+              "mae_bits": 837079076,
+              "mae": 6.659336193592935e-09,
+              "stable_relative_error_bits": 869812752,
+              "stable_relative_error": 1.007175569611718e-07,
+              "cosine_similarity_bits": 1065353215,
+              "cosine_similarity": 0.9999999403953552
+            }
+          },
+          "device_pair_probability": {
+            "mae_bits": 972604351,
+            "mae": 0.0004744808829855174,
+            "stable_relative_error_bits": 1006158783,
+            "stable_relative_error": 0.007591694127768278,
+            "cosine_similarity_bits": 1065353215,
+            "cosine_similarity": 0.9999999403953552
+          },
+          "device_pair_output": {
+            "mae_bits": 975247631,
+            "mae": 0.0006145396619103849,
+            "stable_relative_error_bits": 1008222776,
+            "stable_relative_error": 0.009293131530284882,
+            "cosine_similarity_bits": 1065353216,
+            "cosine_similarity": 1.0
+          },
+          "smu": {
+            "commands": 15,
+            "done": 15,
+            "error": 0,
+            "timeout": 0,
+            "saw_busy": 1
+          },
+          "cycles": {
+            "x_maxabs_scale": 11329,
+            "x_quant": 68287,
+            "q_linear": 2043041,
+            "k_linear": 2043064,
+            "v_linear": 2043050,
+            "q_requant": 90833,
+            "k_requant": 90802,
+            "v_requant": 90842,
+            "qkt": 280811,
+            "score_rescale": 5440,
+            "softmax": 49149,
+            "smu_scalar_window": 24353,
+            "smu_probability_update": 14294,
+            "smu_setup_orchestration": 10502,
+            "smu_total": 49149,
+            "pv": 303832,
+            "output_rescale": 14400,
+            "total": 7498221
+          },
+          "tcdm": {
+            "data_bytes": 34304,
+            "allocation_bytes": 34304,
+            "runtime_reserved_bytes": 16512,
+            "memory_footprint_bytes": 50816,
+            "capacity_bytes": 131072
+          }
+        },
+        "sim_config": {
+          "schema_version": 1,
+          "profile": "low_perturbation",
+          "dasm_trace_enabled": false,
+          "fsm_observer_enabled": true
+        },
+        "fsm": [
+          {
+            "schema_version": 1,
+            "invocation": 0,
+            "N": 16,
+            "D": 16,
+            "mode": 3,
+            "terminal_state": "DONE",
+            "load_scalar_cycles": 208,
+            "compute_scalar_cycles": 16,
+            "compute_weight_cycles": 48,
+            "store_scalar_cycles": 144,
+            "update_vector_cycles": 0,
+            "busy_cycles": 416
+          },
+          {
+            "schema_version": 1,
+            "invocation": 1,
+            "N": 16,
+            "D": 16,
+            "mode": 3,
+            "terminal_state": "DONE",
+            "load_scalar_cycles": 209,
+            "compute_scalar_cycles": 16,
+            "compute_weight_cycles": 48,
+            "store_scalar_cycles": 144,
+            "update_vector_cycles": 0,
+            "busy_cycles": 417
+          },
+          {
+            "schema_version": 1,
+            "invocation": 2,
+            "N": 16,
+            "D": 16,
+            "mode": 3,
+            "terminal_state": "DONE",
+            "load_scalar_cycles": 209,
+            "compute_scalar_cycles": 16,
+            "compute_weight_cycles": 48,
+            "store_scalar_cycles": 144,
+            "update_vector_cycles": 0,
+            "busy_cycles": 417
+          },
+          {
+            "schema_version": 1,
+            "invocation": 3,
+            "N": 16,
+            "D": 16,
+            "mode": 3,
+            "terminal_state": "DONE",
+            "load_scalar_cycles": 209,
+            "compute_scalar_cycles": 16,
+            "compute_weight_cycles": 48,
+            "store_scalar_cycles": 144,
+            "update_vector_cycles": 0,
+            "busy_cycles": 417
+          },
+          {
+            "schema_version": 1,
+            "invocation": 4,
+            "N": 16,
+            "D": 16,
+            "mode": 3,
+            "terminal_state": "DONE",
+            "load_scalar_cycles": 209,
+            "compute_scalar_cycles": 16,
+            "compute_weight_cycles": 48,
+            "store_scalar_cycles": 144,
+            "update_vector_cycles": 0,
+            "busy_cycles": 417
+          },
+          {
+            "schema_version": 1,
+            "invocation": 5,
+            "N": 16,
+            "D": 16,
+            "mode": 3,
+            "terminal_state": "DONE",
+            "load_scalar_cycles": 209,
+            "compute_scalar_cycles": 16,
+            "compute_weight_cycles": 48,
+            "store_scalar_cycles": 144,
+            "update_vector_cycles": 0,
+            "busy_cycles": 417
+          },
+          {
+            "schema_version": 1,
+            "invocation": 6,
+            "N": 16,
+            "D": 16,
+            "mode": 3,
+            "terminal_state": "DONE",
+            "load_scalar_cycles": 209,
+            "compute_scalar_cycles": 16,
+            "compute_weight_cycles": 48,
+            "store_scalar_cycles": 144,
+            "update_vector_cycles": 0,
+            "busy_cycles": 417
+          },
+          {
+            "schema_version": 1,
+            "invocation": 7,
+            "N": 16,
+            "D": 16,
+            "mode": 3,
+            "terminal_state": "DONE",
+            "load_scalar_cycles": 209,
+            "compute_scalar_cycles": 16,
+            "compute_weight_cycles": 48,
+            "store_scalar_cycles": 144,
+            "update_vector_cycles": 0,
+            "busy_cycles": 417
+          },
+          {
+            "schema_version": 1,
+            "invocation": 8,
+            "N": 16,
+            "D": 16,
+            "mode": 3,
+            "terminal_state": "DONE",
+            "load_scalar_cycles": 209,
+            "compute_scalar_cycles": 16,
+            "compute_weight_cycles": 48,
+            "store_scalar_cycles": 144,
+            "update_vector_cycles": 0,
+            "busy_cycles": 417
+          },
+          {
+            "schema_version": 1,
+            "invocation": 9,
+            "N": 16,
+            "D": 16,
+            "mode": 3,
+            "terminal_state": "DONE",
+            "load_scalar_cycles": 209,
+            "compute_scalar_cycles": 16,
+            "compute_weight_cycles": 48,
+            "store_scalar_cycles": 144,
+            "update_vector_cycles": 0,
+            "busy_cycles": 417
+          },
+          {
+            "schema_version": 1,
+            "invocation": 10,
+            "N": 16,
+            "D": 16,
+            "mode": 3,
+            "terminal_state": "DONE",
+            "load_scalar_cycles": 209,
+            "compute_scalar_cycles": 16,
+            "compute_weight_cycles": 48,
+            "store_scalar_cycles": 144,
+            "update_vector_cycles": 0,
+            "busy_cycles": 417
+          },
+          {
+            "schema_version": 1,
+            "invocation": 11,
+            "N": 16,
+            "D": 16,
+            "mode": 3,
+            "terminal_state": "DONE",
+            "load_scalar_cycles": 209,
+            "compute_scalar_cycles": 16,
+            "compute_weight_cycles": 48,
+            "store_scalar_cycles": 144,
+            "update_vector_cycles": 0,
+            "busy_cycles": 417
+          },
+          {
+            "schema_version": 1,
+            "invocation": 12,
+            "N": 16,
+            "D": 16,
+            "mode": 3,
+            "terminal_state": "DONE",
+            "load_scalar_cycles": 209,
+            "compute_scalar_cycles": 16,
+            "compute_weight_cycles": 48,
+            "store_scalar_cycles": 144,
+            "update_vector_cycles": 0,
+            "busy_cycles": 417
+          },
+          {
+            "schema_version": 1,
+            "invocation": 13,
+            "N": 16,
+            "D": 16,
+            "mode": 3,
+            "terminal_state": "DONE",
+            "load_scalar_cycles": 209,
+            "compute_scalar_cycles": 16,
+            "compute_weight_cycles": 48,
+            "store_scalar_cycles": 144,
+            "update_vector_cycles": 0,
+            "busy_cycles": 417
+          },
+          {
+            "schema_version": 1,
+            "invocation": 14,
+            "N": 16,
+            "D": 16,
+            "mode": 3,
+            "terminal_state": "DONE",
+            "load_scalar_cycles": 209,
+            "compute_scalar_cycles": 16,
+            "compute_weight_cycles": 48,
+            "store_scalar_cycles": 144,
+            "update_vector_cycles": 0,
+            "busy_cycles": 417
+          }
+        ],
+        "case": "16x64",
+        "backend": "device_compare",
+        "elf": "/home/wxt/work-phase4-softmax-ablation-sw/device_compare/N16_D64/spatzBenchmarks/test-spatzBenchmarks-quantized-attention",
+        "elf_sha256": "55c8389309144207d8f6d67aaf052c6325933553bb5e2a15c0b76508715082d0"
+      }
+    }
+  }
+}

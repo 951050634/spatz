@@ -1,0 +1,53 @@
+{
+  "seed": 1,
+  "git_commit": "e193d9f94d909485492d686878b3004ff0739057",
+  "git_dirty_after_outputs": true,
+  "simulator_path": "/home/wxt/work-phase4-recip-sim/spatz_cluster.vlt",
+  "simulator_sha256": "8f85b204d064f1ced29d2fc27518754f8b018db0530cf2328a3a1062687c9138",
+  "config": "/home/wxt/work-online-merge-supplement/hw/system/spatz_cluster/cfg/spatz_cluster.default.dram.hjson",
+  "config_sha256": "120fa0c30199e54e6e9b5c60d8da40913eae8526640992cc5d4f130bef159775",
+  "elf_path": {
+    "software/8x32": "/home/wxt/work-phase4-softmax-ablation-sw/software/N8_D32/spatzBenchmarks/test-spatzBenchmarks-quantized-attention",
+    "software/16x64": "/home/wxt/work-phase4-softmax-ablation-sw/software/N16_D64/spatzBenchmarks/test-spatzBenchmarks-quantized-attention",
+    "mixed/8x32": "/home/wxt/work-phase4-softmax-ablation-sw/mixed/N8_D32/spatzBenchmarks/test-spatzBenchmarks-quantized-attention",
+    "mixed/16x64": "/home/wxt/work-phase4-softmax-ablation-sw/mixed/N16_D64/spatzBenchmarks/test-spatzBenchmarks-quantized-attention",
+    "device_compare/8x32": "/home/wxt/work-phase4-softmax-ablation-sw/device_compare/spatzBenchmarks/test-spatzBenchmarks-quantized-attention",
+    "device_compare/16x64": "/home/wxt/work-phase4-softmax-ablation-sw/device_compare/N16_D64/spatzBenchmarks/test-spatzBenchmarks-quantized-attention"
+  },
+  "elf_sha256": {
+    "software/8x32": "7fcd83b6b1139f8d4a0a00cc2abac3954a0d69a0e9225e9719c1f23754af96b1",
+    "software/16x64": "e760e47ae0937f5d293460e164bf7d7f49a45cd784c93a7c26d1aa93cbe66325",
+    "mixed/8x32": "8619cef1f02fc97c2d30cffad17ac212bf93066d410a10eb7dc9f7eeed20e2aa",
+    "mixed/16x64": "75c45491f3e8f09be69641c61f55d545451e6fa0c5073200ac9da632b884c678",
+    "device_compare/8x32": "9cceaa4b9f30cc04369589c3ed26d4ae4f4a3f6e9d59506e46281395e0d82d76",
+    "device_compare/16x64": "55c8389309144207d8f6d67aaf052c6325933553bb5e2a15c0b76508715082d0"
+  },
+  "fresh_ablation_logs": {
+    "software/8x32": "/home/wxt/work-online-merge-supplement/experiments/phase4_softmax_ablation/results/system_logs/software_N8_D32.log",
+    "mixed/8x32": "/home/wxt/work-online-merge-supplement/experiments/phase4_softmax_ablation/results/system_logs/mixed_N8_D32.log",
+    "device_compare/8x32": "/home/wxt/work-online-merge-supplement/experiments/phase4_softmax_ablation/results/system_logs/device_compare_N8_D32.log",
+    "software/16x64": "/home/wxt/work-online-merge-supplement/experiments/phase4_softmax_ablation/results/system_logs/software_N16_D64.log",
+    "mixed/16x64": "/home/wxt/work-online-merge-supplement/experiments/phase4_softmax_ablation/results/system_logs/mixed_N16_D64.log",
+    "device_compare/16x64": "/home/wxt/work-online-merge-supplement/experiments/phase4_softmax_ablation/results/system_logs/device_compare_N16_D64.log"
+  },
+  "fresh_ablation_logs_only": true,
+  "metric_authority": {
+    "device_mae": "direct device_pair_* MAE from target buffers",
+    "device_cosine": "diagnostic only; target sqrt/reciprocal approximation",
+    "formal_cosine": "float64 host recomputation in results/numerical.csv"
+  },
+  "backends": {
+    "software": "-DPHASE4_SOFTWARE_SOFTMAX",
+    "mixed": "default (frozen Mixed SMU path)",
+    "device_compare": "-DPHASE4_DEVICE_COMPARE; software P/O then frozen Mixed P/O on the same score/VQ buffers"
+  },
+  "command_provenance": "The commands below are final aggregate/reparse inputs for the six completed fresh logs; original fresh log-generation command lines were not captured in this manifest.",
+  "commands": [
+    "reuse-log software:8x32=/home/wxt/work-online-merge-supplement/experiments/phase4_softmax_ablation/results/system_logs/software_N8_D32.log (cwd=/home/wxt/work-online-merge-supplement)",
+    "reuse-log software:16x64=/home/wxt/work-online-merge-supplement/experiments/phase4_softmax_ablation/results/system_logs/software_N16_D64.log (cwd=/home/wxt/work-online-merge-supplement)",
+    "reuse-log mixed:8x32=/home/wxt/work-online-merge-supplement/experiments/phase4_softmax_ablation/results/system_logs/mixed_N8_D32.log (cwd=/home/wxt/work-online-merge-supplement)",
+    "reuse-log mixed:16x64=/home/wxt/work-online-merge-supplement/experiments/phase4_softmax_ablation/results/system_logs/mixed_N16_D64.log (cwd=/home/wxt/work-online-merge-supplement)",
+    "reuse-log device_compare:8x32=/home/wxt/work-online-merge-supplement/experiments/phase4_softmax_ablation/results/system_logs/device_compare_N8_D32.log (cwd=/home/wxt/work-online-merge-supplement)",
+    "reuse-log device_compare:16x64=/home/wxt/work-online-merge-supplement/experiments/phase4_softmax_ablation/results/system_logs/device_compare_N16_D64.log (cwd=/home/wxt/work-online-merge-supplement)"
+  ]
+}

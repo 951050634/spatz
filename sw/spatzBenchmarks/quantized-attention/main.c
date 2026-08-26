@@ -87,6 +87,7 @@ typedef struct {
   uint64_t v_requant;
   uint64_t qkt;
   uint64_t score_rescale;
+  uint64_t softmax;
   uint64_t smu_scalar_window;
   uint64_t smu_probability_update;
   uint64_t smu_setup_orchestration;
@@ -440,6 +441,96 @@ static void probability_update(const float *old_probability,
   }
 }
 
+// Reference control path for the ablation. Scores remain in the existing
+// key-major layout, while P is materialized in the same query-major layout
+// consumed by the unchanged P x V loop. The reciprocal helper avoids adding
+// an fdiv instruction to the target binary. The exponential below is the
+// pre-existing software reference used by attnres-baselines; it is copied
+// without changing its LUT, interpolation, or range convention because the
+// available target simulator does not implement fdiv.s for the libm expf
+// implementation.
+#define PHASE4_SOFTWARE_EXP_LUT_ENTRIES 32
+#define PHASE4_SOFTWARE_LOG2_E 1.442695041f
+
+static const float phase4_software_exp2_lut[
+    PHASE4_SOFTWARE_EXP_LUT_ENTRIES + 1] = {
+    1.000000000f, 1.021897149f, 1.044273782f, 1.067140401f,
+    1.090507733f, 1.114386743f, 1.138788635f, 1.163724859f,
+    1.189207115f, 1.215247360f, 1.241857812f, 1.269050957f,
+    1.296839555f, 1.325236643f, 1.354255547f, 1.383909882f,
+    1.414213562f, 1.445180807f, 1.476826146f, 1.509164428f,
+    1.542210825f, 1.575980845f, 1.610490332f, 1.645755478f,
+    1.681792831f, 1.718619298f, 1.756252160f, 1.794709075f,
+    1.834008086f, 1.874167634f, 1.915206561f, 1.957144124f,
+    2.000000000f};
+
+static float phase4_software_exp2_scale(float value, int shift) {
+  if (value == 0.0f) {
+    return 0.0f;
+  }
+  while (shift > 0) {
+    value *= 2.0f;
+    shift--;
+  }
+  while (shift < 0) {
+    value *= 0.5f;
+    shift++;
+  }
+  return value;
+}
+
+static float phase4_software_exp(float value) {
+  float y = value * PHASE4_SOFTWARE_LOG2_E;
+  int ipart = (int)y;
+  if (y < 0.0f && (float)ipart != y) {
+    ipart--;
+  }
+
+  float fraction = y - (float)ipart;
+  if (fraction < 0.0f) {
+    fraction += 1.0f;
+    ipart--;
+  }
+  int index = (int)(fraction * (float)PHASE4_SOFTWARE_EXP_LUT_ENTRIES);
+  if (index < 0) {
+    index = 0;
+  }
+  if (index >= PHASE4_SOFTWARE_EXP_LUT_ENTRIES) {
+    index = PHASE4_SOFTWARE_EXP_LUT_ENTRIES - 1;
+  }
+  float interpolation = fraction * (float)PHASE4_SOFTWARE_EXP_LUT_ENTRIES -
+                        (float)index;
+  float mantissa =
+      phase4_software_exp2_lut[index] +
+      (phase4_software_exp2_lut[index + 1] -
+       phase4_software_exp2_lut[index]) * interpolation;
+  return phase4_software_exp2_scale(mantissa, ipart);
+}
+
+__attribute__((noinline)) static void
+software_softmax(const float *score_key_major, float *probability, uint32_t n) {
+  for (uint32_t query = 0; query < n; query++) {
+    float maximum = score_key_major[query];
+    for (uint32_t key = 1; key < n; key++) {
+      float value = score_key_major[key * n + query];
+      if (value > maximum) {
+        maximum = value;
+      }
+    }
+    float sum = 0.0f;
+    for (uint32_t key = 0; key < n; key++) {
+      float value = phase4_software_exp(
+          score_key_major[key * n + query] - maximum);
+      probability[query * n + key] = value;
+      sum += value;
+    }
+    float inverse_sum = reciprocal_f32(sum);
+    for (uint32_t key = 0; key < n; key++) {
+      probability[query * n + key] *= inverse_sum;
+    }
+  }
+}
+
 static phase4_metrics_t metric_bits(const float *actual,
                                     const uint32_t *reference_bits,
                                     uint32_t count) {
@@ -451,6 +542,38 @@ static phase4_metrics_t metric_bits(const float *actual,
   for (uint32_t index = 0; index < count; index++) {
     double lhs = (double)actual[index];
     double rhs = (double)bits_float(reference_bits[index]);
+    double difference = lhs - rhs;
+    sum_abs += difference < 0.0 ? -difference : difference;
+    sum_ref_abs += rhs < 0.0 ? -rhs : rhs;
+    dot += lhs * rhs;
+    actual_sq += lhs * lhs;
+    reference_sq += rhs * rhs;
+  }
+  phase4_metrics_t result;
+  result.mae = (float)sum_abs * reciprocal_f32((float)count);
+  result.stable_relative_error =
+      (float)sum_abs * reciprocal_f32(
+          (float)(sum_ref_abs > 1.0e-12 ? sum_ref_abs : 1.0e-12));
+  if (actual_sq == 0.0 || reference_sq == 0.0) {
+    result.cosine_similarity = actual_sq == reference_sq ? 1.0f : 0.0f;
+  } else {
+    float denominator = sqrt_f32_no_div((float)actual_sq) *
+                        sqrt_f32_no_div((float)reference_sq);
+    result.cosine_similarity = (float)dot * reciprocal_f32(denominator);
+  }
+  return result;
+}
+
+static phase4_metrics_t metric_float(const float *actual, const float *reference,
+                                     uint32_t count) {
+  double sum_abs = 0.0;
+  double sum_ref_abs = 0.0;
+  double dot = 0.0;
+  double actual_sq = 0.0;
+  double reference_sq = 0.0;
+  for (uint32_t index = 0; index < count; index++) {
+    double lhs = (double)actual[index];
+    double rhs = (double)reference[index];
     double difference = lhs - rhs;
     sum_abs += difference < 0.0 ? -difference : difference;
     sum_ref_abs += rhs < 0.0 ? -rhs : rhs;
@@ -591,6 +714,34 @@ static int run_attention(phase4_buffers_t *buffers, phase4_cycles_t *cycles) {
   rescale_score(buffers->score_i32, buffers->score, nn, score_scale);
   cycles->score_rescale = benchmark_get_cycle64() - stage_start;
 
+  // The control path replaces only the softmax backend. It writes the same
+  // query-major P buffer consumed by the unchanged P x V stage below.
+#if defined(PHASE4_DEVICE_COMPARE)
+  // The pairwise device check runs the software control first, snapshots its
+  // materialized P/output into buffers no longer needed after QK^T, and then
+  // executes the frozen Mixed path below on the same score and VQ buffers.
+  software_softmax(buffers->score, buffers->p_old, n);
+  float *software_probability = (float *)buffers->score_i32;
+  float *software_output = (float *)buffers->aq;
+  for (uint32_t index = 0; index < nn; index++) {
+    software_probability[index] = buffers->p_old[index];
+  }
+  for (uint32_t query = 0; query < n; query++) {
+    for (uint32_t column = 0; column < d; column++) {
+      float sum = 0.0f;
+      for (uint32_t key = 0; key < n; key++) {
+        sum += buffers->p_old[query * n + key] *
+               (float)buffers->vq[key * d + column];
+      }
+      software_output[query * d + column] = sum * sv;
+    }
+  }
+#endif
+#if defined(PHASE4_SOFTWARE_SOFTMAX) && !defined(PHASE4_DEVICE_COMPARE)
+  uint64_t softmax_start = benchmark_get_cycle64();
+  software_softmax(buffers->score, buffers->p_old, n);
+  cycles->softmax = benchmark_get_cycle64() - softmax_start;
+#else
   // Explicit P construction: d=N, one-hot O tiles, and key-major score
   // storage. The vector update is timed separately from the accelerator
   // scalar window while both are also accumulated into smu_total.
@@ -648,6 +799,8 @@ static int run_attention(phase4_buffers_t *buffers, phase4_cycles_t *cycles) {
       cycles->smu_scalar_window + cycles->smu_probability_update;
   cycles->smu_setup_orchestration =
       cycles->smu_total > smu_subtotal ? cycles->smu_total - smu_subtotal : 0u;
+  cycles->softmax = cycles->smu_total;
+#endif
 
   stage_start = benchmark_get_cycle64();
   for (uint32_t query = 0; query < n; query++) {
@@ -669,6 +822,12 @@ static int run_attention(phase4_buffers_t *buffers, phase4_cycles_t *cycles) {
   cycles->output_rescale = benchmark_get_cycle64() - stage_start;
   cycles->total = benchmark_get_cycle64() - total_start;
 
+#if defined(PHASE4_DEVICE_COMPARE)
+  phase4_metrics_t device_probability_metric =
+      metric_float(buffers->p_old, software_probability, nn);
+  phase4_metrics_t device_output_metric =
+      metric_float(buffers->output, software_output, nd);
+#endif
   phase4_metrics_t q_metric =
       metric_i8_scaled(buffers->qq, sq, phase4_q_ref_bits, nd);
   phase4_metrics_t k_metric =
@@ -691,17 +850,41 @@ static int run_attention(phase4_buffers_t *buffers, phase4_cycles_t *cycles) {
   const char *status = "pass";
   if (smu_error_count || smu_timeout_count) {
     status = "smu_error";
+#if defined(PHASE4_DEVICE_COMPARE)
+  } else if (smu_commands != n - 1u ||
+             device_probability_metric.cosine_similarity < 0.999f ||
+             device_output_metric.cosine_similarity < 0.999f ||
+             device_probability_metric.stable_relative_error >= 0.01f ||
+             device_output_metric.stable_relative_error >= 0.01f) {
+    status = "device_compare_fail";
+#elif defined(PHASE4_SOFTWARE_SOFTMAX)
+  } else if (smu_commands != 0u ||
+             p_ref_metric.cosine_similarity < 0.999f ||
+             output_ref_metric.cosine_similarity < 0.999f ||
+             p_ref_metric.stable_relative_error >= 0.02f ||
+             output_ref_metric.stable_relative_error >= 0.02f) {
+    status = "control_fail";
+#else
   } else if (smu_commands != n - 1u ||
              p_mixed_metric.cosine_similarity < 0.999f ||
              output_mixed_metric.cosine_similarity < 0.999f ||
              p_mixed_metric.stable_relative_error >= 0.01f ||
              output_mixed_metric.stable_relative_error >= 0.01f) {
     status = "integration_fail";
+#endif
   }
 
   PRINTF("P4_RESULT {");
-  PRINTF("\"status\":\"%s\",\"n\":%u,\"d\":%u,\"seed\":%u,",
-         status, n, d, PHASE4_CASE_SEED);
+  PRINTF("\"status\":\"%s\",\"backend\":\"%s\",\"n\":%u,"
+         "\"d\":%u,\"seed\":%u,",
+#if defined(PHASE4_DEVICE_COMPARE)
+         status, "device_pair_compare",
+#elif defined(PHASE4_SOFTWARE_SOFTMAX)
+         status, "software_softmax",
+#else
+         status, "mixed_smu",
+#endif
+         n, d, PHASE4_CASE_SEED);
   PRINTF("\"mode\":3,\"smu_d\":%u,\"stride\":%u,", n, stride);
   PRINTF("\"scales_bits\":{\"sX\":%u,\"sWQ\":%u,\"sWK\":%u,"
          "\"sWV\":%u,\"sQ\":%u,\"sK\":%u,\"sV\":%u,"
@@ -730,7 +913,15 @@ static int run_attention(phase4_buffers_t *buffers, phase4_cycles_t *cycles) {
   print_metric(&output_ref_metric);
   PRINTF(",\"integration_vs_host_mixed\":");
   print_metric(&output_mixed_metric);
-  PRINTF("},");
+#if defined(PHASE4_DEVICE_COMPARE)
+  PRINTF("},\"device_pair_probability\":");
+  print_metric(&device_probability_metric);
+  PRINTF(",\"device_pair_output\":");
+  print_metric(&device_output_metric);
+#else
+  PRINTF("}");
+#endif
+  PRINTF(",");
   PRINTF("\"smu\":{\"commands\":%u,\"done\":%u,\"error\":%u,"
          "\"timeout\":%u,\"saw_busy\":%u},",
          smu_commands,
@@ -740,7 +931,7 @@ static int run_attention(phase4_buffers_t *buffers, phase4_cycles_t *cycles) {
   PRINTF("\"cycles\":{\"x_maxabs_scale\":%llu,\"x_quant\":%llu,"
          "\"q_linear\":%llu,\"k_linear\":%llu,\"v_linear\":%llu,"
          "\"q_requant\":%llu,\"k_requant\":%llu,\"v_requant\":%llu,"
-         "\"qkt\":%llu,\"score_rescale\":%llu,"
+         "\"qkt\":%llu,\"score_rescale\":%llu,\"softmax\":%llu,"
          "\"smu_scalar_window\":%llu,\"smu_probability_update\":%llu,"
          "\"smu_setup_orchestration\":%llu,\"smu_total\":%llu,"
          "\"pv\":%llu,\"output_rescale\":%llu,"
@@ -755,6 +946,7 @@ static int run_attention(phase4_buffers_t *buffers, phase4_cycles_t *cycles) {
          (unsigned long long)cycles->v_requant,
          (unsigned long long)cycles->qkt,
          (unsigned long long)cycles->score_rescale,
+         (unsigned long long)cycles->softmax,
          (unsigned long long)cycles->smu_scalar_window,
          (unsigned long long)cycles->smu_probability_update,
          (unsigned long long)cycles->smu_setup_orchestration,
