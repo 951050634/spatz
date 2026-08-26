@@ -1,12 +1,12 @@
 # Phase 5: Native Online Attention Merge
 
-Status: **formal collection complete; waiting for Sol Gate 2**.
+Status: **formal collection complete; Sol Gate 2 PASS; archived**.
 
 This report covers only the two prescribed anchors and the four fresh runs
 collected by `collect_formal.py`. The formal snapshot is
 `7da83c5ad08063e110be8917733b5ebc8bdb3a61`; the Phase 4 archive is the
-preceding independent commit `4760567`. Formal outputs are intentionally left
-uncommitted until Gate 2.
+preceding independent commit `4760567`. Formal results are archived in
+`a8f2747526c0f9b6c11c6360101a78cd836604fe`.
 
 ## 27.1 Motivation
 
@@ -224,14 +224,11 @@ speedup.
 
 ## 27.12 Blocked / Deferred Issues
 
-No P0/P1 correctness issue remains after formal collection. The following are
-deferred by scope:
+No P0/P1 correctness issue remains after formal collection and Sol Gate 2
+review. The only deferred items are scope limitations:
 
-* Sol Gate 2 review of the clean-snapshot provenance, raw logs, output bits,
-  numerical CSV, and claims.
-* Formal artifacts are intentionally uncommitted until Gate 2.
-* Only the two required anchors were measured; no shape sweep or model
-  benchmark was performed.
+* Only the two required anchors were measured; no shape sweep was performed.
+* No model benchmark was performed.
 
 The formal artifact directory contains the raw logs, output-bit archives,
 cycle CSVs, numerical CSV, FSM breakdown, manifest, and separate configure /
