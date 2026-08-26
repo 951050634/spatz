@@ -1,0 +1,5 @@
+case,implementation,n,d,tile_keys,tile_count,merge_count,score_compute_cycles,tile_local_state_cycles,recurrence_cycles,rvv_output_update_cycles,merge_orchestration_cycles,merge_window_cycles,core_residual_cycles,output_copy_cycles,merge_total_cycles,total_cycles,smu_setup_cycles,smu_wait_cycles,smu_breakdown_sum_cycles,smu_breakdown_delta_cycles,software_recurrence_calls,smu_commands,smu_done,smu_compute_weight_cycles
+N8_D32_S1,software,8,32,4,2,1,16885,51446,12368,797,39,13204,2178,1549,13204,85262,0,0,0,0,1,0,0,0
+N8_D32_S1,smu,8,32,4,2,1,16906,50689,1451,812,55,2318,2242,1551,2318,73706,1187,264,1451,0,0,1,1,24
+N16_D64_S1,software,16,64,4,4,3,135686,344198,68994,7908,135,77037,8292,6161,77037,571374,0,0,0,0,3,0,0,0
+N16_D64_S1,smu,16,64,4,4,3,135666,344585,4926,7974,160,13060,8447,6160,13060,507918,3468,1458,4926,0,0,3,3,144

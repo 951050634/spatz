@@ -1,0 +1,5 @@
+case,implementation,invocation,schema_version,N,D,mode,terminal_state,load_scalar_cycles,compute_scalar_cycles,compute_weight_cycles,store_scalar_cycles,update_vector_cycles,busy_cycles
+N8_D32_S1,smu,0,1,8,32,3,DONE,104,8,24,72,0,208
+N16_D64_S1,smu,0,1,16,64,3,DONE,208,16,48,145,0,417
+N16_D64_S1,smu,1,1,16,64,3,DONE,208,16,48,145,0,417
+N16_D64_S1,smu,2,1,16,64,3,DONE,208,16,48,145,0,417

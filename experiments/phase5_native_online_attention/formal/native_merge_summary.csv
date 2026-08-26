@@ -1,0 +1,3 @@
+case,software_recurrence,smu_recurrence,recurrence_speedup,software_merge_total,smu_merge_total,merge_speedup
+N8_D32_S1,12368,1451,8.523776705720193,13204,2318,5.6962899050905955
+N16_D64_S1,68994,4926,14.006090133982948,77037,13060,5.898698315467075

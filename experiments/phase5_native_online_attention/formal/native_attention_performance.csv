@@ -1,0 +1,3 @@
+case,software_native_attention,smu_native_attention,speedup
+N8_D32_S1,85262,73706,1.156785064987925
+N16_D64_S1,571374,507918,1.1249335522663106
