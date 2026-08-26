@@ -254,6 +254,58 @@ target_link_libraries(
   test-${SNITCH_TEST_PREFIX}quantized-attention
   benchmark ${SNITCH_RUNTIME})
 
+# Phase 5 native online-attention integration.  Q/K/V are generated once on
+# the host and loaded before the target core timer; the two ELF variants
+# differ only in the scalar recurrence backend.  The four-key tile keeps the
+# temporary score/local state at N x 4 and never materializes an N x N P.
+set(PHASE5_N "8" CACHE STRING "Phase 5 native attention sequence length")
+set(PHASE5_D "32" CACHE STRING "Phase 5 native attention head dimension")
+set(PHASE5_SEED "1" CACHE STRING "Phase 5 native attention deterministic seed")
+set(PHASE5_DUMP_OUTPUT "0" CACHE STRING
+    "Emit all final O FP32 bits for the Phase 5 collector")
+string(CONCAT PHASE5_CASE_SLUG
+    "N${PHASE5_N}_D${PHASE5_D}_S${PHASE5_SEED}")
+set(PHASE5_GENERATED_DIR
+    "${CMAKE_CURRENT_BINARY_DIR}/phase5_generated/${PHASE5_CASE_SLUG}")
+set(PHASE5_CASE_HEADER
+    "${PHASE5_GENERATED_DIR}/phase5_case_data.h")
+add_custom_command(
+  OUTPUT "${PHASE5_CASE_HEADER}"
+  COMMAND "${PYTHON}"
+          "${CMAKE_CURRENT_SOURCE_DIR}/../../experiments/phase5_native_online_attention/generate_case.py"
+          --n ${PHASE5_N}
+          --d ${PHASE5_D}
+          --seed ${PHASE5_SEED}
+          --output "${PHASE5_CASE_HEADER}"
+  DEPENDS
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../experiments/phase4_quantized_attention/attention_model.py"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../experiments/phase5_native_online_attention/generate_case.py"
+  VERBATIM)
+set_source_files_properties("${PHASE5_CASE_HEADER}"
+    PROPERTIES GENERATED TRUE)
+
+function(add_phase5_native_benchmark name implementation)
+  add_snitch_test(${name}
+      native-online-attention/main.c
+      online-softmax-merge/rtl_reference.c
+      online-softmax-merge/rvv_update.c
+      ${PHASE5_CASE_HEADER})
+  set(target test-${SNITCH_TEST_PREFIX}${name})
+  target_include_directories(
+      ${target}
+      PRIVATE ${PHASE5_GENERATED_DIR}
+              ${CMAKE_CURRENT_SOURCE_DIR}/native-online-attention
+              ${CMAKE_CURRENT_SOURCE_DIR}/online-softmax-merge)
+  target_compile_definitions(
+      ${target}
+      PRIVATE PHASE5_IMPLEMENTATION=${implementation}
+              PHASE5_DUMP_OUTPUT=${PHASE5_DUMP_OUTPUT})
+  target_link_libraries(${target} benchmark ${SNITCH_RUNTIME})
+endfunction()
+
+add_phase5_native_benchmark(native-online-attention-software 0)
+add_phase5_native_benchmark(native-online-attention-smu 1)
+
 add_spatz_test_threeParam(dp-fmatmul dp-fmatmul/main.c 64  64  64 )
 add_spatz_test_threeParam(dp-fmatmul dp-fmatmul/main.c 64  128 64 )
 add_spatz_test_threeParam(dp-fmatmul dp-fmatmul/main.c 128 128 128)

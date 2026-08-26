@@ -297,6 +297,40 @@ static inline online_merge_rtl_row_weights_t online_merge_rtl_row_weights(
   return weights;
 }
 
+float online_merge_exp_approx_f32(float value) {
+  return (float)merge_exp_q1_23(value) * 0x1p-23f;
+}
+
+float online_merge_recip_approx_f32(float value) {
+  int32_t scale_exp;
+  uint32_t reciprocal = merge_recip_q1_23(value, &scale_exp);
+  float result = (float)reciprocal * 0x1p-23f;
+  if (scale_exp > 0) {
+    while (scale_exp-- > 0) {
+      result *= 2.0f;
+    }
+  } else {
+    while (scale_exp++ < 0) {
+      result *= 0.5f;
+    }
+  }
+  return result;
+}
+
+void online_merge_b2_r_scalar(
+    const float *m_old, const float *l_old, const float *m_tile,
+    const float *l_tile, float *m_out, float *l_out, float *old_weight,
+    float *tile_weight, uint32_t n) {
+  for (uint32_t i = 0; i < n; i++) {
+    online_merge_rtl_row_weights_t weights = online_merge_rtl_row_weights(
+        m_old[i], l_old[i], m_tile[i], l_tile[i]);
+    m_out[i] = weights.m_new;
+    l_out[i] = weights.l_new;
+    old_weight[i] = bits_float(uq16_32_to_fp32_bits(weights.old_weight));
+    tile_weight[i] = bits_float(uq16_32_to_fp32_bits(weights.tile_weight));
+  }
+}
+
 void online_merge_rtl_reference(
     const float *m_old, const float *l_old, const float *o_old,
     const float *m_tile, const float *l_tile, const float *o_tile,
