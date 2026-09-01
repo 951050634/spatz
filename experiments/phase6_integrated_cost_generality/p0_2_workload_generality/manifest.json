@@ -1,0 +1,120 @@
+{
+  "schema_version": 1,
+  "kind": "phase6-p0-2-native-online-attention-generality",
+  "status": "gate1-p1-resolved-formal-approved",
+  "formal_collection_started": false,
+  "git_head_at_draft": "9d9bd0a0c0f11b023c525ca909d7ed38afb13bac",
+  "timestamp_schema": {
+    "format": "ISO-8601 UTC",
+    "formal_collection_started_at": null,
+    "formal_collection_completed_at": null,
+    "per_build_run_started_at": null,
+    "per_build_run_completed_at": null,
+    "per_simulation_run_started_at": null,
+    "per_simulation_run_completed_at": null
+  },
+  "shape_manifest": "p0_2_workload_generality/shape_manifest.csv",
+  "shape_selection": {
+    "new_shapes": [
+      {"n": 24, "d": 64, "seed": 1, "status": "frozen-new-shape"},
+      {"n": 16, "d": 128, "seed": 1, "status": "frozen-new-shape"}
+    ],
+    "rejected_pre_result_candidates": [
+      {
+        "n": 32,
+        "d": 64,
+        "seed": 1,
+        "status": "rejected-pre-result-host-completion",
+        "reason": "software exceeded the 900 s host smoke budget without PHASE5_RESULT; the interrupted SMU attempt emitted only OM_FSM invocations 0..2 without PHASE5_RESULT/output",
+        "speedup_inspected": false
+      }
+    ],
+    "selection_frozen_before_phase6_formal_collection": true,
+    "selection_frozen_before_formal_results": true,
+    "selection_method": "two resource-feasible shapes selected before formal collection under the pre-declared host-completion criterion; N32 had no matched result, no shape sweep or speedup-based selection was performed",
+    "selection_constraints": [
+      "tile_size remains 4",
+      "N is divisible by tile_size",
+      "at least one real online merge exists",
+      "estimated footprint is below 80% of 128 KiB TCDM",
+      "no framework or RTL architecture change"
+    ]
+  },
+  "dataflow": {
+    "framework": "reuse Phase 5 native online-attention benchmark and collector semantics",
+    "materialized_full_P": false,
+    "tile_size": 4,
+    "qkv_source": "deterministic Phase 5 host generator, seed 1",
+    "score_computation": "same for software and SMU",
+    "local_state": "same for software and SMU",
+    "rvv_output_update": "same for software and SMU",
+    "only_core_variable": "software recurrence versus SMU recurrence",
+    "smu_mode": "ONLINE_MERGE_MODE_MIXED_SCALAR (runtime mode 3)",
+    "smu_rtl": "same frozen Mixed SMU RTL; no Phase 6 datapath modification"
+  },
+  "memory_model": {
+    "tcdm_capacity_bytes": 131072,
+    "usable_fraction": 0.8,
+    "usable_limit_bytes": 104857,
+    "data_bytes_formula": "28*N*D + 48*N",
+    "allocation_alignment_bytes": 256,
+    "runtime_reserved_bytes": 16512,
+    "footprint_formula": "align_up(data_bytes, 256) + runtime_reserved_bytes"
+  },
+  "simulator": {
+    "path": "/home/wxt/spatz-archive/phase4/work-phase4-recip-sim/spatz_cluster.vlt",
+    "sha256": "8f85b204d064f1ced29d2fc27518754f8b018db0530cf2328a3a1062687c9138",
+    "source": "Phase 5 formal manifest simulator identity"
+  },
+  "toolchain_source_resolution": {
+    "repository_path": "sw/toolchain/riscv-opcodes",
+    "host_resolution": "/home/wxt/spatz-archive/toolchain-src/riscv-opcodes",
+    "purpose": "repair of an ignored local checkout symlink before smoke/formal compilation",
+    "timed_dataflow_impact": "none"
+  },
+  "formal_outputs": [
+    "formal/performance.csv",
+    "formal/numerical_agreement.csv",
+    "formal/shape_manifest.csv",
+    "formal/manifest.json"
+  ],
+  "gate": {
+    "gate1_required_before_formal": true,
+    "gate2_required_after_formal": true,
+    "cherry_picking_policy": "retain both selected new shapes even if a result is non-positive",
+    "status": "PASS_AFTER_P1_RESOLUTION"
+  },
+  "gate1_review": {
+    "reviewer": "Sol Max",
+    "initial_status": "FAIL",
+    "status": "PASS_AFTER_P1_RESOLUTION",
+    "p0": 0,
+    "p1": 2,
+    "findings": [
+      "P0-1 hierarchical area statistic required instance-weighted top scope",
+      "P0-2 run_details SMU status was derived from a nonexistent result field"
+    ],
+    "resolution_status": "resolved-formal-approved",
+    "formal_collection_started": false
+  },
+  "smoke_evidence": {
+    "n16_d128": {
+      "software": "PASS; PHASE5_RESULT and 8 contiguous output chunks covering 2048 bits",
+      "smu": "PASS; PHASE5_RESULT and 8 contiguous output chunks covering 2048 bits; 3/3 mode-3 DONE; errors=0; timeouts=0"
+    },
+    "n32_d64": {
+      "status": "rejected before any speedup result",
+      "software": "host timeout before PHASE5_RESULT",
+      "smu": "interrupted after OM_FSM invocations 0..2; no PHASE5_RESULT/output"
+    },
+    "n24_d64": {
+      "software": "PASS; total=1288856; recurrence=165993; merge_window=186446; 6 contiguous output chunks covering 1536 bits",
+      "smu": "PASS; total=1130764; recurrence=9334; merge_window=29711; 6 contiguous output chunks covering 1536 bits; 5/5 mode-3 DONE; errors=0; timeouts=0",
+      "numerical_smoke_check": {
+        "output_mae": 0.00037368802472788804,
+        "stable_relative_error": 0.006109508981206703,
+        "cosine_similarity": 0.999980878833838
+      }
+    }
+  }
+}

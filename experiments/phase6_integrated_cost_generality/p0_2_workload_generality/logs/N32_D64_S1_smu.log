@@ -1,0 +1,6 @@
+[SUCCESS] Program finished successfully
+OM_SIM_CONFIG {"schema_version":1,"profile":"low_perturbation","dasm_trace_enabled":false,"fsm_observer_enabled":true}
+Loading entry point: 80000000
+OM_FSM {"schema_version":1,"invocation":0,"N":32,"D":64,"mode":3,"terminal_state":"DONE","load_scalar_cycles":416,"compute_scalar_cycles":32,"compute_weight_cycles":96,"store_scalar_cycles":288,"update_vector_cycles":0,"busy_cycles":832}
+OM_FSM {"schema_version":1,"invocation":1,"N":32,"D":64,"mode":3,"terminal_state":"DONE","load_scalar_cycles":416,"compute_scalar_cycles":32,"compute_weight_cycles":96,"store_scalar_cycles":288,"update_vector_cycles":0,"busy_cycles":832}
+OM_FSM {"schema_version":1,"invocation":2,"N":32,"D":64,"mode":3,"terminal_state":"DONE","load_scalar_cycles":416,"compute_scalar_cycles":32,"compute_weight_cycles":96,"store_scalar_cycles":288,"update_vector_cycles":0,"busy_cycles":832}

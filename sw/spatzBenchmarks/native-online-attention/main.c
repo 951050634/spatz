@@ -31,6 +31,7 @@
 #define PHASE5_STACK_LOG2 13
 #define PHASE5_ALLOC_ALIGN 256u
 #define PHASE5_OUTPUT_BUFFER_BYTES 16384u
+#define PHASE5_OUTPUT_CHUNK_WORDS 256u
 
 #ifndef PHASE5_DUMP_OUTPUT
 #define PHASE5_DUMP_OUTPUT 0
@@ -232,7 +233,8 @@ static void load_case(phase5_buffers_t *buffers, uint32_t n, uint32_t d) {
 
 static float score_scale(uint32_t d) {
   return d == 32u ? 0.1767766952966369f
-                  : d == 64u ? 0.125f : 1.0f;
+                  : d == 64u ? 0.125f
+                  : d == 128u ? 0.08838834764831843f : 1.0f;
 }
 
 static void compute_score_tile(const phase5_buffers_t *buffers,
@@ -612,11 +614,9 @@ static void print_cycles(const phase5_cycles_t *cycles) {
 static void print_output(const phase5_buffers_t *buffers, uint32_t n,
                          uint32_t d) {
   const uint32_t count = n * d;
-  uint32_t length = 0u;
-
-  // Build one compact JSON record in DRAM and issue one host write.  The
-  // diagnostic is outside the timed core; avoiding one syscall per UART line
-  // keeps archival of all exact uint32 FP32 encodings practical for N16/D64.
+  // Keep each host write small enough for the simulator transport.  The
+  // diagnostic is outside the timed core; chunking does not change the
+  // archived bit sequence and avoids a large single syscall for larger D.
 #define P5_APPEND_LITERAL(value)                                              \
   do {                                                                         \
     const char *literal = (value);                                            \
@@ -637,28 +637,38 @@ static void print_output(const phase5_buffers_t *buffers, uint32_t n,
       phase5_output_buffer[length++] = reversed[--digits];                     \
     }                                                                          \
   } while (0)
-  P5_APPEND_LITERAL("PHASE5_OUTPUT {\"n\":");
-  P5_APPEND_U32(n);
-  P5_APPEND_LITERAL(",\"d\":");
-  P5_APPEND_U32(d);
-  P5_APPEND_LITERAL(",\"bits\":[");
-  for (uint32_t index = 0; index < count; index++) {
-    if (index != 0u) {
-      phase5_output_buffer[length++] = ',';
+  for (uint32_t offset = 0u; offset < count;
+       offset += PHASE5_OUTPUT_CHUNK_WORDS) {
+    uint32_t length = 0u;
+    uint32_t chunk_count = count - offset;
+    if (chunk_count > PHASE5_OUTPUT_CHUNK_WORDS) {
+      chunk_count = PHASE5_OUTPUT_CHUNK_WORDS;
     }
-    P5_APPEND_U32(float_bits(buffers->output[index]));
+    P5_APPEND_LITERAL("PHASE5_OUTPUT_CHUNK {\"n\":");
+    P5_APPEND_U32(n);
+    P5_APPEND_LITERAL(",\"d\":");
+    P5_APPEND_U32(d);
+    P5_APPEND_LITERAL(",\"offset\":");
+    P5_APPEND_U32(offset);
+    P5_APPEND_LITERAL(",\"bits\":[");
+    for (uint32_t index = 0u; index < chunk_count; index++) {
+      if (index != 0u) {
+        phase5_output_buffer[length++] = ',';
+      }
+      P5_APPEND_U32(float_bits(buffers->output[offset + index]));
+    }
+    P5_APPEND_LITERAL("]}\n");
+    phase5_output_syscall[0] = 64u;  // sys_write
+    phase5_output_syscall[1] = 1u;   // stdout
+    phase5_output_syscall[2] = (uintptr_t)phase5_output_buffer;
+    phase5_output_syscall[3] = length;
+    tohost = (uintptr_t)phase5_output_syscall;
+    while (fromhost == 0u) {
+    }
+    fromhost = 0u;
   }
-  P5_APPEND_LITERAL("]}\n");
 #undef P5_APPEND_U32
 #undef P5_APPEND_LITERAL
-  phase5_output_syscall[0] = 64u;  // sys_write
-  phase5_output_syscall[1] = 1u;   // stdout
-  phase5_output_syscall[2] = (uintptr_t)phase5_output_buffer;
-  phase5_output_syscall[3] = length;
-  tohost = (uintptr_t)phase5_output_syscall;
-  while (fromhost == 0u) {
-  }
-  fromhost = 0u;
 }
 
 int main(void) {

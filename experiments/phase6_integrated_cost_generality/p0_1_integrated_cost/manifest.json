@@ -1,0 +1,149 @@
+{
+  "schema_version": 1,
+  "kind": "phase6-p0-1-integrated-spatz-cost",
+  "status": "gate1-p1-resolved-formal-approved",
+  "formal_collection_started": false,
+  "git_head_at_draft": "9d9bd0a0c0f11b023c525ca909d7ed38afb13bac",
+  "timestamp_schema": {
+    "format": "ISO-8601 UTC",
+    "formal_collection_started_at": null,
+    "formal_collection_completed_at": null,
+    "per_run_started_at": null,
+    "per_run_completed_at": null
+  },
+  "area_unit": "um^2",
+  "area_definition": "instance-weighted hierarchical top mapped Nangate45 standard-cell Liberty area rooted at spatz_cluster_wrapper; blackboxed SRAM macro area excluded",
+  "top": "spatz_cluster_wrapper",
+  "cluster_module": "spatz_cluster",
+  "cluster_instance": "spatz_cluster_wrapper.i_cluster",
+  "smu_instance":
+    "spatz_cluster$spatz_cluster_wrapper.i_cluster.i_online_merge_update_engine",
+  "matched_non_smu_carry_forward": {
+    "file": "hw/system/spatz_cluster/src/spatz_cluster.sv",
+    "line_semantics": "tcdm_req[TcdmPortsOffs+j].q.user.req_id = '0",
+    "reason": "957667e introduced this unrelated core TCDM request-ID tieoff in the same commit; the baseline overlay restores the current value so only SMU integration differs"
+  },
+  "integration_history_audit": {
+    "command": "git log --oneline 957667e^..HEAD -- hw/system/spatz_cluster/src/spatz_cluster.sv hw/system/spatz_cluster/src/spatz_cluster_peripheral",
+    "commits": [
+      "957667e [smu] Add online merge engine prototype",
+      "dc6a6a9 Add scalar-only online merge execution path",
+      "ec2d70e rtl: add mixed-precision and reciprocal-LUT softmax merge datapath"
+    ],
+    "changed_files": [
+      "hw/system/spatz_cluster/src/spatz_cluster.sv",
+      "hw/system/spatz_cluster/src/spatz_cluster_peripheral/spatz_cluster_peripheral.sv",
+      "hw/system/spatz_cluster/src/spatz_cluster_peripheral/spatz_cluster_peripheral_reg.hjson",
+      "hw/system/spatz_cluster/src/spatz_cluster_peripheral/spatz_cluster_peripheral_reg_pkg.sv",
+      "hw/system/spatz_cluster/src/spatz_cluster_peripheral/spatz_cluster_peripheral_reg_top.sv"
+    ],
+    "generated_wrapper_changed_in_history": false
+  },
+  "matched_boundary": {
+    "baseline": {
+      "name": "Spatz Baseline",
+      "method": "temporary synthesis source overlay from the pre-SMU cluster commit",
+      "reference_commit": "957667e^",
+      "overlay_files": [
+        "hw/system/spatz_cluster/src/spatz_cluster.sv",
+        "hw/system/spatz_cluster/src/spatz_cluster_peripheral/spatz_cluster_peripheral.sv",
+        "hw/system/spatz_cluster/src/spatz_cluster_peripheral/spatz_cluster_peripheral_reg.hjson",
+        "hw/system/spatz_cluster/src/spatz_cluster_peripheral/spatz_cluster_peripheral_reg_pkg.sv",
+        "hw/system/spatz_cluster/src/spatz_cluster_peripheral/spatz_cluster_peripheral_reg_top.sv"
+      ],
+      "tieoffs": "not needed; the pre-SMU cluster has no merge TCDM master, engine instance, or SMU CSR glue"
+    },
+    "smu": {
+      "name": "Spatz + final Mixed SMU",
+      "method": "same cluster RTL with the current runtime-mode SMU contribution retained",
+      "defines": ["ONLINE_MERGE_MIXED_RECIPROCAL"],
+      "precision_support": 2,
+      "scalar_only": 0,
+      "runtime_mode": "mode 3 (Mixed Scalar) selected by the Phase 5 software path"
+    },
+    "only_intended_difference": "SMU-related cluster integration; all non-SMU cluster sources remain at the current snapshot"
+  },
+  "source_and_memory_assumptions": {
+    "source_list": "Bender flist-plus -t rtl -t spatz",
+    "sram_replacement": "experiments/synthesis/compat/tc_sram_blackbox.sv",
+    "sram_scope": "tc_sram behavioral arrays are replaced by the existing synthesis blackbox; all other cluster sources are unchanged",
+    "hierarchy": "read_slang --keep-hierarchy; no full-cluster flatten (prior flatten exited 137)",
+    "vector_lane_configuration": "default repository spatz_cluster.default.dram.hjson",
+    "cpu_core_count": 2,
+    "tcdm_configuration": "default repository cluster configuration"
+  },
+  "toolchain": {
+    "yosys": "/home/wxt/yosys-sta/oss-cad-suite/bin/yosys",
+    "yosys_version": "Yosys 0.66+4 (git sha1 8125af88d)",
+    "yosys_sha256": "7c3e3396b38c129dd7485be5a0a0f0da8e495a94c8fd486059e3bea043a588d6",
+    "slang_plugin": "/home/wxt/yosys-sta/oss-cad-suite/share/yosys/plugins/slang.so",
+    "slang_plugin_sha256": "97581993656bbf4a7c1c491fd0dfbf5ead120ece05afea78b4d6b1e723a9afe8",
+    "slang_load_command": "plugin -i /home/wxt/yosys-sta/oss-cad-suite/share/yosys/plugins/slang.so",
+    "technology": "Nangate45 typical Liberty (research-only, non-manufacturable)",
+    "library": "/home/wxt/yosys-sta/pdk/nangate45/lib/Nangate45_typ.lib",
+    "library_sha256": "2efd0b32eb5804e60e72fc0575bb3bc69aac907c91d908442e4ae6d7fe55895",
+    "clock_constraint": "none in the existing Yosys/ABC flow",
+    "timing_proxy": "maximum local ABC stime delay across reported mapped modules after a common -D 50000 ps mapping target; no cross-hierarchy STA, SDC-constrained clock, post-layout delay, or Fmax"
+  },
+  "planned_flow": {
+    "slang_load": "plugin -i /home/wxt/yosys-sta/oss-cad-suite/share/yosys/plugins/slang.so",
+    "area_stat": "stat -top spatz_cluster_wrapper -hierarchy -json -liberty Nangate45_typ.lib; top num_cells.area is instance-weighted across retained hierarchy",
+    "area_map": "abc -fast -liberty Nangate45_typ.lib",
+    "timing_map": "abc -D 50000 -script '+strash; if -K 6; dretime; map -D 50000; &get -n; &st; &dch; &nf; &put; stime -p 5; print_stats -m'; proxy is max of all reported local Delay lines",
+    "proc_passes": "proc_clean; proc_prune; proc_init; proc_arst; proc_rom; proc_mux; proc_dlatch; proc_dff; proc_memwr; proc_clean; opt_expr -keepdc",
+    "post_connect_passes": "opt; memory_collect; opt_clean; fsm; opt; techmap; opt; dfflibmap; map; clean; check -assert",
+    "synthesis_script": "experiments/phase6_integrated_cost_generality/p0_1_integrated_cost/run_matched_synthesis.py",
+    "formal_command": "python3 experiments/phase6_integrated_cost_generality/p0_1_integrated_cost/run_matched_synthesis.py --execute-formal"
+  },
+  "hierarchical_stat_cli_smoke": {
+    "status": "PASS",
+    "command_scope": "isolated two-level fixture; no cluster mapping or formal collection",
+    "checks": [
+      "stat -top <top> -hierarchy -json -liberty <liberty>",
+      "top modules[\\\\<top>].num_cells.area schema"
+    ],
+    "return_code": 0,
+    "log": "logs/stat_hierarchy_smoke.log"
+  },
+  "elaboration_smoke": {
+    "script": "experiments/phase6_integrated_cost_generality/p0_1_integrated_cost/run_elaboration_smoke.py",
+    "status": "PASS",
+    "return_codes": {
+      "Spatz_Baseline": 0,
+      "Spatz_Mixed_SMU": 0
+    },
+    "checks": ["read_slang", "hierarchy -check -top spatz_cluster_wrapper"],
+    "abc_or_stat": false,
+    "logs": [
+      "logs/elab_baseline.log",
+      "logs/elab_smu.log",
+      "logs/elab_smoke_summary.csv"
+    ]
+  },
+  "gate1_review": {
+    "reviewer": "Sol Max",
+    "initial_status": "FAIL",
+    "status": "PASS_AFTER_P1_RESOLUTION",
+    "p0": 0,
+    "p1": 2,
+    "findings": [
+      "P0-1 hierarchical area statistic required instance-weighted top scope",
+      "P0-2 run_details SMU status was derived from a nonexistent result field"
+    ],
+    "resolution_status": "resolved-formal-approved",
+    "formal_collection_started": false
+  },
+  "required_outputs": [
+    "formal/synthesis_comparison.csv",
+    "formal/manifest.json",
+    "logs/Spatz_Baseline_area/yosys.log",
+    "logs/Spatz_Baseline_timing/yosys.log",
+    "logs/Spatz_Mixed_SMU_area/yosys.log",
+    "logs/Spatz_Mixed_SMU_timing/yosys.log"
+  ],
+  "standalone_consistency_check": {
+    "existing_standalone_mixed_smu_area": 52407.586,
+    "source": "experiments/phase3_reciprocal_hardware/area/area_manifest.json",
+    "comparison_status": "pending-integrated-formal-data"
+  }
+}

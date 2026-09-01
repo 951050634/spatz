@@ -1,0 +1,5 @@
+case,implementation,n,d,tile_size,merge_count,status,output_bits,smu_commands,smu_done,smu_errors,smu_timeouts,host_timeout,smoke_status,command
+N16_D128_S1,software,16,128,4,3,pass,2048,0,0,0,0,0,PASS,/home/wxt/spatz-archive/phase4/work-phase4-recip-sim/spatz_cluster.vlt /home/wxt/work-phase6-native-smoke/N16_D128_S1/spatzBenchmarks/test-spatzBenchmarks-native-online-attention-software
+N16_D128_S1,smu,16,128,4,3,pass,2048,3,3,0,0,0,PASS,/home/wxt/spatz-archive/phase4/work-phase4-recip-sim/spatz_cluster.vlt /home/wxt/work-phase6-native-smoke/N16_D128_S1/spatzBenchmarks/test-spatzBenchmarks-native-online-attention-smu
+N24_D64_S1,software,24,64,4,5,pass,1536,0,0,0,0,0,PASS,/home/wxt/spatz-archive/phase4/work-phase4-recip-sim/spatz_cluster.vlt /home/wxt/work-phase6-native-smoke/N24_D64_S1/spatzBenchmarks/test-spatzBenchmarks-native-online-attention-software
+N24_D64_S1,smu,24,64,4,5,pass,1536,5,5,0,0,0,PASS,/home/wxt/spatz-archive/phase4/work-phase4-recip-sim/spatz_cluster.vlt /home/wxt/work-phase6-native-smoke/N24_D64_S1/spatzBenchmarks/test-spatzBenchmarks-native-online-attention-smu

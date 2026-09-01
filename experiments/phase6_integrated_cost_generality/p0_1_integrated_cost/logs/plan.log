@@ -1,0 +1,31 @@
+PLAN ONLY: no synthesis process or formal output was created
+{
+  "audit": {
+    "baseline_reference": "948985eaa4c88132f7786bbd9ce019a800e744d8",
+    "clean": false,
+    "commit": "9d9bd0a0c0f11b023c525ca909d7ed38afb13bac",
+    "status_short": [
+      "M sw/spatzBenchmarks/native-online-attention/main.c",
+      "?? experiments/phase6_integrated_cost_generality/"
+    ]
+  },
+  "bender_command": "/home/wxt/work-online-merge-supplement/install/bender/bender script flist-plus -t rtl -t spatz -D COMMON_CELLS_ASSERTS_OFF -D BUF_FPU -D TARGET_SYNTHESIS -D ONLINE_MERGE_MIXED_RECIPROCAL",
+  "clock_constraint": "none; ABC -D target is a mapping target, not an SDC clock",
+  "configs": [
+    {
+      "baseline_reference": "957667e^",
+      "kind": "baseline",
+      "name": "Spatz_Baseline"
+    },
+    {
+      "baseline_reference": "957667e^",
+      "kind": "smu",
+      "name": "Spatz_Mixed_SMU"
+    }
+  ],
+  "liberty": "/home/wxt/yosys-sta/pdk/nangate45/lib/Nangate45_typ.lib",
+  "slang_plugin": "/home/wxt/yosys-sta/oss-cad-suite/share/yosys/plugins/slang.so",
+  "timing_target_ps": 50000,
+  "top": "spatz_cluster_wrapper",
+  "yosys": "/home/wxt/yosys-sta/oss-cad-suite/bin/yosys"
+}

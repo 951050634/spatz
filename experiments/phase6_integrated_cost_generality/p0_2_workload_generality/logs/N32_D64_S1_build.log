@@ -1,0 +1,12 @@
+[  0%] Built target benchmark
+[ 71%] Built target snRuntime-cluster
+[ 71%] Building C object spatzBenchmarks/CMakeFiles/test-spatzBenchmarks-native-online-attention-software.dir/native-online-attention/main.c.o
+[ 85%] Linking C executable test-spatzBenchmarks-native-online-attention-software
+/home/wxt/work-online-merge-supplement/install/llvm/bin/llvm-objdump: warning: '/home/wxt/work-phase6-native-smoke/N32_D64_S1/spatzBenchmarks/test-spatzBenchmarks-native-online-attention-software': failed to find source /home/wxt/spatz/sw/toolchain/riscv-gnu-toolchain/build/../riscv-gcc/libgcc/libgcc2.c
+[100%] Built target test-spatzBenchmarks-native-online-attention-software
+[  0%] Built target benchmark
+[ 83%] Built target snRuntime-cluster
+[100%] Building C object spatzBenchmarks/CMakeFiles/test-spatzBenchmarks-native-online-attention-smu.dir/native-online-attention/main.c.o
+[100%] Linking C executable test-spatzBenchmarks-native-online-attention-smu
+/home/wxt/work-online-merge-supplement/install/llvm/bin/llvm-objdump: warning: '/home/wxt/work-phase6-native-smoke/N32_D64_S1/spatzBenchmarks/test-spatzBenchmarks-native-online-attention-smu': failed to find source /home/wxt/spatz/sw/toolchain/riscv-gnu-toolchain/build/../riscv-gcc/libgcc/libgcc2.c
+[100%] Built target test-spatzBenchmarks-native-online-attention-smu

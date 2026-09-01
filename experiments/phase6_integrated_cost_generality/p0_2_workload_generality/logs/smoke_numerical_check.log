@@ -1,0 +1,8 @@
+STARTED_AT 2026-09-01T01:58:47.309970+00:00
+RUN N16_D128_S1 software status=pass bits=2048 output_nonfinite=0 smu_done=0 smu_errors=0 smu_timeouts=0
+RUN N16_D128_S1 smu status=pass bits=2048 output_nonfinite=0 smu_done=3 smu_errors=0 smu_timeouts=0
+METRICS N16_D128_S1 output_mae=0.00056315923606042873 stable_relative_error=0.0052194461851064571 cosine_similarity=0.99998475108867313
+RUN N24_D64_S1 software status=pass bits=1536 output_nonfinite=0 smu_done=0 smu_errors=0 smu_timeouts=0
+RUN N24_D64_S1 smu status=pass bits=1536 output_nonfinite=0 smu_done=5 smu_errors=0 smu_timeouts=0
+METRICS N24_D64_S1 output_mae=0.00037368802472788804 stable_relative_error=0.0061095089812067032 cosine_similarity=0.99998087883383802
+COMPLETED_AT 2026-09-01T01:58:47.318151+00:00

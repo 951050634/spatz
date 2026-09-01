@@ -1,0 +1,5 @@
+case,n,d,tile_size,tile_count,merge_count,seed,estimated_data_bytes,estimated_allocation_bytes,runtime_reserved_bytes,estimated_footprint_bytes,tcdm_capacity_bytes,usable_limit_bytes,selected,shape_status,selection_basis,rejection_reason
+N8_D32_S1,8,32,4,2,1,1,7552,7680,16512,24192,131072,104857,1,ARCHIVED_PHASE5_ANCHOR,Phase 5 formal anchor retained unchanged,
+N16_D64_S1,16,64,4,4,3,1,29440,29440,16512,45952,131072,104857,1,ARCHIVED_PHASE5_ANCHOR,Phase 5 formal anchor retained unchanged,
+N24_D64_S1,24,64,4,6,5,1,44160,44288,16512,60800,131072,104857,1,FROZEN_NEW_SHAPE,Replacement selected under the pre-declared host-completion criterion before formal collection; no N32 matched result or speedup-based shape sweep; increase N while retaining D64 and tile-4 semantics; fits current TCDM,
+N16_D128_S1,16,128,4,4,3,1,58112,58112,16512,74624,131072,104857,1,FROZEN_NEW_SHAPE,Increase D with N16 and tile-4 semantics; fits current TCDM,

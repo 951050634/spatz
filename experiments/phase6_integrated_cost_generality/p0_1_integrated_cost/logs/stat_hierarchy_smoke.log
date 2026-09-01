@@ -1,0 +1,9 @@
+Gate 1 low-cost Yosys CLI/schema check (isolated two-level fixture; no formal cluster run)
+COMMAND /home/wxt/yosys-sta/oss-cad-suite/bin/yosys -Q -p 'read_verilog stat_hierarchy_fixture.v; hierarchy -top stat_fixture_top; proc; opt; tee -q -o mapped-hier-stat.json stat -top stat_fixture_top -hierarchy -json -liberty /home/wxt/yosys-sta/pdk/nangate45/lib/Nangate45_typ.lib'
+YOSYS_RC 0
+JSON_SCHEMA_OK true
+TOP_KEY \\stat_fixture_top
+TOP_NUM_CELLS {"count":"3","local_count":"1"}
+TOP_NUM_SUBMODULES {"count":"2","local_count":"0"}
+AREA_SCOPE instance-weighted hierarchical top num_cells.area
+NOTE No cluster mapping or formal area/timing collection was run by this check.
