@@ -1,0 +1,5 @@
+source_phase,case,n,d,implementation,tile_size,tile_count,merge_count,recurrence_cycles,merge_window_cycles,core_cycles,smu_status,smu_commands,smu_done,smu_errors,smu_timeouts,output_nonfinite,timeout
+phase6_formal,N24_D64_S1,24,64,software,4,6,5,165993,186446,1288856,not-launched,0,0,0,0,0,0
+phase6_formal,N24_D64_S1,24,64,smu,4,6,5,9334,29711,1130764,done,5,5,0,0,0,0
+phase6_formal,N16_D128_S1,16,128,software,4,4,3,67451,82220,1026162,not-launched,0,0,0,0,0,0
+phase6_formal,N16_D128_S1,16,128,smu,4,4,3,4910,19841,962823,done,3,3,0,0,0,0

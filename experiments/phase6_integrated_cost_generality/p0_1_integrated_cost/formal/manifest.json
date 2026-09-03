@@ -1,0 +1,288 @@
+{
+  "schema_version": 2,
+  "kind": "phase6-p0-1-integrated-spatz-cost-formal",
+  "artifact_path_base": "experiments/phase6_integrated_cost_generality/p0_1_integrated_cost",
+  "status": "BLOCKED_RESOURCE",
+  "status_reason": "Both exact official matched flows reached a host global OOM during techmap before mapped-hier-stat.json was emitted. No integrated area or timing number is accepted.",
+  "gate2_review": {
+    "reviewer": "Sol Max",
+    "status": "GATE2_PASS",
+    "p0": 0,
+    "p1": 0,
+    "p2": 2,
+    "read_only": true,
+    "partial_closure": true,
+    "p2_findings": [
+      {
+        "id": "ignored_formal_logs",
+        "description": "Formal .log files were affected by gitignore and were force-added into the final archive commit.",
+        "resolution": "Final archive uses git add -f only for manifest-referenced formal logs."
+      },
+      {
+        "id": "command_wording",
+        "description": "Section 4 reports the canonical invocation template; the r3/r4 exact commands with relocation parameters are recorded in this formal manifest."
+      }
+    ]
+  },
+  "freeze_commit": "117caff8109c0f6c32cf07a8322a3397307c8e14",
+  "formal_launch": {
+    "requested": true,
+    "launch_status": "launched_exact_official_flows",
+    "repository": "/home/wxt/work-online-merge-supplement",
+    "commit": "117caff8109c0f6c32cf07a8322a3397307c8e14",
+    "clean": true,
+    "status_short": [],
+    "command_template": "python3 experiments/phase6_integrated_cost_generality/p0_1_integrated_cost/run_matched_synthesis.py --execute-formal",
+    "official_attempts": [
+      "r3",
+      "r4"
+    ],
+    "numeric_result_accepted": false,
+    "numeric_result_reason": "Neither attempt produced mapped-hier-stat.json or a valid comparison row. The CSV leaves every area and timing numeric field empty."
+  },
+  "configuration": {
+    "top": "spatz_cluster_wrapper",
+    "cluster_module": "spatz_cluster",
+    "cluster_instance": "spatz_cluster_wrapper.i_cluster",
+    "smu_instance": "spatz_cluster$spatz_cluster_wrapper.i_cluster.i_online_merge_update_engine",
+    "baseline": {
+      "name": "Spatz Baseline",
+      "method": "temporary synthesis-only source overlay from 957667e^",
+      "reference_commit": "948985eaa4c88132f7786bbd9ce019a800e744d8",
+      "overlay_files": [
+        "hw/system/spatz_cluster/src/spatz_cluster.sv",
+        "hw/system/spatz_cluster/src/spatz_cluster_peripheral/spatz_cluster_peripheral.sv",
+        "hw/system/spatz_cluster/src/spatz_cluster_peripheral/spatz_cluster_peripheral_reg.hjson",
+        "hw/system/spatz_cluster/src/spatz_cluster_peripheral/spatz_cluster_peripheral_reg_pkg.sv",
+        "hw/system/spatz_cluster/src/spatz_cluster_peripheral/spatz_cluster_peripheral_reg_top.sv"
+      ]
+    },
+    "smu": {
+      "name": "Spatz + final Mixed SMU",
+      "method": "current frozen cluster RTL with the final Mixed SMU contribution retained",
+      "define": "ONLINE_MERGE_MIXED_RECIPROCAL",
+      "precision_support": 2,
+      "scalar_only": 0,
+      "runtime_mode": 3
+    },
+    "only_intended_difference": "SMU-related cluster integration; all other cluster sources and configuration remain matched",
+    "matched_non_smu_carry_forward": {
+      "file": "hw/system/spatz_cluster/src/spatz_cluster.sv",
+      "line_semantics": "tcdm_req[TcdmPortsOffs+j].q.user.req_id = '0",
+      "reason": "The pre-SMU overlay restores the current request-ID tieoff so the comparison differs only at the SMU integration boundary."
+    }
+  },
+  "library": {
+    "technology": "Nangate45 typical Liberty (research-only, non-manufacturable)",
+    "path": "/home/wxt/yosys-sta/pdk/nangate45/lib/Nangate45_typ.lib",
+    "sha256": "2efd0b32eb580e4e60e72fc0575bb3bc69aac907c91d908442e4ae6d7fe55895"
+  },
+  "clock_and_timing_proxy": {
+    "clock_constraint": "none in the existing Yosys/ABC flow",
+    "proxy_name": "maximum local ABC stime post-map delay",
+    "proxy_definition": "maximum local stime delay across all reported mapped modules after common -D 50000 ps mapping",
+    "reported_unit": "ps",
+    "not_sta": true,
+    "not_fmax": true,
+    "not_post_layout": true,
+    "not_cross_hierarchy": true
+  },
+  "flow": {
+    "source_list": "Bender flist-plus -t rtl -t spatz",
+    "read_slang": "--std 1800-2017 --single-unit --keep-hierarchy --no-proc -j 1",
+    "slang_load": "plugin -i /home/wxt/yosys-sta/oss-cad-suite/share/yosys/plugins/slang.so",
+    "hierarchy_policy": "keep hierarchy; no full-cluster flatten",
+    "sram_assumption": "/home/wxt/work-online-merge-supplement/experiments/synthesis/compat/tc_sram_blackbox.sv",
+    "process_passes": [
+      "proc_clean",
+      "proc_prune",
+      "proc_init",
+      "proc_arst",
+      "proc_rom",
+      "proc_mux",
+      "proc_dlatch",
+      "proc_dff",
+      "proc_memwr",
+      "proc_clean",
+      "opt_expr -keepdc"
+    ],
+    "area_map": "abc -fast -liberty Nangate45_typ.lib",
+    "area_stat": "stat -top spatz_cluster_wrapper -hierarchy -json -liberty Nangate45_typ.lib; top num_cells.area is instance-weighted across retained hierarchy",
+    "timing_map": "abc -D 50000 -script '+strash; if -K 6; dretime; map -D 50000; &get -n; &st; &dch; &nf; &put; stime -p 5; print_stats -m'",
+    "runner": "experiments/phase6_integrated_cost_generality/p0_1_integrated_cost/run_matched_synthesis.py",
+    "runner_sha256": "8747070e59868d6746214c3dce46af13cdc92d8c56052bf701af978d4d7e9245"
+  },
+  "toolchain_hashes": {
+    "bender": {
+      "path": "/home/wxt/work-online-merge-supplement/install/bender/bender",
+      "sha256": "f73f2f345afc98f630e63195baa1dd93d39f78d247e21997f8156386f659cb20",
+      "version": "bender 0.29.1"
+    },
+    "yosys": {
+      "path": "/home/wxt/yosys-sta/oss-cad-suite/bin/yosys",
+      "sha256": "7c3e3396b38c129dd7485be5a0a0f0da8e495a94c8fd486059e3bea043a588d6",
+      "version": "Yosys 0.66+4 (git sha1 8125af88d)"
+    },
+    "slang_plugin": {
+      "path": "/home/wxt/yosys-sta/oss-cad-suite/share/yosys/plugins/slang.so",
+      "sha256": "97581993656bbf4a7c1c491fd0dfbf5ead120ece05afea78b4d6b1e723a9afe8"
+    },
+    "sram_blackbox": {
+      "path": "/home/wxt/work-online-merge-supplement/experiments/synthesis/compat/tc_sram_blackbox.sv",
+      "sha256": "ec44b43ef9e5bd501f4a96f442bcc7c87ea0ee2e3133f4d45f2627778f31200a"
+    }
+  },
+  "official_attempts": {
+    "r3": {
+      "attempt": "r3",
+      "official": true,
+      "exact_flow": true,
+      "resource_configuration": "4 GiB host RAM plus 4 GiB swap",
+      "runner_root": "/home/wxt/work-phase6-formal-117caff-r3/p0_1",
+      "work_root": "/home/wxt/work-phase6-integrated-synth-117caff-r3",
+      "command": "python3 /home/wxt/work-online-merge-supplement/experiments/phase6_integrated_cost_generality/p0_1_integrated_cost/run_matched_synthesis.py --execute-formal --output /home/wxt/work-phase6-formal-117caff-r3/p0_1/formal --log-root /home/wxt/work-phase6-formal-117caff-r3/p0_1/logs --work-root /home/wxt/work-phase6-integrated-synth-117caff-r3",
+      "expected_commit": "117caff8109c0f6c32cf07a8322a3397307c8e14",
+      "actual_commit": "117caff8109c0f6c32cf07a8322a3397307c8e14",
+      "git_status_before": "clean",
+      "wrapper_start_utc": "2026-09-03T05:59:30Z",
+      "wrapper_end_utc": "2026-09-03T06:48:06Z",
+      "return_code": 1,
+      "status": "OOM",
+      "stopped_at": "techmap",
+      "mapped_hier_stat": {
+        "present": false,
+        "reason": "Yosys did not emit mapped-hier-stat.json before the process was killed."
+      },
+      "runner_meta": {
+        "source": "/home/wxt/work-phase6-formal-117caff-r3/p0_1/runner.meta",
+        "sha256": "af3c744bbcc8a97d672189ac48d545b384fe1bf48e59bcf5b3d890cfc72b6cb0",
+        "bytes": 2387,
+        "repo_copy": "logs/formal_recovery/r3_runner.meta"
+      },
+      "formal_manifest": {
+        "source": "/home/wxt/work-phase6-formal-117caff-r3/p0_1/formal/manifest.json",
+        "sha256": "61e27a42cbc0da2d374be26a6e41baf0deb660588d95eec1f266f4777bc68fdf",
+        "bytes": 5911,
+        "repo_copy": "logs/formal_recovery/r3_manifest.json"
+      },
+      "runner_stderr": {
+        "source": "/home/wxt/work-phase6-formal-117caff-r3/p0_1/runner.stderr.log",
+        "sha256": "7ec7864d3d40891a6346a470c2416f55bee9c447f180a51e3dbebd268b3e051c",
+        "bytes": 947,
+        "repo_copy": "logs/formal_recovery/r3_runner.stderr.log"
+      },
+      "yosys_log": {
+        "source": "/home/wxt/work-phase6-integrated-synth-117caff-r3/Spatz_Baseline_area/yosys.log",
+        "sha256": "954a5e537a00bbd751be321223724faec1f9af6ee9020696f3403e71ad6635fb",
+        "bytes": 145379917,
+        "line_count": 845618,
+        "tail_lines_copied": 220,
+        "repo_evidence": "logs/formal_recovery/r3_yosys.log.evidence.txt"
+      },
+      "kernel_oom": {
+        "source": "/var/log/kern.log",
+        "repo_evidence": "logs/formal_recovery/r3_kernel_oom_excerpt.txt",
+        "timestamp": "2026-09-03T14:48:03+08:00",
+        "global_oom": true,
+        "killed_pid": 24069,
+        "killed_process": "ld-linux-x86-64",
+        "total_vm_kb": 6142572,
+        "anon_rss_kb": 2662724,
+        "free_swap_kb": 204
+      }
+    },
+    "r4": {
+      "attempt": "r4",
+      "official": true,
+      "exact_flow": true,
+      "resource_configuration": "6 GiB host RAM + 4 GiB swap",
+      "runner_root": "/home/wxt/work-phase6-formal-117caff-r4/p0_1",
+      "work_root": "/home/wxt/work-phase6-integrated-synth-117caff-r4",
+      "command": "python3 /home/wxt/work-online-merge-supplement/experiments/phase6_integrated_cost_generality/p0_1_integrated_cost/run_matched_synthesis.py --execute-formal --output /home/wxt/work-phase6-formal-117caff-r4/p0_1/formal --log-root /home/wxt/work-phase6-formal-117caff-r4/p0_1/logs --work-root /home/wxt/work-phase6-integrated-synth-117caff-r4",
+      "expected_commit": "117caff8109c0f6c32cf07a8322a3397307c8e14",
+      "actual_commit": "117caff8109c0f6c32cf07a8322a3397307c8e14",
+      "git_status_before": "clean",
+      "wrapper_start_utc": "2026-09-03T07:47:06Z",
+      "wrapper_end_utc": "2026-09-03T08:41:32Z",
+      "return_code": 1,
+      "status": "OOM",
+      "stopped_at": "techmap",
+      "mapped_hier_stat": {
+        "present": false,
+        "reason": "Yosys did not emit mapped-hier-stat.json before the process was killed."
+      },
+      "runner_meta": {
+        "source": "/home/wxt/work-phase6-formal-117caff-r4/p0_1/runner.meta",
+        "sha256": "adc23561fdffe3262ff1cef7047ff22b2d582f3bdecf3486d69fcda986e4b2b8",
+        "bytes": 3356,
+        "repo_copy": "logs/formal_recovery/r4_runner.meta"
+      },
+      "formal_manifest": {
+        "source": "/home/wxt/work-phase6-formal-117caff-r4/p0_1/formal/manifest.json",
+        "sha256": "097859bcce1596b84f9fdaeeed0b4f107cac2867cfb6119a4d651e933beec89d",
+        "bytes": 5911,
+        "repo_copy": "logs/formal_recovery/r4_manifest.json"
+      },
+      "runner_stderr": {
+        "source": "/home/wxt/work-phase6-formal-117caff-r4/p0_1/runner.stderr.log",
+        "sha256": "933806fe3a4c7e8fc598f560a5f13e02dbcfc836ad0503cde91a056d591d683b",
+        "bytes": 947,
+        "repo_copy": "logs/formal_recovery/r4_runner.stderr.log"
+      },
+      "yosys_log": {
+        "source": "/home/wxt/work-phase6-integrated-synth-117caff-r4/Spatz_Baseline_area/yosys.log",
+        "sha256": "2bc3a949b035f814dabcd6a34ff5db8a80cabb793f02023496b465f303d33d04",
+        "bytes": 145391282,
+        "line_count": 845712,
+        "tail_lines_copied": 220,
+        "repo_evidence": "logs/formal_recovery/r4_yosys.log.evidence.txt"
+      },
+      "kernel_oom": {
+        "source": "/var/log/kern.log",
+        "repo_evidence": "logs/formal_recovery/r4_kernel_oom_excerpt.txt",
+        "timestamp": "2026-09-03T16:41:26+08:00",
+        "global_oom": true,
+        "killed_pid": 18761,
+        "killed_process": "ld-linux-x86-64",
+        "total_vm_kb": 6535660,
+        "anon_rss_kb": 4288984,
+        "free_swap_kb": 200
+      }
+    }
+  },
+  "r5_no_go": {
+    "launched": false,
+    "reason": "After two exact official flows reached the same resource boundary at techmap, the phase had no new resource state for a third run. A third launch would not add evidence without changing the resource boundary.",
+    "minimum_recovery_requirement": "需提供明显高于当前峰值的额外内存/swap并重新运行四个matched flows"
+  },
+  "standalone_reference": {
+    "area": 52407.586,
+    "unit": "um^2",
+    "source": "experiments/phase3_reciprocal_hardware/area/area_manifest.json",
+    "reference_only": true,
+    "substitute_for_integrated": false,
+    "use": "standalone sanity-check reference; it cannot replace the missing integrated top result"
+  },
+  "comparison_artifact": {
+    "path": "formal/synthesis_comparison.csv",
+    "rows": 2,
+    "status_values": [
+      "not_available_resource_blocked"
+    ],
+    "all_area_and_timing_numeric_fields_empty": true
+  },
+  "artifacts": [
+    "formal/synthesis_comparison.csv",
+    "formal/manifest.json",
+    "logs/formal_recovery/r3_runner.meta",
+    "logs/formal_recovery/r3_manifest.json",
+    "logs/formal_recovery/r3_runner.stderr.log",
+    "logs/formal_recovery/r3_yosys.log.evidence.txt",
+    "logs/formal_recovery/r3_kernel_oom_excerpt.txt",
+    "logs/formal_recovery/r4_runner.meta",
+    "logs/formal_recovery/r4_manifest.json",
+    "logs/formal_recovery/r4_runner.stderr.log",
+    "logs/formal_recovery/r4_yosys.log.evidence.txt",
+    "logs/formal_recovery/r4_kernel_oom_excerpt.txt"
+  ]
+}

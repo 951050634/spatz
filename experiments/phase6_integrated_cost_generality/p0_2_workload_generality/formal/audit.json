@@ -1,0 +1,90 @@
+{
+  "canonical_outputs": {
+    "N16_D128_S1/smu": {
+      "fnv32_output_hash": 2234154739,
+      "path": "outputs/N16_D128_S1_smu_output_bits.json",
+      "sha256": "b9683dddb2ada468616eda1a26ed2fa9989b15e3a40e9f74b1fe15462eecc59d",
+      "word_count": 2048
+    },
+    "N16_D128_S1/software": {
+      "fnv32_output_hash": 968263766,
+      "path": "outputs/N16_D128_S1_software_output_bits.json",
+      "sha256": "cafdab40d76eafd13a1f08072f06872ac13c762cf9a6fbc3662d86b078cde8f2",
+      "word_count": 2048
+    },
+    "N24_D64_S1/smu": {
+      "fnv32_output_hash": 1035537227,
+      "path": "outputs/N24_D64_S1_smu_output_bits.json",
+      "sha256": "e800459e96ec2800202b4080a55ee89e4f6159dfbe869640e6d3b1526fc050c6",
+      "word_count": 1536
+    },
+    "N24_D64_S1/software": {
+      "fnv32_output_hash": 80490056,
+      "path": "outputs/N24_D64_S1_software_output_bits.json",
+      "sha256": "5596b771b7446c48dee9da4245da00746ece04b41e5b9f06afd09bad577eda5f",
+      "word_count": 1536
+    }
+  },
+  "canonical_raw_logs": {
+    "raw/N16_D128_S1_build.log": "df64f8c0dc15156e0da417e68aa052fbda816f997647e58bf2588590e399f715",
+    "raw/N16_D128_S1_configure.log": "bf6c447b5b2653517337f263775dfeef50b52b75b49064e6cb0c73950aa0e869",
+    "raw/N16_D128_S1_smu.log": "161fc4bfc5d0569e778b2c33d847f638e6e07f7bf30ca6b3f7b5e73642138140",
+    "raw/N16_D128_S1_smu.stderr.log": "e66d42b7d1896880cf2d40a0a8ba3fb95dffcd8f2ca09c6694b75397cdde6b9b",
+    "raw/N16_D128_S1_smu_recovery.runner.meta": "456bddd6075b571432998a12e4549c8996d1c14f36ee9ce20f836d981ad36ec7",
+    "raw/N16_D128_S1_smu_recovery.runner.sh": "257929652c68b6453e7ce04fdb2a1693da95969fe5b128c972af9ab12b7ea0a4",
+    "raw/N16_D128_S1_software.log": "364a8c486bc12eb5a8200799355c3d48016fb0c57baa8d7259dad22011c14a99",
+    "raw/N24_D64_S1_build.log": "f974d4233a8fafe29aac06a03b1ce8e4e7f0d6f58cb4429bb93ab518b5e2cc99",
+    "raw/N24_D64_S1_configure.log": "8d26ef1e79130d68afeecef8328132b9478c7c836511e4b832693ffe4f90efa0",
+    "raw/N24_D64_S1_smu.log": "ecccd673daec9f61e05fd7a7a08b2707de345d2560951eff02181ab307049e13",
+    "raw/N24_D64_S1_software.log": "a491cb2f4f48222a255bec6386a4c90becc173fa497b30ca83e2fdf7625b6a55",
+    "raw/recovery_launcher.stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "raw/recovery_launcher.stdout.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "checked_at_utc": "2026-09-03T05:56:31.034179+00:00",
+  "checks": {
+    "atomic_staging_complete": true,
+    "csv_manifest_log_output_hash_consistency": true,
+    "cross_phase_hw_tree_identical": true,
+    "four_selected_run_logs_validated": true,
+    "fsm_csv_values_reconciled": true,
+    "git_clean_and_frozen_commit": true,
+    "numerical_csv_values_reconciled": true,
+    "om_fsm_mode3_done": true,
+    "output_bits_finite_and_fnv32_consistent": true,
+    "output_chunks_contiguous_and_full": true,
+    "performance_csv_values_reconciled": true,
+    "phase5_anchor_rows_source_only": true,
+    "r1_incomplete_predecessor_excluded": true,
+    "r1_three_complete_runs": true,
+    "r2_one_recovered_run": true,
+    "smu_commands_done_errors_timeouts_and_busy": true
+  },
+  "csv": {
+    "numerical_agreement.csv": {
+      "rows": 4,
+      "sha256": "e29e4e4bd813322177fe58f0d76aeb0464afefa65e81f628ccc5375dd1915a5d"
+    },
+    "om_fsm_breakdown.csv": {
+      "rows": 12,
+      "sha256": "2f7d228554e61eef59fdd8f72396f93e6e366a0340c7cff2a539b09d2bec47e9"
+    },
+    "performance.csv": {
+      "rows": 4,
+      "sha256": "353f8e3a94324d6fc933634304013179ba201fda43903e1cdec021c54156efae"
+    },
+    "performance_trend.csv": {
+      "rows": 4,
+      "sha256": "5d92ba1c2e92c8bcf407738591d6a83a157593a587f5d858872092dc5f9cdc53"
+    },
+    "run_details.csv": {
+      "rows": 4,
+      "sha256": "f7289ec63b9b24705687061feeb9432a600f0aefcfa08b468bfe653fedcdb2a1"
+    },
+    "shape_manifest.csv": {
+      "rows": 4,
+      "sha256": "ca4c3bfd6c90abdbae838006b31cb78495a9cc6ef0cb51168f3ae04244713b07"
+    }
+  },
+  "manifest_sha256": "e2d41b674a62b7013964cffa7411fa7a2524fa2a4e190002384f216cc5cdfcd7",
+  "status": "PASS"
+}

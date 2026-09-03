@@ -1,0 +1,410 @@
+{
+  "builds": [
+    {
+      "build_command": "cmake --build /home/wxt/work-phase6-native-formal-117caff-r1/N24_D64_S1 --target test-spatzBenchmarks-native-online-attention-software test-spatzBenchmarks-native-online-attention-smu -- -j8",
+      "build_completed_at": "2026-09-01T11:13:05.923145+00:00",
+      "build_dir": "/home/wxt/work-phase6-native-formal-117caff-r1/N24_D64_S1",
+      "build_log": "raw/N24_D64_S1_build.log",
+      "build_log_sha256": "f974d4233a8fafe29aac06a03b1ce8e4e7f0d6f58cb4429bb93ab518b5e2cc99",
+      "build_started_at": "2026-09-01T11:13:04.537387+00:00",
+      "case": "N24_D64_S1",
+      "configure_command": "cmake -S /home/wxt/work-online-merge-supplement/hw/system/spatz_cluster/sw -B /home/wxt/work-phase6-native-formal-117caff-r1/N24_D64_S1 -DLLVM_PATH=/home/wxt/work-online-merge-supplement/install/llvm -DGCC_PATH=/home/wxt/work-online-merge-supplement/install/riscv-gcc -DPYTHON=/usr/bin/python3 -DBUILD_TESTS=ON -DSNITCH_SIMULATOR=/home/wxt/spatz-archive/phase4/work-phase4-recip-sim/spatz_cluster.vlt -DSPATZ_CLUSTER_CFG=spatz_cluster.default.dram.hjson -DPHASE5_N=24 -DPHASE5_D=64 -DPHASE5_SEED=1 -DPHASE5_DUMP_OUTPUT=1 -DCMAKE_C_FLAGS=-DPRINTF_DISABLE_SUPPORT_FLOAT -DMEM_DRAM_ORIGIN=2147483648 -DMEM_DRAM_SIZE=2147483648 -DSNRT_BASE_HARTID=0 -DSNRT_CLUSTER_CORE_NUM=2 -DSNRT_TCDM_START_ADDR=1048576 -DSNRT_CLUSTER_OFFSET=0 -DSNRT_TCDM_SIZE=131072 -DSNRT_NFPU_PER_CORE=4 -DELEN=64",
+      "configure_completed_at": "2026-09-01T11:13:04.537367+00:00",
+      "configure_log": "raw/N24_D64_S1_configure.log",
+      "configure_log_sha256": "8d26ef1e79130d68afeecef8328132b9478c7c836511e4b832693ffe4f90efa0",
+      "configure_started_at": "2026-09-01T11:13:03.306690+00:00",
+      "header": "/home/wxt/work-phase6-native-formal-117caff-r1/N24_D64_S1/spatzBenchmarks/phase5_generated/N24_D64_S1/phase5_case_data.h",
+      "header_sha256": "2e425784896212a516462e85b4e0713eb76e4197aa08b8716227e54ea1ca45a9"
+    },
+    {
+      "build_command": "cmake --build /home/wxt/work-phase6-native-formal-117caff-r1/N16_D128_S1 --target test-spatzBenchmarks-native-online-attention-software test-spatzBenchmarks-native-online-attention-smu -- -j8",
+      "build_completed_at": "2026-09-01T11:44:08.970712+00:00",
+      "build_dir": "/home/wxt/work-phase6-native-formal-117caff-r1/N16_D128_S1",
+      "build_log": "raw/N16_D128_S1_build.log",
+      "build_log_sha256": "df64f8c0dc15156e0da417e68aa052fbda816f997647e58bf2588590e399f715",
+      "build_started_at": "2026-09-01T11:44:07.734577+00:00",
+      "case": "N16_D128_S1",
+      "configure_command": "cmake -S /home/wxt/work-online-merge-supplement/hw/system/spatz_cluster/sw -B /home/wxt/work-phase6-native-formal-117caff-r1/N16_D128_S1 -DLLVM_PATH=/home/wxt/work-online-merge-supplement/install/llvm -DGCC_PATH=/home/wxt/work-online-merge-supplement/install/riscv-gcc -DPYTHON=/usr/bin/python3 -DBUILD_TESTS=ON -DSNITCH_SIMULATOR=/home/wxt/spatz-archive/phase4/work-phase4-recip-sim/spatz_cluster.vlt -DSPATZ_CLUSTER_CFG=spatz_cluster.default.dram.hjson -DPHASE5_N=16 -DPHASE5_D=128 -DPHASE5_SEED=1 -DPHASE5_DUMP_OUTPUT=1 -DCMAKE_C_FLAGS=-DPRINTF_DISABLE_SUPPORT_FLOAT -DMEM_DRAM_ORIGIN=2147483648 -DMEM_DRAM_SIZE=2147483648 -DSNRT_BASE_HARTID=0 -DSNRT_CLUSTER_CORE_NUM=2 -DSNRT_TCDM_START_ADDR=1048576 -DSNRT_CLUSTER_OFFSET=0 -DSNRT_TCDM_SIZE=131072 -DSNRT_NFPU_PER_CORE=4 -DELEN=64",
+      "configure_completed_at": "2026-09-01T11:44:07.734558+00:00",
+      "configure_log": "raw/N16_D128_S1_configure.log",
+      "configure_log_sha256": "bf6c447b5b2653517337f263775dfeef50b52b75b49064e6cb0c73950aa0e869",
+      "configure_started_at": "2026-09-01T11:44:06.438279+00:00",
+      "header": "/home/wxt/work-phase6-native-formal-117caff-r1/N16_D128_S1/spatzBenchmarks/phase5_generated/N16_D128_S1/phase5_case_data.h",
+      "header_sha256": "11db6db210e53114c723ef31c0884c85f0f853aca1e6887f9543251583a43a5a"
+    }
+  ],
+  "collection_completed_at": null,
+  "collection_started_at": "2026-09-01T11:13:03.218899+00:00",
+  "config": {
+    "all_shapes": [
+      {
+        "d": 32,
+        "n": 8,
+        "seed": 1
+      },
+      {
+        "d": 64,
+        "n": 16,
+        "seed": 1
+      },
+      {
+        "d": 64,
+        "n": 24,
+        "seed": 1
+      },
+      {
+        "d": 128,
+        "n": 16,
+        "seed": 1
+      }
+    ],
+    "cmake_cluster_config": "spatz_cluster.default.dram.hjson",
+    "compiler_flags": "-DPRINTF_DISABLE_SUPPORT_FLOAT",
+    "new_shapes": [
+      {
+        "d": 64,
+        "n": 24,
+        "seed": 1
+      },
+      {
+        "d": 128,
+        "n": 16,
+        "seed": 1
+      }
+    ],
+    "rejected_pre_result_candidates": [
+      {
+        "d": 64,
+        "n": 32,
+        "reason": "software exceeded the 900 s host smoke budget without PHASE5_RESULT; the interrupted SMU attempt emitted only OM_FSM invocations 0..2 without PHASE5_RESULT/output",
+        "seed": 1,
+        "speedup_inspected": false,
+        "status": "rejected-pre-result-host-completion"
+      }
+    ],
+    "shape_manifest_sha256": "ca4c3bfd6c90abdbae838006b31cb78495a9cc6ef0cb51168f3ae04244713b07",
+    "smu_mode": 3,
+    "tile_size": 4
+  },
+  "formal_collection_started": true,
+  "git": {
+    "clean_before_run": true,
+    "commit": "117caff8109c0f6c32cf07a8322a3397307c8e14",
+    "diff_stat": "",
+    "phase4_dirty_entries": [],
+    "status_short": []
+  },
+  "kind": "phase6-p0-2-native-online-attention-generality-formal",
+  "phase5_anchor_sources": {
+    "native_attention_performance.csv": "443868cd6f2ce1298c09ccc8518968c20ad5c939c41f589c7b23dc21f992675d",
+    "native_merge_performance.csv": "970d4c1fd300c779a9deec4f264564029646be6f9ec7e1ed360f595c066f9c4f",
+    "native_merge_summary.csv": "2885afac2b84ddf41e7857faed08eff7b7d7fc386f50be6b8c2b609aa294fa14",
+    "numerical_agreement.csv": "729d3780d2026d521226cbf6d59d83df1ec7a199ff3e1c5049682be993477ac3",
+    "om_fsm_breakdown.csv": "3b869fc8a65f165187dde0129ad697147d17a67cc455638b531f2bfc9dcd1a11"
+  },
+  "run_policy": {
+    "formal_runs": 4,
+    "jobs": 8,
+    "phase5_anchor_reruns": 0,
+    "timeout_seconds": 3600
+  },
+  "runs": [
+    {
+      "case": "N24_D64_S1",
+      "command": "/home/wxt/spatz-archive/phase4/work-phase4-recip-sim/spatz_cluster.vlt /home/wxt/work-phase6-native-formal-117caff-r1/N24_D64_S1/spatzBenchmarks/test-spatzBenchmarks-native-online-attention-software",
+      "compute_weight_cycles_sum": 0,
+      "elf": "/home/wxt/work-phase6-native-formal-117caff-r1/N24_D64_S1/spatzBenchmarks/test-spatzBenchmarks-native-online-attention-software",
+      "elf_sha256": "5746dee9abf8454fc5c8a199bc082ed3001883a6119f9f28478701bf1dc03f92",
+      "implementation": "software",
+      "om_fsm": [],
+      "output_bits": "outputs/N24_D64_S1_software_output_bits.json",
+      "raw_log": "raw/N24_D64_S1_software.log",
+      "raw_log_sha256": "a491cb2f4f48222a255bec6386a4c90becc173fa497b30ca83e2fdf7625b6a55",
+      "result": {
+        "cycles": {
+          "core_residual": 12400,
+          "merge_orchestration": 455,
+          "merge_total": 186446,
+          "merge_window": 186446,
+          "output_copy": 9235,
+          "rvv_output_update": 19998,
+          "score_compute": 305194,
+          "smu_breakdown_delta": 0,
+          "smu_breakdown_exact": 1,
+          "smu_breakdown_sum": 0,
+          "smu_commands": 0,
+          "smu_setup": 0,
+          "smu_wait": 0,
+          "software_recurrence": 165993,
+          "software_recurrence_calls": 5,
+          "tile_local_state": 775581,
+          "total": 1288856
+        },
+        "d": 64,
+        "implementation": "software",
+        "merge_count": 5,
+        "n": 24,
+        "output_hash": 80490056,
+        "output_metrics": {
+          "cosine_similarity_bits": 1065353195,
+          "mae_bits": 922989436,
+          "stable_relative_error_bits": 956732303
+        },
+        "output_nonfinite": 0,
+        "seed": 1,
+        "smu": {
+          "commands": 0,
+          "done": 0,
+          "errors": 0,
+          "saw_busy": 0,
+          "timeouts": 0
+        },
+        "status": "pass",
+        "tcdm": {
+          "allocation_bytes": 44288,
+          "capacity_bytes": 131072,
+          "data_bytes": 44160,
+          "memory_footprint_bytes": 60800,
+          "runtime_reserved_bytes": 16512
+        },
+        "tile_count": 6,
+        "tile_keys": 4
+      },
+      "return_code": 0,
+      "run_completed_at": "2026-09-01T11:29:15.288666+00:00",
+      "run_started_at": "2026-09-01T11:13:05.924194+00:00"
+    },
+    {
+      "case": "N24_D64_S1",
+      "command": "/home/wxt/spatz-archive/phase4/work-phase4-recip-sim/spatz_cluster.vlt /home/wxt/work-phase6-native-formal-117caff-r1/N24_D64_S1/spatzBenchmarks/test-spatzBenchmarks-native-online-attention-smu",
+      "compute_weight_cycles_sum": 360,
+      "elf": "/home/wxt/work-phase6-native-formal-117caff-r1/N24_D64_S1/spatzBenchmarks/test-spatzBenchmarks-native-online-attention-smu",
+      "elf_sha256": "5066314f222350c0e2f34a48d7599d6cbd3065a642fb87233669cb18d0e053f8",
+      "implementation": "smu",
+      "om_fsm": [
+        {
+          "D": 64,
+          "N": 24,
+          "busy_cycles": 624,
+          "compute_scalar_cycles": 24,
+          "compute_weight_cycles": 72,
+          "invocation": 0,
+          "load_scalar_cycles": 312,
+          "mode": 3,
+          "schema_version": 1,
+          "store_scalar_cycles": 216,
+          "terminal_state": "DONE",
+          "update_vector_cycles": 0
+        },
+        {
+          "D": 64,
+          "N": 24,
+          "busy_cycles": 625,
+          "compute_scalar_cycles": 24,
+          "compute_weight_cycles": 72,
+          "invocation": 1,
+          "load_scalar_cycles": 312,
+          "mode": 3,
+          "schema_version": 1,
+          "store_scalar_cycles": 217,
+          "terminal_state": "DONE",
+          "update_vector_cycles": 0
+        },
+        {
+          "D": 64,
+          "N": 24,
+          "busy_cycles": 625,
+          "compute_scalar_cycles": 24,
+          "compute_weight_cycles": 72,
+          "invocation": 2,
+          "load_scalar_cycles": 312,
+          "mode": 3,
+          "schema_version": 1,
+          "store_scalar_cycles": 217,
+          "terminal_state": "DONE",
+          "update_vector_cycles": 0
+        },
+        {
+          "D": 64,
+          "N": 24,
+          "busy_cycles": 625,
+          "compute_scalar_cycles": 24,
+          "compute_weight_cycles": 72,
+          "invocation": 3,
+          "load_scalar_cycles": 312,
+          "mode": 3,
+          "schema_version": 1,
+          "store_scalar_cycles": 217,
+          "terminal_state": "DONE",
+          "update_vector_cycles": 0
+        },
+        {
+          "D": 64,
+          "N": 24,
+          "busy_cycles": 625,
+          "compute_scalar_cycles": 24,
+          "compute_weight_cycles": 72,
+          "invocation": 4,
+          "load_scalar_cycles": 312,
+          "mode": 3,
+          "schema_version": 1,
+          "store_scalar_cycles": 217,
+          "terminal_state": "DONE",
+          "update_vector_cycles": 0
+        }
+      ],
+      "output_bits": "outputs/N24_D64_S1_smu_output_bits.json",
+      "raw_log": "raw/N24_D64_S1_smu.log",
+      "raw_log_sha256": "ecccd673daec9f61e05fd7a7a08b2707de345d2560951eff02181ab307049e13",
+      "result": {
+        "cycles": {
+          "core_residual": 12392,
+          "merge_orchestration": 420,
+          "merge_total": 29711,
+          "merge_window": 29711,
+          "output_copy": 9226,
+          "rvv_output_update": 19957,
+          "score_compute": 305347,
+          "smu_breakdown_delta": 0,
+          "smu_breakdown_exact": 1,
+          "smu_breakdown_sum": 9334,
+          "smu_commands": 5,
+          "smu_recurrence": 9334,
+          "smu_setup": 5777,
+          "smu_wait": 3557,
+          "software_recurrence_calls": 0,
+          "tile_local_state": 774088,
+          "total": 1130764
+        },
+        "d": 64,
+        "implementation": "smu",
+        "merge_count": 5,
+        "n": 24,
+        "output_hash": 1035537227,
+        "output_metrics": {
+          "cosine_similarity_bits": 1065352898,
+          "mae_bits": 969096329,
+          "stable_relative_error_bits": 1002930100
+        },
+        "output_nonfinite": 0,
+        "seed": 1,
+        "smu": {
+          "commands": 5,
+          "done": 5,
+          "errors": 0,
+          "saw_busy": 1,
+          "timeouts": 0
+        },
+        "status": "pass",
+        "tcdm": {
+          "allocation_bytes": 44288,
+          "capacity_bytes": 131072,
+          "data_bytes": 44160,
+          "memory_footprint_bytes": 60800,
+          "runtime_reserved_bytes": 16512
+        },
+        "tile_count": 6,
+        "tile_keys": 4
+      },
+      "return_code": 0,
+      "run_completed_at": "2026-09-01T11:44:06.407060+00:00",
+      "run_started_at": "2026-09-01T11:29:15.365730+00:00"
+    },
+    {
+      "case": "N16_D128_S1",
+      "command": "/home/wxt/spatz-archive/phase4/work-phase4-recip-sim/spatz_cluster.vlt /home/wxt/work-phase6-native-formal-117caff-r1/N16_D128_S1/spatzBenchmarks/test-spatzBenchmarks-native-online-attention-software",
+      "compute_weight_cycles_sum": 0,
+      "elf": "/home/wxt/work-phase6-native-formal-117caff-r1/N16_D128_S1/spatzBenchmarks/test-spatzBenchmarks-native-online-attention-software",
+      "elf_sha256": "c75a471e467625c6684b0166147282812cc0e10939188b2a01399c0f86a8e514",
+      "implementation": "software",
+      "om_fsm": [],
+      "output_bits": "outputs/N16_D128_S1_software_output_bits.json",
+      "raw_log": "raw/N16_D128_S1_software.log",
+      "raw_log_sha256": "364a8c486bc12eb5a8200799355c3d48016fb0c57baa8d7259dad22011c14a99",
+      "result": {
+        "cycles": {
+          "core_residual": 13484,
+          "merge_orchestration": 210,
+          "merge_total": 82220,
+          "merge_window": 82220,
+          "output_copy": 12311,
+          "rvv_output_update": 14559,
+          "score_compute": 266771,
+          "smu_breakdown_delta": 0,
+          "smu_breakdown_exact": 1,
+          "smu_breakdown_sum": 0,
+          "smu_commands": 0,
+          "smu_setup": 0,
+          "smu_wait": 0,
+          "software_recurrence": 67451,
+          "software_recurrence_calls": 3,
+          "tile_local_state": 651376,
+          "total": 1026162
+        },
+        "d": 128,
+        "implementation": "software",
+        "merge_count": 3,
+        "n": 16,
+        "output_hash": 968263766,
+        "output_metrics": {
+          "cosine_similarity_bits": 1065353239,
+          "mae_bits": 927363713,
+          "stable_relative_error_bits": 954591004
+        },
+        "output_nonfinite": 0,
+        "seed": 1,
+        "smu": {
+          "commands": 0,
+          "done": 0,
+          "errors": 0,
+          "saw_busy": 0,
+          "timeouts": 0
+        },
+        "status": "pass",
+        "tcdm": {
+          "allocation_bytes": 58112,
+          "capacity_bytes": 131072,
+          "data_bytes": 58112,
+          "memory_footprint_bytes": 74624,
+          "runtime_reserved_bytes": 16512
+        },
+        "tile_count": 4,
+        "tile_keys": 4
+      },
+      "return_code": 0,
+      "run_completed_at": "2026-09-01T11:59:55.401686+00:00",
+      "run_started_at": "2026-09-01T11:44:08.973500+00:00"
+    }
+  ],
+  "schema_version": 1,
+  "simulator": {
+    "path": "/home/wxt/spatz-archive/phase4/work-phase4-recip-sim/spatz_cluster.vlt",
+    "sha256": "8f85b204d064f1ced29d2fc27518754f8b018db0530cf2328a3a1062687c9138"
+  },
+  "status": "in_progress",
+  "toolchain": {
+    "compiler": {
+      "c_compiler": {
+        "path": "/home/wxt/spatz/install/llvm/bin/clang-14",
+        "sha256": "b2547b866a2d786fb48be8c7c66154ed0be2a7a54cd85dc1caaf0fa2d0bf36b1",
+        "version": "clang version 14.0.6 (git@github.com:pulp-platform/llvm-project.git b494f2d8dde88723026db8ec16ac6c7ee1e140ca)\nTarget: riscv32-unknown-unknown-elf\nThread model: posix\nInstalledDir: /home/wxt/spatz/install/llvm/bin",
+        "version_command": "/home/wxt/spatz/install/llvm/bin/clang-14 --version"
+      },
+      "cxx_compiler": {
+        "path": "/home/wxt/spatz/install/llvm/bin/clang-14",
+        "sha256": "b2547b866a2d786fb48be8c7c66154ed0be2a7a54cd85dc1caaf0fa2d0bf36b1",
+        "version": "clang version 14.0.6 (git@github.com:pulp-platform/llvm-project.git b494f2d8dde88723026db8ec16ac6c7ee1e140ca)\nTarget: riscv32-unknown-unknown-elf\nThread model: posix\nInstalledDir: /home/wxt/spatz/install/llvm/bin",
+        "version_command": "/home/wxt/spatz/install/llvm/bin/clang-14 --version"
+      },
+      "gcc_toolchain": {
+        "path": "/home/wxt/spatz/install/riscv-gcc/bin/riscv32-unknown-elf-gcc",
+        "sha256": "d29f21cda9df821893ffff9140054ebfb51a901bac910527d0bc252ce719bf52",
+        "version": "riscv32-unknown-elf-gcc (GCC) 7.1.1 20170509\nCopyright (C) 2017 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.",
+        "version_command": "/home/wxt/spatz/install/riscv-gcc/bin/riscv32-unknown-elf-gcc --version"
+      }
+    },
+    "gcc_path": "/home/wxt/work-online-merge-supplement/install/riscv-gcc",
+    "llvm_path": "/home/wxt/work-online-merge-supplement/install/llvm",
+    "python": "/usr/bin/python3"
+  }
+}

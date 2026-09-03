@@ -1,0 +1,820 @@
+{
+  "artifacts": [
+    "performance.csv",
+    "numerical_agreement.csv",
+    "performance_trend.csv",
+    "run_details.csv",
+    "shape_manifest.csv",
+    "om_fsm_breakdown.csv",
+    "manifest.json",
+    "audit.json"
+  ],
+  "builds": [
+    {
+      "build_command": "cmake --build /home/wxt/work-phase6-native-formal-117caff-r1/N24_D64_S1 --target test-spatzBenchmarks-native-online-attention-software test-spatzBenchmarks-native-online-attention-smu -- -j8",
+      "build_log": "raw/N24_D64_S1_build.log",
+      "build_log_sha256": "f974d4233a8fafe29aac06a03b1ce8e4e7f0d6f58cb4429bb93ab518b5e2cc99",
+      "case": "N24_D64_S1",
+      "configure_command": "cmake -S /home/wxt/work-online-merge-supplement/hw/system/spatz_cluster/sw -B /home/wxt/work-phase6-native-formal-117caff-r1/N24_D64_S1 -DLLVM_PATH=/home/wxt/work-online-merge-supplement/install/llvm -DGCC_PATH=/home/wxt/work-online-merge-supplement/install/riscv-gcc -DPYTHON=/usr/bin/python3 -DBUILD_TESTS=ON -DSNITCH_SIMULATOR=/home/wxt/spatz-archive/phase4/work-phase4-recip-sim/spatz_cluster.vlt -DSPATZ_CLUSTER_CFG=spatz_cluster.default.dram.hjson -DPHASE5_N=24 -DPHASE5_D=64 -DPHASE5_SEED=1 -DPHASE5_DUMP_OUTPUT=1 -DCMAKE_C_FLAGS=-DPRINTF_DISABLE_SUPPORT_FLOAT -DMEM_DRAM_ORIGIN=2147483648 -DMEM_DRAM_SIZE=2147483648 -DSNRT_BASE_HARTID=0 -DSNRT_CLUSTER_CORE_NUM=2 -DSNRT_TCDM_START_ADDR=1048576 -DSNRT_CLUSTER_OFFSET=0 -DSNRT_TCDM_SIZE=131072 -DSNRT_NFPU_PER_CORE=4 -DELEN=64",
+      "configure_log": "raw/N24_D64_S1_configure.log",
+      "configure_log_sha256": "8d26ef1e79130d68afeecef8328132b9478c7c836511e4b832693ffe4f90efa0",
+      "header": "/home/wxt/work-phase6-native-formal-117caff-r1/N24_D64_S1/spatzBenchmarks/phase5_generated/N24_D64_S1/phase5_case_data.h",
+      "header_sha256": "2e425784896212a516462e85b4e0713eb76e4197aa08b8716227e54ea1ca45a9",
+      "no_rebuild": true,
+      "source_build_dir": "/home/wxt/work-phase6-native-formal-117caff-r1/N24_D64_S1",
+      "source_build_log": "raw/N24_D64_S1_build.log",
+      "source_build_log_sha256": "f974d4233a8fafe29aac06a03b1ce8e4e7f0d6f58cb4429bb93ab518b5e2cc99",
+      "source_configure_log": "raw/N24_D64_S1_configure.log",
+      "source_configure_log_sha256": "8d26ef1e79130d68afeecef8328132b9478c7c836511e4b832693ffe4f90efa0"
+    },
+    {
+      "build_command": "cmake --build /home/wxt/work-phase6-native-formal-117caff-r1/N16_D128_S1 --target test-spatzBenchmarks-native-online-attention-software test-spatzBenchmarks-native-online-attention-smu -- -j8",
+      "build_log": "raw/N16_D128_S1_build.log",
+      "build_log_sha256": "df64f8c0dc15156e0da417e68aa052fbda816f997647e58bf2588590e399f715",
+      "case": "N16_D128_S1",
+      "configure_command": "cmake -S /home/wxt/work-online-merge-supplement/hw/system/spatz_cluster/sw -B /home/wxt/work-phase6-native-formal-117caff-r1/N16_D128_S1 -DLLVM_PATH=/home/wxt/work-online-merge-supplement/install/llvm -DGCC_PATH=/home/wxt/work-online-merge-supplement/install/riscv-gcc -DPYTHON=/usr/bin/python3 -DBUILD_TESTS=ON -DSNITCH_SIMULATOR=/home/wxt/spatz-archive/phase4/work-phase4-recip-sim/spatz_cluster.vlt -DSPATZ_CLUSTER_CFG=spatz_cluster.default.dram.hjson -DPHASE5_N=16 -DPHASE5_D=128 -DPHASE5_SEED=1 -DPHASE5_DUMP_OUTPUT=1 -DCMAKE_C_FLAGS=-DPRINTF_DISABLE_SUPPORT_FLOAT -DMEM_DRAM_ORIGIN=2147483648 -DMEM_DRAM_SIZE=2147483648 -DSNRT_BASE_HARTID=0 -DSNRT_CLUSTER_CORE_NUM=2 -DSNRT_TCDM_START_ADDR=1048576 -DSNRT_CLUSTER_OFFSET=0 -DSNRT_TCDM_SIZE=131072 -DSNRT_NFPU_PER_CORE=4 -DELEN=64",
+      "configure_log": "raw/N16_D128_S1_configure.log",
+      "configure_log_sha256": "bf6c447b5b2653517337f263775dfeef50b52b75b49064e6cb0c73950aa0e869",
+      "header": "/home/wxt/work-phase6-native-formal-117caff-r1/N16_D128_S1/spatzBenchmarks/phase5_generated/N16_D128_S1/phase5_case_data.h",
+      "header_sha256": "11db6db210e53114c723ef31c0884c85f0f853aca1e6887f9543251583a43a5a",
+      "no_rebuild": true,
+      "source_build_dir": "/home/wxt/work-phase6-native-formal-117caff-r1/N16_D128_S1",
+      "source_build_log": "raw/N16_D128_S1_build.log",
+      "source_build_log_sha256": "df64f8c0dc15156e0da417e68aa052fbda816f997647e58bf2588590e399f715",
+      "source_configure_log": "raw/N16_D128_S1_configure.log",
+      "source_configure_log_sha256": "bf6c447b5b2653517337f263775dfeef50b52b75b49064e6cb0c73950aa0e869"
+    }
+  ],
+  "collection_mode": "offline-formal-consolidation",
+  "gate2_review": {
+    "reviewer": "Sol Max",
+    "status": "GATE2_PASS",
+    "p0": 0,
+    "p1": 0,
+    "p2": 2,
+    "read_only": true,
+    "partial_closure": true,
+    "p2_findings": [
+      {
+        "id": "ignored_formal_logs",
+        "description": "Formal .log files were affected by gitignore and were force-added into the final archive commit.",
+        "resolution": "Final archive uses git add -f only for manifest-referenced formal logs."
+      },
+      {
+        "id": "command_wording",
+        "description": "Section 4 reports the canonical invocation template; the r3/r4 exact commands with relocation parameters are recorded in the P0-1 formal manifest."
+      }
+    ]
+  },
+  "cross_phase_rtl_identity": {
+    "phase5_anchor_commit": "7da83c5ad08063e110be8917733b5ebc8bdb3a61",
+    "phase6_executed_commit": "117caff8109c0f6c32cf07a8322a3397307c8e14",
+    "scope": "hw",
+    "command": "git diff --exit-code 7da83c5ad08063e110be8917733b5ebc8bdb3a61 117caff8109c0f6c32cf07a8322a3397307c8e14 -- hw",
+    "diff_empty": true,
+    "phase5_hw_tree": "eea7595276eb1a4c1fba58da791b4aa0f67f5f95",
+    "phase6_hw_tree": "eea7595276eb1a4c1fba58da791b4aa0f67f5f95",
+    "same_frozen_rtl": true
+  },
+  "freeze_commit": "117caff8109c0f6c32cf07a8322a3397307c8e14",
+  "generated_at_utc": "2026-09-03T05:56:31.028624+00:00",
+  "git": {
+    "clean": true,
+    "commit": "117caff8109c0f6c32cf07a8322a3397307c8e14",
+    "diff_stat": "",
+    "status_short": []
+  },
+  "host_reboot": {
+    "date": "2026-09-03",
+    "old_in_progress_dirs_are_complete_sources": false,
+    "r1_complete_runs": [
+      "N24_D64_S1/software",
+      "N24_D64_S1/smu",
+      "N16_D128_S1/software"
+    ],
+    "r1_manifest_status": "in_progress",
+    "r2_recovered_run": "N16_D128_S1/smu",
+    "recovery_scope": "only the interrupted N16_D128_S1 SMU run was recovered",
+    "statement": "Host reboot interrupted the Phase 6 P0-2 formal session."
+  },
+  "identity_checks": {
+    "all_runs_frozen_commit": "117caff8109c0f6c32cf07a8322a3397307c8e14",
+    "all_runs_frozen_commit_scope": "Phase 6 executed runs only; Phase 5 anchors are imported from Phase 5 formal artifacts at commit 7da83c5ad08063e110be8917733b5ebc8bdb3a61; cross_phase_rtl_identity establishes identical hw RTL",
+    "all_runs_simulator": {
+      "path": "/home/wxt/spatz-archive/phase4/work-phase4-recip-sim/spatz_cluster.vlt",
+      "sha256": "8f85b204d064f1ced29d2fc27518754f8b018db0530cf2328a3a1062687c9138"
+    },
+    "run_elfs": {
+      "N16_D128_S1/smu": {
+        "commit": "117caff8109c0f6c32cf07a8322a3397307c8e14",
+        "path": "/home/wxt/work-phase6-native-formal-117caff-r1/N16_D128_S1/spatzBenchmarks/test-spatzBenchmarks-native-online-attention-smu",
+        "sha256": "653ed7cccbe845e9f448b63313b6f654666a84d4edb037ca85e826fa8c5ea927",
+        "simulator_path": "/home/wxt/spatz-archive/phase4/work-phase4-recip-sim/spatz_cluster.vlt",
+        "simulator_sha256": "8f85b204d064f1ced29d2fc27518754f8b018db0530cf2328a3a1062687c9138"
+      },
+      "N16_D128_S1/software": {
+        "commit": "117caff8109c0f6c32cf07a8322a3397307c8e14",
+        "path": "/home/wxt/work-phase6-native-formal-117caff-r1/N16_D128_S1/spatzBenchmarks/test-spatzBenchmarks-native-online-attention-software",
+        "sha256": "c75a471e467625c6684b0166147282812cc0e10939188b2a01399c0f86a8e514",
+        "simulator_path": "/home/wxt/spatz-archive/phase4/work-phase4-recip-sim/spatz_cluster.vlt",
+        "simulator_sha256": "8f85b204d064f1ced29d2fc27518754f8b018db0530cf2328a3a1062687c9138"
+      },
+      "N24_D64_S1/smu": {
+        "commit": "117caff8109c0f6c32cf07a8322a3397307c8e14",
+        "path": "/home/wxt/work-phase6-native-formal-117caff-r1/N24_D64_S1/spatzBenchmarks/test-spatzBenchmarks-native-online-attention-smu",
+        "sha256": "5066314f222350c0e2f34a48d7599d6cbd3065a642fb87233669cb18d0e053f8",
+        "simulator_path": "/home/wxt/spatz-archive/phase4/work-phase4-recip-sim/spatz_cluster.vlt",
+        "simulator_sha256": "8f85b204d064f1ced29d2fc27518754f8b018db0530cf2328a3a1062687c9138"
+      },
+      "N24_D64_S1/software": {
+        "commit": "117caff8109c0f6c32cf07a8322a3397307c8e14",
+        "path": "/home/wxt/work-phase6-native-formal-117caff-r1/N24_D64_S1/spatzBenchmarks/test-spatzBenchmarks-native-online-attention-software",
+        "sha256": "5746dee9abf8454fc5c8a199bc082ed3001883a6119f9f28478701bf1dc03f92",
+        "simulator_path": "/home/wxt/spatz-archive/phase4/work-phase4-recip-sim/spatz_cluster.vlt",
+        "simulator_sha256": "8f85b204d064f1ced29d2fc27518754f8b018db0530cf2328a3a1062687c9138"
+      }
+    },
+    "same_shape_and_seed_checked_from_result_and_chunks": true
+  },
+  "kind": "phase6-p0-2-native-online-attention-generality-formal-consolidated",
+  "measurement_contract": {
+    "consolidation_output_copy_not_in_core_timed_boundary": true,
+    "host_wall_time_not_compared": true,
+    "merge_window": "recurrence + RVV output update + orchestration",
+    "smu_recurrence": "setup + wait; delta=0 and exact=1",
+    "target_cycle_measurement_may_cross_host_session": true,
+    "target_cycle_source": "PHASE5_RESULT cycles emitted by each target ELF",
+    "target_reported_output_copy_cycles": "retained as the target's separate output_copy breakdown field; host archival copying adds no target cycles"
+  },
+  "partial_source_provenance": {
+    "excluded_r1_incomplete_predecessor": {
+      "om_fsm_records": 3,
+      "output_chunk_records": 0,
+      "path": "/home/wxt/work-phase6-formal-117caff-r1/p0_2/formal/raw/N16_D128_S1_smu.log",
+      "reason": "replaced by the runner-guarded r2 single-run recovery",
+      "result_records": 0,
+      "sha256": "ce15622b94ac43ce089a53a1e2cb51a654b681757ca9095bc29157390daf5d3e"
+    },
+    "r1_manifest": {
+      "path": "/home/wxt/work-phase6-formal-117caff-r1/p0_2/formal/manifest.json",
+      "sha256": "61664750233180d6b7f9b0b78638834ea4731e215cc6229e76add4a46f2e6079",
+      "status": "in_progress"
+    },
+    "r1_partial_directory": "/home/wxt/work-phase6-formal-117caff-r1/p0_2/formal",
+    "r2_recovery_directory": "/home/wxt/work-phase6-formal-117caff-r2/p0_2_recovery",
+    "r2_runner_meta": {
+      "path": "/home/wxt/work-phase6-formal-117caff-r2/p0_2_recovery/runner.meta",
+      "sha256": "456bddd6075b571432998a12e4549c8996d1c14f36ee9ce20f836d981ad36ec7"
+    },
+    "r2_runner_script": {
+      "path": "/home/wxt/work-phase6-formal-117caff-r2/p0_2_recovery/runner.sh",
+      "sha256": "257929652c68b6453e7ce04fdb2a1693da95969fe5b128c972af9ab12b7ea0a4"
+    },
+    "r2_stderr": {
+      "path": "/home/wxt/work-phase6-formal-117caff-r2/p0_2_recovery/N16_D128_S1_smu.stderr.log",
+      "sha256": "e66d42b7d1896880cf2d40a0a8ba3fb95dffcd8f2ca09c6694b75397cdde6b9b"
+    }
+  },
+  "phase5_anchor_sources": {
+    "experiments/phase5_native_online_attention/formal/native_attention_performance.csv": {
+      "sha256": "443868cd6f2ce1298c09ccc8518968c20ad5c939c41f589c7b23dc21f992675d",
+      "source": "/home/wxt/work-online-merge-supplement/experiments/phase5_native_online_attention/formal/native_attention_performance.csv"
+    },
+    "experiments/phase5_native_online_attention/formal/native_merge_performance.csv": {
+      "sha256": "970d4c1fd300c779a9deec4f264564029646be6f9ec7e1ed360f595c066f9c4f",
+      "source": "/home/wxt/work-online-merge-supplement/experiments/phase5_native_online_attention/formal/native_merge_performance.csv"
+    },
+    "experiments/phase5_native_online_attention/formal/native_merge_summary.csv": {
+      "sha256": "2885afac2b84ddf41e7857faed08eff7b7d7fc386f50be6b8c2b609aa294fa14",
+      "source": "/home/wxt/work-online-merge-supplement/experiments/phase5_native_online_attention/formal/native_merge_summary.csv"
+    },
+    "experiments/phase5_native_online_attention/formal/numerical_agreement.csv": {
+      "sha256": "729d3780d2026d521226cbf6d59d83df1ec7a199ff3e1c5049682be993477ac3",
+      "source": "/home/wxt/work-online-merge-supplement/experiments/phase5_native_online_attention/formal/numerical_agreement.csv"
+    },
+    "experiments/phase5_native_online_attention/formal/om_fsm_breakdown.csv": {
+      "sha256": "3b869fc8a65f165187dde0129ad697147d17a67cc455638b531f2bfc9dcd1a11",
+      "source": "/home/wxt/work-online-merge-supplement/experiments/phase5_native_online_attention/formal/om_fsm_breakdown.csv"
+    }
+  },
+  "runs": [
+    {
+      "case": "N24_D64_S1",
+      "command": "/home/wxt/spatz-archive/phase4/work-phase4-recip-sim/spatz_cluster.vlt /home/wxt/work-phase6-native-formal-117caff-r1/N24_D64_S1/spatzBenchmarks/test-spatzBenchmarks-native-online-attention-software",
+      "commit": "117caff8109c0f6c32cf07a8322a3397307c8e14",
+      "elf": "/home/wxt/work-phase6-native-formal-117caff-r1/N24_D64_S1/spatzBenchmarks/test-spatzBenchmarks-native-online-attention-software",
+      "elf_sha256": "5746dee9abf8454fc5c8a199bc082ed3001883a6119f9f28478701bf1dc03f92",
+      "implementation": "software",
+      "om_fsm": [],
+      "om_fsm_audit": {
+        "all_mode3_done": true,
+        "count": 0,
+        "weight_cycles_sum": 0
+      },
+      "output_bits": "outputs/N24_D64_S1_software_output_bits.json",
+      "output_bits_sha256": "5596b771b7446c48dee9da4245da00746ece04b41e5b9f06afd09bad577eda5f",
+      "output_chunks": {
+        "chunk_count": 6,
+        "chunk_words": [
+          256,
+          256,
+          256,
+          256,
+          256,
+          256
+        ],
+        "coverage": "0..1535",
+        "offsets": [
+          0,
+          256,
+          512,
+          768,
+          1024,
+          1280
+        ],
+        "word_count": 1536
+      },
+      "output_word_count": 1536,
+      "raw_log": "raw/N24_D64_S1_software.log",
+      "raw_log_sha256": "a491cb2f4f48222a255bec6386a4c90becc173fa497b30ca83e2fdf7625b6a55",
+      "result": {
+        "cycles": {
+          "core_residual": 12400,
+          "merge_orchestration": 455,
+          "merge_total": 186446,
+          "merge_window": 186446,
+          "output_copy": 9235,
+          "rvv_output_update": 19998,
+          "score_compute": 305194,
+          "smu_breakdown_delta": 0,
+          "smu_breakdown_exact": 1,
+          "smu_breakdown_sum": 0,
+          "smu_commands": 0,
+          "smu_setup": 0,
+          "smu_wait": 0,
+          "software_recurrence": 165993,
+          "software_recurrence_calls": 5,
+          "tile_local_state": 775581,
+          "total": 1288856
+        },
+        "d": 64,
+        "implementation": "software",
+        "merge_count": 5,
+        "n": 24,
+        "output_hash": 80490056,
+        "output_metrics": {
+          "cosine_similarity_bits": 1065353195,
+          "mae_bits": 922989436,
+          "stable_relative_error_bits": 956732303
+        },
+        "output_nonfinite": 0,
+        "seed": 1,
+        "smu": {
+          "commands": 0,
+          "done": 0,
+          "errors": 0,
+          "saw_busy": 0,
+          "timeouts": 0
+        },
+        "status": "pass",
+        "tcdm": {
+          "allocation_bytes": 44288,
+          "capacity_bytes": 131072,
+          "data_bytes": 44160,
+          "memory_footprint_bytes": 60800,
+          "runtime_reserved_bytes": 16512
+        },
+        "tile_count": 6,
+        "tile_keys": 4
+      },
+      "result_output_hash": 80490056,
+      "return_code": 0,
+      "runner_provenance": "r1_partial_manifest",
+      "simulator": "/home/wxt/spatz-archive/phase4/work-phase4-recip-sim/spatz_cluster.vlt",
+      "simulator_sha256": "8f85b204d064f1ced29d2fc27518754f8b018db0530cf2328a3a1062687c9138",
+      "source_log": "/home/wxt/work-phase6-formal-117caff-r1/p0_2/formal/raw/N24_D64_S1_software.log",
+      "source_log_sha256": "a491cb2f4f48222a255bec6386a4c90becc173fa497b30ca83e2fdf7625b6a55",
+      "source_output_bits": "/home/wxt/work-phase6-formal-117caff-r1/p0_2/formal/outputs/N24_D64_S1_software_output_bits.json",
+      "source_output_bits_sha256": "5596b771b7446c48dee9da4245da00746ece04b41e5b9f06afd09bad577eda5f",
+      "source_session": "r1_partial"
+    },
+    {
+      "case": "N24_D64_S1",
+      "command": "/home/wxt/spatz-archive/phase4/work-phase4-recip-sim/spatz_cluster.vlt /home/wxt/work-phase6-native-formal-117caff-r1/N24_D64_S1/spatzBenchmarks/test-spatzBenchmarks-native-online-attention-smu",
+      "commit": "117caff8109c0f6c32cf07a8322a3397307c8e14",
+      "elf": "/home/wxt/work-phase6-native-formal-117caff-r1/N24_D64_S1/spatzBenchmarks/test-spatzBenchmarks-native-online-attention-smu",
+      "elf_sha256": "5066314f222350c0e2f34a48d7599d6cbd3065a642fb87233669cb18d0e053f8",
+      "implementation": "smu",
+      "om_fsm": [
+        {
+          "D": 64,
+          "N": 24,
+          "busy_cycles": 624,
+          "compute_scalar_cycles": 24,
+          "compute_weight_cycles": 72,
+          "invocation": 0,
+          "load_scalar_cycles": 312,
+          "mode": 3,
+          "schema_version": 1,
+          "store_scalar_cycles": 216,
+          "terminal_state": "DONE",
+          "update_vector_cycles": 0
+        },
+        {
+          "D": 64,
+          "N": 24,
+          "busy_cycles": 625,
+          "compute_scalar_cycles": 24,
+          "compute_weight_cycles": 72,
+          "invocation": 1,
+          "load_scalar_cycles": 312,
+          "mode": 3,
+          "schema_version": 1,
+          "store_scalar_cycles": 217,
+          "terminal_state": "DONE",
+          "update_vector_cycles": 0
+        },
+        {
+          "D": 64,
+          "N": 24,
+          "busy_cycles": 625,
+          "compute_scalar_cycles": 24,
+          "compute_weight_cycles": 72,
+          "invocation": 2,
+          "load_scalar_cycles": 312,
+          "mode": 3,
+          "schema_version": 1,
+          "store_scalar_cycles": 217,
+          "terminal_state": "DONE",
+          "update_vector_cycles": 0
+        },
+        {
+          "D": 64,
+          "N": 24,
+          "busy_cycles": 625,
+          "compute_scalar_cycles": 24,
+          "compute_weight_cycles": 72,
+          "invocation": 3,
+          "load_scalar_cycles": 312,
+          "mode": 3,
+          "schema_version": 1,
+          "store_scalar_cycles": 217,
+          "terminal_state": "DONE",
+          "update_vector_cycles": 0
+        },
+        {
+          "D": 64,
+          "N": 24,
+          "busy_cycles": 625,
+          "compute_scalar_cycles": 24,
+          "compute_weight_cycles": 72,
+          "invocation": 4,
+          "load_scalar_cycles": 312,
+          "mode": 3,
+          "schema_version": 1,
+          "store_scalar_cycles": 217,
+          "terminal_state": "DONE",
+          "update_vector_cycles": 0
+        }
+      ],
+      "om_fsm_audit": {
+        "all_mode3_done": true,
+        "count": 5,
+        "weight_cycles_sum": 360
+      },
+      "output_bits": "outputs/N24_D64_S1_smu_output_bits.json",
+      "output_bits_sha256": "e800459e96ec2800202b4080a55ee89e4f6159dfbe869640e6d3b1526fc050c6",
+      "output_chunks": {
+        "chunk_count": 6,
+        "chunk_words": [
+          256,
+          256,
+          256,
+          256,
+          256,
+          256
+        ],
+        "coverage": "0..1535",
+        "offsets": [
+          0,
+          256,
+          512,
+          768,
+          1024,
+          1280
+        ],
+        "word_count": 1536
+      },
+      "output_word_count": 1536,
+      "raw_log": "raw/N24_D64_S1_smu.log",
+      "raw_log_sha256": "ecccd673daec9f61e05fd7a7a08b2707de345d2560951eff02181ab307049e13",
+      "result": {
+        "cycles": {
+          "core_residual": 12392,
+          "merge_orchestration": 420,
+          "merge_total": 29711,
+          "merge_window": 29711,
+          "output_copy": 9226,
+          "rvv_output_update": 19957,
+          "score_compute": 305347,
+          "smu_breakdown_delta": 0,
+          "smu_breakdown_exact": 1,
+          "smu_breakdown_sum": 9334,
+          "smu_commands": 5,
+          "smu_recurrence": 9334,
+          "smu_setup": 5777,
+          "smu_wait": 3557,
+          "software_recurrence_calls": 0,
+          "tile_local_state": 774088,
+          "total": 1130764
+        },
+        "d": 64,
+        "implementation": "smu",
+        "merge_count": 5,
+        "n": 24,
+        "output_hash": 1035537227,
+        "output_metrics": {
+          "cosine_similarity_bits": 1065352898,
+          "mae_bits": 969096329,
+          "stable_relative_error_bits": 1002930100
+        },
+        "output_nonfinite": 0,
+        "seed": 1,
+        "smu": {
+          "commands": 5,
+          "done": 5,
+          "errors": 0,
+          "saw_busy": 1,
+          "timeouts": 0
+        },
+        "status": "pass",
+        "tcdm": {
+          "allocation_bytes": 44288,
+          "capacity_bytes": 131072,
+          "data_bytes": 44160,
+          "memory_footprint_bytes": 60800,
+          "runtime_reserved_bytes": 16512
+        },
+        "tile_count": 6,
+        "tile_keys": 4
+      },
+      "result_output_hash": 1035537227,
+      "return_code": 0,
+      "runner_provenance": "r1_partial_manifest",
+      "simulator": "/home/wxt/spatz-archive/phase4/work-phase4-recip-sim/spatz_cluster.vlt",
+      "simulator_sha256": "8f85b204d064f1ced29d2fc27518754f8b018db0530cf2328a3a1062687c9138",
+      "source_log": "/home/wxt/work-phase6-formal-117caff-r1/p0_2/formal/raw/N24_D64_S1_smu.log",
+      "source_log_sha256": "ecccd673daec9f61e05fd7a7a08b2707de345d2560951eff02181ab307049e13",
+      "source_output_bits": "/home/wxt/work-phase6-formal-117caff-r1/p0_2/formal/outputs/N24_D64_S1_smu_output_bits.json",
+      "source_output_bits_sha256": "e800459e96ec2800202b4080a55ee89e4f6159dfbe869640e6d3b1526fc050c6",
+      "source_session": "r1_partial"
+    },
+    {
+      "case": "N16_D128_S1",
+      "command": "/home/wxt/spatz-archive/phase4/work-phase4-recip-sim/spatz_cluster.vlt /home/wxt/work-phase6-native-formal-117caff-r1/N16_D128_S1/spatzBenchmarks/test-spatzBenchmarks-native-online-attention-software",
+      "commit": "117caff8109c0f6c32cf07a8322a3397307c8e14",
+      "elf": "/home/wxt/work-phase6-native-formal-117caff-r1/N16_D128_S1/spatzBenchmarks/test-spatzBenchmarks-native-online-attention-software",
+      "elf_sha256": "c75a471e467625c6684b0166147282812cc0e10939188b2a01399c0f86a8e514",
+      "implementation": "software",
+      "om_fsm": [],
+      "om_fsm_audit": {
+        "all_mode3_done": true,
+        "count": 0,
+        "weight_cycles_sum": 0
+      },
+      "output_bits": "outputs/N16_D128_S1_software_output_bits.json",
+      "output_bits_sha256": "cafdab40d76eafd13a1f08072f06872ac13c762cf9a6fbc3662d86b078cde8f2",
+      "output_chunks": {
+        "chunk_count": 8,
+        "chunk_words": [
+          256,
+          256,
+          256,
+          256,
+          256,
+          256,
+          256,
+          256
+        ],
+        "coverage": "0..2047",
+        "offsets": [
+          0,
+          256,
+          512,
+          768,
+          1024,
+          1280,
+          1536,
+          1792
+        ],
+        "word_count": 2048
+      },
+      "output_word_count": 2048,
+      "raw_log": "raw/N16_D128_S1_software.log",
+      "raw_log_sha256": "364a8c486bc12eb5a8200799355c3d48016fb0c57baa8d7259dad22011c14a99",
+      "result": {
+        "cycles": {
+          "core_residual": 13484,
+          "merge_orchestration": 210,
+          "merge_total": 82220,
+          "merge_window": 82220,
+          "output_copy": 12311,
+          "rvv_output_update": 14559,
+          "score_compute": 266771,
+          "smu_breakdown_delta": 0,
+          "smu_breakdown_exact": 1,
+          "smu_breakdown_sum": 0,
+          "smu_commands": 0,
+          "smu_setup": 0,
+          "smu_wait": 0,
+          "software_recurrence": 67451,
+          "software_recurrence_calls": 3,
+          "tile_local_state": 651376,
+          "total": 1026162
+        },
+        "d": 128,
+        "implementation": "software",
+        "merge_count": 3,
+        "n": 16,
+        "output_hash": 968263766,
+        "output_metrics": {
+          "cosine_similarity_bits": 1065353239,
+          "mae_bits": 927363713,
+          "stable_relative_error_bits": 954591004
+        },
+        "output_nonfinite": 0,
+        "seed": 1,
+        "smu": {
+          "commands": 0,
+          "done": 0,
+          "errors": 0,
+          "saw_busy": 0,
+          "timeouts": 0
+        },
+        "status": "pass",
+        "tcdm": {
+          "allocation_bytes": 58112,
+          "capacity_bytes": 131072,
+          "data_bytes": 58112,
+          "memory_footprint_bytes": 74624,
+          "runtime_reserved_bytes": 16512
+        },
+        "tile_count": 4,
+        "tile_keys": 4
+      },
+      "result_output_hash": 968263766,
+      "return_code": 0,
+      "runner_provenance": "r1_partial_manifest",
+      "simulator": "/home/wxt/spatz-archive/phase4/work-phase4-recip-sim/spatz_cluster.vlt",
+      "simulator_sha256": "8f85b204d064f1ced29d2fc27518754f8b018db0530cf2328a3a1062687c9138",
+      "source_log": "/home/wxt/work-phase6-formal-117caff-r1/p0_2/formal/raw/N16_D128_S1_software.log",
+      "source_log_sha256": "364a8c486bc12eb5a8200799355c3d48016fb0c57baa8d7259dad22011c14a99",
+      "source_output_bits": "/home/wxt/work-phase6-formal-117caff-r1/p0_2/formal/outputs/N16_D128_S1_software_output_bits.json",
+      "source_output_bits_sha256": "cafdab40d76eafd13a1f08072f06872ac13c762cf9a6fbc3662d86b078cde8f2",
+      "source_session": "r1_partial"
+    },
+    {
+      "case": "N16_D128_S1",
+      "command": "/home/wxt/spatz-archive/phase4/work-phase4-recip-sim/spatz_cluster.vlt /home/wxt/work-phase6-native-formal-117caff-r1/N16_D128_S1/spatzBenchmarks/test-spatzBenchmarks-native-online-attention-smu",
+      "commit": "117caff8109c0f6c32cf07a8322a3397307c8e14",
+      "elf": "/home/wxt/work-phase6-native-formal-117caff-r1/N16_D128_S1/spatzBenchmarks/test-spatzBenchmarks-native-online-attention-smu",
+      "elf_sha256": "653ed7cccbe845e9f448b63313b6f654666a84d4edb037ca85e826fa8c5ea927",
+      "implementation": "smu",
+      "om_fsm": [
+        {
+          "D": 128,
+          "N": 16,
+          "busy_cycles": 417,
+          "compute_scalar_cycles": 16,
+          "compute_weight_cycles": 48,
+          "invocation": 0,
+          "load_scalar_cycles": 208,
+          "mode": 3,
+          "schema_version": 1,
+          "store_scalar_cycles": 145,
+          "terminal_state": "DONE",
+          "update_vector_cycles": 0
+        },
+        {
+          "D": 128,
+          "N": 16,
+          "busy_cycles": 417,
+          "compute_scalar_cycles": 16,
+          "compute_weight_cycles": 48,
+          "invocation": 1,
+          "load_scalar_cycles": 209,
+          "mode": 3,
+          "schema_version": 1,
+          "store_scalar_cycles": 144,
+          "terminal_state": "DONE",
+          "update_vector_cycles": 0
+        },
+        {
+          "D": 128,
+          "N": 16,
+          "busy_cycles": 416,
+          "compute_scalar_cycles": 16,
+          "compute_weight_cycles": 48,
+          "invocation": 2,
+          "load_scalar_cycles": 208,
+          "mode": 3,
+          "schema_version": 1,
+          "store_scalar_cycles": 144,
+          "terminal_state": "DONE",
+          "update_vector_cycles": 0
+        }
+      ],
+      "om_fsm_audit": {
+        "all_mode3_done": true,
+        "count": 3,
+        "weight_cycles_sum": 144
+      },
+      "output_bits": "outputs/N16_D128_S1_smu_output_bits.json",
+      "output_bits_sha256": "b9683dddb2ada468616eda1a26ed2fa9989b15e3a40e9f74b1fe15462eecc59d",
+      "output_chunks": {
+        "chunk_count": 8,
+        "chunk_words": [
+          256,
+          256,
+          256,
+          256,
+          256,
+          256,
+          256,
+          256
+        ],
+        "coverage": "0..2047",
+        "offsets": [
+          0,
+          256,
+          512,
+          768,
+          1024,
+          1280,
+          1536,
+          1792
+        ],
+        "word_count": 2048
+      },
+      "output_word_count": 2048,
+      "raw_log": "raw/N16_D128_S1_smu.log",
+      "raw_log_sha256": "161fc4bfc5d0569e778b2c33d847f638e6e07f7bf30ca6b3f7b5e73642138140",
+      "result": {
+        "cycles": {
+          "core_residual": 13602,
+          "merge_orchestration": 171,
+          "merge_total": 19841,
+          "merge_window": 19841,
+          "output_copy": 12317,
+          "rvv_output_update": 14760,
+          "score_compute": 266766,
+          "smu_breakdown_delta": 0,
+          "smu_breakdown_exact": 1,
+          "smu_breakdown_sum": 4910,
+          "smu_commands": 3,
+          "smu_recurrence": 4910,
+          "smu_setup": 3488,
+          "smu_wait": 1422,
+          "software_recurrence_calls": 0,
+          "tile_local_state": 650297,
+          "total": 962823
+        },
+        "d": 128,
+        "implementation": "smu",
+        "merge_count": 3,
+        "n": 16,
+        "output_hash": 2234154739,
+        "output_metrics": {
+          "cosine_similarity_bits": 1065353026,
+          "mae_bits": 974362154,
+          "stable_relative_error_bits": 1001061105
+        },
+        "output_nonfinite": 0,
+        "seed": 1,
+        "smu": {
+          "commands": 3,
+          "done": 3,
+          "errors": 0,
+          "saw_busy": 1,
+          "timeouts": 0
+        },
+        "status": "pass",
+        "tcdm": {
+          "allocation_bytes": 58112,
+          "capacity_bytes": 131072,
+          "data_bytes": 58112,
+          "memory_footprint_bytes": 74624,
+          "runtime_reserved_bytes": 16512
+        },
+        "tile_count": 4,
+        "tile_keys": 4
+      },
+      "result_output_hash": 2234154739,
+      "return_code": 0,
+      "runner_provenance": "r2_recovery_runner_meta",
+      "simulator": "/home/wxt/spatz-archive/phase4/work-phase4-recip-sim/spatz_cluster.vlt",
+      "simulator_sha256": "8f85b204d064f1ced29d2fc27518754f8b018db0530cf2328a3a1062687c9138",
+      "source_log": "/home/wxt/work-phase6-formal-117caff-r2/p0_2_recovery/N16_D128_S1_smu.log",
+      "source_log_sha256": "161fc4bfc5d0569e778b2c33d847f638e6e07f7bf30ca6b3f7b5e73642138140",
+      "source_output_bits": null,
+      "source_output_bits_sha256": null,
+      "source_session": "r2_recovery"
+    }
+  ],
+  "schema_version": 1,
+  "shape_policy": {
+    "all_shapes": [
+      {
+        "d": 32,
+        "n": 8,
+        "seed": 1
+      },
+      {
+        "d": 64,
+        "n": 16,
+        "seed": 1
+      },
+      {
+        "d": 64,
+        "n": 24,
+        "seed": 1
+      },
+      {
+        "d": 128,
+        "n": 16,
+        "seed": 1
+      }
+    ],
+    "anchors": [
+      {
+        "d": 32,
+        "n": 8,
+        "seed": 1,
+        "source": "phase5_formal"
+      },
+      {
+        "d": 64,
+        "n": 16,
+        "seed": 1,
+        "source": "phase5_formal"
+      }
+    ],
+    "exactly_two_new_shapes": true,
+    "new_shapes": [
+      {
+        "d": 64,
+        "n": 24,
+        "seed": 1,
+        "source": "phase6_formal"
+      },
+      {
+        "d": 128,
+        "n": 16,
+        "seed": 1,
+        "source": "phase6_formal"
+      }
+    ],
+    "shape_manifest_sha256": "ca4c3bfd6c90abdbae838006b31cb78495a9cc6ef0cb51168f3ae04244713b07",
+    "shape_manifest_source": "/home/wxt/work-online-merge-supplement/experiments/phase6_integrated_cost_generality/p0_2_workload_generality/shape_manifest.csv",
+    "smu_mode": 3,
+    "tile_size": 4
+  },
+  "simulator": {
+    "path": "/home/wxt/spatz-archive/phase4/work-phase4-recip-sim/spatz_cluster.vlt",
+    "sha256": "8f85b204d064f1ced29d2fc27518754f8b018db0530cf2328a3a1062687c9138"
+  },
+  "source_policy": {
+    "formal_run_count": 4,
+    "partial_directories": "r1 and r2 in_progress/recovery directories are not treated as a complete formal source; each selected run is validated independently before aggregation",
+    "phase5_anchor_reruns": 0,
+    "phase5_anchors": "import only from repository Phase 5 formal CSV artifacts; no anchor reruns",
+    "repository_writes": 0,
+    "simulator_invocations": 0
+  },
+  "status": "complete",
+  "toolchain": {
+    "compiler": {
+      "c_compiler": {
+        "path": "/home/wxt/spatz/install/llvm/bin/clang-14",
+        "sha256": "b2547b866a2d786fb48be8c7c66154ed0be2a7a54cd85dc1caaf0fa2d0bf36b1",
+        "version": "clang version 14.0.6 (git@github.com:pulp-platform/llvm-project.git b494f2d8dde88723026db8ec16ac6c7ee1e140ca)\nTarget: riscv32-unknown-unknown-elf\nThread model: posix\nInstalledDir: /home/wxt/spatz/install/llvm/bin",
+        "version_command": "/home/wxt/spatz/install/llvm/bin/clang-14 --version"
+      },
+      "cxx_compiler": {
+        "path": "/home/wxt/spatz/install/llvm/bin/clang-14",
+        "sha256": "b2547b866a2d786fb48be8c7c66154ed0be2a7a54cd85dc1caaf0fa2d0bf36b1",
+        "version": "clang version 14.0.6 (git@github.com:pulp-platform/llvm-project.git b494f2d8dde88723026db8ec16ac6c7ee1e140ca)\nTarget: riscv32-unknown-unknown-elf\nThread model: posix\nInstalledDir: /home/wxt/spatz/install/llvm/bin",
+        "version_command": "/home/wxt/spatz/install/llvm/bin/clang-14 --version"
+      },
+      "gcc_toolchain": {
+        "path": "/home/wxt/spatz/install/riscv-gcc/bin/riscv32-unknown-elf-gcc",
+        "sha256": "d29f21cda9df821893ffff9140054ebfb51a901bac910527d0bc252ce719bf52",
+        "version": "riscv32-unknown-elf-gcc (GCC) 7.1.1 20170509\nCopyright (C) 2017 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.",
+        "version_command": "/home/wxt/spatz/install/riscv-gcc/bin/riscv32-unknown-elf-gcc --version"
+      }
+    },
+    "gcc_path": "/home/wxt/work-online-merge-supplement/install/riscv-gcc",
+    "llvm_path": "/home/wxt/work-online-merge-supplement/install/llvm",
+    "python": "/usr/bin/python3"
+  }
+}

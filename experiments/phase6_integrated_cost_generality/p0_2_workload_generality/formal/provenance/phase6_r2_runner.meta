@@ -1,0 +1,26 @@
+RECOVERY_KIND phase6-p0-2-single-run-recovery
+CASE N16_D128_S1
+IMPLEMENTATION smu
+WRAPPER_START_UTC 2026-09-03T05:15:10Z
+WRAPPER_PID 11144
+SESSION_ID 11144
+CWD /home/wxt/work-online-merge-supplement
+COMMAND /home/wxt/spatz-archive/phase4/work-phase4-recip-sim/spatz_cluster.vlt /home/wxt/work-phase6-native-formal-117caff-r1/N16_D128_S1/spatzBenchmarks/test-spatzBenchmarks-native-online-attention-smu
+GIT_COMMIT_EXPECTED 117caff8109c0f6c32cf07a8322a3397307c8e14
+GIT_COMMIT_ACTUAL 117caff8109c0f6c32cf07a8322a3397307c8e14
+GIT_STATUS_BEFORE clean
+PARTIAL_MANIFEST_READONLY /home/wxt/work-phase6-formal-117caff-r1/p0_2/formal/manifest.json
+ELF_PATH /home/wxt/work-phase6-native-formal-117caff-r1/N16_D128_S1/spatzBenchmarks/test-spatzBenchmarks-native-online-attention-smu
+ELF_SHA256_EXPECTED 653ed7cccbe845e9f448b63313b6f654666a84d4edb037ca85e826fa8c5ea927
+ELF_SHA256_ACTUAL 653ed7cccbe845e9f448b63313b6f654666a84d4edb037ca85e826fa8c5ea927
+SIMULATOR_PATH /home/wxt/spatz-archive/phase4/work-phase4-recip-sim/spatz_cluster.vlt
+SIMULATOR_SHA256_EXPECTED 8f85b204d064f1ced29d2fc27518754f8b018db0530cf2328a3a1062687c9138
+SIMULATOR_SHA256_ACTUAL 8f85b204d064f1ced29d2fc27518754f8b018db0530cf2328a3a1062687c9138
+STDOUT_LOG /home/wxt/work-phase6-formal-117caff-r2/p0_2_recovery/N16_D128_S1_smu.log
+STDERR_LOG /home/wxt/work-phase6-formal-117caff-r2/p0_2_recovery/N16_D128_S1_smu.stderr.log
+VALIDATION_STATUS pending
+VALIDATION_STATUS pass
+RETURN_CODE 0
+WRAPPER_END_UTC 2026-09-03T05:29:07Z
+STDOUT_SHA256 161fc4bfc5d0569e778b2c33d847f638e6e07f7bf30ca6b3f7b5e73642138140
+STDERR_SHA256 e66d42b7d1896880cf2d40a0a8ba3fb95dffcd8f2ca09c6694b75397cdde6b9b

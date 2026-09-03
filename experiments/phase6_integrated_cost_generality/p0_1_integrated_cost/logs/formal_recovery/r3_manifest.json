@@ -1,0 +1,104 @@
+{
+  "area_definition": "instance-weighted hierarchical top mapped Nangate45 standard-cell Liberty area rooted at spatz_cluster_wrapper; blackboxed SRAM macro area excluded",
+  "area_unit": "um^2",
+  "baseline_overlay_files": [
+    "hw/system/spatz_cluster/src/spatz_cluster.sv",
+    "hw/system/spatz_cluster/src/spatz_cluster_peripheral/spatz_cluster_peripheral.sv",
+    "hw/system/spatz_cluster/src/spatz_cluster_peripheral/spatz_cluster_peripheral_reg.hjson",
+    "hw/system/spatz_cluster/src/spatz_cluster_peripheral/spatz_cluster_peripheral_reg_pkg.sv",
+    "hw/system/spatz_cluster/src/spatz_cluster_peripheral/spatz_cluster_peripheral_reg_top.sv"
+  ],
+  "baseline_reference": "957667e^",
+  "cluster_instance": "spatz_cluster_wrapper.i_cluster",
+  "cluster_module": "spatz_cluster",
+  "collection_completed_at": null,
+  "collection_started_at": "2026-09-03T05:59:30.581356+00:00",
+  "flists": {
+    "baseline": {
+      "baseline_file_replacements": {
+        "/home/wxt/work-online-merge-supplement/hw/system/spatz_cluster/src/spatz_cluster.sv": "/home/wxt/work-phase6-formal-117caff-r3/p0_1/formal/baseline_source_overlay/hw/system/spatz_cluster/src/spatz_cluster.sv",
+        "/home/wxt/work-online-merge-supplement/hw/system/spatz_cluster/src/spatz_cluster_peripheral/spatz_cluster_peripheral.sv": "/home/wxt/work-phase6-formal-117caff-r3/p0_1/formal/baseline_source_overlay/hw/system/spatz_cluster/src/spatz_cluster_peripheral/spatz_cluster_peripheral.sv",
+        "/home/wxt/work-online-merge-supplement/hw/system/spatz_cluster/src/spatz_cluster_peripheral/spatz_cluster_peripheral_reg_pkg.sv": "/home/wxt/work-phase6-formal-117caff-r3/p0_1/formal/baseline_source_overlay/hw/system/spatz_cluster/src/spatz_cluster_peripheral/spatz_cluster_peripheral_reg_pkg.sv",
+        "/home/wxt/work-online-merge-supplement/hw/system/spatz_cluster/src/spatz_cluster_peripheral/spatz_cluster_peripheral_reg_top.sv": "/home/wxt/work-phase6-formal-117caff-r3/p0_1/formal/baseline_source_overlay/hw/system/spatz_cluster/src/spatz_cluster_peripheral/spatz_cluster_peripheral_reg_top.sv"
+      },
+      "baseline_overlay": true,
+      "line_count": 392,
+      "path": "/home/wxt/work-phase6-formal-117caff-r3/p0_1/formal/baseline_cluster.f",
+      "sha256": "b017837c82b1d680e24746d0f1dda30018714150c891df1eb5f29f55fb94b2c0",
+      "sram_original": "/home/wxt/work-online-merge-supplement/.bender/git/checkouts/tech_cells_generic-8293603d34b176db/src/rtl/tc_sram.sv",
+      "sram_replacement": "/home/wxt/work-online-merge-supplement/experiments/synthesis/compat/tc_sram_blackbox.sv"
+    },
+    "smu": {
+      "baseline_file_replacements": {},
+      "baseline_overlay": false,
+      "line_count": 392,
+      "path": "/home/wxt/work-phase6-formal-117caff-r3/p0_1/formal/smu_cluster.f",
+      "sha256": "5f236e836afc66fd0ba6c0dea0abef418d328a4c9de9b1d2557c5b7ac75ec13d",
+      "sram_original": "/home/wxt/work-online-merge-supplement/.bender/git/checkouts/tech_cells_generic-8293603d34b176db/src/rtl/tc_sram.sv",
+      "sram_replacement": "/home/wxt/work-online-merge-supplement/experiments/synthesis/compat/tc_sram_blackbox.sv"
+    }
+  },
+  "flow": {
+    "area_map": "abc -fast -liberty Nangate45_typ.lib",
+    "area_stat": "stat -top spatz_cluster_wrapper -hierarchy -json -liberty Nangate45_typ.lib; top num_cells.area is instance-weighted across retained hierarchy",
+    "hierarchy_policy": "keep hierarchy; no full-cluster flatten",
+    "proc_passes": [
+      "proc_clean",
+      "proc_prune",
+      "proc_init",
+      "proc_arst",
+      "proc_rom",
+      "proc_mux",
+      "proc_dlatch",
+      "proc_dff",
+      "proc_memwr",
+      "proc_clean",
+      "opt_expr -keepdc"
+    ],
+    "read_slang": "--std 1800-2017 --single-unit --keep-hierarchy --no-proc -j 1",
+    "slang_load": "plugin -i /home/wxt/yosys-sta/oss-cad-suite/share/yosys/plugins/slang.so",
+    "sram_assumption": "/home/wxt/work-online-merge-supplement/experiments/synthesis/compat/tc_sram_blackbox.sv",
+    "timing_map": {
+      "proxy": "maximum local ABC stime post-map delay across reported mapped modules; no clock/IO constraints or cross-hierarchy STA",
+      "script": "+strash; if -K 6; dretime; map -D 50000; &get -n; &st; &dch; &nf; &put; stime -p 5; print_stats -m",
+      "target_ps": 50000
+    }
+  },
+  "git": {
+    "baseline_reference": "948985eaa4c88132f7786bbd9ce019a800e744d8",
+    "clean": true,
+    "commit": "117caff8109c0f6c32cf07a8322a3397307c8e14",
+    "status_short": []
+  },
+  "kind": "phase6-p0-1-integrated-spatz-cost-formal",
+  "matched_non_smu_carry_forward": {
+    "file": "hw/system/spatz_cluster/src/spatz_cluster.sv",
+    "line_semantics": "tcdm_req[TcdmPortsOffs+j].q.user.req_id = '0",
+    "reason": "957667e introduced this unrelated core TCDM request-ID tieoff in the same commit; the baseline overlay restores the current value so only SMU integration differs"
+  },
+  "runs": [],
+  "schema_version": 1,
+  "smu_instance": "spatz_cluster$spatz_cluster_wrapper.i_cluster.i_online_merge_update_engine",
+  "status": "failed",
+  "toolchain": {
+    "bender": {
+      "path": "/home/wxt/work-online-merge-supplement/install/bender/bender",
+      "sha256": "f73f2f345afc98f630e63195baa1dd93d39f78d247e21997f8156386f659cb20",
+      "version": "bender 0.29.1"
+    },
+    "liberty": {
+      "path": "/home/wxt/yosys-sta/pdk/nangate45/lib/Nangate45_typ.lib",
+      "sha256": "2efd0b32eb580e4e60e72fc0575bb3bc69aac907c91d908442e4ae6d7fe55895"
+    },
+    "slang_plugin": {
+      "path": "/home/wxt/yosys-sta/oss-cad-suite/share/yosys/plugins/slang.so",
+      "sha256": "97581993656bbf4a7c1c491fd0dfbf5ead120ece05afea78b4d6b1e723a9afe8"
+    },
+    "yosys": {
+      "path": "/home/wxt/yosys-sta/oss-cad-suite/bin/yosys",
+      "sha256": "7c3e3396b38c129dd7485be5a0a0f0da8e495a94c8fd486059e3bea043a588d6",
+      "version": "Yosys 0.66+4 (git sha1 8125af88d, clang++ 18.1.8 -fPIC -O3)"
+    }
+  },
+  "top": "spatz_cluster_wrapper"
+}

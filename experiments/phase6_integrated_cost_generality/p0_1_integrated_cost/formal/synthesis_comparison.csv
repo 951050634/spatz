@@ -1,0 +1,3 @@
+configuration,area,area_unit,area_stat_scope,incremental_area,area_overhead_percent,timing_proxy_ps,timing_change_percent,area_flow,timing_flow,status
+Spatz Baseline,,,instance-weighted hierarchical top rooted at spatz_cluster_wrapper,,,,,abc -fast,abc -D 50000 + stime,not_available_resource_blocked
+Spatz + Mixed SMU,,,instance-weighted hierarchical top rooted at spatz_cluster_wrapper,,,,,abc -fast,abc -D 50000 + stime,not_available_resource_blocked

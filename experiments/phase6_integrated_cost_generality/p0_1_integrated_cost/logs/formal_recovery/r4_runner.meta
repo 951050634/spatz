@@ -1,0 +1,62 @@
+RUN_KIND phase6-p0-1-matched-synthesis-r4
+RUNNER_ROOT /home/wxt/work-phase6-formal-117caff-r4/p0_1
+FORMAL_OUTPUT /home/wxt/work-phase6-formal-117caff-r4/p0_1/formal
+LOG_ROOT /home/wxt/work-phase6-formal-117caff-r4/p0_1/logs
+WORK_ROOT /home/wxt/work-phase6-integrated-synth-117caff-r4
+REPO_DIR /home/wxt/work-online-merge-supplement
+WRAPPER_START_UTC 2026-09-03T07:47:06Z
+WRAPPER_PID 18646
+SESSION_ID 18646
+COMMAND python3 /home/wxt/work-online-merge-supplement/experiments/phase6_integrated_cost_generality/p0_1_integrated_cost/run_matched_synthesis.py --execute-formal --output /home/wxt/work-phase6-formal-117caff-r4/p0_1/formal --log-root /home/wxt/work-phase6-formal-117caff-r4/p0_1/logs --work-root /home/wxt/work-phase6-integrated-synth-117caff-r4
+TIMEOUT_SECONDS 3600
+EXPECTED_COMMIT 117caff8109c0f6c32cf07a8322a3397307c8e14
+ACTUAL_COMMIT 117caff8109c0f6c32cf07a8322a3397307c8e14
+GIT_STATUS_BEFORE clean
+BASELINE_REF 957667e^
+BASELINE_COMMIT 948985eaa4c88132f7786bbd9ce019a800e744d8
+SCRIPT /home/wxt/work-online-merge-supplement/experiments/phase6_integrated_cost_generality/p0_1_integrated_cost/run_matched_synthesis.py
+SCRIPT_SHA256 8747070e59868d6746214c3dce46af13cdc92d8c56052bf701af978d4d7e9245
+BENDER /home/wxt/work-online-merge-supplement/install/bender/bender
+BENDER_SHA256 f73f2f345afc98f630e63195baa1dd93d39f78d247e21997f8156386f659cb20
+YOSYS /home/wxt/yosys-sta/oss-cad-suite/bin/yosys
+YOSYS_SHA256 7c3e3396b38c129dd7485be5a0a0f0da8e495a94c8fd486059e3bea043a588d6
+SLANG_PLUGIN /home/wxt/yosys-sta/oss-cad-suite/share/yosys/plugins/slang.so
+SLANG_SHA256 97581993656bbf4a7c1c491fd0dfbf5ead120ece05afea78b4d6b1e723a9afe8
+LIBERTY /home/wxt/yosys-sta/pdk/nangate45/lib/Nangate45_typ.lib
+LIBERTY_SHA256 2efd0b32eb580e4e60e72fc0575bb3bc69aac907c91d908442e4ae6d7fe55895
+SRAM_BLACKBOX /home/wxt/work-online-merge-supplement/experiments/synthesis/compat/tc_sram_blackbox.sv
+SRAM_BLACKBOX_SHA256 ec44b43ef9e5bd501f4a96f442bcc7c87ea0ee2e3133f4d45f2627778f31200a
+HOST_BOOT_TIME_UTC 2026-09-03T07:30:05Z
+HOST_UPTIME_S 1021
+HOST_MEMINFO_BEGIN
+MemTotal:        6014416 kB
+MemFree:          186644 kB
+MemAvailable:    3004028 kB
+SwapTotal:       4194300 kB
+SwapFree:        3109928 kB
+HOST_MEMINFO_END
+HOST_FREE_H_BEGIN
+               total        used        free      shared  buff/cache   available
+Mem:           5.7Gi       2.9Gi       182Mi        67Mi       3.0Gi       2.9Gi
+Swap:          4.0Gi       1.0Gi       3.0Gi
+HOST_FREE_H_END
+HOST_SWAPON_BEGIN
+NAME      TYPE       SIZE       USED PRIO
+/swap.img file 4294963200 1110396928   -1
+HOST_SWAPON_END
+R3_OOM_PREDECESSOR /home/wxt/work-phase6-formal-117caff-r3/p0_1
+R3_OOM_STATUS kernel-confirmed-global-oom
+R3_OOM_TIME 2026-09-03T14:48:03+08:00
+R3_OOM_PID 24069
+R3_OOM_METRICS total-vm=6142572kB anon-rss=2662724kB swapents=771131-pages free-swap=204kB
+R3_OOM_EXCLUSION r3 failed before mapped-hier-stat; no PPA number is used; r4 is fresh exact rerun
+VALIDATION_STATUS pending
+VALIDATION_STATUS pass
+RUN_STATUS running
+RETURN_CODE 1
+WRAPPER_END_UTC 2026-09-03T08:41:32Z
+RUN_STATUS failed
+STDOUT_LOG /home/wxt/work-phase6-formal-117caff-r4/p0_1/runner.stdout.log
+STDERR_LOG /home/wxt/work-phase6-formal-117caff-r4/p0_1/runner.stderr.log
+STDOUT_SHA256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+STDERR_SHA256 933806fe3a4c7e8fc598f560a5f13e02dbcfc836ad0503cde91a056d591d683b

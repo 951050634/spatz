@@ -1,0 +1,71 @@
+[ 14%] Building ASM object snRuntime/CMakeFiles/snRuntime-cluster.dir/src/platforms/standalone/start_snitch.S.o
+[  0%] Building C object spatzBenchmarks/CMakeFiles/benchmark.dir/benchmark/benchmark.c.o
+[ 28%] Building C object snRuntime/CMakeFiles/snRuntime-cluster.dir/src/barrier.c.o
+[ 14%] Building ASM object snRuntime/CMakeFiles/snRuntime-cluster.dir/start.S.o
+[ 28%] Building C object snRuntime/CMakeFiles/snRuntime-cluster.dir/src/platforms/standalone/putchar.c.o
+[ 28%] Building C object snRuntime/CMakeFiles/snRuntime-cluster.dir/src/platforms/shared/start.c.o
+[ 28%] Building C object snRuntime/CMakeFiles/snRuntime-cluster.dir/src/dma.c.o
+[ 28%] Building C object snRuntime/CMakeFiles/snRuntime-cluster.dir/src/memcpy.c.o
+/home/wxt/work-online-merge-supplement/sw/snRuntime/src/platforms/shared/start.c:40:45: warning: unused parameter 'spm_end' [-Wunused-parameter]
+                     void *spm_start, void *spm_end,
+                                            ^
+1 warning generated.
+[ 28%] Building C object snRuntime/CMakeFiles/snRuntime-cluster.dir/src/printf.c.o
+[ 28%] Linking C static library libbenchmark.a
+[ 42%] Building C object snRuntime/CMakeFiles/snRuntime-cluster.dir/src/team.c.o
+[ 42%] Building C object snRuntime/CMakeFiles/snRuntime-cluster.dir/src/alloc.c.o
+[ 42%] Building C object snRuntime/CMakeFiles/snRuntime-cluster.dir/src/interrupt.c.o
+[ 42%] Building C object snRuntime/CMakeFiles/snRuntime-cluster.dir/src/omp/kmp.c.o
+[ 57%] Building C object snRuntime/CMakeFiles/snRuntime-cluster.dir/src/omp/omp.c.o
+[ 57%] Building C object snRuntime/CMakeFiles/snRuntime-cluster.dir/src/perf_cnt.c.o
+In file included from /home/wxt/work-online-merge-supplement/sw/snRuntime/src/omp/kmp.c:12:
+/home/wxt/work-online-merge-supplement/sw/snRuntime/include/omp.h:129:45: warning: returning 'volatile omp_t *' from a function with result type 'omp_t *' discards qualifiers [-Wincompatible-pointer-types-discards-qualifiers]
+static inline omp_t *omp_getData() { return omp_p; }
+                                            ^~~~~
+In file included from /home/wxt/work-online-merge-supplement/sw/snRuntime/src/omp/omp.c:5:
+/home/wxt/work-online-merge-supplement/sw/snRuntime/include/omp.h:129:45: warning: returning 'volatile omp_t *' from a function with result type 'omp_t *' discards qualifiers [-Wincompatible-pointer-types-discards-qualifiers]
+static inline omp_t *omp_getData() { return omp_p; }
+                                            ^~~~~
+/home/wxt/work-online-merge-supplement/sw/snRuntime/src/omp/omp.c:70:18: warning: passing 'volatile omp_t *' to parameter of type 'omp_t *' discards qualifiers [-Wincompatible-pointer-types-discards-qualifiers]
+        initTeam(omp_p, &omp_p->plainTeam);
+                 ^~~~~
+/home/wxt/work-online-merge-supplement/sw/snRuntime/src/omp/omp.c:45:36: note: passing argument to parameter '_this' here
+static inline void initTeam(omp_t *_this, omp_team_t *team) {
+                                   ^
+/home/wxt/work-online-merge-supplement/sw/snRuntime/src/omp/omp.c:70:25: warning: passing 'volatile omp_team_t *' to parameter of type 'omp_team_t *' discards qualifiers [-Wincompatible-pointer-types-discards-qualifiers]
+        initTeam(omp_p, &omp_p->plainTeam);
+                        ^~~~~~~~~~~~~~~~~
+/home/wxt/work-online-merge-supplement/sw/snRuntime/src/omp/omp.c:45:55: note: passing argument to parameter 'team' here
+static inline void initTeam(omp_t *_this, omp_team_t *team) {
+                                                      ^
+/home/wxt/work-online-merge-supplement/sw/snRuntime/src/omp/omp.c:75:22: warning: assigning to 'omp_t *volatile' from 'volatile omp_t *' discards qualifiers [-Wincompatible-pointer-types-discards-qualifiers]
+        omp_p_global = omp_p;
+                     ^ ~~~~~
+/home/wxt/work-online-merge-supplement/sw/snRuntime/src/omp/omp.c:65:27: warning: comparison of integers of different signs: 'int' and 'unsigned int' [-Wsign-compare]
+        for (int i = 0; i < sizeof(omp_p->plainTeam.core_epoch) /
+                        ~ ^ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+5 warnings generated.
+[ 57%] Building C object snRuntime/CMakeFiles/snRuntime-cluster.dir/src/omp/eu.c.o
+[ 57%] Building C object snRuntime/CMakeFiles/snRuntime-cluster.dir/src/dm.c.o
+[ 57%] Built target benchmark
+1 warning generated.
+[ 71%] Linking C static library libsnRuntime-cluster.a
+error: address range table at offset 0x0 has a premature terminator entry at offset 0x10
+error: address range table at offset 0x0 has a premature terminator entry at offset 0x10
+[ 71%] Built target snRuntime-cluster
+[ 85%] Generating phase5_generated/N16_D128_S1/phase5_case_data.h
+phase5-case generated N=16 D=128 seed=1 output=/home/wxt/work-phase6-native-formal-117caff-r1/N16_D128_S1/spatzBenchmarks/phase5_generated/N16_D128_S1/phase5_case_data.h
+[ 85%] Building C object spatzBenchmarks/CMakeFiles/test-spatzBenchmarks-native-online-attention-software.dir/native-online-attention/main.c.o
+[ 85%] Building C object spatzBenchmarks/CMakeFiles/test-spatzBenchmarks-native-online-attention-software.dir/online-softmax-merge/rvv_update.c.o
+[ 85%] Building C object spatzBenchmarks/CMakeFiles/test-spatzBenchmarks-native-online-attention-software.dir/online-softmax-merge/rtl_reference.c.o
+[100%] Linking C executable test-spatzBenchmarks-native-online-attention-software
+/home/wxt/work-online-merge-supplement/install/llvm/bin/llvm-objdump: warning: '/home/wxt/work-phase6-native-formal-117caff-r1/N16_D128_S1/spatzBenchmarks/test-spatzBenchmarks-native-online-attention-software': failed to find source /home/wxt/spatz/sw/toolchain/riscv-gnu-toolchain/build/../riscv-gcc/libgcc/libgcc2.c
+[100%] Built target test-spatzBenchmarks-native-online-attention-software
+[ 83%] Built target snRuntime-cluster
+[ 16%] Built target benchmark
+[100%] Building C object spatzBenchmarks/CMakeFiles/test-spatzBenchmarks-native-online-attention-smu.dir/online-softmax-merge/rtl_reference.c.o
+[100%] Building C object spatzBenchmarks/CMakeFiles/test-spatzBenchmarks-native-online-attention-smu.dir/native-online-attention/main.c.o
+[100%] Building C object spatzBenchmarks/CMakeFiles/test-spatzBenchmarks-native-online-attention-smu.dir/online-softmax-merge/rvv_update.c.o
+[100%] Linking C executable test-spatzBenchmarks-native-online-attention-smu
+/home/wxt/work-online-merge-supplement/install/llvm/bin/llvm-objdump: warning: '/home/wxt/work-phase6-native-formal-117caff-r1/N16_D128_S1/spatzBenchmarks/test-spatzBenchmarks-native-online-attention-smu': failed to find source /home/wxt/spatz/sw/toolchain/riscv-gnu-toolchain/build/../riscv-gcc/libgcc/libgcc2.c
+[100%] Built target test-spatzBenchmarks-native-online-attention-smu

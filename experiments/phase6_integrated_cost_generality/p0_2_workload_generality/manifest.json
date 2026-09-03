@@ -1,6 +1,8 @@
 {
   "schema_version": 1,
   "kind": "phase6-p0-2-native-online-attention-generality",
+  "artifact_role": "gate1-provisional-snapshot",
+  "superseded_by": "formal/manifest.json",
   "status": "gate1-p1-resolved-formal-approved",
   "formal_collection_started": false,
   "git_head_at_draft": "9d9bd0a0c0f11b023c525ca909d7ed38afb13bac",

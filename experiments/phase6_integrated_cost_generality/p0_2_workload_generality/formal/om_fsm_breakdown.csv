@@ -1,0 +1,13 @@
+source_phase,case,implementation,invocation,schema_version,N,D,mode,terminal_state,load_scalar_cycles,compute_scalar_cycles,compute_weight_cycles,store_scalar_cycles,update_vector_cycles,busy_cycles
+phase5_formal,N8_D32_S1,smu,0,1,8,32,3,DONE,104,8,24,72,0,208
+phase5_formal,N16_D64_S1,smu,0,1,16,64,3,DONE,208,16,48,145,0,417
+phase5_formal,N16_D64_S1,smu,1,1,16,64,3,DONE,208,16,48,145,0,417
+phase5_formal,N16_D64_S1,smu,2,1,16,64,3,DONE,208,16,48,145,0,417
+phase6_formal,N24_D64_S1,smu,0,1,24,64,3,DONE,312,24,72,216,0,624
+phase6_formal,N24_D64_S1,smu,1,1,24,64,3,DONE,312,24,72,217,0,625
+phase6_formal,N24_D64_S1,smu,2,1,24,64,3,DONE,312,24,72,217,0,625
+phase6_formal,N24_D64_S1,smu,3,1,24,64,3,DONE,312,24,72,217,0,625
+phase6_formal,N24_D64_S1,smu,4,1,24,64,3,DONE,312,24,72,217,0,625
+phase6_formal,N16_D128_S1,smu,0,1,16,128,3,DONE,208,16,48,145,0,417
+phase6_formal,N16_D128_S1,smu,1,1,16,128,3,DONE,209,16,48,144,0,417
+phase6_formal,N16_D128_S1,smu,2,1,16,128,3,DONE,208,16,48,144,0,416

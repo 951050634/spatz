@@ -1,0 +1,6 @@
+SOURCE /var/log/kern.log
+RUN r4
+2026-09-03T16:41:26.419424+08:00 wxt-VMware-Virtual-Platform kernel: awk invoked oom-killer: gfp_mask=0x140cca(GFP_HIGHUSER_MOVABLE|__GFP_COMP), order=0, oom_score_adj=0
+2026-09-03T16:41:26.421045+08:00 wxt-VMware-Virtual-Platform kernel: Free swap  = 200kB
+2026-09-03T16:41:26.422420+08:00 wxt-VMware-Virtual-Platform kernel: oom-kill:constraint=CONSTRAINT_NONE,nodemask=(null),cpuset=/,mems_allowed=0,global_oom,task_memcg=/user.slice/user-1000.slice/session-4.scope,task=ld-linux-x86-64,pid=18761,uid=1000
+2026-09-03T16:41:26.422420+08:00 wxt-VMware-Virtual-Platform kernel: Out of memory: Killed process 18761 (ld-linux-x86-64) total-vm:6535660kB, anon-rss:4288984kB, file-rss:1392kB, shmem-rss:0kB, UID:1000 pgtables:12244kB oom_score_adj:0

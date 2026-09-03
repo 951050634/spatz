@@ -1,0 +1,5 @@
+source_phase,case,n,d,tile_size,tile_count,merge_count,sw_recurrence_cycles,smu_recurrence_cycles,recurrence_speedup,sw_merge_cycles,smu_merge_cycles,merge_speedup,sw_core_cycles,smu_core_cycles,core_speedup,sw_status,smu_status,smu_commands,smu_done,smu_errors,smu_timeouts
+phase5_formal,N8_D32_S1,8,32,4,2,1,12368,1451,8.523776705720193,13204,2318,5.6962899050905955,85262,73706,1.156785064987925,pass,pass,1,1,0,0
+phase5_formal,N16_D64_S1,16,64,4,4,3,68994,4926,14.006090133982948,77037,13060,5.898698315467075,571374,507918,1.1249335522663106,pass,pass,3,3,0,0
+phase6_formal,N24_D64_S1,24,64,4,6,5,165993,9334,17.78369402185558,186446,29711,6.275318905455892,1288856,1130764,1.1398098984403466,pass,pass,5,5,0,0
+phase6_formal,N16_D128_S1,16,128,4,4,3,67451,4910,13.737474541751528,82220,19841,4.143944357643264,1026162,962823,1.0657846769343897,pass,pass,3,3,0,0

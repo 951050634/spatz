@@ -1,0 +1,6 @@
+SOURCE /var/log/kern.log
+RUN r3
+2026-09-03T14:48:02.958890+08:00 wxt-VMware-Virtual-Platform kernel: verge-mihomo invoked oom-killer: gfp_mask=0x140cca(GFP_HIGHUSER_MOVABLE|__GFP_COMP), order=0, oom_score_adj=0
+2026-09-03T14:48:03.011926+08:00 wxt-VMware-Virtual-Platform kernel: Free swap  = 204kB
+2026-09-03T14:48:03.046653+08:00 wxt-VMware-Virtual-Platform kernel: oom-kill:constraint=CONSTRAINT_NONE,nodemask=(null),cpuset=/,mems_allowed=0,global_oom,task_memcg=/user.slice/user-1000.slice/session-5.scope,task=ld-linux-x86-64,pid=24069,uid=1000
+2026-09-03T14:48:03.046654+08:00 wxt-VMware-Virtual-Platform kernel: Out of memory: Killed process 24069 (ld-linux-x86-64) total-vm:6142572kB, anon-rss:2662724kB, file-rss:80kB, shmem-rss:0kB, UID:1000 pgtables:11468kB oom_score_adj:0
