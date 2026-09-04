@@ -1,0 +1,314 @@
+{
+  "schema": "phase7a-omerge-encoding-refreeze-v1",
+  "audited_commit": "40a679851a9e32e8a59793141a5be4bedccfd7c3",
+  "checker": {
+    "path": "/tmp/phase7a_checker_step1.py",
+    "sha256": "fd04d0b743ecc584a2ec3ad2640f8932bcc59f0cd8198068b102d29d705fab3b",
+    "invocation": "cd /home/wxt/work-online-merge-supplement && python3 /tmp/phase7a_checker_step1.py",
+    "pipeline": [
+      {
+        "path": "/tmp/phase7a_checker_step1.py",
+        "sha256": "fd04d0b743ecc584a2ec3ad2640f8932bcc59f0cd8198068b102d29d705fab3b",
+        "invocation": "cd /home/wxt/work-online-merge-supplement && python3 /tmp/phase7a_checker_step1.py",
+        "role": "extract decoder/source patterns, run regressions, run symbolic and concrete searches, emit raw temporary CSV/JSON"
+      },
+      {
+        "path": "/tmp/phase7a_augment.py",
+        "sha256": "dc58b7bb6953cb21cd9777ba6da4e9786a243bac92e2ddd11623836f13b3ae58",
+        "invocation": "cd /home/wxt/work-online-merge-supplement && python3 /tmp/phase7a_augment.py",
+        "role": "post-process raw decoder CSV with riscv_instr.sv locations and generator-source joins"
+      },
+      {
+        "path": "/tmp/phase7a_augment_candidates.py",
+        "sha256": "5e659867b58be1a08a1bfe429681913eed6903818c2d78a101743db79cc1e31f",
+        "invocation": "cd /home/wxt/work-online-merge-supplement && python3 /tmp/phase7a_augment_candidates.py",
+        "role": "post-process raw candidate CSV with separate selected-generator and all-source overlap/concrete columns"
+      }
+    ],
+    "summary_generation": "encoding_audit_summary.json is a manually curated apply_patch metadata summary of checker and post-processor outputs, not direct checker output"
+  },
+  "decoder": {
+    "case_location": "hw/ip/snitch/src/snitch.sv:552",
+    "preprocessor_target": "TARGET_SPATZ",
+    "label_occurrences": 440,
+    "unique_instruction_names": 440,
+    "package_pattern_count": 1062,
+    "unresolved_labels": 0,
+    "direct_literal_labels": 0,
+    "guard_counts": {
+      "always": 198,
+      "ifdef TARGET_SPATZ": 242
+    },
+    "custom_opcode_label_counts": {
+      "0x0b": 2,
+      "0x2b": 8,
+      "0x5b": 0,
+      "0x7b": 0
+    },
+    "nested_field_case_locations": [
+      "hw/ip/snitch/src/snitch.sv:776",
+      "hw/ip/snitch/src/snitch.sv:806",
+      "hw/ip/snitch/src/snitch.sv:835",
+      "hw/ip/snitch/src/snitch.sv:866",
+      "hw/ip/snitch/src/snitch.sv:901",
+      "hw/ip/snitch/src/snitch.sv:932",
+      "hw/ip/snitch/src/snitch.sv:2731"
+    ],
+    "spatz_target_evidence": {
+      "bender_target": "Bender.yml:120 target: spatz",
+      "vlt_bender_targets": "util/Makefrag:73: -t rtl -t spatz -t spatz_test -t snitch_test",
+      "actual_verilator_entry": "util/Makefrag:139-142: VERILATE emits the Bender file list and invokes VLT",
+      "lint_file_list_command": "hw/system/spatz_cluster/Makefile:203: bender script verilator -t rtl -t spatz > lint/tmp/files",
+      "generated_define": "experiments/synthesis/p6-stop/cluster_bb.f:17: +define+TARGET_SPATZ",
+      "generated_snitch_source": "experiments/synthesis/p6-stop/cluster_bb.f:303"
+    }
+  },
+  "generator_sources": {
+    "current_makefile_inputs": [
+      "opcodes-rvv",
+      "opcodes-rv32b_CUSTOM",
+      "opcodes-ipu_CUSTOM",
+      "opcodes-frep_CUSTOM",
+      "opcodes-dma_CUSTOM",
+      "opcodes-ssr_CUSTOM",
+      "opcodes-smallfloat"
+    ],
+    "current_makefile_inputs_role": "Root Makefile passes these seven names as MY_OPCODES; they are additional inputs to the opcode-generator sub-Makefile, not its complete default ALL_OPCODES list.",
+    "current_makefile_definition_count": 642,
+    "all_opcodes_file_count": 46,
+    "all_opcodes_definition_file_count": 42,
+    "all_opcodes_definition_count": 1717,
+    "all_opcodes_definition_count_basis": "actual non-@ instruction definitions after excluding pseudo/custom descriptor lines",
+    "unresolved_definitions": 0,
+    "custom_opcode_source_map": {
+      "0x0b": {
+        "selected_definitions": 2,
+        "all_source_definitions": 12,
+        "files": [
+          "sw/toolchain/riscv-opcodes/opcodes-frep_CUSTOM",
+          "sw/toolchain/riscv-opcodes/opcodes-xpulppostmod_CUSTOM"
+        ]
+      },
+      "0x2b": {
+        "selected_definitions": 12,
+        "all_source_definitions": 18,
+        "files": [
+          "sw/toolchain/riscv-opcodes/opcodes-dma_CUSTOM",
+          "sw/toolchain/riscv-opcodes/opcodes-ssr_CUSTOM",
+          "sw/toolchain/riscv-opcodes/opcodes-xpulppostmod_CUSTOM"
+        ]
+      },
+      "0x5b": {
+        "selected_definitions": 62,
+        "all_source_definitions": 64,
+        "files": [
+          "sw/toolchain/riscv-opcodes/opcodes-ipu_CUSTOM",
+          "sw/toolchain/riscv-opcodes/opcodes-xpulpminmax_CUSTOM"
+        ]
+      },
+      "0x7b": {
+        "selected_definitions": 20,
+        "all_source_definitions": 26,
+        "files": [
+          "sw/toolchain/riscv-opcodes/opcodes-ipu_CUSTOM",
+          "sw/toolchain/riscv-opcodes/opcodes-xpulphwloop_CUSTOM"
+        ]
+      }
+    }
+  },
+  "regression": {
+    "custom0": {
+      "family_pattern": "00000000000000000000?????0001011",
+      "overlap_count": 2,
+      "overlapping_instruction_names": [
+        "FREP_I",
+        "FREP_O"
+      ],
+      "witnesses": {
+        "FREP_I": "0x0000000b",
+        "FREP_O": "0x0000008b"
+      }
+    },
+    "custom1": {
+      "family_pattern": "00000000000000000000?????0101011",
+      "overlap_count": 1,
+      "overlapping_instruction_names": [
+        "DMSRC"
+      ],
+      "witnesses": {
+        "DMSRC": "0x0000002b"
+      }
+    }
+  },
+  "search": {
+    "format": "R-type-shaped custom family with rs1=x0, rs2=x0, variable rd",
+    "funct3_values": "0..7",
+    "funct7_values": "0..127",
+    "families_per_opcode": 1024,
+    "rd_values_per_family": 32,
+    "concrete_words_per_opcode": 32768,
+    "concrete_words_total": 65536,
+    "symbolic_and_concrete_results_agree": true,
+    "custom-2": {
+      "active_decoder": {
+        "safe_families": 1024,
+        "unsafe_families": 0,
+        "intersection_pair_count": 0
+      },
+      "selected_makefile_inputs": {
+        "safe_families": 851,
+        "unsafe_families": 173,
+        "intersection_pair_count": 176
+      },
+      "all_opcodes_source": {
+        "safe_families": 806,
+        "unsafe_families": 218,
+        "intersection_pair_count": 240
+      }
+    },
+    "custom-3": {
+      "active_decoder": {
+        "safe_families": 1024,
+        "unsafe_families": 0,
+        "intersection_pair_count": 0
+      },
+      "selected_makefile_inputs": {
+        "safe_families": 230,
+        "unsafe_families": 794,
+        "intersection_pair_count": 794
+      },
+      "all_opcodes_source": {
+        "safe_families": 0,
+        "unsafe_families": 1024,
+        "intersection_pair_count": 1435
+      }
+    }
+  },
+  "candidates": [
+    {
+      "candidate_id": "A",
+      "opcode": "0x5b",
+      "opcode_name": "custom-2",
+      "funct3": 0,
+      "funct7": 3,
+      "funct7_bits": "0000011",
+      "rs1": "x0",
+      "rs2": "x0",
+      "variable_rd": "x0..x31",
+      "family_pattern": "00000110000000000000?????1011011",
+      "active_decoder_family_overlap_count": 0,
+      "selected_generator_family_overlap_count": 0,
+      "all_source_generator_family_overlap_count": 0,
+      "all_32_rd_safe": true,
+      "matches_after_adding_omerge": 1
+    },
+    {
+      "candidate_id": "B",
+      "opcode": "0x5b",
+      "opcode_name": "custom-2",
+      "funct3": 0,
+      "funct7": 4,
+      "funct7_bits": "0000100",
+      "rs1": "x0",
+      "rs2": "x0",
+      "variable_rd": "x0..x31",
+      "family_pattern": "00001000000000000000?????1011011",
+      "active_decoder_family_overlap_count": 0,
+      "selected_generator_family_overlap_count": 0,
+      "all_source_generator_family_overlap_count": 0,
+      "all_32_rd_safe": true,
+      "matches_after_adding_omerge": 1
+    },
+    {
+      "candidate_id": "C",
+      "opcode": "0x5b",
+      "opcode_name": "custom-2",
+      "funct3": 0,
+      "funct7": 6,
+      "funct7_bits": "0000110",
+      "rs1": "x0",
+      "rs2": "x0",
+      "variable_rd": "x0..x31",
+      "family_pattern": "00001100000000000000?????1011011",
+      "active_decoder_family_overlap_count": 0,
+      "selected_generator_family_overlap_count": 0,
+      "all_source_generator_family_overlap_count": 0,
+      "all_32_rd_safe": true,
+      "matches_after_adding_omerge": 1
+    }
+  ],
+  "recommendation": {
+    "instruction": "OMERGE rd",
+    "format": "R-type custom",
+    "opcode": "1011011",
+    "opcode_hex": "0x5b",
+    "funct3": "000",
+    "funct7": "0000011",
+    "rs1": "x0",
+    "rs2": "x0",
+    "rd": "completion/status destination",
+    "base_machine_word": "0x0600005b",
+    "formula": "0x0600005b | (rd << 7)",
+    "collision_status": "PROVEN SAFE against active TARGET_SPATZ decoder and all opcodes-* source definitions"
+  },
+  "assembler_sanity": {
+    "assembler": "/usr/bin/riscv64-unknown-elf-as",
+    "assembler_version": "GNU assembler (2.42-1ubuntu1+6)",
+    "objdump": "/usr/bin/riscv64-unknown-elf-objdump",
+    "objdump_version": "GNU objdump (2.42-1ubuntu1+6)",
+    "command": "riscv64-unknown-elf-as -march=rv32imafdv -mabi=ilp32d -o /tmp/phase7a_asm.o /tmp/phase7a_asm.S",
+    "insn_form": ".insn r 0x5b, 0, 3, rd, x0, x0",
+    "machine_words": {
+      "x0": "0x0600005b",
+      "a0": "0x0600055b",
+      "a1": "0x060005db",
+      "x31": "0x06000fdb"
+    },
+    "objdump_interpretation": "objdump prints .insn 4 for these unknown custom words; it reports no existing mnemonic and is not the collision authority"
+  },
+  "artifacts": {
+    "decoder_pattern_inventory": {
+      "path": "experiments/phase7_omerge_instruction/decoder_pattern_inventory.csv",
+      "data_rows": 440
+    },
+    "opcode_generator_inventory": {
+      "path": "experiments/phase7_omerge_instruction/opcode_generator_inventory.csv",
+      "data_rows": 1717
+    },
+    "encoding_candidates": {
+      "path": "experiments/phase7_omerge_instruction/encoding_candidates.csv",
+      "data_rows": 2048
+    },
+    "encoding_collision_details": {
+      "path": "experiments/phase7_omerge_instruction/encoding_collision_details.csv",
+      "data_rows": 1678
+    },
+    "encoding_rd_proof": {
+      "path": "experiments/phase7_omerge_instruction/encoding_rd_proof.csv",
+      "data_rows": 96
+    }
+  },
+  "sol_review": {
+    "review_count": 1,
+    "p0": 0,
+    "p1": 0,
+    "p2": 3,
+    "verdict": "PASS",
+    "p2_observations": [
+      "artifact pipeline and provenance precision",
+      "custom-3 source-coverage wording",
+      "generator and build-target wording"
+    ],
+    "corrections_applied": [
+      "recorded all checker/post-processor hashes and invocations and identified the manually curated summary",
+      "stated that six xpulphwloop definitions do not individually cover all custom-3 families and that coverage is combined with 20 IPU definitions",
+      "distinguished root MY_OPCODES inputs from the default opcode list and distinguished lint file-list generation from the actual VERILATE entry"
+    ],
+    "second_invocation": false
+  },
+  "limitations": [
+    "TARGET_SPATZ is selected from experiments/synthesis/p6-stop/cluster_bb.f:17; another preprocessor target requires a fresh inventory.",
+    "All opcodes-* source definitions are included conservatively; the seven root Makefile MY_OPCODES inputs are additional inputs used for current riscv_instr.sv generation, not the complete default opcode list.",
+    "No OMERGE RTL, decoder, adapter, software, benchmark, or performance change was made."
+  ]
+}
