@@ -1,0 +1,224 @@
+{
+  "schema": "phase7b-omerge-audit-v2",
+  "status": "PENDING_GATE2",
+  "implementation_commit": "eac2851cbb60754a2e63f64780901ab6fd12a9c0",
+  "implementation_tree": "fabf72c186506588a1d9352354ce35af57b2b20e",
+  "formal_results_commit": "PENDING_GATE2_AND_RESULTS_COMMIT",
+  "gate2": {
+    "initial_status": "FAIL",
+    "initial_failure": "P1: formal raw transcripts were unavailable after session continuation",
+    "recovery_required": true,
+    "recovery_case_count": 4,
+    "recovery_order": [
+      "N8_D32_A1/mmio",
+      "N8_D32_A1/isa",
+      "N16_D64_A1/mmio",
+      "N16_D64_A1/isa"
+    ],
+    "re_review_status": "PASS",
+    "re_review_p0": 0,
+    "re_review_p1": 0,
+    "re_review_p2": 0
+  },
+  "recovery": {
+    "systematic": true,
+    "single_run_each": true,
+    "rerun": false,
+    "cherry_pick": false,
+    "run_order": [
+      "N8_D32_A1/mmio",
+      "N8_D32_A1/isa",
+      "N16_D64_A1/mmio",
+      "N16_D64_A1/isa"
+    ],
+    "raw_stream_contract": "combined stdout+stderr, byte-for-byte, no header, no rewrite, no truncation",
+    "cases": [
+      {
+        "case": "N8_D32_A1",
+        "path": "mmio",
+        "step": 1,
+        "status": "pass",
+        "exit_code": 0,
+        "raw": "logs/formal_n8_d32_a1_mmio.raw.txt",
+        "raw_sha256": "ab566916c4962bb66d93aad47e1c764cd877e12c767531db19f1926a1528ee3a",
+        "provenance": "logs/formal_n8_d32_a1_mmio.provenance.json",
+        "elf_sha256": "68d94000d9a74bedc89f45cf16497340c16d7e16706287dc94590b2ee99ee13e",
+        "output_hash": 2625429212,
+        "output_nonfinite": 0,
+        "omerge_count": 0,
+        "smu_commands": 1,
+        "smu_done": 1,
+        "smu_errors": 0,
+        "smu_timeouts": 0
+      },
+      {
+        "case": "N8_D32_A1",
+        "path": "isa",
+        "step": 2,
+        "status": "pass",
+        "exit_code": 0,
+        "raw": "logs/formal_n8_d32_a1_isa.raw.txt",
+        "raw_sha256": "e61d790de94e64639b7dc82e6292521f54624083e9030bece9ef97f839a0a47a",
+        "provenance": "logs/formal_n8_d32_a1_isa.provenance.json",
+        "elf_sha256": "51a0c39fdf27e1016a62be5bfe037abe76ba0502564d705c5007edbf458e4c17",
+        "output_hash": 2625429212,
+        "output_nonfinite": 0,
+        "omerge_count": 1,
+        "smu_commands": 1,
+        "smu_done": 1,
+        "smu_errors": 0,
+        "smu_timeouts": 0
+      },
+      {
+        "case": "N16_D64_A1",
+        "path": "mmio",
+        "step": 3,
+        "status": "pass",
+        "exit_code": 0,
+        "raw": "logs/formal_n16_d64_a1_mmio.raw.txt",
+        "raw_sha256": "dc3edf9d5992efdbad5cfd07c434ef004bfc8131fe1326b3ee07d898e99bb4f4",
+        "provenance": "logs/formal_n16_d64_a1_mmio.provenance.json",
+        "elf_sha256": "3182b56e923f33f2123304f83a2c3cddc451f40b5873b62c2915ff73ebb228e9",
+        "output_hash": 4245499135,
+        "output_nonfinite": 0,
+        "omerge_count": 0,
+        "smu_commands": 3,
+        "smu_done": 3,
+        "smu_errors": 0,
+        "smu_timeouts": 0
+      },
+      {
+        "case": "N16_D64_A1",
+        "path": "isa",
+        "step": 4,
+        "status": "pass",
+        "exit_code": 0,
+        "raw": "logs/formal_n16_d64_a1_isa.raw.txt",
+        "raw_sha256": "16ded3c5e969baaadf9d3f74b01f7682db6f745cde64d9fb1a31c3225ceda1e4",
+        "provenance": "logs/formal_n16_d64_a1_isa.provenance.json",
+        "elf_sha256": "385ddb38d88b64a94120dd3c800b8c89d5c9f2e364772b27be0082bc1a5b7f78",
+        "output_hash": 4245499135,
+        "output_nonfinite": 0,
+        "omerge_count": 3,
+        "smu_commands": 3,
+        "smu_done": 3,
+        "smu_errors": 0,
+        "smu_timeouts": 0
+      }
+    ]
+  },
+  "legacy_reconstructed_logs": {
+    "status": "DERIVED/INVALIDATED",
+    "source_for_results": false,
+    "paths": [
+      "logs/formal_n8_d32_a1_mmio.reconstructed_legacy.txt",
+      "logs/formal_n8_d32_a1_isa.reconstructed_legacy.txt",
+      "logs/formal_n16_d64_a1_mmio.reconstructed_legacy.txt",
+      "logs/formal_n16_d64_a1_isa.reconstructed_legacy.txt"
+    ],
+    "reason": "first continuation source was unavailable; Gate 2 required full fixed-order recovery"
+  },
+  "simulator": {
+    "path": "/home/wxt/spatz/hw/system/spatz_cluster/bin/spatz_cluster.vlt",
+    "sha256": "483ca72c2cebb6959620a3ec5bdc3bee891c294ef99f91cd1587aaf9c44c9aff",
+    "OM_SIM_CONFIG": {
+      "schema_version": 1,
+      "profile": "default",
+      "dasm_trace_enabled": true,
+      "fsm_observer_enabled": true
+    },
+    "environment_dump": false,
+    "environment_overrides": "none; no OM_/SPATZ_/SNITCH_/PHASE5_ overrides"
+  },
+  "correctness": {
+    "source": "recovery raw transcripts only",
+    "n8_output_hash": 2625429212,
+    "n16_output_hash": 4245499135,
+    "all_status_pass": true,
+    "all_nonfinite_zero": true,
+    "pairwise_dump_present": true,
+    "final_o_pairwise": {
+      "N8_D32_A1": {"mae": 0.0, "stable_relative_error": 0.0, "cosine": 1.0, "bit_identical": true},
+      "N16_D64_A1": {"mae": 0.0, "stable_relative_error": 0.0, "cosine": 1.0, "bit_identical": true}
+    },
+    "reference_metrics": {
+      "N8_D32_A1": {
+        "mae_bits": 965841751,
+        "mae": 0.00027766331913881004,
+        "stable_relative_error_bits": 1000282788,
+        "stable_relative_error": 0.004855470731854439,
+        "cosine_bits": 1065352977,
+        "cosine": 0.9999857544898987
+      },
+      "N16_D64_A1": {
+        "mae_bits": 972444283,
+        "mae": 0.00046982229105196893,
+        "stable_relative_error_bits": 1005107881,
+        "stable_relative_error": 0.007102329749614,
+        "cosine_bits": 1065352699,
+        "cosine": 0.9999691843986511
+      }
+    },
+    "component_hashes": {
+      "status": "NA",
+      "mmio": "NA",
+      "isa": "NA",
+      "hash_match": "NA",
+      "mae": "NA",
+      "reason": "component hashes were not emitted in either recovery PHASE5_RESULT"
+    }
+  },
+  "selector": {
+    "source": "logs/formal_n16_d64_a1_isa.raw.txt and logs/formal_n8_d32_a1_isa.raw.txt",
+    "N8_D32_A1": {
+      "sequence": "A->B",
+      "merge_count": 1,
+      "each_merge_accept_start_done_response": 1,
+      "errors": 0,
+      "mode": 3,
+      "busy_cycles": [808]
+    },
+    "N16_D64_A1": {
+      "sequence": "A->B->A->B",
+      "merge_count": 3,
+      "each_merge_accept_start_done_response": 1,
+      "errors": 0,
+      "mode": 3,
+      "busy_cycles": [1616, 1616, 1616]
+    },
+    "mmio_selector": "NA"
+  },
+  "timing_definitions": {
+    "dispatch_or_instruction_window_cycles": "inclusive recurrence control window, not pure dispatch",
+    "mmio_window": "config+clear+start+poll+SMU",
+    "isa_window": "issue+SMU+completion/status",
+    "engine_busy_cycles": "sum of OM_FSM busy_cycles records",
+    "setup_inclusive_native_core": "native_core_cycles plus measured ISA workload_setup; setup occurs before core_start and is reported separately",
+    "NA_policy": "NA marks a field not emitted by the recovery evidence; it is not a zero"
+  },
+  "gate1": {
+    "status": "PASS",
+    "p0": 0,
+    "p1": 0,
+    "p2": 2,
+    "no_trace_optional": "DEFERRED",
+    "concurrent_mmio_isa": "DEFERRED",
+    "flush_interrupt_multihart": "DEFERRED"
+  },
+  "warnings": {
+    "recovery_raw": "All four raw transcripts retain the simulator warning: Failed to write binary name to logs/.rtlbinary",
+    "n8_mmio_rtlbinary": "retained",
+    "legacy_warning": "No legacy warning is copied into recovery raw; legacy files are invalidated"
+  },
+  "scope": {
+    "modified_files": 14,
+    "scope_root": "experiments/phase7_omerge_instruction",
+    "implementation_scope_unchanged": true,
+    "smu_arithmetic_changed": false,
+    "rvv_datapath_changed": false,
+    "phase1_to_phase6_changed": false,
+    "proposed_design": "Scalar SMU + RVV",
+    "full_smu": "ablation/history only"
+  },
+  "provenance_note": "The first continuation's formal source was unavailable. Gate 2 therefore required four fresh single runs in the fixed order above. All derived results use the second recovery's raw transcripts; this is not cherry-picking."
+}

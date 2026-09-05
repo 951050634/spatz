@@ -1,0 +1,97 @@
+{
+  "schema": "phase7b-omerge-instruction-manifest-v1",
+  "phase": "7B",
+  "instruction": "OMERGE rd",
+  "format": "R-type custom",
+  "encoding": {
+    "opcode_name": "custom-2",
+    "opcode": "1011011",
+    "opcode_hex": "0x5b",
+    "funct3": "000",
+    "funct7": "0000011",
+    "rs1": "x0",
+    "rs2": "x0",
+    "rd": "x0..x31 completion/status destination",
+    "pattern": "00000110000000000000?????1011011",
+    "base_machine_word": "0x0600005b",
+    "machine_word_formula": "0x0600005b | (rd << 7)",
+    "machine_words": {
+      "x0": "0x0600005b",
+      "a0": "0x0600055b",
+      "a1": "0x060005db",
+      "x31": "0x06000fdb"
+    },
+    "little_endian_bytes": {
+      "x0": "5b 00 00 06",
+      "a0": "5b 05 00 06",
+      "a1": "db 05 00 06",
+      "x31": "db 0f 00 06"
+    }
+  },
+  "implementation_commit": "eac2851cbb60754a2e63f64780901ab6fd12a9c0",
+  "implementation_tree": "fabf72c186506588a1d9352354ce35af57b2b20e",
+  "formal_results_commit": "PENDING_GATE2_AND_RESULTS_COMMIT",
+  "decoder_regression": {
+    "decoder_case_label_occurrences_before_omerge": 440,
+    "decoder_unique_instruction_names_before_omerge": 440,
+    "unresolved_labels_before_omerge": 0,
+    "selected_family_existing_matches_for_rd0_to_rd31": 0,
+    "selected_family_matches_after_omerge_for_rd0_to_rd31": 1,
+    "selected_family_generator_matches_before_omerge": 0,
+    "all_rd_unique_after_add": true,
+    "proof_artifact": "../encoding_rd_proof.csv",
+    "proof_rows_all_candidates": 96,
+    "phase7a_checker_scope": "custom-2/custom-3 R-type families; no complete 2048-family search in Phase7B",
+    "custom0_regression": {
+      "overlap_count": 2,
+      "instructions": ["FREP_I", "FREP_O"],
+      "witnesses": ["0x0000000b", "0x0000008b"]
+    },
+    "custom1_sanity": {
+      "overlap_count": 1,
+      "instruction": "DMSRC",
+      "witness": "0x0000002b"
+    }
+  },
+  "formal_recovery": {
+    "status": "PASS",
+    "single_run_each": true,
+    "run_order": ["N8_D32_A1/mmio", "N8_D32_A1/isa", "N16_D64_A1/mmio", "N16_D64_A1/isa"],
+    "raw_transcripts": [
+      "logs/formal_n8_d32_a1_mmio.raw.txt",
+      "logs/formal_n8_d32_a1_isa.raw.txt",
+      "logs/formal_n16_d64_a1_mmio.raw.txt",
+      "logs/formal_n16_d64_a1_isa.raw.txt"
+    ]
+  },
+  "gate1": {
+    "status": "PASS",
+    "p0": 0,
+    "p1": 0,
+    "p2": 2,
+    "no_trace_optional": "DEFERRED"
+  },
+  "gate2": {
+    "initial_status": "FAIL",
+    "initial_failure": "P1: formal raw transcripts were unavailable after session continuation",
+    "recovery_required": true,
+    "recovery_case_count": 4,
+    "recovery_order": [
+      "N8_D32_A1/mmio",
+      "N8_D32_A1/isa",
+      "N16_D64_A1/mmio",
+      "N16_D64_A1/isa"
+    ],
+    "re_review_status": "PASS",
+    "re_review_p0": 0,
+    "re_review_p1": 0,
+    "re_review_p2": 0
+  },
+  "scope": {
+    "proposed_design": "Scalar SMU + RVV",
+    "full_smu": "ablation/history only",
+    "smu_arithmetic_changed": false,
+    "rvv_datapath_changed": false,
+    "phase1_to_phase6_changed": false
+  }
+}

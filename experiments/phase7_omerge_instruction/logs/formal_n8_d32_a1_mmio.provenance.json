@@ -1,0 +1,43 @@
+{
+  "schema": "phase7b-recovery-provenance-v1",
+  "step": 1,
+  "case": "N8_D32_A1",
+  "path": "mmio",
+  "status": "pass",
+  "exit_code": 0,
+  "raw_path": "logs/formal_n8_d32_a1_mmio.raw.txt",
+  "raw_sha256": "ab566916c4962bb66d93aad47e1c764cd877e12c767531db19f1926a1528ee3a",
+  "raw_stream": "combined stdout+stderr, byte-for-byte, no header, no rewrite, no truncation",
+  "cwd": "/tmp/phase7b-recovery-n8-mmio.Xk4AXK",
+  "expanded_command": "/usr/bin/timeout 1800s /home/wxt/spatz/hw/system/spatz_cluster/bin/spatz_cluster.vlt /tmp/phase7b-recovery-build.gdb8PH/N8_D32_A1/spatzBenchmarks/test-spatzBenchmarks-native-online-attention-smu",
+  "timeout_seconds": 1800,
+  "started_at_local": "2026-09-06T00:43:44.404072468+0800",
+  "ended_at_local": "2026-09-06T00:46:06.270544784+0800",
+  "started_at_utc": "2026-09-05T16:43:44.404072468Z",
+  "ended_at_utc": "2026-09-05T16:46:06.270544784Z",
+  "head": "eac2851cbb60754a2e63f64780901ab6fd12a9c0",
+  "tree": "fabf72c186506588a1d9352354ce35af57b2b20e",
+  "simulator": {
+    "path": "/home/wxt/spatz/hw/system/spatz_cluster/bin/spatz_cluster.vlt",
+    "sha256": "483ca72c2cebb6959620a3ec5bdc3bee891c294ef99f91cd1587aaf9c44c9aff"
+  },
+  "elf": {
+    "path": "/tmp/phase7b-recovery-build.gdb8PH/N8_D32_A1/spatzBenchmarks/test-spatzBenchmarks-native-online-attention-smu",
+    "sha256": "68d94000d9a74bedc89f45cf16497340c16d7e16706287dc94590b2ee99ee13e"
+  },
+  "OM_SIM_CONFIG": {
+    "schema_version": 1,
+    "profile": "default",
+    "dasm_trace_enabled": true,
+    "fsm_observer_enabled": true
+  },
+  "environment_overrides": "none; no OM_/SPATZ_/SNITCH_/PHASE5_ overrides",
+  "environment_dump": false,
+  "build": {
+    "build_root": "/tmp/phase7b-recovery-build.gdb8PH/N8_D32_A1",
+    "configure_command": "cmake -S /home/wxt/work-online-merge-supplement/hw/system/spatz_cluster/sw -B /tmp/phase7b-recovery-build.gdb8PH/N8_D32_A1 -DLLVM_PATH=/home/wxt/work-online-merge-supplement/install/llvm -DGCC_PATH=/home/wxt/work-online-merge-supplement/install/riscv-gcc -DPYTHON=/usr/bin/python3 -DBUILD_TESTS=ON -DSNITCH_SIMULATOR=/home/wxt/spatz/hw/system/spatz_cluster/bin/spatz_cluster.vlt -DSPATZ_CLUSTER_CFG=spatz_cluster.default.dram.hjson -DPHASE5_N=8 -DPHASE5_D=32 -DPHASE5_SEED=1 -DPHASE5_DUMP_OUTPUT=1 -DCMAKE_C_FLAGS=-DPRINTF_DISABLE_SUPPORT_FLOAT -DMEM_DRAM_ORIGIN=2147483648 -DMEM_DRAM_SIZE=2147483648 -DSNRT_BASE_HARTID=0 -DSNRT_CLUSTER_CORE_NUM=2 -DSNRT_TCDM_START_ADDR=1048576 -DSNRT_CLUSTER_OFFSET=0 -DSNRT_TCDM_SIZE=131072 -DSNRT_NFPU_PER_CORE=4 -DELEN=64",
+    "build_command": "cmake --build /tmp/phase7b-recovery-build.gdb8PH/N8_D32_A1 --target test-spatzBenchmarks-native-online-attention-smu test-spatzBenchmarks-native-online-attention-omerge -- -j8",
+    "configure_log_sha256": "9f1e209ae66967810f19c053a988ed20b854562d267f65dcc9f269d9e0e8e8a3",
+    "build_log_sha256": "99a178456b580e6c2e91d4fb794557b06068214c846551b173c7053c1f97b169"
+  }
+}

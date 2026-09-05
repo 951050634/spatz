@@ -1,0 +1,15 @@
+Phase 7B decoder uniqueness regression
+source: Phase 7A decoder_pattern_inventory.csv, encoding_rd_proof.csv,
+        encoding_refreeze_audit.md sections 1, 4, 10, and 12
+existing decoder case-label occurrences: 440
+existing unique instruction names: 440
+unresolved labels: 0
+selected OMERGE family: 00000110000000000000?????1011011
+rd domain checked: x0..x31
+existing matches before OMERGE: exactly 0 for every rd
+matches after OMERGE: exactly 1 for every rd
+unique OMERGE after add: true for every rd
+custom-0 regression: overlap_count=2; FREP_I=0x0000000b; FREP_O=0x0000008b
+custom-1 sanity: overlap_count=1; DMSRC=0x0000002b
+search restriction: no complete 2048-family search was executed in Phase 7B
+status: PASS (Phase 7A checker evidence reused; no Phase 7B rerun)

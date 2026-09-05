@@ -1,0 +1,22 @@
+DERIVED/INVALIDATED: legacy reconstruction; not a raw transcript.
+# source: /tmp/phase7b-formal-n8-mmio.H0Ntj4/run.log
+# run_order: 1/4 (N8/D32/seed1, MMIO Scalar SMU)
+# exact_command_template: (cd <run_dir>/spatzBenchmarks && /home/wxt/spatz/hw/system/spatz_cluster/bin/spatz_cluster.vlt <elf>) > run.log 2>&1
+# HEAD: eac2851cbb60754a2e63f64780901ab6fd12a9c0
+# tree: fabf72c186506588a1d9352354ce35af57b2b20e
+# simulator_path: /home/wxt/spatz/hw/system/spatz_cluster/bin/spatz_cluster.vlt
+# simulator_sha256: 483ca72c2cebb6959620a3ec5bdc3bee891c294ef99f91cd1587aaf9c44c9aff
+# elf_path: /tmp/phase7b-formal-n8-mmio.H0Ntj4/spatzBenchmarks/test-spatzBenchmarks-native-online-attention-smu
+# elf_sha256: 3570d12f2fdfe28873f9816455f68bab8eb2534ba1a3541441ffaaa1088b0736
+# OM_SIM_CONFIG: {"schema_version":1,"profile":"default","dasm_trace_enabled":true,"fsm_observer_enabled":true}
+# environment_redacted: true; allowlisted provenance header only
+# environment_overrides: none; no OM_/SPATZ_/SNITCH_/PHASE5_ overrides
+Warning: Failed to write binary name to logs/.rtlbinary
+PHASE5_RESULT {"status":"pass","implementation":"smu","n":8,"d":32,"seed":1,"tile_keys":4,"tile_count":2,"merge_count":1,"smu":{"commands":1,"done":1,"errors":0,"timeouts":0,"saw_busy":1},"cycles":{"smu_recurrence":2096,"rvv_output_update":804,"merge_window":2958,"total":74342,"workload_setup":0},"output_nonfinite":0,"output_hash":2625429212,"output_metrics":{"mae_bits":965841751,"stable_relative_error_bits":1000282788,"cosine_similarity_bits":1065352977}}
+native-online-attention PASS
+[SUCCESS] Program finished successfully
+OM_SIM_CONFIG {"schema_version":1,"profile":"default","dasm_trace_enabled":true,"fsm_observer_enabled":true}
+[Tracer] Logging Hart          0 to logs/trace_hart_00000.dasm
+[Tracer] Logging Hart          1 to logs/trace_hart_00001.dasm
+Loading entry point: 80000000
+OM_FSM {"schema_version":1,"invocation":0,"N":8,"D":32,"mode":3,"terminal_state":"DONE","load_scalar_cycles":104,"compute_scalar_cycles":8,"compute_weight_cycles":624,"store_scalar_cycles":72,"update_vector_cycles":0,"busy_cycles":808}

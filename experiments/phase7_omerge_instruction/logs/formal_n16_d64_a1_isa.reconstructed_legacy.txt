@@ -1,0 +1,36 @@
+DERIVED/INVALIDATED: legacy reconstruction; not a raw transcript.
+# source: /tmp/phase7b-formal-n16-isa.U6A0dG/run.log
+# run_order: 4/4 (N16/D64/seed1, OMERGE ISA)
+# exact_command_template: (cd <run_dir>/spatzBenchmarks && /home/wxt/spatz/hw/system/spatz_cluster/bin/spatz_cluster.vlt <elf>) > run.log 2>&1
+# HEAD: eac2851cbb60754a2e63f64780901ab6fd12a9c0
+# tree: fabf72c186506588a1d9352354ce35af57b2b20e
+# simulator_path: /home/wxt/spatz/hw/system/spatz_cluster/bin/spatz_cluster.vlt
+# simulator_sha256: 483ca72c2cebb6959620a3ec5bdc3bee891c294ef99f91cd1587aaf9c44c9aff
+# elf_path: /tmp/phase7b-formal-n16-isa.U6A0dG/spatzBenchmarks/test-spatzBenchmarks-native-online-attention-omerge
+# elf_sha256: a83127faff94962bb9a872581c52ae24d792abeda4882ddffde31672a74c4d31
+# OM_SIM_CONFIG: {"schema_version":1,"profile":"default","dasm_trace_enabled":true,"fsm_observer_enabled":true}
+# environment_redacted: true; allowlisted provenance header only
+# environment_overrides: none; no OM_/SPATZ_/SNITCH_/PHASE5_ overrides
+PHASE5_RESULT {"status":"pass","implementation":"omerge","n":16,"d":64,"seed":1,"tile_keys":4,"tile_count":4,"merge_count":3,"smu":{"commands":3,"done":3,"errors":0,"timeouts":0,"saw_busy":0},"cycles":{"smu_recurrence":4929,"rvv_output_update":7881,"merge_window":13011,"total":507588,"workload_setup":881},"output_nonfinite":0,"output_hash":4245499135,"output_metrics":{"mae_bits":972444283,"stable_relative_error_bits":1005107881,"cosine_similarity_bits":1065352699}}
+PHASE7B_SETUP_CHECK expected=881 observed=881 placement=before_core_start
+native-online-attention PASS
+[SUCCESS] Program finished successfully
+OM_SIM_CONFIG {"schema_version":1,"profile":"default","dasm_trace_enabled":true,"fsm_observer_enabled":true}
+[Tracer] Logging Hart          0 to logs/trace_hart_00000.dasm
+[Tracer] Logging Hart          1 to logs/trace_hart_00001.dasm
+Loading entry point: 80000000
+OMERGE_ADAPTER_ACCEPT id=0 selector=0
+OMERGE_ADAPTER_START selector=0
+OMERGE_ADAPTER_DONE error=0 selector=0
+OMERGE_ADAPTER_RESPONSE error=0 selector_before=0 selector_after=1
+OMERGE_ADAPTER_ACCEPT id=0 selector=1
+OMERGE_ADAPTER_START selector=1
+OMERGE_ADAPTER_DONE error=0 selector=1
+OMERGE_ADAPTER_RESPONSE error=0 selector_before=1 selector_after=0
+OMERGE_ADAPTER_ACCEPT id=0 selector=0
+OMERGE_ADAPTER_START selector=0
+OMERGE_ADAPTER_DONE error=0 selector=0
+OMERGE_ADAPTER_RESPONSE error=0 selector_before=0 selector_after=1
+OM_FSM {"schema_version":1,"invocation":0,"N":16,"D":64,"mode":3,"terminal_state":"DONE","busy_cycles":1616}
+OM_FSM {"schema_version":1,"invocation":1,"N":16,"D":64,"mode":3,"terminal_state":"DONE","busy_cycles":1616}
+OM_FSM {"schema_version":1,"invocation":2,"N":16,"D":64,"mode":3,"terminal_state":"DONE","busy_cycles":1616}

@@ -1,0 +1,107 @@
+{
+  "schema": "phase7b-implementation-manifest-v1",
+  "implementation_commit": "eac2851cbb60754a2e63f64780901ab6fd12a9c0",
+  "implementation_tree": "fabf72c186506588a1d9352354ce35af57b2b20e",
+  "modified_files_count": 14,
+  "modified_files": [
+    "Bender.yml",
+    "hw/ip/online_merge/src/online_merge_omerge_adapter.sv",
+    "hw/ip/snitch/src/riscv_instr.sv",
+    "hw/ip/snitch/src/snitch.sv",
+    "hw/ip/snitch/src/snitch_pkg.sv",
+    "hw/ip/spatz_cc/src/spatz_cc.sv",
+    "hw/system/spatz_cluster/src/spatz_cluster.sv",
+    "hw/system/spatz_cluster/src/spatz_cluster_peripheral/spatz_cluster_peripheral.sv",
+    "hw/system/spatz_cluster/src/spatz_cluster_peripheral/spatz_cluster_peripheral_reg.hjson",
+    "hw/system/spatz_cluster/src/spatz_cluster_peripheral/spatz_cluster_peripheral_reg_pkg.sv",
+    "hw/system/spatz_cluster/src/spatz_cluster_peripheral/spatz_cluster_peripheral_reg_top.sv",
+    "sw/snRuntime/include/spatz_cluster_peripheral.h",
+    "sw/spatzBenchmarks/CMakeLists.txt",
+    "sw/spatzBenchmarks/native-online-attention/main.c"
+  ],
+  "routing": {
+    "decoder": "hw/ip/snitch/src/snitch.sv",
+    "core_issue_wrapper": "hw/ip/spatz_cc/src/spatz_cc.sv",
+    "cluster_issue_arbiter_response_demux": "hw/system/spatz_cluster/src/spatz_cluster.sv",
+    "owner_tracking": "cluster-local single active OMERGE owner tag"
+  },
+  "adapter": {
+    "path": "hw/ip/online_merge/src/online_merge_omerge_adapter.sv",
+    "role": "persistent configuration, A/B selector, engine start, completion response",
+    "fixed_mode": 3,
+    "arithmetic": "delegated to existing online_merge_update_engine"
+  },
+  "wrapper": {
+    "cluster_register_wrapper": "hw/system/spatz_cluster/src/spatz_cluster_peripheral/spatz_cluster_peripheral.sv",
+    "register_description": "hw/system/spatz_cluster/src/spatz_cluster_peripheral/spatz_cluster_peripheral_reg.hjson",
+    "generated_register_package": "hw/system/spatz_cluster/src/spatz_cluster_peripheral/spatz_cluster_peripheral_reg_pkg.sv",
+    "runtime_header": "sw/snRuntime/include/spatz_cluster_peripheral.h"
+  },
+  "benchmark": {
+    "cmake": "sw/spatzBenchmarks/CMakeLists.txt",
+    "source": "sw/spatzBenchmarks/native-online-attention/main.c",
+    "isa_target": "test-spatzBenchmarks-native-online-attention-omerge",
+    "mmio_target": "test-spatzBenchmarks-native-online-attention-smu",
+    "persistent_setup": "smu_isa_setup before core_start; mode 3"
+  },
+  "change_exclusions": {
+    "smu_arithmetic": false,
+    "rvv_datapath": false,
+    "phase1_to_phase6": false,
+    "full_smu_as_primary_design": false
+  },
+  "gate1": {
+    "status": "PASS",
+    "p0": 0,
+    "p1": 0,
+    "p2": 2,
+    "no_trace_optional": "DEFERRED",
+    "concurrent_mmio_isa": "DEFERRED",
+    "flush_interrupt_multihart": "DEFERRED"
+  },
+  "gate2": {
+    "initial_status": "FAIL",
+    "initial_failure": "P1: formal raw transcripts were unavailable after session continuation",
+    "recovery_required": true,
+    "recovery_case_count": 4,
+    "recovery_order": [
+      "N8_D32_A1/mmio",
+      "N8_D32_A1/isa",
+      "N16_D64_A1/mmio",
+      "N16_D64_A1/isa"
+    ],
+    "re_review_status": "PASS",
+    "re_review_p0": 0,
+    "re_review_p1": 0,
+    "re_review_p2": 0
+  },
+  "simulator": {
+    "path": "/home/wxt/spatz/hw/system/spatz_cluster/bin/spatz_cluster.vlt",
+    "sha256": "483ca72c2cebb6959620a3ec5bdc3bee891c294ef99f91cd1587aaf9c44c9aff"
+  },
+  "elfs": {
+    "N8_D32_A1_mmio": {
+      "path": "/tmp/phase7b-recovery-build.gdb8PH/N8_D32_A1/spatzBenchmarks/test-spatzBenchmarks-native-online-attention-smu",
+      "sha256": "68d94000d9a74bedc89f45cf16497340c16d7e16706287dc94590b2ee99ee13e"
+    },
+    "N8_D32_A1_isa": {
+      "path": "/tmp/phase7b-recovery-build.gdb8PH/N8_D32_A1/spatzBenchmarks/test-spatzBenchmarks-native-online-attention-omerge",
+      "sha256": "51a0c39fdf27e1016a62be5bfe037abe76ba0502564d705c5007edbf458e4c17"
+    },
+    "N16_D64_A1_mmio": {
+      "path": "/tmp/phase7b-recovery-build.gdb8PH/N16_D64_A1/spatzBenchmarks/test-spatzBenchmarks-native-online-attention-smu",
+      "sha256": "3182b56e923f33f2123304f83a2c3cddc451f40b5873b62c2915ff73ebb228e9"
+    },
+    "N16_D64_A1_isa": {
+      "path": "/tmp/phase7b-recovery-build.gdb8PH/N16_D64_A1/spatzBenchmarks/test-spatzBenchmarks-native-online-attention-omerge",
+      "sha256": "385ddb38d88b64a94120dd3c800b8c89d5c9f2e364772b27be0082bc1a5b7f78"
+    }
+  },
+  "formal": {
+    "fresh_run_count": 4,
+    "single_run_each": true,
+    "recovery_order": ["N8_D32_A1/mmio", "N8_D32_A1/isa", "N16_D64_A1/mmio", "N16_D64_A1/isa"],
+    "rerun": false,
+    "formal_results_commit": "PENDING_GATE2_AND_RESULTS_COMMIT"
+  }
+}

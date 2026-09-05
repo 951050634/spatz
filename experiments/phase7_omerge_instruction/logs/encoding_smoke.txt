@@ -1,0 +1,16 @@
+Phase 7B OMERGE encoding smoke evidence
+source: Phase 7A encoding_refreeze_audit.md sections 10-11 and encoding_rd_proof.csv
+execution: reused verified Phase 7A checker/assembler evidence; no Phase 7B simulator rerun
+format: R-type custom-2, funct7=0000011, rs2=x0, rs1=x0, funct3=000, opcode=0x5b
+formula: word = 0x0600005b | (rd << 7)
+
+assembly   exact_word   little_endian_bytes
+OMERGE x0  0x0600005b   5b 00 00 06
+OMERGE a0  0x0600055b   5b 05 00 06
+OMERGE a1  0x060005db   db 05 00 06
+OMERGE x31 0x06000fdb   db 0f 00 06
+
+assembler form: .insn r 0x5b, 0, 3, rd, x0, x0
+rd proof: x0..x31 each had 0 existing decoder matches, 0 generator matches,
+          1 match after adding OMERGE, and unique_omerge_after_add=1
+status: PASS (verified evidence reused; no Phase 7B rerun)
