@@ -3,7 +3,7 @@
   "status": "PASS",
   "implementation_commit": "eac2851cbb60754a2e63f64780901ab6fd12a9c0",
   "implementation_tree": "fabf72c186506588a1d9352354ce35af57b2b20e",
-  "formal_results_commit": "PENDING_SCHEMA_GATE2_AND_FINAL_RESULTS_COMMIT",
+  "formal_results_commit": "a62347923dd89cba08aff1c84bc55e34441404ca",
   "gate2": {
     "initial_status": "FAIL",
     "initial_failure": "P1: formal raw transcripts were unavailable after session continuation",

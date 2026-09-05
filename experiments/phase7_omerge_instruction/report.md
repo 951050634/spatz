@@ -222,7 +222,7 @@ is not cherry-picked.
 The simulator hash is
 `483ca72c2cebb6959620a3ec5bdc3bee891c294ef99f91cd1587aaf9c44c9aff`.
 The formal result commit is
-`PENDING_SCHEMA_GATE2_AND_FINAL_RESULTS_COMMIT`. The subsequent commit only
+`a62347923dd89cba08aff1c84bc55e34441404ca`. The subsequent commit only
 finalizes provenance metadata; it does not change raw transcripts, CSV values,
 or performance conclusions. No environment secrets or unallowlisted
 overrides are archived.
