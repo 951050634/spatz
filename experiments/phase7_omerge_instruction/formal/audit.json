@@ -1,9 +1,9 @@
 {
   "schema": "phase7b-omerge-audit-v2",
-  "status": "PENDING_GATE2",
+  "status": "PASS",
   "implementation_commit": "eac2851cbb60754a2e63f64780901ab6fd12a9c0",
   "implementation_tree": "fabf72c186506588a1d9352354ce35af57b2b20e",
-  "formal_results_commit": "PENDING_GATE2_AND_RESULTS_COMMIT",
+  "formal_results_commit": "f72e73d897d8b9f4791a555b4d45be3b5a0a5f66",
   "gate2": {
     "initial_status": "FAIL",
     "initial_failure": "P1: formal raw transcripts were unavailable after session continuation",
@@ -220,5 +220,5 @@
     "proposed_design": "Scalar SMU + RVV",
     "full_smu": "ablation/history only"
   },
-  "provenance_note": "The first continuation's formal source was unavailable. Gate 2 therefore required four fresh single runs in the fixed order above. All derived results use the second recovery's raw transcripts; this is not cherry-picking."
+  "provenance_note": "The first continuation's formal source was unavailable. Gate 2 therefore required four fresh single runs in the fixed order above. All derived results use the second recovery's raw transcripts; this is not cherry-picking. The subsequent commit only finalizes metadata provenance."
 }

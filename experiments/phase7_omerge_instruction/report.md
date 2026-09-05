@@ -215,6 +215,8 @@ The final data comes only from this second fixed-order single-run recovery; it
 is not cherry-picked.
 The simulator hash is
 `483ca72c2cebb6959620a3ec5bdc3bee891c294ef99f91cd1587aaf9c44c9aff`.
-The formal result commit remains
-`PENDING_GATE2_AND_RESULTS_COMMIT`; this directory is intentionally dirty for
-Gate 2. No environment secrets or unallowlisted overrides are archived.
+The formal result commit is
+`f72e73d897d8b9f4791a555b4d45be3b5a0a5f66`. The subsequent commit only
+finalizes provenance metadata; it does not change raw transcripts, CSV values,
+or performance conclusions. No environment secrets or unallowlisted
+overrides are archived.
