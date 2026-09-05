@@ -102,7 +102,7 @@
     "single_run_each": true,
     "recovery_order": ["N8_D32_A1/mmio", "N8_D32_A1/isa", "N16_D64_A1/mmio", "N16_D64_A1/isa"],
     "rerun": false,
-    "formal_results_commit": "f72e73d897d8b9f4791a555b4d45be3b5a0a5f66",
+    "formal_results_commit": "PENDING_SCHEMA_GATE2_AND_FINAL_RESULTS_COMMIT",
     "metadata_finalization_scope": "subsequent commit only finalizes provenance metadata; no results or raw artifacts change"
   }
 }

@@ -3,7 +3,7 @@
   "status": "PASS",
   "implementation_commit": "eac2851cbb60754a2e63f64780901ab6fd12a9c0",
   "implementation_tree": "fabf72c186506588a1d9352354ce35af57b2b20e",
-  "formal_results_commit": "f72e73d897d8b9f4791a555b4d45be3b5a0a5f66",
+  "formal_results_commit": "PENDING_SCHEMA_GATE2_AND_FINAL_RESULTS_COMMIT",
   "gate2": {
     "initial_status": "FAIL",
     "initial_failure": "P1: formal raw transcripts were unavailable after session continuation",
@@ -19,6 +19,77 @@
     "re_review_p0": 0,
     "re_review_p1": 0,
     "re_review_p2": 0
+  },
+  "csv_schema": {
+    "performance": {
+      "required_columns": [
+        "case",
+        "path",
+        "workload_setup_cycles",
+        "dispatch_or_instruction_window_cycles",
+        "recurrence_cycles",
+        "rvv_update_cycles",
+        "merge_cycles",
+        "native_core_cycles",
+        "omerge_count",
+        "smu_start_count",
+        "smu_done_count",
+        "selector_toggle_count",
+        "error_count",
+        "timeout"
+      ],
+      "canonical_path_values": ["A1-MMIO", "A1-ISA"],
+      "implementation_alias_column": "implementation",
+      "implementation_alias_values": ["mmio", "isa"],
+      "aliases": {
+        "recurrence_cycles": "dispatch_or_instruction_window_cycles",
+        "rvv_update_cycles": "rvv_output_update_cycles",
+        "merge_cycles": "merge_window_cycles",
+        "smu_start_count": "smu_commands",
+        "smu_done_count": "smu_done",
+        "error_count": "smu_errors",
+        "timeout": "false when smu_timeouts is 0; true when smu_timeouts is greater than 0",
+        "selector_toggle_count": "ISA equals merge count; MMIO is NA"
+      }
+    },
+    "numerical_agreement": {
+      "required_columns": [
+        "case",
+        "reference_path",
+        "test_path",
+        "m_mae",
+        "l_mae",
+        "weight_old_mae",
+        "weight_tile_mae",
+        "output_mae",
+        "output_stable_relative",
+        "output_cosine",
+        "finite",
+        "error",
+        "timeout"
+      ],
+      "reference_path": "A1-MMIO",
+      "test_path": "A1-ISA",
+      "intermediate_mae_policy": "m_mae, l_mae, weight_old_mae, and weight_tile_mae are NA because recovery raw transcripts do not dump those arrays",
+      "output_policy": "output_mae, output_stable_relative, and output_cosine are computed from raw final-O arrays"
+    },
+    "selector_audit": {
+      "required_columns": [
+        "case",
+        "merge_index",
+        "expected_src",
+        "expected_dst",
+        "observed_selector_before",
+        "observed_selector_after",
+        "smu_start_count",
+        "completion",
+        "error"
+      ],
+      "expected_selector_labels": ["A", "B"],
+      "observed_selector_encoding": {"A": 0, "B": 1},
+      "completion_success_value": "success",
+      "error_success_value": 0
+    }
   },
   "recovery": {
     "systematic": true,

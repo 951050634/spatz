@@ -111,7 +111,9 @@ pairwise cosine is 1.0. The retained reference metrics are:
 
 The recovery `PHASE5_RESULT` records do not emit component hashes. Component
 hash match and component MAE are therefore `NA`; the old reconstructed logs
-are invalidated and are not evidence for these fields.
+are invalidated and are not evidence for these fields. The canonical numerical
+schema also leaves m/l/weight MAE fields `NA` because recovery raw transcripts
+do not dump those intermediate arrays.
 
 ## 13. MMIO vs ISA Matched Methodology
 
@@ -129,6 +131,10 @@ RVV update. The main measured table is:
 
 The inclusive control window is not pure dispatch. For MMIO it is
 config+clear+start+poll+SMU. For ISA it is issue+SMU+completion/status.
+The canonical performance path values are `A1-MMIO` and `A1-ISA`; lowercase
+implementation aliases remain in the detailed columns. The recurrence, RVV,
+merge, SMU start, SMU done, error, timeout, and selector-toggle aliases are
+mechanically derived from their detailed source fields.
 
 ## 14. Control / Recurrence Cycles
 
@@ -216,7 +222,7 @@ is not cherry-picked.
 The simulator hash is
 `483ca72c2cebb6959620a3ec5bdc3bee891c294ef99f91cd1587aaf9c44c9aff`.
 The formal result commit is
-`f72e73d897d8b9f4791a555b4d45be3b5a0a5f66`. The subsequent commit only
+`PENDING_SCHEMA_GATE2_AND_FINAL_RESULTS_COMMIT`. The subsequent commit only
 finalizes provenance metadata; it does not change raw transcripts, CSV values,
 or performance conclusions. No environment secrets or unallowlisted
 overrides are archived.
