@@ -438,6 +438,23 @@ module spatz_cluster
   logic merge_start, merge_clear_done;
   logic merge_busy, merge_done, merge_error;
 
+  // Cluster-local OMERGE issue/response path.  The single adapter is shared
+  // by the cores; the owner tag routes its asynchronous completion back to
+  // the core that accepted the command.
+  acc_issue_req_t [NrCores-1:0] smu_core_req;
+  logic           [NrCores-1:0] smu_core_qvalid, smu_core_qready;
+  acc_rsp_t       [NrCores-1:0] smu_core_resp;
+  logic           [NrCores-1:0] smu_core_pvalid, smu_core_pready;
+  acc_issue_req_t smu_req;
+  logic           smu_qvalid, smu_qready;
+  acc_rsp_t       smu_resp;
+  logic           smu_pvalid, smu_pready;
+  logic [CoreIDWidth-1:0] smu_owner_q;
+
+  addr_t merge_isa_state_a_m, merge_isa_state_a_l;
+  addr_t merge_isa_state_b_m, merge_isa_state_b_l;
+  logic merge_isa_setup;
+
   // -------------
   // DMA Subsystem
   // -------------
@@ -705,6 +722,109 @@ module spatz_cluster
     merge_req.q.user.req_id = '0;
   end
 
+  stream_arbiter #(
+    .DATA_T (acc_issue_req_t),
+    .N_INP  (NrCores)
+  ) i_smu_issue_arbiter (
+    .clk_i       (clk_i),
+    .rst_ni      (rst_ni),
+    .inp_data_i  (smu_core_req),
+    .inp_valid_i (smu_core_qvalid),
+    .inp_ready_o (smu_core_qready),
+    .oup_data_o  (smu_req),
+    .oup_valid_o (smu_qvalid),
+    .oup_ready_i (smu_qready)
+  );
+
+  // There is only one active OMERGE stream in this prototype.  Recording the
+  // accepted request's source core is therefore sufficient to route the
+  // completion response without a second transaction queue.
+  always_ff @(posedge clk_i or negedge rst_ni) begin
+    if (!rst_ni) begin
+      smu_owner_q <= '0;
+    end else if (smu_qvalid && smu_qready) begin
+      for (int i = 0; i < NrCores; i++) begin
+        if (smu_core_qvalid[i] && smu_core_qready[i]) begin
+          smu_owner_q <= i[CoreIDWidth-1:0];
+        end
+      end
+    end
+  end
+
+  stream_demux #(
+    .N_OUP (NrCores)
+  ) i_smu_response_demux (
+    .inp_valid_i (smu_pvalid),
+    .inp_ready_o (smu_pready),
+    .oup_sel_i   (smu_owner_q),
+    .oup_valid_o (smu_core_pvalid),
+    .oup_ready_i (smu_core_pready)
+  );
+
+  for (genvar i = 0; i < NrCores; i++) begin : gen_smu_response_data
+    assign smu_core_resp[i] = smu_resp;
+  end
+
+  tcdm_addr_t smu_src_m_old, smu_src_l_old, smu_src_o_old;
+  tcdm_addr_t smu_src_m_tile, smu_src_l_tile, smu_src_o_tile;
+  tcdm_addr_t smu_dst_m, smu_dst_l, smu_dst_o;
+  tcdm_addr_t smu_dst_weight_old, smu_dst_weight_tile;
+  logic [31:0] smu_n, smu_d, smu_stride, smu_mode;
+  logic smu_start, smu_clear_done, smu_cfg_active;
+  logic smu_rsp_valid, smu_rsp_ready;
+
+  online_merge_omerge_adapter #(
+    .AddrWidth       (TCDMAddrWidth),
+    .acc_issue_req_t (acc_issue_req_t),
+    .acc_rsp_t       (acc_rsp_t)
+  ) i_online_merge_omerge_adapter (
+    .clk_i              (clk_i),
+    .rst_ni             (rst_ni),
+    .req_i              (smu_req),
+    .req_valid_i        (smu_qvalid),
+    .req_ready_o        (smu_qready),
+    .rsp_o              (smu_resp),
+    .rsp_valid_o        (smu_rsp_valid),
+    .rsp_ready_i        (smu_rsp_ready),
+    .state_a_m_i        (tcdm_addr_t'(merge_isa_state_a_m)),
+    .state_a_l_i        (tcdm_addr_t'(merge_isa_state_a_l)),
+    .state_b_m_i        (tcdm_addr_t'(merge_isa_state_b_m)),
+    .state_b_l_i        (tcdm_addr_t'(merge_isa_state_b_l)),
+    .tile_m_i           (tcdm_addr_t'(merge_src_m_tile)),
+    .tile_l_i           (tcdm_addr_t'(merge_src_l_tile)),
+    .dst_weight_old_i   (tcdm_addr_t'(merge_dst_weight_old)),
+    .dst_weight_tile_i  (tcdm_addr_t'(merge_dst_weight_tile)),
+    .n_i                (merge_n),
+    .d_i                (merge_d),
+    .stride_i           (merge_stride),
+    .config_reset_i     (merge_isa_setup),
+    .engine_busy_i      (merge_busy),
+    .engine_done_i      (merge_done),
+    .engine_error_i     (merge_error),
+    .src_m_old_o        (smu_src_m_old),
+    .src_l_old_o        (smu_src_l_old),
+    .src_o_old_o        (smu_src_o_old),
+    .src_m_tile_o       (smu_src_m_tile),
+    .src_l_tile_o       (smu_src_l_tile),
+    .src_o_tile_o       (smu_src_o_tile),
+    .dst_m_o            (smu_dst_m),
+    .dst_l_o            (smu_dst_l),
+    .dst_o_o            (smu_dst_o),
+    .dst_weight_old_o   (smu_dst_weight_old),
+    .dst_weight_tile_o  (smu_dst_weight_tile),
+    .n_o                (smu_n),
+    .d_o                (smu_d),
+    .stride_o           (smu_stride),
+    .mode_o             (smu_mode),
+    .start_o            (smu_start),
+    .clear_done_o       (smu_clear_done),
+    .config_active_o    (smu_cfg_active),
+    .selector_o         ()
+  );
+
+  assign smu_pvalid = smu_rsp_valid;
+  assign smu_rsp_ready = smu_pready;
+
   online_merge_update_engine #(
     .AddrWidth  (TCDMAddrWidth),
     .DataWidth  (NarrowDataWidth),
@@ -714,23 +834,23 @@ module spatz_cluster
   ) i_online_merge_update_engine (
     .clk_i              (clk_i),
     .rst_ni             (rst_ni),
-    .src_m_old_i        (tcdm_addr_t'(merge_src_m_old)),
-    .src_l_old_i        (tcdm_addr_t'(merge_src_l_old)),
-    .src_o_old_i        (tcdm_addr_t'(merge_src_o_old)),
-    .src_m_tile_i       (tcdm_addr_t'(merge_src_m_tile)),
-    .src_l_tile_i       (tcdm_addr_t'(merge_src_l_tile)),
-    .src_o_tile_i       (tcdm_addr_t'(merge_src_o_tile)),
-    .dst_m_i            (tcdm_addr_t'(merge_dst_m)),
-    .dst_l_i            (tcdm_addr_t'(merge_dst_l)),
-    .dst_o_i            (tcdm_addr_t'(merge_dst_o)),
-    .dst_weight_old_i   (tcdm_addr_t'(merge_dst_weight_old)),
-    .dst_weight_tile_i  (tcdm_addr_t'(merge_dst_weight_tile)),
-    .n_i                (merge_n),
-    .d_i                (merge_d),
-    .stride_i           (merge_stride),
-    .mode_i             (merge_mode),
-    .start_i            (merge_start),
-    .clear_done_i       (merge_clear_done),
+    .src_m_old_i        (smu_cfg_active ? smu_src_m_old : tcdm_addr_t'(merge_src_m_old)),
+    .src_l_old_i        (smu_cfg_active ? smu_src_l_old : tcdm_addr_t'(merge_src_l_old)),
+    .src_o_old_i        (smu_cfg_active ? smu_src_o_old : tcdm_addr_t'(merge_src_o_old)),
+    .src_m_tile_i       (smu_cfg_active ? smu_src_m_tile : tcdm_addr_t'(merge_src_m_tile)),
+    .src_l_tile_i       (smu_cfg_active ? smu_src_l_tile : tcdm_addr_t'(merge_src_l_tile)),
+    .src_o_tile_i       (smu_cfg_active ? smu_src_o_tile : tcdm_addr_t'(merge_src_o_tile)),
+    .dst_m_i            (smu_cfg_active ? smu_dst_m : tcdm_addr_t'(merge_dst_m)),
+    .dst_l_i            (smu_cfg_active ? smu_dst_l : tcdm_addr_t'(merge_dst_l)),
+    .dst_o_i            (smu_cfg_active ? smu_dst_o : tcdm_addr_t'(merge_dst_o)),
+    .dst_weight_old_i   (smu_cfg_active ? smu_dst_weight_old : tcdm_addr_t'(merge_dst_weight_old)),
+    .dst_weight_tile_i  (smu_cfg_active ? smu_dst_weight_tile : tcdm_addr_t'(merge_dst_weight_tile)),
+    .n_i                (smu_cfg_active ? smu_n : merge_n),
+    .d_i                (smu_cfg_active ? smu_d : merge_d),
+    .stride_i           (smu_cfg_active ? smu_stride : merge_stride),
+    .mode_i             (smu_cfg_active ? smu_mode : merge_mode),
+    .start_i            (merge_start | smu_start),
+    .clear_done_i       (merge_clear_done | smu_clear_done),
     .busy_o             (merge_busy),
     .done_o             (merge_done),
     .error_o            (merge_error),
@@ -833,7 +953,13 @@ module spatz_cluster
       .axi_dma_perf_o   (/* Unused */                        ),
       .axi_dma_events_o (dma_core_events                     ),
       .core_events_o    (core_events[i]                      ),
-      .tcdm_addr_base_i (tcdm_start_address                  )
+      .tcdm_addr_base_i (tcdm_start_address                  ),
+      .smu_req_o        (smu_core_req[i]                     ),
+      .smu_qvalid_o     (smu_core_qvalid[i]                  ),
+      .smu_qready_i     (smu_core_qready[i]                  ),
+      .smu_resp_i       (smu_core_resp[i]                    ),
+      .smu_pvalid_i     (smu_core_pvalid[i]                  ),
+      .smu_pready_o     (smu_core_pready[i]                  )
     );
     for (genvar j = 0; j < TcdmPorts; j++) begin : gen_tcdm_user
       always_comb begin
@@ -1104,6 +1230,11 @@ module spatz_cluster
     .merge_dst_weight_tile_o  (merge_dst_weight_tile ),
     .merge_start_o            (merge_start           ),
     .merge_clear_done_o       (merge_clear_done      ),
+    .merge_isa_state_a_m_o    (merge_isa_state_a_m   ),
+    .merge_isa_state_a_l_o    (merge_isa_state_a_l   ),
+    .merge_isa_state_b_m_o    (merge_isa_state_b_m   ),
+    .merge_isa_state_b_l_o    (merge_isa_state_b_l   ),
+    .merge_isa_setup_o        (merge_isa_setup       ),
     .merge_busy_i             (merge_busy            ),
     .merge_done_i             (merge_done            ),
     .merge_error_i            (merge_error           ),

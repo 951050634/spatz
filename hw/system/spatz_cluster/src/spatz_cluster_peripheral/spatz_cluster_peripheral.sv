@@ -49,6 +49,11 @@ module spatz_cluster_peripheral
   output addr_t                      merge_dst_weight_tile_o,
   output logic                       merge_start_o,
   output logic                       merge_clear_done_o,
+  output addr_t                      merge_isa_state_a_m_o,
+  output addr_t                      merge_isa_state_a_l_o,
+  output addr_t                      merge_isa_state_b_m_o,
+  output addr_t                      merge_isa_state_b_l_o,
+  output logic                       merge_isa_setup_o,
   input  logic                       merge_busy_i,
   input  logic                       merge_done_i,
   input  logic                       merge_error_i,
@@ -123,6 +128,13 @@ module spatz_cluster_peripheral
   assign merge_dst_weight_tile_o = addr_t'(reg2hw.merge_dst_weight_tile.q);
   assign merge_start_o       = reg2hw.merge_ctrl.start.qe & reg2hw.merge_ctrl.start.q;
   assign merge_clear_done_o  = reg2hw.merge_ctrl.clear_done.qe & reg2hw.merge_ctrl.clear_done.q;
+  assign merge_isa_state_a_m_o = addr_t'(reg2hw.merge_isa_state_a_m.q);
+  assign merge_isa_state_a_l_o = addr_t'(reg2hw.merge_isa_state_a_l.q);
+  assign merge_isa_state_b_m_o = addr_t'(reg2hw.merge_isa_state_b_m.q);
+  assign merge_isa_state_b_l_o = addr_t'(reg2hw.merge_isa_state_b_l.q);
+  assign merge_isa_setup_o = reg2hw.merge_isa_state_a_m.qe |
+      reg2hw.merge_isa_state_a_l.qe | reg2hw.merge_isa_state_b_m.qe |
+      reg2hw.merge_isa_state_b_l.qe;
   assign hw2reg.merge_status.busy.d  = merge_busy_i;
   assign hw2reg.merge_status.done.d  = merge_done_i;
   assign hw2reg.merge_status.error.d = merge_error_i;

@@ -27,6 +27,7 @@
 
 #define PHASE5_SOFTWARE 0
 #define PHASE5_SMU 1
+#define PHASE5_ISA 2
 #define PHASE5_MAX_POLLS 1000000u
 #define PHASE5_STACK_LOG2 13
 #define PHASE5_ALLOC_ALIGN 256u
@@ -46,7 +47,8 @@ static volatile uint64_t phase5_output_syscall[8];
 static char phase5_output_buffer[PHASE5_OUTPUT_BUFFER_BYTES];
 
 _Static_assert(PHASE5_IMPLEMENTATION == PHASE5_SOFTWARE ||
-                   PHASE5_IMPLEMENTATION == PHASE5_SMU,
+                   PHASE5_IMPLEMENTATION == PHASE5_SMU ||
+                   PHASE5_IMPLEMENTATION == PHASE5_ISA,
                "invalid Phase 5 implementation selector");
 _Static_assert(PHASE5_TILE_KEYS > 0u, "Phase 5 tile must be non-empty");
 _Static_assert(PHASE5_CASE_N % PHASE5_TILE_KEYS == 0u,
@@ -89,6 +91,7 @@ typedef struct {
   uint64_t core_residual_cycles;
   uint64_t output_copy_cycles;
   uint64_t total_cycles;
+  uint64_t workload_setup_cycles;
   uint64_t smu_setup_cycles;
   uint64_t smu_wait_cycles;
   int64_t smu_breakdown_delta_cycles;
@@ -365,6 +368,50 @@ static void smu_start(const phase5_buffers_t *buffers, uint32_t n,
       1u << SPATZ_CLUSTER_PERIPHERAL_MERGE_CTRL_START_BIT;
 }
 
+// Configure the physical A/B m/l state buffers once for the instruction path.
+// The software O pointer remains outside the adapter and is updated by the
+// existing RVV routine after every successful completion.
+static void smu_isa_setup(const phase5_buffers_t *buffers, uint32_t n,
+                          uint32_t d) {
+  *cluster_reg(
+      SPATZ_CLUSTER_PERIPHERAL_MERGE_ISA_STATE_A_M_REG_OFFSET) =
+      tcdm_offset(buffers->m_old);
+  *cluster_reg(
+      SPATZ_CLUSTER_PERIPHERAL_MERGE_ISA_STATE_A_L_REG_OFFSET) =
+      tcdm_offset(buffers->l_old);
+  *cluster_reg(
+      SPATZ_CLUSTER_PERIPHERAL_MERGE_ISA_STATE_B_M_REG_OFFSET) =
+      tcdm_offset(buffers->m_out);
+  *cluster_reg(
+      SPATZ_CLUSTER_PERIPHERAL_MERGE_ISA_STATE_B_L_REG_OFFSET) =
+      tcdm_offset(buffers->l_out);
+  *cluster_reg(SPATZ_CLUSTER_PERIPHERAL_MERGE_SRC_M_TILE_REG_OFFSET) =
+      tcdm_offset(buffers->m_tile);
+  *cluster_reg(SPATZ_CLUSTER_PERIPHERAL_MERGE_SRC_L_TILE_REG_OFFSET) =
+      tcdm_offset(buffers->l_tile);
+  *cluster_reg(SPATZ_CLUSTER_PERIPHERAL_MERGE_N_REG_OFFSET) = n;
+  *cluster_reg(SPATZ_CLUSTER_PERIPHERAL_MERGE_D_REG_OFFSET) = d;
+  *cluster_reg(SPATZ_CLUSTER_PERIPHERAL_MERGE_STRIDE_REG_OFFSET) =
+      d * sizeof(float);
+  *cluster_reg(SPATZ_CLUSTER_PERIPHERAL_MERGE_MODE_REG_OFFSET) =
+      (uint32_t)ONLINE_MERGE_MODE_MIXED_SCALAR;
+  *cluster_reg(SPATZ_CLUSTER_PERIPHERAL_MERGE_DST_WEIGHT_OLD_REG_OFFSET) =
+      tcdm_offset(buffers->old_weight);
+  *cluster_reg(SPATZ_CLUSTER_PERIPHERAL_MERGE_DST_WEIGHT_TILE_REG_OFFSET) =
+      tcdm_offset(buffers->tile_weight);
+  smu_clear_done();
+}
+
+static inline uint32_t omerge(void) {
+  uint32_t status;
+  __asm__ volatile(
+      ".insn r 0x5b, 0, 3, %0, x0, x0"
+      : "=r"(status)
+      :
+      : "memory");
+  return status;
+}
+
 static phase5_wait_t smu_wait(int *saw_busy) {
   *saw_busy = 0;
   for (uint32_t poll = 0; poll < PHASE5_MAX_POLLS; poll++) {
@@ -447,6 +494,12 @@ static int run_attention(phase5_buffers_t *buffers, phase5_cycles_t *cycles) {
   const uint32_t tile_count = n / PHASE5_TILE_KEYS;
   int failed = 0;
 
+#if PHASE5_IMPLEMENTATION == PHASE5_ISA
+  uint64_t setup_start = benchmark_get_cycle64();
+  smu_isa_setup(buffers, n, d);
+  cycles->workload_setup_cycles = benchmark_get_cycle64() - setup_start;
+#endif
+
   uint64_t core_start = benchmark_get_cycle64();
   for (uint32_t tile = 0; tile < tile_count; tile++) {
     uint32_t key_start = tile * PHASE5_TILE_KEYS;
@@ -476,7 +529,7 @@ static int run_attention(phase5_buffers_t *buffers, phase5_cycles_t *cycles) {
     recurrence_cycles = benchmark_get_cycle64() - stage_start;
     cycles->recurrence_cycles += recurrence_cycles;
     cycles->software_recurrence_calls++;
-#else
+#elif PHASE5_IMPLEMENTATION == PHASE5_SMU
     uint64_t recurrence_start = benchmark_get_cycle64();
     uint64_t setup_start = recurrence_start;
     smu_start(buffers, n, d);
@@ -499,6 +552,25 @@ static int run_attention(phase5_buffers_t *buffers, phase5_cycles_t *cycles) {
       cycles->smu_timeouts++;
       failed = 1;
     }
+    if (failed) {
+      break;
+    }
+#else
+    uint64_t recurrence_start = benchmark_get_cycle64();
+    uint32_t status = omerge();
+    cycles->smu_commands++;
+    if (status == 0u) {
+      cycles->smu_done++;
+    } else {
+      cycles->smu_errors++;
+      failed = 1;
+    }
+    // Consume the completion status before sampling the end of the
+    // instruction window.  This keeps the ISA timing bucket inclusive of
+    // issue, SMU execution, response commit, and status consumption.
+    uint64_t recurrence_end = benchmark_get_cycle64();
+    recurrence_cycles = recurrence_end - recurrence_start;
+    cycles->recurrence_cycles += recurrence_cycles;
     if (failed) {
       break;
     }
@@ -598,9 +670,10 @@ static void print_cycles(const phase5_cycles_t *cycles) {
          (unsigned long long)cycles->output_copy_cycles,
          (unsigned long long)cycles->merge_window_cycles,
          (unsigned long long)cycles->total_cycles);
-  PRINTF("\"smu_setup\":%llu,\"smu_wait\":%llu,"
+  PRINTF("\"workload_setup\":%llu,\"smu_setup\":%llu,\"smu_wait\":%llu,"
          "\"smu_breakdown_sum\":%llu,\"smu_breakdown_delta\":%lld,"
          "\"smu_breakdown_exact\":%u,",
+         (unsigned long long)cycles->workload_setup_cycles,
          (unsigned long long)cycles->smu_setup_cycles,
          (unsigned long long)cycles->smu_wait_cycles,
          (unsigned long long)(cycles->smu_setup_cycles +
@@ -684,6 +757,8 @@ int main(void) {
            "\"implementation\":\"%s\",\"n\":%u,\"d\":%u}\n",
 #if PHASE5_IMPLEMENTATION == PHASE5_SOFTWARE
            "software",
+#elif PHASE5_IMPLEMENTATION == PHASE5_ISA
+           "omerge",
 #else
            "smu",
 #endif
@@ -698,6 +773,8 @@ int main(void) {
 
 #if PHASE5_IMPLEMENTATION == PHASE5_SOFTWARE
   const char *implementation = "software";
+#elif PHASE5_IMPLEMENTATION == PHASE5_ISA
+  const char *implementation = "omerge";
 #else
   const char *implementation = "smu";
 #endif

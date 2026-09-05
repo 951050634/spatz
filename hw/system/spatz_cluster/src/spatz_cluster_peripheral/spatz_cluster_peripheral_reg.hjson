@@ -598,6 +598,42 @@
 	    name: "ERROR",
 	    desc: "The previous request failed configuration validation."
 	}]
+    },
+    {
+	name: "MERGE_ISA_STATE_A_M",
+	desc: '''TCDM byte offset of the persistent OMERGE state-A max buffer.'''
+	swaccess: "rw",
+	hwaccess: "hro",
+	hwqe: "true",
+	resval: "0",
+	fields: [{ bits: "31:0", name: "ADDR", desc: "Cluster-local TCDM byte offset." }]
+    },
+    {
+	name: "MERGE_ISA_STATE_A_L",
+	desc: '''TCDM byte offset of the persistent OMERGE state-A normalization buffer.'''
+	swaccess: "rw",
+	hwaccess: "hro",
+	hwqe: "true",
+	resval: "0",
+	fields: [{ bits: "31:0", name: "ADDR", desc: "Cluster-local TCDM byte offset." }]
+    },
+    {
+	name: "MERGE_ISA_STATE_B_M",
+	desc: '''TCDM byte offset of the persistent OMERGE state-B max buffer.'''
+	swaccess: "rw",
+	hwaccess: "hro",
+	hwqe: "true",
+	resval: "0",
+	fields: [{ bits: "31:0", name: "ADDR", desc: "Cluster-local TCDM byte offset." }]
+    },
+    {
+	name: "MERGE_ISA_STATE_B_L",
+	desc: '''TCDM byte offset of the persistent OMERGE state-B normalization buffer.'''
+	swaccess: "rw",
+	hwaccess: "hro",
+	hwqe: "true",
+	resval: "0",
+	fields: [{ bits: "31:0", name: "ADDR", desc: "Cluster-local TCDM byte offset." }]
     }
   ]
 }

@@ -10,7 +10,7 @@
 module spatz_cluster_peripheral_reg_top #(
   parameter type reg_req_t = logic,
   parameter type reg_rsp_t = logic,
-  parameter int AW = 8
+  parameter int AW = 9
 ) (
   input logic clk_i,
   input logic rst_ni,
@@ -339,6 +339,18 @@ module spatz_cluster_peripheral_reg_top #(
   logic merge_status_done_re;
   logic merge_status_error_qs;
   logic merge_status_error_re;
+  logic [31:0] merge_isa_state_a_m_qs;
+  logic [31:0] merge_isa_state_a_m_wd;
+  logic merge_isa_state_a_m_we;
+  logic [31:0] merge_isa_state_a_l_qs;
+  logic [31:0] merge_isa_state_a_l_wd;
+  logic merge_isa_state_a_l_we;
+  logic [31:0] merge_isa_state_b_m_qs;
+  logic [31:0] merge_isa_state_b_m_wd;
+  logic merge_isa_state_b_m_we;
+  logic [31:0] merge_isa_state_b_l_qs;
+  logic [31:0] merge_isa_state_b_l_wd;
+  logic merge_isa_state_b_l_we;
 
   // Register instances
 
@@ -2689,9 +2701,117 @@ module spatz_cluster_peripheral_reg_top #(
   );
 
 
+  // R[merge_isa_state_a_m]: V(False)
+
+  prim_subreg #(
+    .DW      (32),
+    .SWACCESS("RW"),
+    .RESVAL  (32'h0)
+  ) u_merge_isa_state_a_m (
+    .clk_i   (clk_i    ),
+    .rst_ni  (rst_ni  ),
+
+    // from register interface
+    .we     (merge_isa_state_a_m_we),
+    .wd     (merge_isa_state_a_m_wd),
+
+    // from internal hardware
+    .de     (1'b0),
+    .d      ('0  ),
+
+    // to internal hardware
+    .qe     (reg2hw.merge_isa_state_a_m.qe),
+    .q      (reg2hw.merge_isa_state_a_m.q ),
+
+    // to register interface (read)
+    .qs     (merge_isa_state_a_m_qs)
+  );
 
 
-  logic [29:0] addr_hit;
+  // R[merge_isa_state_a_l]: V(False)
+
+  prim_subreg #(
+    .DW      (32),
+    .SWACCESS("RW"),
+    .RESVAL  (32'h0)
+  ) u_merge_isa_state_a_l (
+    .clk_i   (clk_i    ),
+    .rst_ni  (rst_ni  ),
+
+    // from register interface
+    .we     (merge_isa_state_a_l_we),
+    .wd     (merge_isa_state_a_l_wd),
+
+    // from internal hardware
+    .de     (1'b0),
+    .d      ('0  ),
+
+    // to internal hardware
+    .qe     (reg2hw.merge_isa_state_a_l.qe),
+    .q      (reg2hw.merge_isa_state_a_l.q ),
+
+    // to register interface (read)
+    .qs     (merge_isa_state_a_l_qs)
+  );
+
+
+  // R[merge_isa_state_b_m]: V(False)
+
+  prim_subreg #(
+    .DW      (32),
+    .SWACCESS("RW"),
+    .RESVAL  (32'h0)
+  ) u_merge_isa_state_b_m (
+    .clk_i   (clk_i    ),
+    .rst_ni  (rst_ni  ),
+
+    // from register interface
+    .we     (merge_isa_state_b_m_we),
+    .wd     (merge_isa_state_b_m_wd),
+
+    // from internal hardware
+    .de     (1'b0),
+    .d      ('0  ),
+
+    // to internal hardware
+    .qe     (reg2hw.merge_isa_state_b_m.qe),
+    .q      (reg2hw.merge_isa_state_b_m.q ),
+
+    // to register interface (read)
+    .qs     (merge_isa_state_b_m_qs)
+  );
+
+
+  // R[merge_isa_state_b_l]: V(False)
+
+  prim_subreg #(
+    .DW      (32),
+    .SWACCESS("RW"),
+    .RESVAL  (32'h0)
+  ) u_merge_isa_state_b_l (
+    .clk_i   (clk_i    ),
+    .rst_ni  (rst_ni  ),
+
+    // from register interface
+    .we     (merge_isa_state_b_l_we),
+    .wd     (merge_isa_state_b_l_wd),
+
+    // from internal hardware
+    .de     (1'b0),
+    .d      ('0  ),
+
+    // to internal hardware
+    .qe     (reg2hw.merge_isa_state_b_l.qe),
+    .q      (reg2hw.merge_isa_state_b_l.q ),
+
+    // to register interface (read)
+    .qs     (merge_isa_state_b_l_qs)
+  );
+
+
+
+
+  logic [33:0] addr_hit;
   always_comb begin
     addr_hit = '0;
     addr_hit[ 0] = (reg_addr == SPATZ_CLUSTER_PERIPHERAL_PERF_COUNTER_ENABLE_0_OFFSET);
@@ -2724,6 +2844,10 @@ module spatz_cluster_peripheral_reg_top #(
     addr_hit[27] = (reg_addr == SPATZ_CLUSTER_PERIPHERAL_MERGE_DST_WEIGHT_TILE_OFFSET);
     addr_hit[28] = (reg_addr == SPATZ_CLUSTER_PERIPHERAL_MERGE_CTRL_OFFSET);
     addr_hit[29] = (reg_addr == SPATZ_CLUSTER_PERIPHERAL_MERGE_STATUS_OFFSET);
+    addr_hit[30] = (reg_addr == SPATZ_CLUSTER_PERIPHERAL_MERGE_ISA_STATE_A_M_OFFSET);
+    addr_hit[31] = (reg_addr == SPATZ_CLUSTER_PERIPHERAL_MERGE_ISA_STATE_A_L_OFFSET);
+    addr_hit[32] = (reg_addr == SPATZ_CLUSTER_PERIPHERAL_MERGE_ISA_STATE_B_M_OFFSET);
+    addr_hit[33] = (reg_addr == SPATZ_CLUSTER_PERIPHERAL_MERGE_ISA_STATE_B_L_OFFSET);
   end
 
   assign addrmiss = (reg_re || reg_we) ? ~|addr_hit : 1'b0 ;
@@ -2760,7 +2884,11 @@ module spatz_cluster_peripheral_reg_top #(
                (addr_hit[26] & (|(SPATZ_CLUSTER_PERIPHERAL_PERMIT[26] & ~reg_be))) |
                (addr_hit[27] & (|(SPATZ_CLUSTER_PERIPHERAL_PERMIT[27] & ~reg_be))) |
                (addr_hit[28] & (|(SPATZ_CLUSTER_PERIPHERAL_PERMIT[28] & ~reg_be))) |
-               (addr_hit[29] & (|(SPATZ_CLUSTER_PERIPHERAL_PERMIT[29] & ~reg_be)))));
+               (addr_hit[29] & (|(SPATZ_CLUSTER_PERIPHERAL_PERMIT[29] & ~reg_be))) |
+               (addr_hit[30] & (|(SPATZ_CLUSTER_PERIPHERAL_PERMIT[30] & ~reg_be))) |
+               (addr_hit[31] & (|(SPATZ_CLUSTER_PERIPHERAL_PERMIT[31] & ~reg_be))) |
+               (addr_hit[32] & (|(SPATZ_CLUSTER_PERIPHERAL_PERMIT[32] & ~reg_be))) |
+               (addr_hit[33] & (|(SPATZ_CLUSTER_PERIPHERAL_PERMIT[33] & ~reg_be)))));
   end
 
   assign perf_counter_enable_0_cycle_0_we = addr_hit[0] & reg_we & !reg_error;
@@ -3040,6 +3168,18 @@ module spatz_cluster_peripheral_reg_top #(
 
   assign merge_status_error_re = addr_hit[29] & reg_re & !reg_error;
 
+  assign merge_isa_state_a_m_we = addr_hit[30] & reg_we & !reg_error;
+  assign merge_isa_state_a_m_wd = reg_wdata[31:0];
+
+  assign merge_isa_state_a_l_we = addr_hit[31] & reg_we & !reg_error;
+  assign merge_isa_state_a_l_wd = reg_wdata[31:0];
+
+  assign merge_isa_state_b_m_we = addr_hit[32] & reg_we & !reg_error;
+  assign merge_isa_state_b_m_wd = reg_wdata[31:0];
+
+  assign merge_isa_state_b_l_we = addr_hit[33] & reg_we & !reg_error;
+  assign merge_isa_state_b_l_wd = reg_wdata[31:0];
+
   // Read data return
   always_comb begin
     reg_rdata_next = '0;
@@ -3227,6 +3367,22 @@ module spatz_cluster_peripheral_reg_top #(
         reg_rdata_next[2] = merge_status_error_qs;
       end
 
+      addr_hit[30]: begin
+        reg_rdata_next[31:0] = merge_isa_state_a_m_qs;
+      end
+
+      addr_hit[31]: begin
+        reg_rdata_next[31:0] = merge_isa_state_a_l_qs;
+      end
+
+      addr_hit[32]: begin
+        reg_rdata_next[31:0] = merge_isa_state_b_m_qs;
+      end
+
+      addr_hit[33]: begin
+        reg_rdata_next[31:0] = merge_isa_state_b_l_qs;
+      end
+
       default: begin
         reg_rdata_next = '1;
       end
@@ -3249,7 +3405,7 @@ endmodule
 
 module spatz_cluster_peripheral_reg_top_intf
 #(
-  parameter int AW = 8,
+  parameter int AW = 9,
   localparam int DW = 64
 ) (
   input logic clk_i,

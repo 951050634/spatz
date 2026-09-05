@@ -305,6 +305,7 @@ endfunction()
 
 add_phase5_native_benchmark(native-online-attention-software 0)
 add_phase5_native_benchmark(native-online-attention-smu 1)
+add_phase5_native_benchmark(native-online-attention-omerge 2)
 
 add_spatz_test_threeParam(dp-fmatmul dp-fmatmul/main.c 64  64  64 )
 add_spatz_test_threeParam(dp-fmatmul dp-fmatmul/main.c 64  128 64 )

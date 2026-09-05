@@ -2247,6 +2247,17 @@ module snitch import snitch_pkg::*; import riscv_instr::*; #(
         end
       end
 
+      // OMERGE is a scalar-side, stateful accelerator command.  Its frozen
+      // encoding fixes rs1 and rs2 to x0; all workload state is held by the
+      // cluster-local SMU adapter, while rd receives completion status.
+      riscv_instr::OMERGE: begin
+        write_rd        = 1'b0;
+        uses_rd         = 1'b1;
+        acc_qvalid_o    = valid_instr;
+        acc_register_rd = 1'b1;
+        acc_qreq_o.addr = SMU;
+      end
+
 /* RVV extension */
 `ifdef TARGET_SPATZ
       // Off-load to RVV coprocessor

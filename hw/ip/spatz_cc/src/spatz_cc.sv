@@ -113,7 +113,14 @@ module spatz_cc
     output dma_events_t                  axi_dma_events_o,
     // Core event strobes
     output core_events_t                 core_events_o,
-    input  addr_t                        tcdm_addr_base_i
+    input  addr_t                        tcdm_addr_base_i,
+    // Cluster-local Online Merge accelerator path.
+    output acc_issue_req_t               smu_req_o,
+    output logic                         smu_qvalid_o,
+    input  logic                         smu_qready_i,
+    input  acc_rsp_t                     smu_resp_i,
+    input  logic                         smu_pvalid_i,
+    output logic                         smu_pready_o
   );
 
   // FMA architecture is "merged" -> mulexp and macexp instructions are supported
@@ -128,6 +135,7 @@ module spatz_cc
   acc_issue_req_t acc_snitch_req;
   acc_issue_req_t acc_snitch_demux;
   acc_issue_rsp_t acc_snitch_resp;
+  acc_issue_rsp_t acc_spatz_issue_resp;
 
   acc_rsp_t acc_demux_snitch;
   acc_rsp_t acc_resp;
@@ -136,6 +144,7 @@ module spatz_cc
   logic acc_snitch_demux_qvalid, acc_snitch_demux_qready;
   logic acc_qvalid, acc_qready;
   logic dma_qvalid, dma_qready;
+  logic smu_qvalid;
 
   logic acc_pvalid, acc_pready;
   logic dma_pvalid, dma_pready;
@@ -239,13 +248,13 @@ module spatz_cc
 
   // Accelerator Demux Port
   stream_demux #(
-    .N_OUP ( 2 )
+    .N_OUP ( 3 )
   ) i_stream_demux_offload (
     .inp_valid_i (acc_snitch_demux_qvalid             ),
     .inp_ready_o (acc_snitch_demux_qready             ),
-    .oup_sel_i   (acc_snitch_demux.addr[$clog2(2)-1:0]),
-    .oup_valid_o ({dma_qvalid, acc_qvalid}            ),
-    .oup_ready_i ({dma_qready, acc_qready}            )
+    .oup_sel_i   (acc_snitch_demux.addr[$clog2(3)-1:0]),
+    .oup_valid_o ({smu_qvalid, dma_qvalid, acc_qvalid} ),
+    .oup_ready_i ({smu_qready_i, dma_qready, acc_qready} )
   );
 
   // There is no shared muldiv in this configuration
@@ -253,16 +262,29 @@ module spatz_cc
   assign hive_req_o.acc_pready = 1'b0;
   assign hive_req_o.acc_req    = '0;
   assign acc_snitch_req        = acc_snitch_demux;
+  assign smu_req_o             = acc_snitch_demux;
+  assign smu_qvalid_o          = smu_qvalid;
+
+  // The Spatz issue response describes the regular accelerator path. OMERGE
+  // has no memory-operation side effects at issue time, so only advertise
+  // the adapter's ready state when that destination is selected.
+  always_comb begin
+    acc_snitch_resp = acc_spatz_issue_resp;
+    if (acc_snitch_demux.addr == snitch_pkg::SMU) begin
+      acc_snitch_resp = '0;
+      acc_snitch_resp.accept = smu_qready_i;
+    end
+  end
 
   stream_arbiter #(
     .DATA_T ( acc_rsp_t ),
-    .N_INP  ( 2         )
+    .N_INP  ( 3         )
   ) i_stream_arbiter_offload (
     .clk_i       ( clk_i                     ),
     .rst_ni      ( rst_ni                    ),
-    .inp_data_i  ( {dma_resp, acc_resp }     ),
-    .inp_valid_i ( {dma_pvalid, acc_pvalid } ),
-    .inp_ready_o ( {dma_pready, acc_pready } ),
+    .inp_data_i  ( {dma_resp, smu_resp_i, acc_resp } ),
+    .inp_valid_i ( {dma_pvalid, smu_pvalid_i, acc_pvalid } ),
+    .inp_ready_o ( {dma_pready, smu_pready_o, acc_pready } ),
     .oup_data_o  ( acc_demux_snitch          ),
     .oup_valid_o ( acc_demux_snitch_valid    ),
     .oup_ready_i ( acc_demux_snitch_ready    )
@@ -297,7 +319,7 @@ module spatz_cc
     .issue_valid_i           (acc_qvalid            ),
     .issue_ready_o           (acc_qready            ),
     .issue_req_i             (acc_snitch_req        ),
-    .issue_rsp_o             (acc_snitch_resp       ),
+    .issue_rsp_o             (acc_spatz_issue_resp  ),
     .rsp_valid_o             (acc_pvalid            ),
     .rsp_ready_i             (acc_pready            ),
     .rsp_o                   (acc_resp              ),
