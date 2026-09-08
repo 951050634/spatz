@@ -467,7 +467,8 @@
 	name: "MERGE_SRC_M_TILE",
 	desc: '''TCDM byte offset of the tile per-row max state buffer.'''
 	swaccess: "rw",
-	hwaccess: "hro",
+	hwaccess: "hrw",
+	hwqe: "true",
 	resval: "0",
 	fields: [{ bits: "31:0", name: "ADDR", desc: "Cluster-local TCDM byte offset." }]
     },
@@ -475,7 +476,8 @@
 	name: "MERGE_SRC_L_TILE",
 	desc: '''TCDM byte offset of the tile per-row normalization state buffer.'''
 	swaccess: "rw",
-	hwaccess: "hro",
+	hwaccess: "hrw",
+	hwqe: "true",
 	resval: "0",
 	fields: [{ bits: "31:0", name: "ADDR", desc: "Cluster-local TCDM byte offset." }]
     },
@@ -515,7 +517,8 @@
 	name: "MERGE_N",
 	desc: '''Number of rows to merge.'''
 	swaccess: "rw",
-	hwaccess: "hro",
+	hwaccess: "hrw",
+	hwqe: "true",
 	resval: "0",
 	fields: [{ bits: "31:0", name: "VALUE", desc: "Number of rows." }]
     },
@@ -547,7 +550,8 @@
 	name: "MERGE_DST_WEIGHT_OLD",
 	desc: '''TCDM byte offset of the scalar-only old-weight output array.'''
 	swaccess: "rw",
-	hwaccess: "hro",
+	hwaccess: "hrw",
+	hwqe: "true",
 	resval: "0",
 	fields: [{ bits: "31:0", name: "ADDR", desc: "Cluster-local TCDM byte offset." }]
     },
@@ -555,7 +559,8 @@
 	name: "MERGE_DST_WEIGHT_TILE",
 	desc: '''TCDM byte offset of the scalar-only tile-weight output array.'''
 	swaccess: "rw",
-	hwaccess: "hro",
+	hwaccess: "hrw",
+	hwqe: "true",
 	resval: "0",
 	fields: [{ bits: "31:0", name: "ADDR", desc: "Cluster-local TCDM byte offset." }]
     },
@@ -603,7 +608,7 @@
 	name: "MERGE_ISA_STATE_A_M",
 	desc: '''TCDM byte offset of the persistent OMERGE state-A max buffer.'''
 	swaccess: "rw",
-	hwaccess: "hro",
+	hwaccess: "hrw",
 	hwqe: "true",
 	resval: "0",
 	fields: [{ bits: "31:0", name: "ADDR", desc: "Cluster-local TCDM byte offset." }]
@@ -612,7 +617,7 @@
 	name: "MERGE_ISA_STATE_A_L",
 	desc: '''TCDM byte offset of the persistent OMERGE state-A normalization buffer.'''
 	swaccess: "rw",
-	hwaccess: "hro",
+	hwaccess: "hrw",
 	hwqe: "true",
 	resval: "0",
 	fields: [{ bits: "31:0", name: "ADDR", desc: "Cluster-local TCDM byte offset." }]
@@ -621,7 +626,7 @@
 	name: "MERGE_ISA_STATE_B_M",
 	desc: '''TCDM byte offset of the persistent OMERGE state-B max buffer.'''
 	swaccess: "rw",
-	hwaccess: "hro",
+	hwaccess: "hrw",
 	hwqe: "true",
 	resval: "0",
 	fields: [{ bits: "31:0", name: "ADDR", desc: "Cluster-local TCDM byte offset." }]
@@ -630,7 +635,7 @@
 	name: "MERGE_ISA_STATE_B_L",
 	desc: '''TCDM byte offset of the persistent OMERGE state-B normalization buffer.'''
 	swaccess: "rw",
-	hwaccess: "hro",
+	hwaccess: "hrw",
 	hwqe: "true",
 	resval: "0",
 	fields: [{ bits: "31:0", name: "ADDR", desc: "Cluster-local TCDM byte offset." }]

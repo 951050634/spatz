@@ -1,0 +1,8 @@
+PHASE8B_DECODE PASS
+OMCFG match=0x0000105b mask=0x00007fff
+OMERGE match=0x0600005b mask=0xfffff07f
+active_snitch_labels=442 symbolic_overlaps=0
+sample=0x0000105b cfg_id=0 rs1=x0 rd=x0
+sample=0x0015105b cfg_id=1 rs1=x10 rd=x0
+sample=0x002f905b cfg_id=2 rs1=x31 rd=x0
+sample=0x00af905b cfg_id=10 rs1=x31 rd=x0

@@ -53,7 +53,11 @@ module spatz_cluster_peripheral
   output addr_t                      merge_isa_state_a_l_o,
   output addr_t                      merge_isa_state_b_m_o,
   output addr_t                      merge_isa_state_b_l_o,
+  output logic [8:0]                 merge_isa_cfg_write_o,
   output logic                       merge_isa_setup_o,
+  input  logic                       omcfg_write_i,
+  input  logic [11:0]                omcfg_id_i,
+  input  logic [31:0]                omcfg_value_i,
   input  logic                       merge_busy_i,
   input  logic                       merge_done_i,
   input  logic                       merge_error_i,
@@ -132,9 +136,40 @@ module spatz_cluster_peripheral
   assign merge_isa_state_a_l_o = addr_t'(reg2hw.merge_isa_state_a_l.q);
   assign merge_isa_state_b_m_o = addr_t'(reg2hw.merge_isa_state_b_m.q);
   assign merge_isa_state_b_l_o = addr_t'(reg2hw.merge_isa_state_b_l.q);
-  assign merge_isa_setup_o = reg2hw.merge_isa_state_a_m.qe |
-      reg2hw.merge_isa_state_a_l.qe | reg2hw.merge_isa_state_b_m.qe |
-      reg2hw.merge_isa_state_b_l.qe;
+
+  // Software MMIO writes and OMCFG hardware writes update the same generated
+  // register storage.  The write pulse vector lets the OMERGE adapter apply
+  // identical required-field tracking to both paths.
+  assign merge_isa_cfg_write_o[0] = reg2hw.merge_isa_state_a_m.qe;
+  assign merge_isa_cfg_write_o[1] = reg2hw.merge_isa_state_a_l.qe;
+  assign merge_isa_cfg_write_o[2] = reg2hw.merge_isa_state_b_m.qe;
+  assign merge_isa_cfg_write_o[3] = reg2hw.merge_isa_state_b_l.qe;
+  assign merge_isa_cfg_write_o[4] = reg2hw.merge_src_m_tile.qe;
+  assign merge_isa_cfg_write_o[5] = reg2hw.merge_src_l_tile.qe;
+  assign merge_isa_cfg_write_o[6] = reg2hw.merge_dst_weight_old.qe;
+  assign merge_isa_cfg_write_o[7] = reg2hw.merge_dst_weight_tile.qe;
+  assign merge_isa_cfg_write_o[8] = reg2hw.merge_n.qe;
+  assign merge_isa_setup_o = merge_clear_done_o;
+
+  assign hw2reg.merge_isa_state_a_m.d = omcfg_value_i;
+  assign hw2reg.merge_isa_state_a_m.de = omcfg_write_i && (omcfg_id_i == 12'h000);
+  assign hw2reg.merge_isa_state_a_l.d = omcfg_value_i;
+  assign hw2reg.merge_isa_state_a_l.de = omcfg_write_i && (omcfg_id_i == 12'h001);
+  assign hw2reg.merge_isa_state_b_m.d = omcfg_value_i;
+  assign hw2reg.merge_isa_state_b_m.de = omcfg_write_i && (omcfg_id_i == 12'h002);
+  assign hw2reg.merge_isa_state_b_l.d = omcfg_value_i;
+  assign hw2reg.merge_isa_state_b_l.de = omcfg_write_i && (omcfg_id_i == 12'h003);
+  assign hw2reg.merge_src_m_tile.d = omcfg_value_i;
+  assign hw2reg.merge_src_m_tile.de = omcfg_write_i && (omcfg_id_i == 12'h004);
+  assign hw2reg.merge_src_l_tile.d = omcfg_value_i;
+  assign hw2reg.merge_src_l_tile.de = omcfg_write_i && (omcfg_id_i == 12'h005);
+  assign hw2reg.merge_dst_weight_old.d = omcfg_value_i;
+  assign hw2reg.merge_dst_weight_old.de = omcfg_write_i && (omcfg_id_i == 12'h006);
+  assign hw2reg.merge_dst_weight_tile.d = omcfg_value_i;
+  assign hw2reg.merge_dst_weight_tile.de = omcfg_write_i && (omcfg_id_i == 12'h007);
+  assign hw2reg.merge_n.d = omcfg_value_i;
+  assign hw2reg.merge_n.de = omcfg_write_i && (omcfg_id_i == 12'h008);
+
   assign hw2reg.merge_status.busy.d  = merge_busy_i;
   assign hw2reg.merge_status.done.d  = merge_done_i;
   assign hw2reg.merge_status.error.d = merge_error_i;

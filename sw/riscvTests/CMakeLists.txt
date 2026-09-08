@@ -27,6 +27,8 @@ include_directories(isa/macros/vector)
 enable_testing()
 set(SNITCH_TEST_PREFIX riscvTests-)
 
+add_snitch_test(omcfg-directed isa/omcfg-directed.c)
+
 add_snitch_test(vsetvli isa/rv64uv/vsetvli.c)
 
 add_snitch_test(vadd  isa/rv64uv/vadd.c)

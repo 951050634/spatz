@@ -1,0 +1,61 @@
+PHASE8B_T1 PASS
+PHASE8B_T2 PASS
+PHASE8B_T3 PASS
+PHASE8B_T4 PASS
+PHASE8B_T5 PASS
+PHASE8B_T6 PASS
+PHASE8B_T7 PASS
+PHASE8B_RESERVED PASS
+PHASE8B_T8 PASS
+PHASE8B_MMIO_SHARED PASS
+PHASE8B_RESULT SUCCESS failures=0
+OM_SIM_CONFIG {"schema_version":1,"profile":"default","dasm_trace_enabled":true,"fsm_observer_enabled":true}
+[Tracer] Logging Hart          0 to logs/trace_hart_00000.dasm
+[Tracer] Logging Hart          1 to logs/trace_hart_00001.dasm
+Loading entry point: 80000000
+OMCFG_ADAPTER_WRITE cfg_id=0 rs1=x0 value=0x00000000 mask_before=0x000 mask_after=0x001
+OMCFG_ADAPTER_WRITE cfg_id=1 rs1=x10 value=0x00000004 mask_before=0x001 mask_after=0x003
+OMCFG_ADAPTER_WRITE cfg_id=2 rs1=x31 value=0x00000008 mask_before=0x003 mask_after=0x007
+OMCFG_ADAPTER_INIT value=0x00000001 mask=0x007 complete=0 cfg_valid_after=0 selector_after=0
+OMERGE_ADAPTER_ACCEPT id=13 cfg_valid=0 selector=0
+OMERGE_ADAPTER_RESPONSE error=1 selector_before=0 selector_after=0
+OMCFG_ADAPTER_WRITE cfg_id=0 rs1=x10 value=0x00000000 mask_before=0x007 mask_after=0x007
+OMCFG_ADAPTER_WRITE cfg_id=3 rs1=x10 value=0x0000000c mask_before=0x007 mask_after=0x00f
+OMCFG_ADAPTER_WRITE cfg_id=4 rs1=x10 value=0x00000010 mask_before=0x00f mask_after=0x01f
+OMCFG_ADAPTER_WRITE cfg_id=5 rs1=x10 value=0x00000014 mask_before=0x01f mask_after=0x03f
+OMCFG_ADAPTER_WRITE cfg_id=6 rs1=x10 value=0x0000001c mask_before=0x03f mask_after=0x07f
+OMCFG_ADAPTER_WRITE cfg_id=7 rs1=x10 value=0x00000020 mask_before=0x07f mask_after=0x0ff
+OMCFG_ADAPTER_WRITE cfg_id=8 rs1=x25 value=0x00000001 mask_before=0x0ff mask_after=0x1ff
+OMCFG_ADAPTER_INIT value=0x00000001 mask=0x1ff complete=1 cfg_valid_after=1 selector_after=0
+OMERGE_ADAPTER_ACCEPT id=13 cfg_valid=1 selector=0
+OMERGE_ADAPTER_START selector=0
+OM_FSM {"schema_version":1,"invocation":0,"N":1,"D":1,"mode":3,"terminal_state":"DONE","load_scalar_cycles":13,"compute_scalar_cycles":1,"compute_weight_cycles":78,"store_scalar_cycles":9,"update_vector_cycles":0,"busy_cycles":101}
+OMERGE_ADAPTER_DONE error=0 selector=0
+OMERGE_ADAPTER_RESPONSE error=0 selector_before=0 selector_after=1
+OMERGE_ADAPTER_ACCEPT id=13 cfg_valid=1 selector=1
+OMERGE_ADAPTER_START selector=1
+OM_FSM {"schema_version":1,"invocation":1,"N":1,"D":1,"mode":3,"terminal_state":"DONE","load_scalar_cycles":13,"compute_scalar_cycles":1,"compute_weight_cycles":78,"store_scalar_cycles":9,"update_vector_cycles":0,"busy_cycles":101}
+OMERGE_ADAPTER_DONE error=0 selector=1
+OMERGE_ADAPTER_RESPONSE error=0 selector_before=1 selector_after=0
+OMCFG_ADAPTER_RESERVED cfg_id=10 rs1=x31 value=0xa5a55a5a cfg_valid_after=0
+OMERGE_ADAPTER_ACCEPT id=13 cfg_valid=0 selector=0
+OMERGE_ADAPTER_RESPONSE error=1 selector_before=0 selector_after=0
+OMCFG_ADAPTER_INIT value=0x00000001 mask=0x1ff complete=1 cfg_valid_after=1 selector_after=0
+OMCFG_ADAPTER_WRITE cfg_id=5 rs1=x10 value=0x00000018 mask_before=0x1ff mask_after=0x1ff
+OMERGE_ADAPTER_ACCEPT id=13 cfg_valid=0 selector=0
+OMERGE_ADAPTER_RESPONSE error=1 selector_before=0 selector_after=0
+OMCFG_ADAPTER_INIT value=0x00000001 mask=0x1ff complete=1 cfg_valid_after=1 selector_after=0
+OMERGE_ADAPTER_ACCEPT id=13 cfg_valid=1 selector=0
+OMERGE_ADAPTER_START selector=0
+OM_FSM {"schema_version":1,"invocation":2,"N":1,"D":1,"mode":3,"terminal_state":"DONE","load_scalar_cycles":13,"compute_scalar_cycles":1,"compute_weight_cycles":78,"store_scalar_cycles":9,"update_vector_cycles":0,"busy_cycles":101}
+OMERGE_ADAPTER_DONE error=0 selector=0
+OMERGE_ADAPTER_RESPONSE error=0 selector_before=0 selector_after=1
+OMCFG_ADAPTER_MMIO_WRITE fields=0x020 mask_before=0x1ff mask_after=0x1ff
+OMERGE_ADAPTER_ACCEPT id=13 cfg_valid=0 selector=1
+OMERGE_ADAPTER_RESPONSE error=1 selector_before=1 selector_after=1
+OMCFG_ADAPTER_MMIO_INIT mask=0x1ff cfg_valid_after=1 selector_after=0
+OMERGE_ADAPTER_ACCEPT id=13 cfg_valid=1 selector=0
+OMERGE_ADAPTER_START selector=0
+OM_FSM {"schema_version":1,"invocation":3,"N":1,"D":1,"mode":3,"terminal_state":"DONE","load_scalar_cycles":13,"compute_scalar_cycles":1,"compute_weight_cycles":78,"store_scalar_cycles":9,"update_vector_cycles":0,"busy_cycles":101}
+OMERGE_ADAPTER_DONE error=0 selector=0
+OMERGE_ADAPTER_RESPONSE error=0 selector_before=0 selector_after=1

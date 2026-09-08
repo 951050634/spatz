@@ -2313,11 +2313,11 @@ module spatz_cluster_peripheral_reg_top #(
     .wd     (merge_src_m_tile_wd),
 
     // from internal hardware
-    .de     (1'b0),
-    .d      ('0  ),
+    .de     (hw2reg.merge_src_m_tile.de),
+    .d      (hw2reg.merge_src_m_tile.d ),
 
     // to internal hardware
-    .qe     (),
+    .qe     (reg2hw.merge_src_m_tile.qe),
     .q      (reg2hw.merge_src_m_tile.q ),
 
     // to register interface (read)
@@ -2340,11 +2340,11 @@ module spatz_cluster_peripheral_reg_top #(
     .wd     (merge_src_l_tile_wd),
 
     // from internal hardware
-    .de     (1'b0),
-    .d      ('0  ),
+    .de     (hw2reg.merge_src_l_tile.de),
+    .d      (hw2reg.merge_src_l_tile.d ),
 
     // to internal hardware
-    .qe     (),
+    .qe     (reg2hw.merge_src_l_tile.qe),
     .q      (reg2hw.merge_src_l_tile.q ),
 
     // to register interface (read)
@@ -2475,11 +2475,11 @@ module spatz_cluster_peripheral_reg_top #(
     .wd     (merge_n_wd),
 
     // from internal hardware
-    .de     (1'b0),
-    .d      ('0  ),
+    .de     (hw2reg.merge_n.de),
+    .d      (hw2reg.merge_n.d ),
 
     // to internal hardware
-    .qe     (),
+    .qe     (reg2hw.merge_n.qe),
     .q      (reg2hw.merge_n.q ),
 
     // to register interface (read)
@@ -2583,11 +2583,11 @@ module spatz_cluster_peripheral_reg_top #(
     .wd     (merge_dst_weight_old_wd),
 
     // from internal hardware
-    .de     (1'b0),
-    .d      ('0  ),
+    .de     (hw2reg.merge_dst_weight_old.de),
+    .d      (hw2reg.merge_dst_weight_old.d ),
 
     // to internal hardware
-    .qe     (),
+    .qe     (reg2hw.merge_dst_weight_old.qe),
     .q      (reg2hw.merge_dst_weight_old.q ),
 
     // to register interface (read)
@@ -2610,11 +2610,11 @@ module spatz_cluster_peripheral_reg_top #(
     .wd     (merge_dst_weight_tile_wd),
 
     // from internal hardware
-    .de     (1'b0),
-    .d      ('0  ),
+    .de     (hw2reg.merge_dst_weight_tile.de),
+    .d      (hw2reg.merge_dst_weight_tile.d ),
 
     // to internal hardware
-    .qe     (),
+    .qe     (reg2hw.merge_dst_weight_tile.qe),
     .q      (reg2hw.merge_dst_weight_tile.q ),
 
     // to register interface (read)
@@ -2716,8 +2716,8 @@ module spatz_cluster_peripheral_reg_top #(
     .wd     (merge_isa_state_a_m_wd),
 
     // from internal hardware
-    .de     (1'b0),
-    .d      ('0  ),
+    .de     (hw2reg.merge_isa_state_a_m.de),
+    .d      (hw2reg.merge_isa_state_a_m.d ),
 
     // to internal hardware
     .qe     (reg2hw.merge_isa_state_a_m.qe),
@@ -2743,8 +2743,8 @@ module spatz_cluster_peripheral_reg_top #(
     .wd     (merge_isa_state_a_l_wd),
 
     // from internal hardware
-    .de     (1'b0),
-    .d      ('0  ),
+    .de     (hw2reg.merge_isa_state_a_l.de),
+    .d      (hw2reg.merge_isa_state_a_l.d ),
 
     // to internal hardware
     .qe     (reg2hw.merge_isa_state_a_l.qe),
@@ -2770,8 +2770,8 @@ module spatz_cluster_peripheral_reg_top #(
     .wd     (merge_isa_state_b_m_wd),
 
     // from internal hardware
-    .de     (1'b0),
-    .d      ('0  ),
+    .de     (hw2reg.merge_isa_state_b_m.de),
+    .d      (hw2reg.merge_isa_state_b_m.d ),
 
     // to internal hardware
     .qe     (reg2hw.merge_isa_state_b_m.qe),
@@ -2797,8 +2797,8 @@ module spatz_cluster_peripheral_reg_top #(
     .wd     (merge_isa_state_b_l_wd),
 
     // from internal hardware
-    .de     (1'b0),
-    .d      ('0  ),
+    .de     (hw2reg.merge_isa_state_b_l.de),
+    .d      (hw2reg.merge_isa_state_b_l.d ),
 
     // to internal hardware
     .qe     (reg2hw.merge_isa_state_b_l.qe),

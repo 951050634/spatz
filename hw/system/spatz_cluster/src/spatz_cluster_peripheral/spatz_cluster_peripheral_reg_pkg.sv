@@ -165,10 +165,12 @@ package spatz_cluster_peripheral_reg_pkg;
 
   typedef struct packed {
     logic [31:0] q;
+    logic        qe;
   } spatz_cluster_peripheral_reg2hw_merge_src_m_tile_reg_t;
 
   typedef struct packed {
     logic [31:0] q;
+    logic        qe;
   } spatz_cluster_peripheral_reg2hw_merge_src_l_tile_reg_t;
 
   typedef struct packed {
@@ -189,6 +191,7 @@ package spatz_cluster_peripheral_reg_pkg;
 
   typedef struct packed {
     logic [31:0] q;
+    logic        qe;
   } spatz_cluster_peripheral_reg2hw_merge_n_reg_t;
 
   typedef struct packed {
@@ -205,10 +208,12 @@ package spatz_cluster_peripheral_reg_pkg;
 
   typedef struct packed {
     logic [31:0] q;
+    logic        qe;
   } spatz_cluster_peripheral_reg2hw_merge_dst_weight_old_reg_t;
 
   typedef struct packed {
     logic [31:0] q;
+    logic        qe;
   } spatz_cluster_peripheral_reg2hw_merge_dst_weight_tile_reg_t;
 
   typedef struct packed {
@@ -263,6 +268,31 @@ package spatz_cluster_peripheral_reg_pkg;
   } spatz_cluster_peripheral_hw2reg_hw_barrier_reg_t;
 
   typedef struct packed {
+    logic [31:0] d;
+    logic        de;
+  } spatz_cluster_peripheral_hw2reg_merge_src_m_tile_reg_t;
+
+  typedef struct packed {
+    logic [31:0] d;
+    logic        de;
+  } spatz_cluster_peripheral_hw2reg_merge_src_l_tile_reg_t;
+
+  typedef struct packed {
+    logic [31:0] d;
+    logic        de;
+  } spatz_cluster_peripheral_hw2reg_merge_n_reg_t;
+
+  typedef struct packed {
+    logic [31:0] d;
+    logic        de;
+  } spatz_cluster_peripheral_hw2reg_merge_dst_weight_old_reg_t;
+
+  typedef struct packed {
+    logic [31:0] d;
+    logic        de;
+  } spatz_cluster_peripheral_hw2reg_merge_dst_weight_tile_reg_t;
+
+  typedef struct packed {
     struct packed {
       logic        d;
     } busy;
@@ -274,33 +304,53 @@ package spatz_cluster_peripheral_reg_pkg;
     } error;
   } spatz_cluster_peripheral_hw2reg_merge_status_reg_t;
 
+  typedef struct packed {
+    logic [31:0] d;
+    logic        de;
+  } spatz_cluster_peripheral_hw2reg_merge_isa_state_a_m_reg_t;
+
+  typedef struct packed {
+    logic [31:0] d;
+    logic        de;
+  } spatz_cluster_peripheral_hw2reg_merge_isa_state_a_l_reg_t;
+
+  typedef struct packed {
+    logic [31:0] d;
+    logic        de;
+  } spatz_cluster_peripheral_hw2reg_merge_isa_state_b_m_reg_t;
+
+  typedef struct packed {
+    logic [31:0] d;
+    logic        de;
+  } spatz_cluster_peripheral_hw2reg_merge_isa_state_b_l_reg_t;
+
   // Register -> HW type
   typedef struct packed {
-    spatz_cluster_peripheral_reg2hw_perf_counter_enable_mreg_t [1:0] perf_counter_enable; // [962:901]
-    spatz_cluster_peripheral_reg2hw_hart_select_mreg_t [1:0] hart_select; // [900:881]
-    spatz_cluster_peripheral_reg2hw_perf_counter_mreg_t [1:0] perf_counter; // [880:783]
-    spatz_cluster_peripheral_reg2hw_cl_clint_set_reg_t cl_clint_set; // [782:750]
-    spatz_cluster_peripheral_reg2hw_cl_clint_clear_reg_t cl_clint_clear; // [749:717]
-    spatz_cluster_peripheral_reg2hw_hw_barrier_reg_t hw_barrier; // [716:685]
-    spatz_cluster_peripheral_reg2hw_icache_prefetch_enable_reg_t icache_prefetch_enable; // [684:684]
-    spatz_cluster_peripheral_reg2hw_spatz_status_reg_t spatz_status; // [683:683]
-    spatz_cluster_peripheral_reg2hw_cluster_boot_control_reg_t cluster_boot_control; // [682:651]
-    spatz_cluster_peripheral_reg2hw_cluster_eoc_exit_reg_t cluster_eoc_exit; // [650:619]
-    spatz_cluster_peripheral_reg2hw_merge_src_m_old_reg_t merge_src_m_old; // [618:587]
-    spatz_cluster_peripheral_reg2hw_merge_src_l_old_reg_t merge_src_l_old; // [586:555]
-    spatz_cluster_peripheral_reg2hw_merge_src_o_old_reg_t merge_src_o_old; // [554:523]
-    spatz_cluster_peripheral_reg2hw_merge_src_m_tile_reg_t merge_src_m_tile; // [522:491]
-    spatz_cluster_peripheral_reg2hw_merge_src_l_tile_reg_t merge_src_l_tile; // [490:459]
-    spatz_cluster_peripheral_reg2hw_merge_src_o_tile_reg_t merge_src_o_tile; // [458:427]
-    spatz_cluster_peripheral_reg2hw_merge_dst_m_reg_t merge_dst_m; // [426:395]
-    spatz_cluster_peripheral_reg2hw_merge_dst_l_reg_t merge_dst_l; // [394:363]
-    spatz_cluster_peripheral_reg2hw_merge_dst_o_reg_t merge_dst_o; // [362:331]
-    spatz_cluster_peripheral_reg2hw_merge_n_reg_t merge_n; // [330:299]
-    spatz_cluster_peripheral_reg2hw_merge_d_reg_t merge_d; // [298:267]
-    spatz_cluster_peripheral_reg2hw_merge_stride_reg_t merge_stride; // [266:235]
-    spatz_cluster_peripheral_reg2hw_merge_mode_reg_t merge_mode; // [234:203]
-    spatz_cluster_peripheral_reg2hw_merge_dst_weight_old_reg_t merge_dst_weight_old; // [202:171]
-    spatz_cluster_peripheral_reg2hw_merge_dst_weight_tile_reg_t merge_dst_weight_tile; // [170:139]
+    spatz_cluster_peripheral_reg2hw_perf_counter_enable_mreg_t [1:0] perf_counter_enable; // [967:906]
+    spatz_cluster_peripheral_reg2hw_hart_select_mreg_t [1:0] hart_select; // [905:886]
+    spatz_cluster_peripheral_reg2hw_perf_counter_mreg_t [1:0] perf_counter; // [885:788]
+    spatz_cluster_peripheral_reg2hw_cl_clint_set_reg_t cl_clint_set; // [787:755]
+    spatz_cluster_peripheral_reg2hw_cl_clint_clear_reg_t cl_clint_clear; // [754:722]
+    spatz_cluster_peripheral_reg2hw_hw_barrier_reg_t hw_barrier; // [721:690]
+    spatz_cluster_peripheral_reg2hw_icache_prefetch_enable_reg_t icache_prefetch_enable; // [689:689]
+    spatz_cluster_peripheral_reg2hw_spatz_status_reg_t spatz_status; // [688:688]
+    spatz_cluster_peripheral_reg2hw_cluster_boot_control_reg_t cluster_boot_control; // [687:656]
+    spatz_cluster_peripheral_reg2hw_cluster_eoc_exit_reg_t cluster_eoc_exit; // [655:624]
+    spatz_cluster_peripheral_reg2hw_merge_src_m_old_reg_t merge_src_m_old; // [623:592]
+    spatz_cluster_peripheral_reg2hw_merge_src_l_old_reg_t merge_src_l_old; // [591:560]
+    spatz_cluster_peripheral_reg2hw_merge_src_o_old_reg_t merge_src_o_old; // [559:528]
+    spatz_cluster_peripheral_reg2hw_merge_src_m_tile_reg_t merge_src_m_tile; // [527:495]
+    spatz_cluster_peripheral_reg2hw_merge_src_l_tile_reg_t merge_src_l_tile; // [494:462]
+    spatz_cluster_peripheral_reg2hw_merge_src_o_tile_reg_t merge_src_o_tile; // [461:430]
+    spatz_cluster_peripheral_reg2hw_merge_dst_m_reg_t merge_dst_m; // [429:398]
+    spatz_cluster_peripheral_reg2hw_merge_dst_l_reg_t merge_dst_l; // [397:366]
+    spatz_cluster_peripheral_reg2hw_merge_dst_o_reg_t merge_dst_o; // [365:334]
+    spatz_cluster_peripheral_reg2hw_merge_n_reg_t merge_n; // [333:301]
+    spatz_cluster_peripheral_reg2hw_merge_d_reg_t merge_d; // [300:269]
+    spatz_cluster_peripheral_reg2hw_merge_stride_reg_t merge_stride; // [268:237]
+    spatz_cluster_peripheral_reg2hw_merge_mode_reg_t merge_mode; // [236:205]
+    spatz_cluster_peripheral_reg2hw_merge_dst_weight_old_reg_t merge_dst_weight_old; // [204:172]
+    spatz_cluster_peripheral_reg2hw_merge_dst_weight_tile_reg_t merge_dst_weight_tile; // [171:139]
     spatz_cluster_peripheral_reg2hw_merge_ctrl_reg_t merge_ctrl; // [138:135]
     spatz_cluster_peripheral_reg2hw_merge_status_reg_t merge_status; // [134:132]
     spatz_cluster_peripheral_reg2hw_merge_isa_state_a_m_reg_t merge_isa_state_a_m; // [131:99]
@@ -311,9 +361,18 @@ package spatz_cluster_peripheral_reg_pkg;
 
   // HW -> register type
   typedef struct packed {
-    spatz_cluster_peripheral_hw2reg_perf_counter_mreg_t [1:0] perf_counter; // [130:35]
-    spatz_cluster_peripheral_hw2reg_hw_barrier_reg_t hw_barrier; // [34:3]
-    spatz_cluster_peripheral_hw2reg_merge_status_reg_t merge_status; // [2:0]
+    spatz_cluster_peripheral_hw2reg_perf_counter_mreg_t [1:0] perf_counter; // [427:332]
+    spatz_cluster_peripheral_hw2reg_hw_barrier_reg_t hw_barrier; // [331:300]
+    spatz_cluster_peripheral_hw2reg_merge_src_m_tile_reg_t merge_src_m_tile; // [299:267]
+    spatz_cluster_peripheral_hw2reg_merge_src_l_tile_reg_t merge_src_l_tile; // [266:234]
+    spatz_cluster_peripheral_hw2reg_merge_n_reg_t merge_n; // [233:201]
+    spatz_cluster_peripheral_hw2reg_merge_dst_weight_old_reg_t merge_dst_weight_old; // [200:168]
+    spatz_cluster_peripheral_hw2reg_merge_dst_weight_tile_reg_t merge_dst_weight_tile; // [167:135]
+    spatz_cluster_peripheral_hw2reg_merge_status_reg_t merge_status; // [134:132]
+    spatz_cluster_peripheral_hw2reg_merge_isa_state_a_m_reg_t merge_isa_state_a_m; // [131:99]
+    spatz_cluster_peripheral_hw2reg_merge_isa_state_a_l_reg_t merge_isa_state_a_l; // [98:66]
+    spatz_cluster_peripheral_hw2reg_merge_isa_state_b_m_reg_t merge_isa_state_b_m; // [65:33]
+    spatz_cluster_peripheral_hw2reg_merge_isa_state_b_l_reg_t merge_isa_state_b_l; // [32:0]
   } spatz_cluster_peripheral_hw2reg_t;
 
   // Register offsets

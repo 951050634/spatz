@@ -1,0 +1,31 @@
+800013cc <omcfg_id0_x0>:
+;   __asm__ volatile(".insn i 0x5b, 1, x0, x0, 0" ::: "memory");
+800013cc: 5b 10 00 00  	<unknown>
+; }
+800013d0: 67 80 00 00  	ret
+
+800016c4 <omcfg_id1_a0>:
+; static __attribute__((noinline)) void omcfg_id1_a0(uint32_t value) {
+800016c4: 93 05 05 00  	mv	a1, a0
+;   __asm__ volatile("mv a0, %0\n\t"
+800016c8: 13 85 05 00  	mv	a0, a1
+800016cc: 5b 10 15 00  	<unknown>
+; }
+800016d0: 67 80 00 00  	ret
+
+800016d4 <omcfg_id2_x31>:
+;   __asm__ volatile("mv t6, %0\n\t"
+800016d4: 93 0f 05 00  	mv	t6, a0
+800016d8: 5b 90 2f 00  	<unknown>
+; }
+800016dc: 67 80 00 00  	ret
+
+800016e0 <omcfg_reserved_x31>:
+; static __attribute__((noinline)) void omcfg_reserved_x31(uint32_t value) {
+800016e0: 37 65 a5 a5  	lui	a0, 678486
+800016e4: 13 05 a5 a5  	addi	a0, a0, -1446
+;   __asm__ volatile("mv t6, %0\n\t"
+800016e8: 93 0f 05 00  	mv	t6, a0
+800016ec: 5b 90 af 00  	<unknown>
+; }
+800016f0: 67 80 00 00  	ret

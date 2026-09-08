@@ -2258,6 +2258,19 @@ module snitch import snitch_pkg::*; import riscv_instr::*; #(
         acc_qreq_o.addr = SMU;
       end
 
+      // OMCFG is a short scalar-side configuration write.  The full
+      // instruction carries cfg_id in imm12 and operand A carries X[rs1].
+      // rd is architecturally fixed to x0, so no scoreboard entry or
+      // asynchronous destination response is required.
+      riscv_instr::OMCFG: begin
+        write_rd        = 1'b0;
+        uses_rd         = 1'b0;
+        opa_select      = Reg;
+        acc_qvalid_o    = valid_instr;
+        acc_register_rd = 1'b0;
+        acc_qreq_o.addr = SMU;
+      end
+
 /* RVV extension */
 `ifdef TARGET_SPATZ
       // Off-load to RVV coprocessor

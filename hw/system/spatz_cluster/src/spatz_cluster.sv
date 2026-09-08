@@ -453,7 +453,11 @@ module spatz_cluster
 
   addr_t merge_isa_state_a_m, merge_isa_state_a_l;
   addr_t merge_isa_state_b_m, merge_isa_state_b_l;
+  logic [8:0] merge_isa_cfg_write;
   logic merge_isa_setup;
+  logic omcfg_write;
+  logic [11:0] omcfg_id;
+  logic [31:0] omcfg_value;
 
   // -------------
   // DMA Subsystem
@@ -795,9 +799,11 @@ module spatz_cluster
     .dst_weight_old_i   (tcdm_addr_t'(merge_dst_weight_old)),
     .dst_weight_tile_i  (tcdm_addr_t'(merge_dst_weight_tile)),
     .n_i                (merge_n),
-    .d_i                (merge_d),
-    .stride_i           (merge_stride),
-    .config_reset_i     (merge_isa_setup),
+    .mmio_cfg_write_i   (merge_isa_cfg_write),
+    .mmio_init_i        (merge_isa_setup),
+    .omcfg_write_o      (omcfg_write),
+    .omcfg_id_o         (omcfg_id),
+    .omcfg_value_o      (omcfg_value),
     .engine_busy_i      (merge_busy),
     .engine_done_i      (merge_done),
     .engine_error_i     (merge_error),
@@ -819,6 +825,8 @@ module spatz_cluster
     .start_o            (smu_start),
     .clear_done_o       (smu_clear_done),
     .config_active_o    (smu_cfg_active),
+    .cfg_valid_o        (),
+    .cfg_written_mask_o (),
     .selector_o         ()
   );
 
@@ -1234,7 +1242,11 @@ module spatz_cluster
     .merge_isa_state_a_l_o    (merge_isa_state_a_l   ),
     .merge_isa_state_b_m_o    (merge_isa_state_b_m   ),
     .merge_isa_state_b_l_o    (merge_isa_state_b_l   ),
+    .merge_isa_cfg_write_o    (merge_isa_cfg_write   ),
     .merge_isa_setup_o        (merge_isa_setup       ),
+    .omcfg_write_i            (omcfg_write           ),
+    .omcfg_id_i               (omcfg_id              ),
+    .omcfg_value_i            (omcfg_value           ),
     .merge_busy_i             (merge_busy            ),
     .merge_done_i             (merge_done            ),
     .merge_error_i            (merge_error           ),
