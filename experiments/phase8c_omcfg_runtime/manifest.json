@@ -1,0 +1,721 @@
+{
+  "artifacts": [
+    "matched_results.csv",
+    "manifest.json",
+    "raw/n8_mmio.log",
+    "raw/n8_omcfg.log",
+    "raw/n16_mmio.log",
+    "raw/n16_omcfg.log"
+  ],
+  "audit": {
+    "formal_head": "7786820821102d34e32e9517a7630b028693f25a",
+    "git_status_before": [
+      " M sw/spatzBenchmarks/CMakeLists.txt",
+      " M sw/spatzBenchmarks/native-online-attention/main.c",
+      "?? experiments/phase8a_omcfg_encoding_audit/README.md",
+      "?? experiments/phase8a_omcfg_encoding_audit/candidate_families.csv",
+      "?? experiments/phase8a_omcfg_encoding_audit/collision_details.md",
+      "?? experiments/phase8a_omcfg_encoding_audit/current_decoder_inventory.md",
+      "?? experiments/phase8a_omcfg_encoding_audit/raw/audit_instruction_space.py",
+      "?? experiments/phase8a_omcfg_encoding_audit/raw/audit_results.txt",
+      "?? experiments/phase8a_omcfg_encoding_audit/raw/audit_summary.json",
+      "?? experiments/phase8a_omcfg_encoding_audit/raw/collision_witnesses.csv",
+      "?? experiments/phase8a_omcfg_encoding_audit/raw/custom_opcode_inventory.csv",
+      "?? experiments/phase8a_omcfg_encoding_audit/raw/decoder_inventory.csv",
+      "?? experiments/phase8a_omcfg_encoding_audit/raw/family_range_results.csv",
+      "?? experiments/phase8a_omcfg_encoding_audit/raw/family_range_results.json",
+      "?? experiments/phase8a_omcfg_encoding_audit/raw/omerge_rd_matches.csv",
+      "?? experiments/phase8a_omcfg_encoding_audit/raw/rd_variation_results.csv",
+      "?? experiments/phase8a_omcfg_encoding_audit/raw/rs1_collision_matrix.csv",
+      "?? experiments/phase8a_omcfg_encoding_audit/raw/snitch_decoder_patterns.csv",
+      "?? experiments/phase8a_omcfg_encoding_audit/raw/spatz_decoder_patterns.csv",
+      "?? experiments/phase8a_omcfg_encoding_audit/recommendation.md",
+      "?? experiments/phase8c_omcfg_runtime/run_formal.py"
+    ],
+    "implementation_freeze_commit": "7786820821102d34e32e9517a7630b028693f25a",
+    "rtl_diff_from_freeze": [],
+    "run_order": [
+      {
+        "case": "n8",
+        "d": 32,
+        "index": 1,
+        "n": 8,
+        "path": "mmio"
+      },
+      {
+        "case": "n8",
+        "d": 32,
+        "index": 2,
+        "n": 8,
+        "path": "omcfg"
+      },
+      {
+        "case": "n16",
+        "d": 64,
+        "index": 3,
+        "n": 16,
+        "path": "mmio"
+      },
+      {
+        "case": "n16",
+        "d": 64,
+        "index": 4,
+        "n": 16,
+        "path": "omcfg"
+      }
+    ],
+    "simulator": {
+      "path": "/home/wxt/work-online-merge-supplement/hw/system/spatz_cluster/work-phase8c/spatz_cluster.vlt",
+      "sha256": "002161e3e88edd6fa6392dbe79a6a89796477282d5ff951037a211676785a51a"
+    },
+    "sources": {
+      "sw/spatzBenchmarks/CMakeLists.txt": "eb3254b0d63b491d0dd9e0adbb5f5e983016f437a806f27d7ee2ce2db35768c2",
+      "sw/spatzBenchmarks/native-online-attention/main.c": "dd93d87b2297dbab82eccb38c3d777b8d8d029373bae0531b1e0ff5db9ee02e9"
+    },
+    "tracked_diff_from_freeze": [
+      "sw/spatzBenchmarks/CMakeLists.txt",
+      "sw/spatzBenchmarks/native-online-attention/main.c"
+    ],
+    "tracked_diff_sha256": "00db1d31adae65479d9a47fea5b88080cfe41691450dcb5161ae168da9201a98"
+  },
+  "builds": [
+    {
+      "build_command": "cmake --build /home/wxt/work-online-merge-supplement/hw/system/spatz_cluster/work-phase8c-formal/N8_D32_S1 --target test-spatzBenchmarks-native-online-attention-omerge-mmio test-spatzBenchmarks-native-online-attention-omerge-omcfg -- -j8",
+      "build_dir": "/home/wxt/work-online-merge-supplement/hw/system/spatz_cluster/work-phase8c-formal/N8_D32_S1",
+      "build_log": "raw/n8_build.log",
+      "build_log_sha256": "478268284739c61197271d403a5d1a95ef608ef692f298a9c95d12139d84d1b0",
+      "case": "n8",
+      "configure_command": "cmake -S /home/wxt/work-online-merge-supplement/hw/system/spatz_cluster/sw -B /home/wxt/work-online-merge-supplement/hw/system/spatz_cluster/work-phase8c-formal/N8_D32_S1 -DLLVM_PATH=/home/wxt/work-online-merge-supplement/install/llvm -DGCC_PATH=/home/wxt/work-online-merge-supplement/install/riscv-gcc -DPYTHON=/usr/bin/python3 -DBUILD_TESTS=ON -DSNITCH_SIMULATOR=/home/wxt/work-online-merge-supplement/hw/system/spatz_cluster/work-phase8c/spatz_cluster.vlt -DSPATZ_CLUSTER_CFG=spatz_cluster.default.dram.hjson -DPHASE5_N=8 -DPHASE5_D=32 -DPHASE5_SEED=1 -DPHASE5_DUMP_OUTPUT=1 -DCMAKE_C_FLAGS=-DPRINTF_DISABLE_SUPPORT_FLOAT -DMEM_DRAM_ORIGIN=2147483648 -DMEM_DRAM_SIZE=2147483648 -DSNRT_BASE_HARTID=0 -DSNRT_CLUSTER_CORE_NUM=2 -DSNRT_TCDM_START_ADDR=1048576 -DSNRT_CLUSTER_OFFSET=0 -DSNRT_TCDM_SIZE=131072 -DSNRT_NFPU_PER_CORE=4 -DELEN=64",
+      "configure_log": "raw/n8_configure.log",
+      "configure_log_sha256": "f48bf4ccf21b022e53be486324d12e8291c601110535e15ce5cc7c04952a41d2",
+      "d": 32,
+      "elfs": {
+        "mmio": {
+          "path": "/home/wxt/work-online-merge-supplement/hw/system/spatz_cluster/work-phase8c-formal/N8_D32_S1/spatzBenchmarks/test-spatzBenchmarks-native-online-attention-omerge-mmio",
+          "sha256": "1a4192569061e89ff667451fa70864e0ce7c04332ad23be9e9e444f0cfd6889e",
+          "text_sha256": "07d31ec89d8e8f3f94b3584132c18afcdfbf75d6576083c38b7b6437e55d9df7"
+        },
+        "omcfg": {
+          "path": "/home/wxt/work-online-merge-supplement/hw/system/spatz_cluster/work-phase8c-formal/N8_D32_S1/spatzBenchmarks/test-spatzBenchmarks-native-online-attention-omerge-omcfg",
+          "sha256": "3b8f65ca49c1f8335d541e4c6e3d6770b92346add7429d4c87c2f59fee5fdbd6",
+          "text_sha256": "07d31ec89d8e8f3f94b3584132c18afcdfbf75d6576083c38b7b6437e55d9df7"
+        }
+      },
+      "generated_input": "/home/wxt/work-online-merge-supplement/hw/system/spatz_cluster/work-phase8c-formal/N8_D32_S1/spatzBenchmarks/phase5_generated/N8_D32_S1/phase5_case_data.h",
+      "generated_input_sha256": "4785e1a85b06cdfc19a67c951131928db50f5fb91931234ebb39eb61b93d8237",
+      "matched_text_identical": true,
+      "n": 8
+    },
+    {
+      "build_command": "cmake --build /home/wxt/work-online-merge-supplement/hw/system/spatz_cluster/work-phase8c-formal/N16_D64_S1 --target test-spatzBenchmarks-native-online-attention-omerge-mmio test-spatzBenchmarks-native-online-attention-omerge-omcfg -- -j8",
+      "build_dir": "/home/wxt/work-online-merge-supplement/hw/system/spatz_cluster/work-phase8c-formal/N16_D64_S1",
+      "build_log": "raw/n16_build.log",
+      "build_log_sha256": "f343f18a276d9fe2bbfab6c6f336d948d8e8527c9b73b2910f5cd7cfbcf3808d",
+      "case": "n16",
+      "configure_command": "cmake -S /home/wxt/work-online-merge-supplement/hw/system/spatz_cluster/sw -B /home/wxt/work-online-merge-supplement/hw/system/spatz_cluster/work-phase8c-formal/N16_D64_S1 -DLLVM_PATH=/home/wxt/work-online-merge-supplement/install/llvm -DGCC_PATH=/home/wxt/work-online-merge-supplement/install/riscv-gcc -DPYTHON=/usr/bin/python3 -DBUILD_TESTS=ON -DSNITCH_SIMULATOR=/home/wxt/work-online-merge-supplement/hw/system/spatz_cluster/work-phase8c/spatz_cluster.vlt -DSPATZ_CLUSTER_CFG=spatz_cluster.default.dram.hjson -DPHASE5_N=16 -DPHASE5_D=64 -DPHASE5_SEED=1 -DPHASE5_DUMP_OUTPUT=1 -DCMAKE_C_FLAGS=-DPRINTF_DISABLE_SUPPORT_FLOAT -DMEM_DRAM_ORIGIN=2147483648 -DMEM_DRAM_SIZE=2147483648 -DSNRT_BASE_HARTID=0 -DSNRT_CLUSTER_CORE_NUM=2 -DSNRT_TCDM_START_ADDR=1048576 -DSNRT_CLUSTER_OFFSET=0 -DSNRT_TCDM_SIZE=131072 -DSNRT_NFPU_PER_CORE=4 -DELEN=64",
+      "configure_log": "raw/n16_configure.log",
+      "configure_log_sha256": "3e3e857356f7146f55f940b17794592518165226a1a015248e1e90322ac7b0d8",
+      "d": 64,
+      "elfs": {
+        "mmio": {
+          "path": "/home/wxt/work-online-merge-supplement/hw/system/spatz_cluster/work-phase8c-formal/N16_D64_S1/spatzBenchmarks/test-spatzBenchmarks-native-online-attention-omerge-mmio",
+          "sha256": "8ee5b7d3f2992ea99ed7dc93f985f2134f6267d645acbd880c8ba6f28a85d402",
+          "text_sha256": "337a39eceacd74049b12cc818e1218c7366c585fa291ba999ae4697e589f7bd0"
+        },
+        "omcfg": {
+          "path": "/home/wxt/work-online-merge-supplement/hw/system/spatz_cluster/work-phase8c-formal/N16_D64_S1/spatzBenchmarks/test-spatzBenchmarks-native-online-attention-omerge-omcfg",
+          "sha256": "6b95a2cc44ce6c3bce289a7a82b26e39626a9d5e94e30a2806afcc0343b19ef0",
+          "text_sha256": "337a39eceacd74049b12cc818e1218c7366c585fa291ba999ae4697e589f7bd0"
+        }
+      },
+      "generated_input": "/home/wxt/work-online-merge-supplement/hw/system/spatz_cluster/work-phase8c-formal/N16_D64_S1/spatzBenchmarks/phase5_generated/N16_D64_S1/phase5_case_data.h",
+      "generated_input_sha256": "fa08d229f75a104a9204a714437baac42b533e712ebeab3f4d89348ff5ad6ed1",
+      "matched_text_identical": true,
+      "n": 16
+    }
+  ],
+  "finished_at": "2026-09-09T02:47:44.808236+08:00",
+  "kind": "phase8c-omcfg-runtime-matched-validation",
+  "matched_pairs": {
+    "n16": {
+      "config_state_equal": true,
+      "cosine": 1.0,
+      "nonfinite": 0,
+      "output_hash_equal": true,
+      "pairwise_mae": 0.0,
+      "stable_rel": 0.0,
+      "word_for_word_equal": true
+    },
+    "n8": {
+      "config_state_equal": true,
+      "cosine": 1.0,
+      "nonfinite": 0,
+      "output_hash_equal": true,
+      "pairwise_mae": 0.0,
+      "stable_rel": 0.0,
+      "word_for_word_equal": true
+    }
+  },
+  "policy": {
+    "dasm_trace_enabled": false,
+    "formal_order_fixed": true,
+    "fsm_observer_enabled": true,
+    "jobs": 8,
+    "seed": 1,
+    "tile_keys": 4,
+    "timeout_seconds": 1800
+  },
+  "postprocessing_correction": {
+    "formal_cases_rerun": false,
+    "original_failure": "n16 MMIO/OMCFG equivalence failed",
+    "original_finished_at": "2026-09-09T02:34:10.296464+08:00",
+    "original_status": "failed",
+    "raw_log_sha256_unchanged": {
+      "n16_mmio": "56cff6489ad924ff2af6a1d368ee7f6689c441a9507be2ee197b4a485c398b65",
+      "n16_omcfg": "bc4062b38a0908bbf438c3e981c02d0589e46849511c45a957f538afde99fd52",
+      "n8_mmio": "5d8bd958892a8f6fd5ba66cbca9c74536fffae39613b294fab717f5b240164a7",
+      "n8_omcfg": "b6be5348a331985d7cfbaf6436b23396ab98e5238364fd6dfc3d119508918f1c"
+    },
+    "raw_logs_modified": false,
+    "reason": "Exact N16 bit-vector identity produced host float64 cosine 1.0000000000000002; exact identity is now mapped to cosine 1.0."
+  },
+  "runs": [
+    {
+      "case": "n8",
+      "config_path": "mmio",
+      "config_state": {
+        "A_L": 3232,
+        "A_M": 3200,
+        "B_L": 5408,
+        "B_M": 5376,
+        "N": 8,
+        "TILE_L": 4320,
+        "TILE_M": 4288,
+        "WEIGHT_OLD": 6464,
+        "WEIGHT_TILE": 6496,
+        "cfg_valid": 1,
+        "selector_after_init": 0
+      },
+      "config_state_hash": "31a112541234a811901899f55413724b33811aac8b09921b7082a0bb3762a89a",
+      "exit_code": 0,
+      "markers": {
+        "mmio_field_writes": 9,
+        "mmio_init": 1,
+        "omcfg_field_writes": 0,
+        "omcfg_init": 0,
+        "omerge_accept": 1,
+        "smu_done": 1,
+        "smu_start": 1
+      },
+      "om_fsm": [
+        {
+          "D": 1,
+          "N": 8,
+          "busy_cycles": 808,
+          "compute_scalar_cycles": 8,
+          "compute_weight_cycles": 624,
+          "invocation": 0,
+          "load_scalar_cycles": 104,
+          "mode": 3,
+          "schema_version": 1,
+          "store_scalar_cycles": 72,
+          "terminal_state": "DONE",
+          "update_vector_cycles": 0
+        }
+      ],
+      "output_bits_sha256": "40a462b87d57684aaa93be1f3daef39ff779770271ab84cabcd2628102043ed0",
+      "output_hash": 2625429212,
+      "output_words": 256,
+      "raw_log": "raw/n8_mmio.log",
+      "raw_log_sha256": "5d8bd958892a8f6fd5ba66cbca9c74536fffae39613b294fab717f5b240164a7",
+      "result": {
+        "configuration": {
+          "field_writes": 9,
+          "init_count": 1,
+          "mmio_writes": 9,
+          "omcfg_instructions": 0,
+          "path": "mmio"
+        },
+        "cycles": {
+          "core_residual": 2053,
+          "merge_orchestration": 50,
+          "merge_total": 1694,
+          "merge_window": 1694,
+          "output_copy": 1566,
+          "rvv_output_update": 808,
+          "score_compute": 16926,
+          "smu_breakdown_delta": 0,
+          "smu_breakdown_exact": 1,
+          "smu_breakdown_sum": 0,
+          "smu_commands": 1,
+          "smu_recurrence": 836,
+          "smu_setup": 0,
+          "smu_wait": 0,
+          "software_recurrence_calls": 0,
+          "tile_local_state": 50397,
+          "total": 72636,
+          "workload_setup": 991
+        },
+        "d": 32,
+        "implementation": "omerge",
+        "merge_count": 1,
+        "n": 8,
+        "output_hash": 2625429212,
+        "output_metrics": {
+          "cosine_similarity_bits": 1065352977,
+          "mae_bits": 965841751,
+          "stable_relative_error_bits": 1000282788
+        },
+        "output_nonfinite": 0,
+        "seed": 1,
+        "smu": {
+          "commands": 1,
+          "done": 1,
+          "errors": 0,
+          "saw_busy": 0,
+          "timeouts": 0
+        },
+        "status": "pass",
+        "tcdm": {
+          "allocation_bytes": 7680,
+          "capacity_bytes": 131072,
+          "data_bytes": 7552,
+          "memory_footprint_bytes": 24192,
+          "runtime_reserved_bytes": 16512
+        },
+        "tile_count": 2,
+        "tile_keys": 4
+      },
+      "selector_transitions": [
+        [
+          0,
+          1
+        ]
+      ],
+      "timed_out": false
+    },
+    {
+      "case": "n8",
+      "config_path": "omcfg",
+      "config_state": {
+        "A_L": 3232,
+        "A_M": 3200,
+        "B_L": 5408,
+        "B_M": 5376,
+        "N": 8,
+        "TILE_L": 4320,
+        "TILE_M": 4288,
+        "WEIGHT_OLD": 6464,
+        "WEIGHT_TILE": 6496,
+        "cfg_valid": 1,
+        "selector_after_init": 0
+      },
+      "config_state_hash": "31a112541234a811901899f55413724b33811aac8b09921b7082a0bb3762a89a",
+      "exit_code": 0,
+      "markers": {
+        "mmio_field_writes": 0,
+        "mmio_init": 0,
+        "omcfg_field_writes": 9,
+        "omcfg_init": 1,
+        "omerge_accept": 1,
+        "smu_done": 1,
+        "smu_start": 1
+      },
+      "om_fsm": [
+        {
+          "D": 1,
+          "N": 8,
+          "busy_cycles": 808,
+          "compute_scalar_cycles": 8,
+          "compute_weight_cycles": 624,
+          "invocation": 0,
+          "load_scalar_cycles": 104,
+          "mode": 3,
+          "schema_version": 1,
+          "store_scalar_cycles": 72,
+          "terminal_state": "DONE",
+          "update_vector_cycles": 0
+        }
+      ],
+      "output_bits_sha256": "40a462b87d57684aaa93be1f3daef39ff779770271ab84cabcd2628102043ed0",
+      "output_hash": 2625429212,
+      "output_words": 256,
+      "raw_log": "raw/n8_omcfg.log",
+      "raw_log_sha256": "b6be5348a331985d7cfbaf6436b23396ab98e5238364fd6dfc3d119508918f1c",
+      "result": {
+        "configuration": {
+          "field_writes": 9,
+          "init_count": 1,
+          "mmio_writes": 0,
+          "omcfg_instructions": 10,
+          "path": "omcfg"
+        },
+        "cycles": {
+          "core_residual": 2053,
+          "merge_orchestration": 50,
+          "merge_total": 1694,
+          "merge_window": 1694,
+          "output_copy": 1566,
+          "rvv_output_update": 808,
+          "score_compute": 16926,
+          "smu_breakdown_delta": 0,
+          "smu_breakdown_exact": 1,
+          "smu_breakdown_sum": 0,
+          "smu_commands": 1,
+          "smu_recurrence": 836,
+          "smu_setup": 0,
+          "smu_wait": 0,
+          "software_recurrence_calls": 0,
+          "tile_local_state": 50397,
+          "total": 72636,
+          "workload_setup": 659
+        },
+        "d": 32,
+        "implementation": "omerge",
+        "merge_count": 1,
+        "n": 8,
+        "output_hash": 2625429212,
+        "output_metrics": {
+          "cosine_similarity_bits": 1065352977,
+          "mae_bits": 965841751,
+          "stable_relative_error_bits": 1000282788
+        },
+        "output_nonfinite": 0,
+        "seed": 1,
+        "smu": {
+          "commands": 1,
+          "done": 1,
+          "errors": 0,
+          "saw_busy": 0,
+          "timeouts": 0
+        },
+        "status": "pass",
+        "tcdm": {
+          "allocation_bytes": 7680,
+          "capacity_bytes": 131072,
+          "data_bytes": 7552,
+          "memory_footprint_bytes": 24192,
+          "runtime_reserved_bytes": 16512
+        },
+        "tile_count": 2,
+        "tile_keys": 4
+      },
+      "selector_transitions": [
+        [
+          0,
+          1
+        ]
+      ],
+      "timed_out": false
+    },
+    {
+      "case": "n16",
+      "config_path": "mmio",
+      "config_state": {
+        "A_L": 12608,
+        "A_M": 12544,
+        "B_L": 21056,
+        "B_M": 20992,
+        "N": 16,
+        "TILE_L": 16832,
+        "TILE_M": 16768,
+        "WEIGHT_OLD": 25216,
+        "WEIGHT_TILE": 25280,
+        "cfg_valid": 1,
+        "selector_after_init": 0
+      },
+      "config_state_hash": "9d07df611b831de36d6e0811b9a78c218923fe2e5f46205992d1f71feadcfd24",
+      "exit_code": 0,
+      "markers": {
+        "mmio_field_writes": 9,
+        "mmio_init": 1,
+        "omcfg_field_writes": 0,
+        "omcfg_init": 0,
+        "omerge_accept": 3,
+        "smu_done": 3,
+        "smu_start": 3
+      },
+      "om_fsm": [
+        {
+          "D": 1,
+          "N": 16,
+          "busy_cycles": 1616,
+          "compute_scalar_cycles": 16,
+          "compute_weight_cycles": 1248,
+          "invocation": 0,
+          "load_scalar_cycles": 208,
+          "mode": 3,
+          "schema_version": 1,
+          "store_scalar_cycles": 144,
+          "terminal_state": "DONE",
+          "update_vector_cycles": 0
+        },
+        {
+          "D": 1,
+          "N": 16,
+          "busy_cycles": 1616,
+          "compute_scalar_cycles": 16,
+          "compute_weight_cycles": 1248,
+          "invocation": 1,
+          "load_scalar_cycles": 208,
+          "mode": 3,
+          "schema_version": 1,
+          "store_scalar_cycles": 144,
+          "terminal_state": "DONE",
+          "update_vector_cycles": 0
+        },
+        {
+          "D": 1,
+          "N": 16,
+          "busy_cycles": 1616,
+          "compute_scalar_cycles": 16,
+          "compute_weight_cycles": 1248,
+          "invocation": 2,
+          "load_scalar_cycles": 208,
+          "mode": 3,
+          "schema_version": 1,
+          "store_scalar_cycles": 144,
+          "terminal_state": "DONE",
+          "update_vector_cycles": 0
+        }
+      ],
+      "output_bits_sha256": "19bdf06bb7745d641da824dbe3adc88e1c017e431d3390dd31f20d9fd82a4892",
+      "output_hash": 4245499135,
+      "output_words": 1024,
+      "raw_log": "raw/n16_mmio.log",
+      "raw_log_sha256": "56cff6489ad924ff2af6a1d368ee7f6689c441a9507be2ee197b4a485c398b65",
+      "result": {
+        "configuration": {
+          "field_writes": 9,
+          "init_count": 1,
+          "mmio_writes": 9,
+          "omcfg_instructions": 0,
+          "path": "mmio"
+        },
+        "cycles": {
+          "core_residual": 8137,
+          "merge_orchestration": 179,
+          "merge_total": 13013,
+          "merge_window": 13013,
+          "output_copy": 6159,
+          "rvv_output_update": 7905,
+          "score_compute": 135602,
+          "smu_breakdown_delta": 0,
+          "smu_breakdown_exact": 1,
+          "smu_breakdown_sum": 0,
+          "smu_commands": 3,
+          "smu_recurrence": 4929,
+          "smu_setup": 0,
+          "smu_wait": 0,
+          "software_recurrence_calls": 0,
+          "tile_local_state": 344553,
+          "total": 507464,
+          "workload_setup": 986
+        },
+        "d": 64,
+        "implementation": "omerge",
+        "merge_count": 3,
+        "n": 16,
+        "output_hash": 4245499135,
+        "output_metrics": {
+          "cosine_similarity_bits": 1065352699,
+          "mae_bits": 972444283,
+          "stable_relative_error_bits": 1005107881
+        },
+        "output_nonfinite": 0,
+        "seed": 1,
+        "smu": {
+          "commands": 3,
+          "done": 3,
+          "errors": 0,
+          "saw_busy": 0,
+          "timeouts": 0
+        },
+        "status": "pass",
+        "tcdm": {
+          "allocation_bytes": 29440,
+          "capacity_bytes": 131072,
+          "data_bytes": 29440,
+          "memory_footprint_bytes": 45952,
+          "runtime_reserved_bytes": 16512
+        },
+        "tile_count": 4,
+        "tile_keys": 4
+      },
+      "selector_transitions": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0
+        ],
+        [
+          0,
+          1
+        ]
+      ],
+      "timed_out": false
+    },
+    {
+      "case": "n16",
+      "config_path": "omcfg",
+      "config_state": {
+        "A_L": 12608,
+        "A_M": 12544,
+        "B_L": 21056,
+        "B_M": 20992,
+        "N": 16,
+        "TILE_L": 16832,
+        "TILE_M": 16768,
+        "WEIGHT_OLD": 25216,
+        "WEIGHT_TILE": 25280,
+        "cfg_valid": 1,
+        "selector_after_init": 0
+      },
+      "config_state_hash": "9d07df611b831de36d6e0811b9a78c218923fe2e5f46205992d1f71feadcfd24",
+      "exit_code": 0,
+      "markers": {
+        "mmio_field_writes": 0,
+        "mmio_init": 0,
+        "omcfg_field_writes": 9,
+        "omcfg_init": 1,
+        "omerge_accept": 3,
+        "smu_done": 3,
+        "smu_start": 3
+      },
+      "om_fsm": [
+        {
+          "D": 1,
+          "N": 16,
+          "busy_cycles": 1616,
+          "compute_scalar_cycles": 16,
+          "compute_weight_cycles": 1248,
+          "invocation": 0,
+          "load_scalar_cycles": 208,
+          "mode": 3,
+          "schema_version": 1,
+          "store_scalar_cycles": 144,
+          "terminal_state": "DONE",
+          "update_vector_cycles": 0
+        },
+        {
+          "D": 1,
+          "N": 16,
+          "busy_cycles": 1616,
+          "compute_scalar_cycles": 16,
+          "compute_weight_cycles": 1248,
+          "invocation": 1,
+          "load_scalar_cycles": 208,
+          "mode": 3,
+          "schema_version": 1,
+          "store_scalar_cycles": 144,
+          "terminal_state": "DONE",
+          "update_vector_cycles": 0
+        },
+        {
+          "D": 1,
+          "N": 16,
+          "busy_cycles": 1616,
+          "compute_scalar_cycles": 16,
+          "compute_weight_cycles": 1248,
+          "invocation": 2,
+          "load_scalar_cycles": 208,
+          "mode": 3,
+          "schema_version": 1,
+          "store_scalar_cycles": 144,
+          "terminal_state": "DONE",
+          "update_vector_cycles": 0
+        }
+      ],
+      "output_bits_sha256": "19bdf06bb7745d641da824dbe3adc88e1c017e431d3390dd31f20d9fd82a4892",
+      "output_hash": 4245499135,
+      "output_words": 1024,
+      "raw_log": "raw/n16_omcfg.log",
+      "raw_log_sha256": "bc4062b38a0908bbf438c3e981c02d0589e46849511c45a957f538afde99fd52",
+      "result": {
+        "configuration": {
+          "field_writes": 9,
+          "init_count": 1,
+          "mmio_writes": 0,
+          "omcfg_instructions": 10,
+          "path": "omcfg"
+        },
+        "cycles": {
+          "core_residual": 8125,
+          "merge_orchestration": 179,
+          "merge_total": 12983,
+          "merge_window": 12983,
+          "output_copy": 6159,
+          "rvv_output_update": 7875,
+          "score_compute": 135618,
+          "smu_breakdown_delta": 0,
+          "smu_breakdown_exact": 1,
+          "smu_breakdown_sum": 0,
+          "smu_commands": 3,
+          "smu_recurrence": 4929,
+          "smu_setup": 0,
+          "smu_wait": 0,
+          "software_recurrence_calls": 0,
+          "tile_local_state": 344591,
+          "total": 507476,
+          "workload_setup": 632
+        },
+        "d": 64,
+        "implementation": "omerge",
+        "merge_count": 3,
+        "n": 16,
+        "output_hash": 4245499135,
+        "output_metrics": {
+          "cosine_similarity_bits": 1065352699,
+          "mae_bits": 972444283,
+          "stable_relative_error_bits": 1005107881
+        },
+        "output_nonfinite": 0,
+        "seed": 1,
+        "smu": {
+          "commands": 3,
+          "done": 3,
+          "errors": 0,
+          "saw_busy": 0,
+          "timeouts": 0
+        },
+        "status": "pass",
+        "tcdm": {
+          "allocation_bytes": 29440,
+          "capacity_bytes": 131072,
+          "data_bytes": 29440,
+          "memory_footprint_bytes": 45952,
+          "runtime_reserved_bytes": 16512
+        },
+        "tile_count": 4,
+        "tile_keys": 4
+      },
+      "selector_transitions": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0
+        ],
+        [
+          0,
+          1
+        ]
+      ],
+      "timed_out": false
+    }
+  ],
+  "schema_version": 1,
+  "source_snapshot_unchanged": true,
+  "status": "complete",
+  "toolchain": {
+    "clang": "clang version 14.0.6 (git@github.com:pulp-platform/llvm-project.git b494f2d8dde88723026db8ec16ac6c7ee1e140ca)\nTarget: riscv32-unknown-unknown-elf\nThread model: posix\nInstalledDir: /home/wxt/work-online-merge-supplement/install/llvm/bin",
+    "python": "3.12.3 (main, Jun 19 2026, 12:46:00) [GCC 13.3.0]",
+    "riscv_gcc": "riscv32-unknown-elf-gcc (GCC) 7.1.1 20170509\nCopyright (C) 2017 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.",
+    "verilator": "Verilator 5.034 2025-02-24 rev v5.034"
+  }
+}

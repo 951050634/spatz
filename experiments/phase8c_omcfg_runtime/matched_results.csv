@@ -1,0 +1,5 @@
+case,config_path,setup_cycles,omerge_count,smu_start,smu_done,selector_toggle,mmio_writes,omcfg_instructions,init_count,rvv_update_cycles,merge_cycles,native_core_cycles,setup_inclusive_cycles,output_words,output_hash,pairwise_mae,stable_rel,cosine,nonfinite,config_state_hash,errors,timeouts,exit_code
+n8,mmio,991,1,1,1,1,9,0,1,808,1694,72636,73627,256,2625429212,0.0,0.0,1.0,0,31a112541234a811901899f55413724b33811aac8b09921b7082a0bb3762a89a,0,0,0
+n8,omcfg,659,1,1,1,1,0,10,1,808,1694,72636,73295,256,2625429212,0.0,0.0,1.0,0,31a112541234a811901899f55413724b33811aac8b09921b7082a0bb3762a89a,0,0,0
+n16,mmio,986,3,3,3,3,9,0,1,7905,13013,507464,508450,1024,4245499135,0.0,0.0,1.0,0,9d07df611b831de36d6e0811b9a78c218923fe2e5f46205992d1f71feadcfd24,0,0,0
+n16,omcfg,632,3,3,3,3,0,10,1,7875,12983,507476,508108,1024,4245499135,0.0,0.0,1.0,0,9d07df611b831de36d6e0811b9a78c218923fe2e5f46205992d1f71feadcfd24,0,0,0
