@@ -307,6 +307,18 @@ add_phase5_native_benchmark(native-online-attention-software 0)
 add_phase5_native_benchmark(native-online-attention-smu 1)
 add_phase5_native_benchmark(native-online-attention-omerge 2)
 
+# Phase 8C matched configuration-plane pair.  Both targets use the same
+# Native Attention source, OMERGE execution path, Scalar SMU, and RVV update;
+# only the one-time persistent-configuration access mechanism differs.
+add_phase5_native_benchmark(native-online-attention-omerge-mmio 2)
+target_compile_definitions(
+  test-${SNITCH_TEST_PREFIX}native-online-attention-omerge-mmio
+  PRIVATE PHASE8C_CONFIG_PATH=1)
+add_phase5_native_benchmark(native-online-attention-omerge-omcfg 2)
+target_compile_definitions(
+  test-${SNITCH_TEST_PREFIX}native-online-attention-omerge-omcfg
+  PRIVATE PHASE8C_CONFIG_PATH=2)
+
 add_spatz_test_threeParam(dp-fmatmul dp-fmatmul/main.c 64  64  64 )
 add_spatz_test_threeParam(dp-fmatmul dp-fmatmul/main.c 64  128 64 )
 add_spatz_test_threeParam(dp-fmatmul dp-fmatmul/main.c 128 128 128)

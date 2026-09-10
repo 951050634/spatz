@@ -17,6 +17,7 @@
 #include "rtl_reference.h"
 #include "rvv_update.h"
 #include <online_merge_mode.h>
+#include <online_merge_omcfg.h>
 
 #undef PRINTF
 #define PRINTF(...) printf(__VA_ARGS__)
@@ -34,6 +35,17 @@
 #define PHASE5_OUTPUT_BUFFER_BYTES 16384u
 #define PHASE5_OUTPUT_CHUNK_WORDS 256u
 
+#define PHASE8C_CONFIG_MMIO 1
+#define PHASE8C_CONFIG_OMCFG 2
+
+#ifndef PHASE8C_CONFIG_PATH
+#define PHASE8C_CONFIG_PATH PHASE8C_CONFIG_MMIO
+#endif
+
+// Keep both configuration mechanisms in an identical text image.  The two
+// matched targets differ only in this initialized runtime selector word.
+static volatile uint32_t phase8c_config_path = PHASE8C_CONFIG_PATH;
+
 #ifndef PHASE5_DUMP_OUTPUT
 #define PHASE5_DUMP_OUTPUT 0
 #endif
@@ -50,6 +62,9 @@ _Static_assert(PHASE5_IMPLEMENTATION == PHASE5_SOFTWARE ||
                    PHASE5_IMPLEMENTATION == PHASE5_SMU ||
                    PHASE5_IMPLEMENTATION == PHASE5_ISA,
                "invalid Phase 5 implementation selector");
+_Static_assert(PHASE8C_CONFIG_PATH == PHASE8C_CONFIG_MMIO ||
+                   PHASE8C_CONFIG_PATH == PHASE8C_CONFIG_OMCFG,
+               "invalid Phase 8C configuration path selector");
 _Static_assert(PHASE5_TILE_KEYS > 0u, "Phase 5 tile must be non-empty");
 _Static_assert(PHASE5_CASE_N % PHASE5_TILE_KEYS == 0u,
                "Phase 5 anchor must have complete four-key tiles");
@@ -333,6 +348,27 @@ static void smu_clear_done(void) {
       1u << SPATZ_CLUSTER_PERIPHERAL_MERGE_CTRL_CLEAR_DONE_BIT;
 }
 
+static inline void phase8c_cfg_write(uint32_t cfg_id, uint32_t mmio_offset,
+                                     uint32_t value) {
+  if (phase8c_config_path == PHASE8C_CONFIG_OMCFG) {
+    omerge_cfg_write(cfg_id, value);
+  } else {
+    *cluster_reg(mmio_offset) = value;
+  }
+}
+
+static inline void phase8c_cfg_init(void) {
+  if (phase8c_config_path == PHASE8C_CONFIG_OMCFG) {
+    omerge_cfg_write(OMERGE_CFG_CTRL, OMERGE_CFG_CTRL_INIT);
+  } else {
+    smu_clear_done();
+  }
+}
+
+static const char *phase8c_config_path_name(void) {
+  return phase8c_config_path == PHASE8C_CONFIG_OMCFG ? "omcfg" : "mmio";
+}
+
 static void smu_start(const phase5_buffers_t *buffers, uint32_t n,
                       uint32_t d) {
   *cluster_reg(SPATZ_CLUSTER_PERIPHERAL_MERGE_SRC_M_OLD_REG_OFFSET) =
@@ -373,33 +409,63 @@ static void smu_start(const phase5_buffers_t *buffers, uint32_t n,
 // existing RVV routine after every successful completion.
 static void smu_isa_setup(const phase5_buffers_t *buffers, uint32_t n,
                           uint32_t d) {
-  *cluster_reg(
-      SPATZ_CLUSTER_PERIPHERAL_MERGE_ISA_STATE_A_M_REG_OFFSET) =
-      tcdm_offset(buffers->m_old);
-  *cluster_reg(
-      SPATZ_CLUSTER_PERIPHERAL_MERGE_ISA_STATE_A_L_REG_OFFSET) =
-      tcdm_offset(buffers->l_old);
-  *cluster_reg(
-      SPATZ_CLUSTER_PERIPHERAL_MERGE_ISA_STATE_B_M_REG_OFFSET) =
-      tcdm_offset(buffers->m_out);
-  *cluster_reg(
-      SPATZ_CLUSTER_PERIPHERAL_MERGE_ISA_STATE_B_L_REG_OFFSET) =
-      tcdm_offset(buffers->l_out);
-  *cluster_reg(SPATZ_CLUSTER_PERIPHERAL_MERGE_SRC_M_TILE_REG_OFFSET) =
-      tcdm_offset(buffers->m_tile);
-  *cluster_reg(SPATZ_CLUSTER_PERIPHERAL_MERGE_SRC_L_TILE_REG_OFFSET) =
-      tcdm_offset(buffers->l_tile);
-  *cluster_reg(SPATZ_CLUSTER_PERIPHERAL_MERGE_N_REG_OFFSET) = n;
-  *cluster_reg(SPATZ_CLUSTER_PERIPHERAL_MERGE_D_REG_OFFSET) = d;
-  *cluster_reg(SPATZ_CLUSTER_PERIPHERAL_MERGE_STRIDE_REG_OFFSET) =
-      d * sizeof(float);
-  *cluster_reg(SPATZ_CLUSTER_PERIPHERAL_MERGE_MODE_REG_OFFSET) =
-      (uint32_t)ONLINE_MERGE_MODE_MIXED_SCALAR;
-  *cluster_reg(SPATZ_CLUSTER_PERIPHERAL_MERGE_DST_WEIGHT_OLD_REG_OFFSET) =
-      tcdm_offset(buffers->old_weight);
-  *cluster_reg(SPATZ_CLUSTER_PERIPHERAL_MERGE_DST_WEIGHT_TILE_REG_OFFSET) =
-      tcdm_offset(buffers->tile_weight);
-  smu_clear_done();
+  (void)d;
+  phase8c_cfg_write(
+      OMERGE_CFG_STATE_A_M_ADDR,
+      SPATZ_CLUSTER_PERIPHERAL_MERGE_ISA_STATE_A_M_REG_OFFSET,
+      tcdm_offset(buffers->m_old));
+  phase8c_cfg_write(
+      OMERGE_CFG_STATE_A_L_ADDR,
+      SPATZ_CLUSTER_PERIPHERAL_MERGE_ISA_STATE_A_L_REG_OFFSET,
+      tcdm_offset(buffers->l_old));
+  phase8c_cfg_write(
+      OMERGE_CFG_STATE_B_M_ADDR,
+      SPATZ_CLUSTER_PERIPHERAL_MERGE_ISA_STATE_B_M_REG_OFFSET,
+      tcdm_offset(buffers->m_out));
+  phase8c_cfg_write(
+      OMERGE_CFG_STATE_B_L_ADDR,
+      SPATZ_CLUSTER_PERIPHERAL_MERGE_ISA_STATE_B_L_REG_OFFSET,
+      tcdm_offset(buffers->l_out));
+  phase8c_cfg_write(OMERGE_CFG_TILE_M_ADDR,
+                    SPATZ_CLUSTER_PERIPHERAL_MERGE_SRC_M_TILE_REG_OFFSET,
+                    tcdm_offset(buffers->m_tile));
+  phase8c_cfg_write(OMERGE_CFG_TILE_L_ADDR,
+                    SPATZ_CLUSTER_PERIPHERAL_MERGE_SRC_L_TILE_REG_OFFSET,
+                    tcdm_offset(buffers->l_tile));
+  phase8c_cfg_write(
+      OMERGE_CFG_WEIGHT_OLD_ADDR,
+      SPATZ_CLUSTER_PERIPHERAL_MERGE_DST_WEIGHT_OLD_REG_OFFSET,
+      tcdm_offset(buffers->old_weight));
+  phase8c_cfg_write(
+      OMERGE_CFG_WEIGHT_TILE_ADDR,
+      SPATZ_CLUSTER_PERIPHERAL_MERGE_DST_WEIGHT_TILE_REG_OFFSET,
+      tcdm_offset(buffers->tile_weight));
+  phase8c_cfg_write(OMERGE_CFG_N,
+                    SPATZ_CLUSTER_PERIPHERAL_MERGE_N_REG_OFFSET, n);
+  phase8c_cfg_init();
+}
+
+static void print_phase8c_config_state(uint32_t workload_d) {
+  PRINTF("PHASE8C_CONFIG_STATE {\"path\":\"%s\","
+         "\"A_M\":%u,\"A_L\":%u,\"B_M\":%u,\"B_L\":%u,"
+         "\"TILE_M\":%u,\"TILE_L\":%u,\"WEIGHT_OLD\":%u,"
+         "\"WEIGHT_TILE\":%u,\"N\":%u,\"workload_D\":%u}\n",
+         phase8c_config_path_name(),
+         *cluster_reg(
+             SPATZ_CLUSTER_PERIPHERAL_MERGE_ISA_STATE_A_M_REG_OFFSET),
+         *cluster_reg(
+             SPATZ_CLUSTER_PERIPHERAL_MERGE_ISA_STATE_A_L_REG_OFFSET),
+         *cluster_reg(
+             SPATZ_CLUSTER_PERIPHERAL_MERGE_ISA_STATE_B_M_REG_OFFSET),
+         *cluster_reg(
+             SPATZ_CLUSTER_PERIPHERAL_MERGE_ISA_STATE_B_L_REG_OFFSET),
+         *cluster_reg(SPATZ_CLUSTER_PERIPHERAL_MERGE_SRC_M_TILE_REG_OFFSET),
+         *cluster_reg(SPATZ_CLUSTER_PERIPHERAL_MERGE_SRC_L_TILE_REG_OFFSET),
+         *cluster_reg(
+             SPATZ_CLUSTER_PERIPHERAL_MERGE_DST_WEIGHT_OLD_REG_OFFSET),
+         *cluster_reg(
+             SPATZ_CLUSTER_PERIPHERAL_MERGE_DST_WEIGHT_TILE_REG_OFFSET),
+         *cluster_reg(SPATZ_CLUSTER_PERIPHERAL_MERGE_N_REG_OFFSET), workload_d);
 }
 
 static inline uint32_t omerge(void) {
@@ -498,6 +564,7 @@ static int run_attention(phase5_buffers_t *buffers, phase5_cycles_t *cycles) {
   uint64_t setup_start = benchmark_get_cycle64();
   smu_isa_setup(buffers, n, d);
   cycles->workload_setup_cycles = benchmark_get_cycle64() - setup_start;
+  print_phase8c_config_state(d);
 #endif
 
   uint64_t core_start = benchmark_get_cycle64();
@@ -792,6 +859,14 @@ int main(void) {
          "\"timeouts\":%u,\"saw_busy\":%u},",
          cycles.smu_commands, cycles.smu_done, cycles.smu_errors,
          cycles.smu_timeouts, cycles.smu_saw_busy);
+#if PHASE5_IMPLEMENTATION == PHASE5_ISA
+  PRINTF("\"configuration\":{\"path\":\"%s\",\"field_writes\":9,"
+         "\"mmio_writes\":%u,\"omcfg_instructions\":%u,"
+         "\"init_count\":1},",
+         phase8c_config_path_name(),
+         phase8c_config_path == PHASE8C_CONFIG_MMIO ? 9u : 0u,
+         phase8c_config_path == PHASE8C_CONFIG_OMCFG ? 10u : 0u);
+#endif
   print_cycles(&cycles);
   PRINTF(",\"output_nonfinite\":%u,\"output_hash\":%u,"
          "\"output_metrics\":{\"mae_bits\":%u,"
