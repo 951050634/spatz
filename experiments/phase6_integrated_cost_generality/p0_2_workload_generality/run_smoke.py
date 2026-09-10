@@ -30,7 +30,7 @@ TARGETS = {
     "smu": "test-spatzBenchmarks-native-online-attention-smu",
 }
 SIMULATOR = Path(
-    "/home/wxt/spatz-archive/phase4/work-phase4-recip-sim/spatz_cluster.vlt"
+    "/home/wxt/work-online-merge-supplement/work-artifacts/work-phase4-recip-sim/spatz_cluster.vlt"
 )
 
 
@@ -100,9 +100,9 @@ def parse_output(log: Path, n: int, d: int) -> int:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--build-root", type=Path,
-                        default=ROOT.parent / "work-phase6-native-smoke")
+                        default=ROOT / "work-artifacts" / "work-phase6-native-smoke")
     parser.add_argument("--case-root", type=Path,
-                        default=ROOT.parent / "work-phase6-native-smoke-cases")
+                        default=ROOT / "work-artifacts" / "work-phase6-native-smoke-cases")
     parser.add_argument("--timeout", type=int, default=900)
     parser.add_argument("--jobs", type=int, default=8)
     parser.add_argument("--reuse-build", action="store_true",

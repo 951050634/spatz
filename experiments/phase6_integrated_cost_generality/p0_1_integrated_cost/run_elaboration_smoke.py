@@ -20,7 +20,7 @@ from pathlib import Path
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 ROOT = SCRIPT_DIR.parents[2]
-SCRATCH = ROOT.parent / "work-phase6-integrated-elab-smoke"
+SCRATCH = ROOT / "work-artifacts" / "work-phase6-integrated-elab-smoke"
 LOG_ROOT = SCRIPT_DIR / "logs"
 RUNNER = SCRIPT_DIR / "run_matched_synthesis.py"
 TOP = "spatz_cluster_wrapper"

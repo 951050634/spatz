@@ -2,7 +2,7 @@
   "artifact_bytes": 109541972,
   "artifact_count": 90,
   "artifact_manifest_sha256": "4df6d885112ac3739c19091a6f3ca3842e9e640aaa68474af48306a42f27bbde",
-  "artifact_root": "/home/wxt/m1-matched-lut.7wqexi/artifacts/work-online-merge-m2-matched-lut-scale-07-r1",
+  "artifact_root": "/home/wxt/work-online-merge-supplement/run-archive/m1-matched-lut-7wqexi/artifacts/work-online-merge-m2-matched-lut-scale-07-r1",
   "artifact_verification": "PASS",
   "commands_sha256": "6ae5510b05a292dda39413d2807f6952cfbb0d8c31db6e186c594d1eafcf2ca3",
   "failure_count": 0,

@@ -343,7 +343,7 @@ def main() -> int:
     )
     parser.add_argument(
         "--work-root", type=Path,
-        default=ROOT.parent / "work-phase6-integrated-synth",
+        default=ROOT / "work-artifacts" / "work-phase6-integrated-synth",
     )
     parser.add_argument("--timeout", type=int, default=3600)
     args = parser.parse_args()

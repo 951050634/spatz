@@ -43,7 +43,7 @@ TARGETS = {
     "smu": "test-spatzBenchmarks-native-online-attention-smu",
 }
 DEFAULT_SIMULATOR = Path(
-    "/home/wxt/spatz-archive/phase4/work-phase4-recip-sim/spatz_cluster.vlt"
+    "/home/wxt/work-online-merge-supplement/work-artifacts/work-phase4-recip-sim/spatz_cluster.vlt"
 )
 
 
@@ -368,7 +368,7 @@ def main() -> int:
                         help="run the two new shape pairs from a clean snapshot")
     parser.add_argument("--output", type=Path, default=SCRIPT_DIR / "formal")
     parser.add_argument("--build-root", type=Path,
-                        default=ROOT.parent / "work-phase6-native-formal")
+                        default=ROOT / "work-artifacts" / "work-phase6-native-formal")
     parser.add_argument("--simulator", type=Path, default=DEFAULT_SIMULATOR)
     parser.add_argument("--llvm-path", type=Path, default=ROOT / "install/llvm")
     parser.add_argument("--gcc-path", type=Path,

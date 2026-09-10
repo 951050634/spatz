@@ -53,7 +53,7 @@
     "--require-clean",
     "--no-index",
     "--artifact-root",
-    "/home/wxt/m1-matched-lut.7wqexi/artifacts/work-online-merge-m2-matched-lut-scale-00-r1",
+    "/home/wxt/work-online-merge-supplement/run-archive/m1-matched-lut-7wqexi/artifacts/work-online-merge-m2-matched-lut-scale-00-r1",
     "--suite",
     "m2-matched-lut-scale-00",
     "--case-ids",
