@@ -1,0 +1,14 @@
+audited_head=c32c99c90b11831f46d8d79372d38bede8ea3c3b
+package_32bit_patterns=1063
+snitch_active_labels=441
+snitch_guard_counts={'always': 199, 'ifdef TARGET_SPATZ': 242}
+spatz_top_labels=345
+omerge_rd_x0_x31_exactly_one=PASS
+families=32
+fixed_rd0_concrete_words_total=4194304
+rs1_matrix_rows=1024
+rd_variation_rows=1024
+status_counts={'SAFE': 22, 'PARTIALLY_SAFE': 1, 'BLOCKED': 9}
+safe_current_matches=0
+safe_hypothetical_matches=1
+result=PASS

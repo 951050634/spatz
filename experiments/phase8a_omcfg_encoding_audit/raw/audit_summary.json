@@ -1,0 +1,69 @@
+{
+  "schema": "phase8a-omcfg-instruction-space-audit-v1",
+  "audited_head": "c32c99c90b11831f46d8d79372d38bede8ea3c3b",
+  "checker": {
+    "path": "experiments/phase8a_omcfg_encoding_audit/raw/audit_instruction_space.py",
+    "sha256": "ab135212107c4bb543fe45fbd9545634cea9b2a4cc4261af6a60f1aa57e42dee"
+  },
+  "sources": {
+    "hw/ip/snitch/src/riscv_instr.sv": "39253601463204449264d5555fcc08aa57930c1d138817d606534c8e8c16251a",
+    "hw/ip/snitch/src/snitch.sv": "5f3e1c106e7c9fb2dafc599cf1ed28dc4e06783bc58eb7875e1ca68cd8c67339",
+    "hw/ip/spatz/src/spatz_decoder.sv": "d217f8d86b9d157b8cf3228e9a2ab83db7c2ac324623c0f2a41588712770f107"
+  },
+  "package_pattern_count": 1063,
+  "snitch": {
+    "case_start": 552,
+    "case_end": 2641,
+    "active_label_count": 441,
+    "unique_name_count": 441,
+    "guard_counts": {
+      "always": 199,
+      "ifdef TARGET_SPATZ": 242
+    },
+    "custom_opcode_active_counts": {
+      "0x0B": 2,
+      "0x2B": 8,
+      "0x5B": 1,
+      "0x7B": 0
+    }
+  },
+  "spatz": {
+    "case_start": 55,
+    "case_end": 1774,
+    "active_label_count": 345,
+    "unique_name_count": 345,
+    "custom_opcode_active_count": 0
+  },
+  "omerge": {
+    "pattern": "00000110000000000000?????1011011",
+    "mask": "0xFFFFF07F",
+    "match": "0x0600005B",
+    "base_word": "0x0600005B",
+    "word_rule": "0x0600005B | (rd << 7)",
+    "rd_values_tested": 32,
+    "all_exactly_one_active_match": true
+  },
+  "candidate_search": {
+    "family_count": 32,
+    "fixed_rd0_concrete_words_per_family": 131072,
+    "fixed_rd0_total_concrete_words": 4194304,
+    "rs1_values_per_family": 32,
+    "required_cfg_range": "0x000..0x009",
+    "reserved_cfg_range": "0x000..0x0FF",
+    "full_cfg_range": "0x000..0xFFF",
+    "status_counts": {
+      "SAFE": 22,
+      "PARTIALLY_SAFE": 1,
+      "BLOCKED": 9
+    },
+    "safe_current_match_range": [
+      0,
+      0
+    ],
+    "safe_hypothetical_match_range": [
+      1,
+      1
+    ]
+  },
+  "r_type_fallback": "not run: complete SAFE I-type-like families exist"
+}

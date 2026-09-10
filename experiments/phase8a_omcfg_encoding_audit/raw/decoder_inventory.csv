@@ -1,0 +1,4 @@
+scope,count,notes
+riscv_instr_32bit_package_patterns,1063,declarations; only case-referenced labels are active
+snitch_TARGET_SPATZ_top_case_labels,441,case lines 552..2641; 199 always + 242 TARGET_SPATZ
+spatz_downstream_top_case_labels,345,case lines 55..1774; zero custom opcode labels

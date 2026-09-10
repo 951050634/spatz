@@ -1,0 +1,12 @@
+opcode,opcode_name,instruction_name,pattern,match,mask,decoder_location,funct3_rule,funct7_rule,rd_rule,rs1_rule,rs2_rule
+0x0B,custom-0,FREP_O,????????????????????????10001011,0x0000008B,0x000000FF,hw/ip/snitch/src/snitch.sv:2066,*,*,????1,*,*
+0x0B,custom-0,FREP_I,????????????????????????00001011,0x0000000B,0x000000FF,hw/ip/snitch/src/snitch.sv:2067,*,*,????0,*,*
+0x2B,custom-1,DMSRC,0000000??????????000000000101011,0x0000002B,0xFE007FFF,hw/ip/snitch/src/snitch.sv:2178,000,0000000,00000,*,*
+0x2B,custom-1,DMDST,0000001??????????000000000101011,0x0200002B,0xFE007FFF,hw/ip/snitch/src/snitch.sv:2179,000,0000001,00000,*,*
+0x2B,custom-1,DMSTR,0000110??????????000000000101011,0x0C00002B,0xFE007FFF,hw/ip/snitch/src/snitch.sv:2180,000,0000110,00000,*,*
+0x2B,custom-1,DMCPYI,0000010??????????000?????0101011,0x0400002B,0xFE00707F,hw/ip/snitch/src/snitch.sv:2191,000,0000010,*,*,*
+0x2B,custom-1,DMCPY,0000011??????????000?????0101011,0x0600002B,0xFE00707F,hw/ip/snitch/src/snitch.sv:2203,000,0000011,*,*,*
+0x2B,custom-1,DMSTATI,0000100?????00000000?????0101011,0x0800002B,0xFE0FF07F,hw/ip/snitch/src/snitch.sv:2216,000,0000100,*,00000,*
+0x2B,custom-1,DMSTAT,0000101?????00000000?????0101011,0x0A00002B,0xFE0FF07F,hw/ip/snitch/src/snitch.sv:2227,000,0000101,*,00000,*
+0x2B,custom-1,DMREP,000011100000?????000000000101011,0x0E00002B,0xFFF07FFF,hw/ip/snitch/src/snitch.sv:2239,000,0000111,00000,*,00000
+0x5B,custom-2,OMERGE,00000110000000000000?????1011011,0x0600005B,0xFFFFF07F,hw/ip/snitch/src/snitch.sv:2253,000,0000011,*,00000,00000
