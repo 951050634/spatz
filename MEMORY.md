@@ -1,1 +1,0 @@
-- [SMU设计与创新点](docs/online-softmax-merge-engine/SMU设计与创新点.md) — 研究定位、SMU 架构、执行边界、创新性审计与主张范围
