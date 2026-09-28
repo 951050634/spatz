@@ -1,45 +1,43 @@
-\documentclass[conference]{IEEEtran}
+\documentclass[journal]{IEEEtran}
 
 \usepackage[T1]{fontenc}
 \usepackage{amsmath}
 \usepackage{amsfonts}
+\usepackage{array}
 \usepackage{booktabs}
 \usepackage{graphicx}
 
-\title{Scalar SMU for Native Online Attention}
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}m{#1}}
 
-\author{\IEEEauthorblockN{xt}}
+\title{Scalar SMU: Selective Recurrence Acceleration for Native Online Attention on a RISC-V Vector Cluster}
+
+\author{Xiaoteng Wang}
 
 \begin{document}
 
 \maketitle
 
 \begin{abstract}
-Online attention never materializes the full probability matrix; it merges
-tile-local normalization and output states instead. Each merge is one logical
-operation, but its computation is not uniform. A small nonlinear recurrence
-updates the running maximum and normalizer and produces two rescaling weights,
-and a regular $D$-dimensional vector operation applies them to the output. We
-present a hardware/software co-design that specializes the recurrence alone and
-leaves the vector update on the existing RISC-V Vector (RVV) datapath. A
-cluster-local Scalar Online-Merge Unit (SMU) implements the recurrence in
-stage-aware mixed precision: FP16 maximum and difference operations,
-fixed-point exponential and reciprocal approximations, and Q16.32 normalization
-accumulation. Two lightweight custom RISC-V instructions expose it.
-\texttt{OMCFG} establishes workload-persistent context, \texttt{OMERGE} invokes
-one recurrence, and a hardware-maintained selector tracks the alternating
-scalar state.
-
-On four native online-attention workloads, the design reaches
-8.524--17.784$\times$ recurrence speedup, 4.144--6.275$\times$ merge speedup,
-and 1.066--1.157$\times$ Native Core speedup over a matched software baseline.
-The mixed-precision SMU also cuts standalone mapped area by 27.613\% against the
-legacy scalar implementation, at cosine similarities above 0.99997 on the
-native workloads. On the two anchor workloads \texttt{OMERGE} trims the
-inclusive recurring recurrence/control window by 41.523--59.014\%, and
-\texttt{OMCFG} trims one-time configuration cost by 33.50--35.90\%. In two
-measured explicit probability-matrix cases, the same unit gives no consistent
-benefit as a generic Softmax replacement.
+Native online attention processes score tiles incrementally, but each
+noninitial tile updates a running maximum and normalizer through a
+state-dependent scalar recurrence. We study how to map that recurrence in a
+programmable RISC-V vector cluster, where the accompanying output update
+exposes $D$-element parallelism. We design a cluster-local Scalar
+Online-Merge Unit (SMU) for the recurrence and retain the existing Spatz/RVV
+datapath for the output update. Two custom-2 instructions expose the hardware:
+\texttt{OMCFG} writes nine persistent context fields and commits
+initialization, while \texttt{OMERGE} processes each later score tile across
+all configured $N$ query rows and returns completion status. Hardware tracks
+alternating scalar-state buffers; software
+retains output-vector ownership. Across four native workloads (tile size four,
+seed one), the MMIO-controlled selective implementation yields
+8.524--17.784$\times$ speedup in the recurrence window, 4.144--6.275$\times$
+in the inclusive merge window, and
+1.066--1.157$\times$ in the Native Core window over a matched scalar-software
+recurrence with the same RVV update. Native Core excludes Q/K/V loading and
+linear projections; it is not a full-attention or full-model measurement. The
+mixed-precision SMU reduces standalone mapped area by 27.613\% relative to the
+legacy scalar implementation, while its pre-layout delay proxy is higher.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -49,94 +47,101 @@ acceleration, vector processing, mixed-precision computing, Softmax.
 
 \section{Introduction}
 
-Attention dominates Transformer execution: it combines high-throughput matrix
-products with normalization and data-dependent nonlinearity. Matrix
-multiplication has been optimized heavily, so the nonlinear and
-synchronization-heavy parts now account for a larger share of the remaining
-time. Online Softmax avoids holding the full normalized matrix in memory by
-keeping a running maximum and normalizer as scores arrive
-\cite{milakov2018online}. FlashAttention applies the same idea to tiling and
-avoids materializing the complete attention matrix
-\cite{dao2022flashattention}. Both reduce data movement. In exchange, the
-online formulation introduces a recurrence that carries state from one score
-tile to the next.
+Transformer attention combines matrix multiplication with Softmax
+normalization and is a fundamental operation in modern sequence
+models~\cite{vaswani2017attention}. Online normalization updates running
+statistics as scores arrive~\cite{milakov2018online}. FlashAttention applies
+this idea to tiled exact attention and avoids materializing the complete
+attention matrix through IO-aware execution~\cite{dao2022flashattention};
+FlashAttention-2 further improves GPU parallelism and work
+partitioning~\cite{dao2024flashattention}. In a programmable processor, the
+online formulation also creates a loop-carried recurrence between score tiles.
 
-An online-attention merge contains two parts that make different demands on
-hardware. The first is a small nonlinear recurrence that updates the running
-maximum and normalizer and produces two rescaling weights. Maximum selection,
-exponentiation, accumulation, and normalization form a dependency chain, and
-the work does not grow with the output dimension $D$. The second applies the
-two weights to the $D$-element partial outputs. That step is element-wise,
-regular, and exposes exactly the data parallelism a vector processor is
-designed for. Treating the merge as a single uniform kernel hides this
-asymmetry: the state-dependent recurrence and the regular vector update suit
-different execution resources.
+Each merge combines two different kinds of work. A scalar recurrence updates
+the running maximum and normalizer and produces two output-rescaling weights.
+Maximum selection, exponential rescaling, accumulation, and normalization
+form a dependency chain whose work does not grow with the output dimension
+$D$. The output update applies those weights to $D$ elements independently.
+Thus, one merge couples $O(1)$ dependency-constrained scalar operations with
+$O(D)$ regular vector operations. The design question is where to place the
+boundary between a dedicated unit and a programmable vector datapath: a
+uniform offload duplicates vector resources, whereas leaving the recurrence on
+the scalar core preserves the dependency chain.
 
-Accelerators for attention nonlinearity have been built at several
-granularities. Some add exponential or nonlinear arithmetic to a programmable
-processor. Others offload the complete Softmax operator, or place a
-domain-specific unit beside a RISC-V core or vector processor. Together they
-show that nonlinear, dependency-heavy work rewards specialization, but they
-leave a partitioning question open: how much of attention execution belongs in
-dedicated hardware? Offloading the whole merge would rebuild vector
-functionality that an RVV processor already provides. Leaving it all in
-software keeps the state-dependent recurrence on the scalar control path.
+Prior work already establishes online normalization and specialized Softmax
+hardware. Softermax combines online normalization and low-precision arithmetic
+for hardware-friendly Softmax~\cite{stevens2021softermax}; SoftEx accelerates
+Softmax and GELU beside a RISC-V cluster~\cite{belano2025softex}. VEXP adds
+approximate exponentiation to Snitch RISC-V execution and evaluates both
+Softmax and FlashAttention-2~\cite{wang2025vexp}. Other work reuses Softmax
+hardware for GELU~\cite{peltekis2024gelu}. RISC-V platforms also span scalar
+cores with accelerator interfaces~\cite{zaruba2021snitch}, vector processors
+~\cite{cavalcante2020ara}, and shared-memory vector clusters~\cite{Spatz2025}.
+TOP-V shows that a dependency-heavy operation can be specialized inside a
+vector processor while its surrounding computation remains
+programmable~\cite{chen2026topv}. These systems make the architectural
+trade-off concrete, but do not settle how to partition the native
+online-attention merge itself.
 
-We explore a selective alternative in the Spatz RISC-V vector cluster
-\cite{Spatz2023}. A cluster-local Scalar Online-Merge Unit (SMU) accelerates
-only the state-dependent recurrence; the Spatz/RVV datapath continues to
-perform the $D$-dimensional output update. The SMU assigns numerical formats
-per recurrence stage, according to the range and accuracy each stage needs. It
-requests the shared tightly coupled data memory (TCDM) directly, so the vector
-register file, the vector floating-point units, and RVV execution semantics
-are untouched. Two lightweight custom RISC-V operations reduce software
-orchestration. \texttt{OMCFG} establishes workload-persistent scalar context, and
-\texttt{OMERGE} invokes one online recurrence. A hardware-maintained A/B selector
-advances the alternating scalar state after successful completion; software
-retains ownership of the dimension-dependent output buffers.
+We study that partition on a Spatz RISC-V vector cluster. A cluster-local
+Scalar Online-Merge Unit (SMU) executes only the state-dependent recurrence;
+the existing RISC-V Vector (RVV) datapath retains the $D$-dimensional output
+update. The SMU uses fixed, stage-aware mixed precision for maximum selection,
+exponential rescaling, normalization accumulation, reciprocal approximation,
+and weight generation. The design exposes two implementation-specific
+custom-2 instructions. \texttt{OMCFG} programs persistent TCDM addresses and
+the query-row count $N$ and required addresses, then commits the context;
+\texttt{OMERGE} processes one later score tile across all $N$ configured rows
+and returns completion status. Hardware selects
+the alternating scalar-state buffers, while software owns tile scheduling,
+output-buffer pointers, and the RVV update. This interface gives the RISC-V
+core explicit control of the accelerator without adding an SMU-specific vector
+instruction or a second $D$-wide datapath.
 
-We evaluate four native online-attention workloads: N8/D32, N16/D64, N24/D64,
-and N16/D128. Against a matched scalar-software recurrence that uses the same
-RVV output update, the SMU speeds up the recurrence by 8.524--17.784$\times$,
-the merge window by 4.144--6.275$\times$, and the Native Core by
-1.066--1.157$\times$. The benefit shrinks as the measurement scope widens,
-because the selective partition leaves the surrounding work unchanged. The
-mixed-precision engine also cuts standalone mapped area by 27.613\% relative
-to the legacy scalar implementation. On the two anchor workloads, \texttt{OMERGE}
-reduces the inclusive recurring recurrence/control window by
-41.523--59.014\%, and \texttt{OMCFG} cuts the one-time configuration cost by
-33.50--35.90\%. The same unit gives no consistent benefit in the two measured
-explicit-P cases, where it is used as a generic row-wise Softmax replacement.
-That negative control supports our reading: the gain comes from matching the
-hardware to the native online-attention recurrence.
+Across four native online-attention workloads, the matched recurrence window
+improves by 8.524--17.784$\times$ and the inclusive merge window by
+4.144--6.275$\times$ relative to scalar-software recurrence with the same RVV
+output update. The broader Native Core window improves by 1.066--1.157$\times$;
+it excludes Q/K/V loading and linear projections and is not full attention or
+model execution. Separately, the mixed-precision SMU reduces standalone mapped area
+by 27.613\% against the legacy scalar unit, with a higher pre-layout delay
+proxy. The instruction comparisons show large reductions in their measured
+recurrence/control and setup windows but no material Native Core improvement.
 
-We make four contributions:
+The paper makes three contributions, ordered by the primary claim:
 \begin{itemize}
-    \item We characterize the execution asymmetry within native online-attention
-    merging and develop a selective HW/SW partition: a dedicated scalar engine
-    handles the state-dependent recurrence, and the RVV datapath retains the
-    regular $D$-dimensional output update.
+    \item We characterize the scalar/vector asymmetry inside native
+    online-attention merging and evaluate a selective HW/SW partition: the
+    Scalar SMU accelerates the state-dependent recurrence, while the existing
+    RVV datapath retains the regular $D$-dimensional output update. Across four
+    shapes, the measured speedups are 8.524--17.784$\times$ for the recurrence,
+    4.144--6.275$\times$ for the inclusive merge, and 1.066--1.157$\times$ for
+    the broader Native Core scope.
 
-    \item We design a cluster-local stage-aware mixed-precision SMU that combines
-    FP16, fixed-point lookup-based nonlinear approximation, and Q16.32
-    accumulation behind an FP32 memory-visible interface. It reduces standalone
-    mapped area without duplicating a vector datapath.
+    \item We define a RISC-V programming model for the selective partition.
+    \texttt{OMCFG} configures nine persistent scalar-context fields and commits
+    initialization; \texttt{OMERGE} processes one later score tile across the
+    configured $N$ query rows and returns status. The hardware adapter tracks scalar A/B state and routes completion
+    to the issuing core, while software retains the output buffers and uses
+    existing RVV instructions for the vector update.
 
-    \item We develop a lightweight RISC-V programming model that separates
-    workload-persistent configuration (\texttt{OMCFG}) from recurring execution
-    (\texttt{OMERGE}), with hardware-managed scalar-state selection and
-    software-managed output state.
-
-    \item We evaluate the architecture using matched baselines across numerical
-    fidelity, standalone hardware cost, native online-attention performance,
-    HW/SW partitioning, and ISA-interface overhead, and use an explicit-P
-    negative control to establish the applicability boundary of the proposed
-    specialization.
+    \item We implement a cluster-local, fixed stage-aware mixed-precision SMU
+    using FP16, lookup-based fixed-point nonlinear approximation, and Q16.32
+    normalization accumulation behind an FP32 memory-visible interface. Its
+    standalone mapped area is 27.613\% below the legacy scalar design; the
+    measured timing proxy is higher, and cluster-level PPA remains unavailable.
 \end{itemize}
 
 \section{Native Online Attention and Design Motivation}
 
 \subsection{Native Online Attention}
+Throughout, $N$ is the configured query-row count, $B$ the key-tile size, and
+$T=N/B$ the number of tiles for the divisible workloads studied here; $D$ is
+the output-vector length and $t$ indexes a tile. The word \emph{tile} in a
+weight subscript marks its source contribution. A prime marks merged state, a
+tilde a rescaled intermediate, and a hat a value after hardware conversion. In
+a $\mathrm{Q}I.F$ format, $I$ counts integer magnitude bits and $F$ fractional
+bits; signed formats add one sign bit.
 Attention aggregates value vectors by query-key similarity. A conventional
 implementation materializes scores and normalized probabilities before
 accumulating values. Online attention instead processes score tiles and updates
@@ -145,11 +150,9 @@ matrix is never formed. This streaming normalizer underlies online
 softmax~\cite{milakov2018online} and IO-aware exact
 attention~\cite{dao2022flashattention}.
 
-For a query row, the accumulated state is represented by the triplet
-\[
-(m,l,\mathbf{O}).
-\]
-It satisfies the invariant:
+For a query row, let $s_i$ denote the score and $\mathbf{v}_i$ the associated
+value vector at each position $i$ processed so far. The accumulated state is
+$(m,l,\mathbf{O})$, with invariant:
 \[
 \begin{gathered}
 m=\max_i s_i,\\
@@ -157,12 +160,9 @@ l=\sum_i \exp(s_i-m),\\
 \mathbf{O}=\frac{1}{l}\sum_i \exp(s_i-m)\mathbf{v}_i.
 \end{gathered}
 \]
-The summation covers all scores processed so far. Thus, $l$ is the softmax
-denominator relative to the running maximum $m$, and $\mathbf{O}\in\mathbb{R}^{D}$
-is the corresponding normalized partial output. A new score tile has state:
-\[
-(m_t,l_t,\mathbf{O}_t).
-\]
+Thus, $l$ is the softmax denominator relative to the running maximum $m$, and
+$\mathbf{O}\in\mathbb{R}^{D}$ is the corresponding normalized partial output.
+A new score tile supplies state $(m_t,l_t,\mathbf{O}_t)$.
 
 The exact scalar merge combines the two states without reconstructing earlier
 probabilities:
@@ -170,14 +170,14 @@ probabilities:
 \label{eq:scalar_merge_recurrence}
 \begin{aligned}
 m' &= \max(m,m_t),\\
-\tilde{l}_{\mathrm{old}} &= l\exp(m-m'), &
+\tilde{l}_{\mathrm{old}} &= l\exp(m-m'),\\
 \tilde{l}_{\mathrm{tile}} &= l_t\exp(m_t-m'),\\
-l' &= \tilde{l}_{\mathrm{old}}+\tilde{l}_{\mathrm{tile}}, &
-w_{\mathrm{old}} &= \frac{\tilde{l}_{\mathrm{old}}}{l'},\quad
-w_{\mathrm{tile}} = \frac{\tilde{l}_{\mathrm{tile}}}{l'}.
+l' &= \tilde{l}_{\mathrm{old}}+\tilde{l}_{\mathrm{tile}},\\
+w_{\mathrm{old}} &= \frac{\tilde{l}_{\mathrm{old}}}{l'},\\
+w_{\mathrm{tile}} &= \frac{\tilde{l}_{\mathrm{tile}}}{l'}.
 \end{aligned}
 \end{equation}
-The output state is then updated as
+The vector output state is then updated as
 \[
 \mathbf{O}'=w_{\mathrm{old}}\mathbf{O}
   +w_{\mathrm{tile}}\mathbf{O}_t.
@@ -187,9 +187,8 @@ The first tile initializes the running state directly. Each later tile evaluates
 the recurrence and updates the $D$-element output. Because the output remains
 normalized, no final normalization pass is needed.
 
-The recurrence and the vector update are logically one merge, yet they expose
-different parallelism. That distinction motivates the hardware/software (HW/SW)
-partition developed here.
+Logically the recurrence and the vector update are one merge, but the
+parallelism available in each is different.
 
 \subsection{Execution Characteristics}
 Fig.~\ref{fig:motivation} separates the merge into a state-dependent scalar
@@ -199,7 +198,7 @@ elements.
 
 \begin{figure*}[t]
 \centering
-\includegraphics[width=\textwidth]{./figure/fig1.png}
+\includegraphics[width=\textwidth,trim=0 58 0 0,clip]{./figure/fig1.png}
 \caption{Execution decomposition of a native online-attention merge. The
 state-dependent recurrence updates $m$ and $l$ and generates two scalar
 rescaling weights. The regular $D$-dimensional output update stays mapped to
@@ -215,17 +214,19 @@ so increasing $D$ adds no recurrence lanes.
 Each output element $j$ obeys the opposite pattern:
 \begin{equation}
 \label{eq:rvv_o_update}
-O'[j]=w_{\mathrm{old}}O[j]+w_{\mathrm{tile}}O_t[j],\qquad 0\leq j<D,
+\mathbf{O}'[j]=w_{\mathrm{old}}\mathbf{O}[j]+w_{\mathrm{tile}}\mathbf{O}_t[j],
+\qquad 0\leq j<D,
 \end{equation}
 All $D$ elements share the same weights and have no inter-element dependency.
 The update is a regular floating-point multiply-add loop and maps naturally to
 the existing RISC-V Vector (RVV) execution resources.
 
-The asymmetry motivates selective specialization. Offloading the whole merge
-would duplicate vector functionality. Leaving everything in software would keep
-the nonlinear recurrence on the scalar path. The accelerator therefore targets
-the recurrence alone; score generation, tile-local state construction, and the
-$D$-dimensional output update stay programmable.
+The accelerator therefore targets the recurrence alone. Score generation,
+tile-local state construction, and the $D$-dimensional output update stay
+programmable, and only the part whose parallelism does not grow with $D$ moves into
+hardware. For a configured $N$-row tile merge, the engine repeats this
+$O(1)$-in-$D$ recurrence once per row; RVV applies the weights to the $D$
+output elements of each row.
 
 \subsection{Design Objectives}
 Three objectives follow from these execution characteristics.
@@ -235,26 +236,23 @@ reuse Spatz/RVV for the regular output update. That preserves RVV
 programmability without duplicating a $D$-wide datapath.
 
 The second is a recurrence unit light enough for cluster integration. Its
-stages have different numerical requirements, which motivates the stage-aware
-mixed-precision design in Section~III.
+stages have different numerical requirements, which Section~III addresses with
+stage-aware mixed precision.
 
 The third is a HW/SW interface that separates workload-persistent context from
 repeated merge invocations and keeps the alternating recurrence state in
 hardware, so per-merge control traffic does not repeat.
 
-Together they yield a fine-grained partition. A cluster-local mixed-precision
-Scalar Online-Merge Unit (SMU) executes the recurrence, and the Spatz RISC-V
-vector datapath performs the $D$-dimensional output update. A lightweight
-RISC-V interface separates workload-persistent configuration from individual
-merge invocations, and the active A/B selector for the TCDM-resident scalar
-recurrence state lives in hardware. Section~III describes this architecture and
-programming model.
+Together they yield a fine-grained partition: a cluster-local mixed-precision
+Scalar Online-Merge Unit (SMU) executes the recurrence, the Spatz RISC-V vector
+datapath performs the $D$-dimensional output update, and the active A/B
+selector for the TCDM-resident scalar recurrence state lives in hardware.
 
 \section{Architecture and HW/SW Co-Design}
 
 \subsection{System Overview and HW/SW Partition}
 Figure~\ref{fig:system_overview} shows how the design fits into a Spatz vector
-cluster~\cite{Spatz2023}. The Snitch scalar core and the Spatz/RVV datapath
+cluster~\cite{Spatz2025}. The Snitch scalar core and the Spatz/RVV datapath
 share the tightly coupled data memory (TCDM). The cluster-local SMU handles the
 Section~II recurrence; Spatz/RVV keeps the regular $D$-dimensional update.
 
@@ -279,17 +277,19 @@ diagnostics, Q/K/V loading, and linear projection. It includes score tiles,
 local states, first-tile initialization, later merges, RVV updates, and the
 final output copy.
 The first tile copies $(m_t,l_t,\mathbf{O}_t)$ into the running state. Each later
-\texttt{OMERGE} reads the active $m,l$ and tile-local $m_t,l_t$, writes $m',l'$ to the
-inactive A/B buffers, and writes both weights to TCDM. The adapter returns status
-to the issuing core and commits the A/B selector when a successful response is
-accepted; errors leave it unchanged. Spatz/RVV then reads the weights and
-updates the output vectors, after which software advances the output pointers.
-Detailed configuration, invocation, and selector semantics appear in
-Sections~III-C--III-E.
+\texttt{OMERGE} processes all $N$ configured query rows for one score tile. For
+each row it reads the active $m,l$ and tile-local $m_t,l_t$, writes $m',l'$ to
+the inactive A/B buffers, and stores both weights in TCDM. After all rows
+complete, the adapter returns status to the issuing core and commits the A/B
+selector only when a successful response is accepted; errors leave it
+unchanged. Spatz/RVV then reads the weights and updates each output row, after
+which software advances the output pointers. Detailed configuration, invocation,
+and selector semantics appear in
+Sections~\ref{sec:isa_interface}--\ref{sec:ownership}.
 
-Thus, the SMU handles only the scalar recurrence; software and Spatz/RVV retain
-score generation, local-state construction, output addressing and update,
-first-tile initialization, and the final copy.
+The SMU handles only the scalar recurrence. Score generation, local-state
+construction, output addressing and update, first-tile initialization, and the
+final copy stay in software or on Spatz/RVV.
 
 \begin{figure}[t]
 \centering
@@ -297,8 +297,9 @@ first-tile initialization, and the final copy.
 \caption{System integration and HW/SW partition. The representative per-core
 path decodes \texttt{OMERGE} through the accelerator demultiplexer,
 cluster-level issue arbiter, and adapter/SMU. Existing Spatz/RVV instructions
-take the direct regular path. The SMU and the vector datapath are independent
-TCDM requesters.}
+take the direct regular path. The SMU and vector datapath are independent TCDM
+requesters; arrows show scalar TCDM reads and writes and the owner-routed
+completion response to the issuing core.}
 \label{fig:system_overview}
 \end{figure}
 
@@ -309,21 +310,21 @@ different numerical ranges. The assignment is static and shown in
 Fig.~\ref{fig:smu_datapath}; input values never select precision at runtime.
 What the SMU computes is a stage-quantized approximation of the exact
 recurrence in Eq.~\eqref{eq:scalar_merge_recurrence}, not exact FP32
-arithmetic. A hat marks a value after a hardware conversion. The TCDM
-interface carries $m$, $m_t$, $l$, and $l_t$ in FP32; the maxima and their
+arithmetic. The TCDM interface carries $m$, $m_t$, $l$, and $l_t$ in FP32; the maxima and their
 difference use FP16 round-to-nearest-even (RNE):
 \[
 \begin{aligned}
 \widehat{m} &= \operatorname{RNE}_{16}(m), &
 \widehat{m}_t &= \operatorname{RNE}_{16}(m_t),\\
-\widehat{m}' &= \max(\widehat{m},\widehat{m}_t), &
-\widehat{\Delta}_{\mathrm{old}} &= \widehat{m}-\widehat{m}',\\
-\widehat{\Delta}_{\mathrm{tile}} &= \widehat{m}_t-\widehat{m}'.
+\widehat{m^{\prime}} &= \max(\widehat{m},\widehat{m}_t), &
+\widehat{\Delta}_{\mathrm{old}} &= \widehat{m}-\widehat{m^{\prime}},\\
+\widehat{\Delta}_{\mathrm{tile}} &= \widehat{m}_t-\widehat{m^{\prime}}.
 \end{aligned}
 \]
 
 The exponential (EXP) stage uses one 256-entry signed Q1.14 lookup table (LUT)
-over $[-8,0]$ with direct bin selection and no interpolation. The winning
+indexed by nonpositive differences in $[-8,0]$, with direct bin selection and
+no interpolation. The winning
 contribution bypasses the LUT and returns exact unity; equal converted maxima
 therefore yield unity on both paths. Only the losing difference accesses the
 LUT; differences below $-8$ saturate to zero. Denote the factors by
@@ -333,11 +334,10 @@ $\widehat{s}_{\mathrm{tile}}$.
 The SMU converts FP32 $l$ and $l_t$ to 48-bit unsigned Q16.32 carriers,
 denoted $\widehat{l}$ and $\widehat{l}_t$, and computes
 \[
-\widehat{l}'=\widehat{l}\,\widehat{s}_{\mathrm{old}}
-            +\widehat{l}_t\,\widehat{s}_{\mathrm{tile}}
-\quad\text{in Q16.32}.
+\widehat{l^{\prime}}=\widehat{l}\,\widehat{s}_{\mathrm{old}}
+            +\widehat{l}_t\,\widehat{s}_{\mathrm{tile}}.
 \]
-The denominator crosses an FP16 RNE boundary before reciprocal evaluation. A
+The sum remains in the unsigned Q16.32 carrier. The denominator crosses an FP16 RNE boundary before reciprocal evaluation. A
 256-entry unsigned Q1.15 LUT approximates the normalized mantissa, followed by
 piecewise-linear interpolation and exponent correction. Each scaled numerator
 also crosses the FP16 RNE boundary and returns to Q16.32 before weight
@@ -346,8 +346,16 @@ weights sequentially. The reciprocal-LUT path is selected by the
 \texttt{ONLINE\_MERGE\_MIXED\_RECIPROCAL} build definition; its provenance is
 reported with the evaluation results.
 
-The engine encodes $\widehat{m}'$ and $\widehat{l}'$ as FP32 for TCDM writeback.
-The encoding restores the memory-side carrier, not the precision already
+The supported numerical contract requires a positive finite denominator after
+FP16 conversion and no overflow in fixed-point intermediates. Q16.32 storage
+does not remove the FP16 normalization boundary. Directed model vectors cover
+zero numerators, subnormals, and the largest finite FP16 denominator; zero over
+zero is unsupported. Arbitrary nonfinite inputs and overflow recovery are
+outside the validated workload contract. EXP truncation and FP16 rounding
+remain sources of total recurrence error.
+
+The engine encodes $\widehat{m^{\prime}}$ and $\widehat{l^{\prime}}$ as FP32 for TCDM writeback.
+The encoding restores the memory-side carrier, not precision already
 discarded: the maximum comes from FP16 rounding and the normalization term from
 Q16.32. Weights are rounded to FP16, widened to FP32, and consumed by the
 unchanged FP32 Spatz/RVV update. FP32 therefore carries memory-visible state,
@@ -360,118 +368,104 @@ handles the bounded nonlinear stages. All assignments are fixed at design time.
 \caption{Stage-aware mixed-precision Scalar SMU datapath. Hats denote values
 after FP16 RNE or Q16.32 conversion at the indicated stage; direct-lookup EXP,
 interpolated reciprocal correction, and a shared multiplier produce
-FP16-to-FP32 weights for the unchanged RVV output update. The FP32 writeback
-of the updated scalar state is described in the text.}
+FP16-to-FP32 weights for the unchanged RVV output update. Return paths show the
+FP16-RNE maximum and Q16.32 normalizer encoded through an FP32 memory-side
+carrier before TCDM state writeback.}
 \label{fig:smu_datapath}
 \end{figure}
 
-\subsection{Per-Merge Invocation}
-The instruction interface turns one scalar online merge into one architectural
-operation. \texttt{OMERGE} occupies the RISC-V custom-2 opcode space reserved
-for implementation-specific extensions~\cite{riscv_unprivileged}. It enters
-the existing Snitch accelerator request path and reaches the cluster-local SMU
-through the same owner-tracked response path as the other offloaded
-operations~\cite{Spatz2023}. Table~\ref{tab:isa_interface} summarizes the
-custom instruction interface and the persistent configuration fields.
+\subsection{RISC-V Instruction Interface}
+\label{sec:isa_interface}
+The programming model separates persistent context setup from recurring
+execution. Both operations use the RISC-V custom-2 opcode space reserved for
+implementation-specific extensions~\cite{riscv_unprivileged}, and enter the
+existing Snitch accelerator request path in the Spatz cluster
+~\cite{Spatz2025}. Their encodings and architectural effects are listed in
+Table~\ref{tab:isa_interface}. Neither instruction changes the RVV encoding or
+the semantics of supported vector instructions.
 
 \begin{table*}[t]
 \centering
-\caption{Custom ISA interface and persistent configuration of the proposed design.}
+\caption{Custom-2 instruction formats and architectural effects.}
 \label{tab:isa_interface}
 \scriptsize
-\setlength{\tabcolsep}{3pt}
-\begin{tabular}{@{}l l l p{4.1cm} p{6.3cm}@{}}
+\setlength{\tabcolsep}{2pt}
+\begin{tabular}{@{}l p{4.6cm} p{3.8cm} p{7.2cm}@{}}
 \toprule
-\multicolumn{5}{@{}l@{}}{\textit{(a) Instruction interface}} \\
-Instruction & Opcode & funct3 & Operand fields & Architectural effect \\
+Instruction & Encoding fields & Register and immediate fields & Architectural effect \\
 \midrule
-\texttt{OMERGE} & custom-2 (\texttt{0x5B}) & \texttt{000} &
-R-type; \texttt{rs1=rs2=x0}; \texttt{rd} is the status destination &
-Invokes one online-merge recurrence using the configured TCDM state and
-returns completion status.\\
+\texttt{OMERGE} &
+R-type; opcode \texttt{0x5B}; funct7 \texttt{0000011}; funct3 \texttt{000} &
+\texttt{rs1=rs2=x0}; \texttt{rd} is the status destination &
+Processes all configured $N$ rows for one score tile, reads and writes each
+row's scalar recurrence state through TCDM, stores the two weights, and returns
+completion status. \\
 \addlinespace
-\texttt{OMCFG} & custom-2 (\texttt{0x5B}) & \texttt{001} &
-I-type-like; \texttt{imm12=cfg\_id}; \texttt{rs1} is the configuration value;
-\texttt{rd=x0} &
-Updates one persistent accelerator-context field. It starts no recurrence and
-produces no writeback result.\\
-\midrule
-\multicolumn{5}{@{}l@{}}{\textit{(b) Persistent configuration fields}} \\
-\texttt{cfg\_id} & \multicolumn{3}{l}{Field group} & Purpose \\
-\midrule
-\texttt{0x000--003} & \multicolumn{3}{l}{A/B state \texttt{m,l} addresses} &
-Two physical running scalar states \\
-\texttt{0x004--005} & \multicolumn{3}{l}{\texttt{TILE\_M} / \texttt{TILE\_L}} &
-Tile-local scalar state \\
-\texttt{0x006--007} & \multicolumn{3}{l}{\texttt{WEIGHT\_OLD} / \texttt{WEIGHT\_TILE}} &
-Merge-weight destinations \\
-\texttt{0x008} & \multicolumn{3}{l}{\texttt{N}} & Scalar row count \\
-\texttt{0x009} & \multicolumn{3}{l}{\texttt{CTRL} / \texttt{INIT}} &
-Commit configuration and reset selector \\
-\texttt{0x00A--0xFFF} & \multicolumn{3}{l}{Reserved} & Invalid or unsupported \\
+\texttt{OMCFG} &
+I-type-like; opcode \texttt{0x5B}; funct3 \texttt{001}; \texttt{imm12=cfg\_id} &
+\texttt{rs1} supplies the value; \texttt{rd=x0} &
+Writes one persistent context field or issues the separate INIT commit
+operation. It starts no recurrence and returns no register result. \\
 \bottomrule
 \end{tabular}
 \end{table*}
 
-\texttt{OMERGE} carries no recurrence operands in the scalar register file.
-The fixed \texttt{rs1} and \texttt{rs2} fields both name \texttt{x0}; the
-adapter obtains the running and tile-local \texttt{m/l} operands from the
-TCDM addresses in the configured context. The command carries no
-$D$-dimensional output data. The adapter fixes the engine to Mixed Scalar mode
-and uses the same SMU arithmetic as the matched MMIO path; the RVV routine
-handles the output vector.
+The exact decoder masks, match values, and machine-word expressions are
+provided in Supplementary Note~1. The fixed function bits separate the
+recurring command from the configuration namespace while keeping both
+operations in custom-2.
 
-The destination field carries completion status. When Snitch accepts an
-\texttt{OMERGE}, it reserves \texttt{rd} in the accelerator scoreboard and
-passes the instruction and request identifier through the cluster issue path.
-The adapter then advances through its one-outstanding-command sequence:
+\texttt{OMERGE} is a scalar recurrence command, not a vector operation. Its
+\texttt{rs1} and \texttt{rs2} fields both name \texttt{x0}. Each command
+applies the scalar recurrence to all $N$ configured rows of one score tile,
+reading $m$, $l$, $m_t$, and $l_t$ and writing $m'$, $l'$, and the two
+rescaling weights through TCDM. No $D$-dimensional output data crosses the
+instruction interface. The adapter
+fixes the engine to Mixed Scalar mode, matching the arithmetic used by the
+MMIO-controlled SMU path; the existing RVV routine performs the output update.
+
+The \texttt{rd} field names the status destination. Software must use a
+nonzero destination to inspect the returned status; \texttt{rd=x0} discards
+the register write. On issue, Snitch reserves that destination in its
+accelerator scoreboard and forwards the instruction and
+request identifier through the per-core accelerator demultiplexer and cluster
+issue arbiter. The adapter permits one outstanding command and follows
 \texttt{IDLE}, \texttt{START}, \texttt{WAIT}, and \texttt{RESP}. In
-\texttt{WAIT}, the adapter waits for the SMU to report DONE or ERROR. In
-\texttt{RESP}, the existing accelerator response channel returns the request
-identifier and status data to the issuing core. The core writes that data to
-\texttt{rd} and clears the pending destination when it accepts the response.
-Status zero denotes successful completion; a nonzero status denotes an error.
-Thus, software observes a completed instruction only after the accelerator
-response reaches the core.
+\texttt{WAIT}, it waits for the SMU to report DONE or ERROR. In
+\texttt{RESP}, the response path returns the request identifier and status to
+the issuing core; accepting that response writes \texttt{rd} and clears its
+pending scoreboard entry. A zero status denotes success and a nonzero status
+denotes an error. The instruction is therefore complete to software only
+after the core accepts the accelerator response.
 
-\texttt{OMERGE} removes repeated launch control from the recurring merge path.
-The legacy MMIO path performs context traffic, launch, and completion checks
-around each recurrence. The instruction path keeps persistent context in the
-shared canonical configuration registers and represents each later recurrence
-with one command. In the evaluation, any recurring-interface measurement is
-treated as an inclusive recurrence/control window and is not interpreted as
-pure dispatch latency; it includes issue, SMU execution, response commit, and
-status consumption.
+The recurring timing comparison uses this complete path: issue, SMU execution
+and busy time, response commit, and status consumption. It is an inclusive
+recurrence/control window, not a dispatch-only latency. The separate
+\texttt{OMERGE} interface comparison holds the SMU arithmetic and RVV update
+constant while changing how each non-first-tile recurrence is invoked.
 
-The instruction completes the scalar part of a merge. After a zero status, the
-existing RVV routine reads $w_{\mathrm{old}}$ and $w_{\mathrm{tile}}$ from TCDM
-and applies Eq.~\eqref{eq:rvv_o_update} to the $D$ output elements. Software
-continues to own the output-buffer pointers. This boundary keeps the regular
-vector update on the unchanged Spatz/RVV path and confines \texttt{OMERGE} to the
-state-dependent recurrence.
+\subsection{Runtime-Configurable Context with \texttt{OMCFG}}
+Addresses and workload parameters need to persist across a sequence of tile
+merges. Rewriting them around every recurrence would put setup traffic back in
+the steady-state path. \texttt{OMCFG} writes the context once per workload;
+\texttt{OMERGE} then processes all configured query rows for each later tile:
 
-\subsection{Persistent Configuration}
-\texttt{OMERGE} needs a stable set of addresses and workload parameters across
-tile merges. Rewriting those values for every command would move setup traffic
-back into the recurring path. \texttt{OMCFG} establishes this context once per
-workload; \texttt{OMERGE} then invokes one recurrence per later tile:
-
-\begin{equation}
-\underbrace{\texttt{OMCFG}}_{\text{workload-persistent context}}
-\quad+\quad
-\underbrace{\texttt{OMERGE}}_{\text{one invocation per merge}}.
-\label{eq:cfg_merge_model}
-\end{equation}
+\texttt{OMCFG} establishes workload-persistent context once; each later
+score tile uses one \texttt{OMERGE} invocation to process all configured
+query rows.
 
 \begin{figure*}[t]
 \centering
 \includegraphics[width=\textwidth]{./figure/fig4.png}
-\caption{\texttt{OMCFG}/\texttt{OMERGE} programming model. One-time \texttt{OMCFG} writes establish the
-persistent scalar context and reset the selector; each later tile invokes
-\texttt{OMERGE} for the scalar recurrence, followed by the unchanged RVV output update.
-Hardware toggles only the A/B scalar-state selector; software swaps the
-output buffers. The selector changes after the issuing core accepts a
-successful response.}
+\caption{\texttt{OMCFG}/\texttt{OMERGE} programming model. One-time
+\texttt{OMCFG} writes establish persistent scalar context and reset the
+selector. Each later score tile uses one \texttt{OMERGE} command to process
+the configured $N$ query rows before the unchanged RVV output update. With
+tile size $B=4$, a workload of $N$ rows has $T=N/B$ tiles, and the final tile
+is $T-1$. The dashed setup path writes context addresses, not TCDM data.
+Hardware toggles only the A/B scalar-state selector; software swaps output
+buffers. The selector changes after the issuing core accepts a successful
+response.}
 \label{fig:programming_model}
 \end{figure*}
 
@@ -480,55 +474,83 @@ execution timeline: \texttt{OMCFG} establishes persistent context, \texttt{OMERG
 scalar state, hardware toggles the selector after successful completion, and
 software updates the output-buffer pointers.
 
-\texttt{OMCFG} shares custom-2 with \texttt{OMERGE} and selects funct3
-\texttt{001}. Its I-type-like layout places the configuration identifier in
-the 12-bit immediate and the value source in \texttt{rs1}. The encoding fixes
-\texttt{rd} to \texttt{x0}, so Snitch creates no destination scoreboard entry
-and the accelerator path returns no writeback payload. The adapter accepts
-the short command only while idle and while the SMU engine is idle.
+\texttt{OMCFG} uses the same custom-2 opcode as \texttt{OMERGE} and selects
+funct3 \texttt{001}. The I-type-like encoding places a 12-bit configuration
+identifier in \texttt{imm12} and the value in \texttt{rs1}; \texttt{rd} is
+fixed to \texttt{x0}. This creates no destination scoreboard entry and
+returns no writeback payload. The adapter accepts a configuration command
+only while the adapter and SMU engine are idle. The immediate selects a
+field; it does not carry the field value.
 
-Version~1 exposes nine required persistent fields and a separate CTRL/INIT
-operation, as listed in Table~\ref{tab:isa_interface}. The address fields
-carry the physical TCDM
-locations for the two running-state pairs, the tile-local scalar state, and
-the two weight destinations. \texttt{N} supplies the scalar row bound.
+IDs \texttt{0x000}--\texttt{0x008} write nine required fields. They specify
+the physical TCDM addresses for the two running-state pairs, tile-local
+$m_t/l_t$, the two weight destinations, and scalar row bound $N$. ID
+\texttt{0x009} selects the separate CTRL/INIT operation; its value bit~0
+commits a complete context and resets the selector. Table~\ref{tab:omcfg_map}
+lists the mapping and its boundary.
+
+\begin{table*}[t]
+\centering
+\caption{\texttt{OMCFG} configuration-ID map. IDs 0--8 are the required
+context fields; ID 9 is the separate INIT control operation.}
+\label{tab:omcfg_map}
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}c l p{6.3cm} p{7.0cm}@{}}
+\toprule
+\texttt{cfg\_id} & Field & Value or address & Purpose and write semantics \\
+\midrule
+\texttt{0x000} & \texttt{A\_M} & TCDM address & Running maximum in state buffer A \\
+\texttt{0x001} & \texttt{A\_L} & TCDM address & Running normalizer in state buffer A \\
+\texttt{0x002} & \texttt{B\_M} & TCDM address & Running maximum in state buffer B \\
+\texttt{0x003} & \texttt{B\_L} & TCDM address & Running normalizer in state buffer B \\
+\texttt{0x004} & \texttt{TILE\_M} & TCDM address & Tile-local maximum $m_t$ \\
+\texttt{0x005} & \texttt{TILE\_L} & TCDM address & Tile-local normalizer $l_t$ \\
+\texttt{0x006} & \texttt{WEIGHT\_OLD} & TCDM address & Destination for $w_{\mathrm{old}}$ \\
+\texttt{0x007} & \texttt{WEIGHT\_TILE} & TCDM address & Destination for $w_{\mathrm{tile}}$ \\
+\texttt{0x008} & \texttt{N} & Scalar row count & Rows processed by each \texttt{OMERGE} invocation \\
+\texttt{0x009} & \texttt{CTRL/INIT} & Bit~0 = 1 & Commit all required fields and reset the A/B selector \\
+\texttt{0x00A--0xFFF} & Reserved & No register write & Unsupported IDs invalidate readiness until a complete INIT \\
+\bottomrule
+\end{tabular}
+\end{table*}
 
 The nine required fields share the canonical generated registers with the
-legacy MMIO interface. An \texttt{OMCFG} field write drives the hardware-write
-side of its corresponding register, so an MMIO read observes the same value.
-The adapter records each field in a \texttt{9'h1FF} written mask and marks the
-context dirty. A CTRL command with bit~0 set commits the context only when the
-written mask contains all nine required bits. A successful commit sets \texttt{cfg\_valid} and
-resets the selector to zero. A CTRL command with bit~0 clear leaves the commit
-state unchanged, and rewriting any required field makes a later INIT necessary.
+legacy MMIO interface. An \texttt{OMCFG} write updates the same register as
+MMIO, so an MMIO read observes the written value. The adapter tracks writes
+with a \texttt{9'h1FF} mask and marks the context dirty. INIT with bit~0 set
+commits only when all nine required bits are present; success sets
+\texttt{cfg\_valid} and resets the selector to zero. INIT with bit~0 clear
+does not commit. Rewriting a required field makes another complete INIT
+necessary before the next merge.
 
-The v1 boundary covers the scalar recurrence context. The namespace contains no
-IDs for $D$, precision or mode, tile size, output-vector addresses, stride, or
-the A/B selector. The adapter fixes Mixed Scalar mode and supplies validation
-constants for the engine's unused scalar-mode fields, including $D=1$ and
-stride zero. Workload dimension and output addressing remain software/RVV
-parameters. Reserved IDs perform no register write and invalidate readiness;
-software must issue a complete INIT before a subsequent \texttt{OMERGE} can run.
+This is runtime configurability over a deliberately narrow context, not a
+general SMU control ISA. Version~1 exposes no IDs for $D$, precision or mode,
+tile size, output-vector addresses, stride, or selector. The adapter fixes
+Mixed Scalar mode and supplies validation constants for unused scalar-mode
+fields, including $D=1$ and stride zero. Workload dimension and output
+addressing remain software/RVV parameters. A reserved ID performs no
+register write and invalidates readiness; software must issue a complete INIT
+before another \texttt{OMERGE}. The interface evaluation therefore separates
+one-time setup from recurring invocation and the broader Native Core window.
 
-\texttt{OMCFG} updates context only. It never starts the recurrence engine.
-This lifetime separation places one-time configuration outside the recurring
-invocation path. The evaluation therefore reports the setup window separately
-from the steady-state Native Core window.
-
-\subsection{Hardware-Maintained Dynamic State}
-The configured addresses identify two physical running-state buffers, but each
-successful merge changes which buffer holds the current state. A one-bit
-hardware selector tracks that transition and removes per-merge address updates
-from software.
+\subsection{Invocation Sequence and State Ownership}
+\label{sec:ownership}
+The programmed addresses name two physical running-state buffers. A
+one-bit hardware selector identifies which pair supplies the current scalar
+state and which pair receives the next state, avoiding per-merge address
+updates in software. Figure~\ref{fig:programming_model} shows the lifetime:
+software initializes the first tile and output state, writes the nine
+required fields, commits INIT, then issues one \texttt{OMERGE} for each later
+tile. After a successful response, the existing RVV routine updates the
+output and software swaps its output-buffer pointers.
 
 The selector operates on two TCDM-resident buffer pairs:
-
-\begin{equation}
+\[
 A=(A_m,A_l),
 \qquad
 B=(B_m,B_l).
-\label{eq:ab_state}
-\end{equation}
+\]
 
 Selector zero selects $A$ as the source and $B$ as the destination. Selector
 one selects $B$ as the source and $A$ as the destination. The selector changes
@@ -541,12 +563,11 @@ so no \texttt{OMERGE} runs for that tile. A complete INIT
 leaves the selector at zero. The first later merge therefore reads $A$ and
 writes $B$, and subsequent merges alternate the direction:
 
-\begin{equation}
-A\rightarrow B,\quad
-B\rightarrow A,\quad
-A\rightarrow B,\ \ldots
-\label{eq:selector_sequence}
-\end{equation}
+\[
+  A\rightarrow B,\quad
+  B\rightarrow A,\quad
+  A\rightarrow B,\ \ldots.
+\]
 
 The adapter commits a selector transition only when the issuing core accepts a
 zero-error accelerator response. Issue and SMU start leave the selector
@@ -558,14 +579,18 @@ the next successful merge.
 The selector owns only the scalar $m/l$ state. Software continues to maintain
 the two $D$-dimensional output-buffer pointers, and the unchanged RVV routine
 performs the output update after each successful recurrence. Software also owns
-tile addresses and output pointers. This ownership split gives
-\texttt{OMCFG} a persistent scalar context, \texttt{OMERGE} a single recurring
-operation, and RVV responsibility for dimension-dependent output state.
+tile addresses and output pointers.
+The evaluated contract uses one controlling core and one active context.
+Request-owner routing does not provide per-core context isolation. Concurrent
+configuration writers, interrupts, cancellation, and fault recovery are outside
+the validated scope. Software consumes successful completion before the RVV
+update; the two anchor tests establish output equivalence, not a general proof
+of memory ordering under concurrent execution.
 
 \section{Evaluation}
 
 \subsection{Experimental Setup and Measurement Scope}
-All results come from cycle-level simulation of the Spatz RISC-V vector
+Performance results come from cycle-level simulation of the Spatz RISC-V vector
 cluster. The Verilated model uses Verilator 5.034 and the default cluster
 configuration with 128~KiB of 16-bank TCDM. Cycle counters bracket each
 measured stage explicitly, and every matched comparison runs on the same frozen
@@ -573,122 +598,63 @@ cluster configuration and software toolchain.
 
 N8/D32 and N16/D64 are the two anchor workloads. N24/D64 and N16/D128 test
 whether the observed behavior survives a change in sequence length or output
-dimension. All native-attention cases use tile size four and seed one. The
-first tile initializes the running state directly and needs no merge, so a
-workload with $N/4$ tiles requires
-
-\begin{equation}
-N_{\mathrm{merge}} = \frac{N}{4} - 1.
-\label{eq:merge_count}
-\end{equation}
-
-That gives one merge at N8/D32, three at N16/D64, five at N24/D64, and three at
-N16/D128.
+dimension. All native-attention cases use tile size $B=4$ and seed one. The
+first tile initializes the running state directly and needs no merge. Each
+query row therefore has $T-1$ later-tile merges: one at N8/D32, three at
+N16/D64, five at N24/D64, and three at N16/D128. Each later score tile issues
+one \texttt{OMERGE}, which processes all configured $N$ rows.
 
 The design accelerates only part of native online attention, so we report three
-timing scopes. The \emph{recurrence} window covers the state-dependent update
-that produces $m'$, $l'$, $w_{\mathrm{old}}$, and $w_{\mathrm{tile}}$. The
-\emph{merge} window adds the corresponding RVV output update and the merge-side
-orchestration. The \emph{Native Core} window adds score-tile computation,
-tile-local state construction, first-tile handling, all later merges, and the
-final output handling. Allocation, input generation, diagnostics, Q/K/V
-loading, and linear projection stay outside all three, so none of them measures
-full attention or a full model.
+timing scopes. The B2R software \emph{recurrence} window covers the scalar
+state-dependent update that produces $m'$, $l'$, $w_{\mathrm{old}}$, and
+$w_{\mathrm{tile}}$. For the matched MMIO-controlled SMU path, the reported
+recurrence window also includes per-merge register programming, clear/start,
+BUSY/DONE polling, and SMU execution. It therefore measures the complete
+recurrence invocation, including control and engine-busy time, rather than
+arithmetic-only latency. The \emph{merge} window adds the corresponding RVV
+output update and the merge-side orchestration. The \emph{Native Core} window
+adds score-tile computation, tile-local state construction, first-tile handling,
+all later merges, and the final output handling. Allocation, input generation,
+diagnostics, Q/K/V loading, and linear projection stay outside all three.
 
-The comparisons form independent matched families. The first sets B2R against
-Mixed Scalar SMU + RVV to isolate recurrence offload; B2R runs the recurrence
-in scalar software and keeps the same RVV output update as the SMU path. The
-second sets A1-MMIO against A1-ISA/\texttt{OMERGE}: both use the same SMU
-arithmetic and RVV routine and differ only in how each recurrence is triggered.
-The third sets MMIO-config+\texttt{OMERGE} against
-\texttt{OMCFG}-config+\texttt{OMERGE}: both invoke \texttt{OMERGE} inside the
-Native Core and differ only in how the one-time configuration is transported.
-Full SMU/A2 appears only in a separate historical ablation.
+The comparisons form independent matched families. The arithmetic-offload
+family compares a scalar-software recurrence plus RVV (B2R) with the
+MMIO-controlled Mixed Scalar SMU plus the same RVV update. The recurring-
+interface family holds SMU arithmetic and RVV common and compares per-merge
+MMIO control with \texttt{OMERGE}. The configuration family holds
+\texttt{OMERGE} common and compares one-time MMIO configuration with
+\texttt{OMCFG}. Full SMU appears only in a separate historical ablation.
 
-Absolute cycle counts from different families are not a chronological
-optimization trajectory, and we never read them as one. Each result is compared
-only with its matched baseline from the same frozen experiment. Phase 5/6,
-Phase 7, and Phase 8C use different simulator and implementation epochs, so
-their absolute counts do not combine into a progressive speedup. Kept separate,
-the families isolate arithmetic offload, recurring invocation, persistent
-configuration, and full-offload area cost.
-
-\subsection{Numerical Fidelity and Standalone SMU Cost}
-The first question is whether the stage-aware mixed-precision datapath holds the
-FP32 reference and still lowers standalone recurrence cost. Across the four
-native-attention workloads, the final Mixed Scalar SMU reaches cosine
-similarities of 0.999970724 to 0.999984751. No output is nonfinite in these
-cases.
-
-\begin{table*}[t]
-\centering
-\caption{Numerical fidelity and standalone SMU cost.}
-\label{tab:numerical_ppa}
-\scriptsize
-\setlength{\tabcolsep}{4pt}
-\begin{tabular}{@{}lccc@{}}
-\toprule
-\multicolumn{4}{@{}l@{}}{\textit{(a) Native numerical fidelity}} \\
-Shape & MAE & \multicolumn{2}{c@{}}{Cosine similarity} \\
-\midrule
-N8/D32 & $2.793084\times10^{-4}$ & \multicolumn{2}{c@{}}{0.999984541} \\
-N16/D64 & $4.665494\times10^{-4}$ & \multicolumn{2}{c@{}}{0.999970724} \\
-N24/D64 & $3.736880\times10^{-4}$ & \multicolumn{2}{c@{}}{0.999980879} \\
-N16/D128 & $5.631592\times10^{-4}$ & \multicolumn{2}{c@{}}{0.999984751} \\
-\midrule
-\multicolumn{4}{@{}l@{}}{\textit{(b) Standalone synthesis}} \\
-Design & Mapped area & Area reduction vs. Legacy & Delay proxy \\
-\midrule
-Legacy Scalar & 72,399.082 & n/a & 12.518~ns \\
-Mixed+Division & 52,000.074 & 28.176\% & 14.620~ns \\
-Mixed+Reciprocal & 52,407.586 & 27.613\% & 15.540~ns \\
-\bottomrule
-\end{tabular}
-\end{table*}
-
-Table~\ref{tab:numerical_ppa} reports host-side metrics for the native cases.
-A separate numerical stress sweep drops to a minimum cosine similarity of
-0.999873853, which rules out any global claim above 0.9999. Sweeping all 31,743
-positive finite FP16 denominators exhaustively gives a maximum reciprocal
-relative error of $6.6966\times10^{-5}$.
-
-Stage-aware precision is measured with matched standalone Yosys/ABC synthesis
-against the Nangate45 typical library. Replacing the Legacy arithmetic with
-mixed precision, and keeping division, cuts mapped area from 72,399.082 to
-52,000.074 units, a 28.176\% reduction. The final reciprocal implementation
-occupies 52,407.586 units. That is 27.613\% below Legacy and 0.784\% above
-Mixed+Division.
-
-Lower area does not mean better timing. The longest mapped register-to-register
-delay proxy rises from 12.518~ns for Legacy to 14.620~ns for Mixed+Division and
-15.540~ns for Mixed+Reciprocal. These values are pre-layout timing proxies
-only, and no design meets the 1.5~ns target. The cluster-level synthesis run
-exhausted resources during techmap. The measured standalone area reduction
-therefore supports a block-area claim only, not a cluster-level PPA, frequency,
-or energy claim.
+Each family uses its own matched baseline and frozen implementation. Absolute
+cycles across families do not form an optimization trajectory, and no matched
+comparison between B2R and the final \texttt{OMCFG}/\texttt{OMERGE} interface
+is available. B2R implements the same mathematical recurrence and shares the
+RVV routine, but its internal numerical formats differ from the SMU's. The
+recurrence ratio therefore includes both hardware specialization and
+numerical-implementation differences, which are not separated here. B2R is not
+an optimized software-library baseline. All native cases use one seed, and the
+interface families contain one formal run per path and shape. These results
+establish deterministic prototype behavior, not model accuracy, multi-head
+scaling, or statistical generality. Speedups are cycle-count ratios without an
+achieved-frequency assumption.
 
 \subsection{Native Online Attention Performance}
+\label{sec:native_performance}
 The next question is whether selective recurrence offload speeds up native
 online attention at all, given that the RVV output update is untouched. B2R is
 the matched software baseline: it runs the recurrence in scalar software with
 the same RVV output routine as the SMU path.
 Figure~\ref{fig:native_performance} summarizes the three timing scopes.
 
-% [FIGURE 5 PLACEHOLDER]
-% Final figure: Native online-attention speedup across measurement scopes.
-% Panel (a): Recurrence speedup.
-% Panel (b): Merge speedup.
-% Panel (c): Native Core speedup.
-% Shared x-axis: N8/D32, N16/D64, N24/D64, N16/D128.
-% Frozen values for panels (a)--(c):
-% Recurrence: 8.524x, 14.006x, 17.784x, 13.737x.
-% Merge: 5.696x, 5.899x, 6.275x, 4.144x.
-% Native Core: 1.157x, 1.125x, 1.140x, 1.066x.
 \begin{figure*}[t]
 \centering
-\fbox{\rule{0pt}{1.35in}\rule{0.94\textwidth}{0pt}}
+\includegraphics[width=\textwidth]{./figure/fig5.pdf}
 \caption{Native online-attention speedup across recurrence, merge, and Native
-Core measurement scopes.}
+Core measurement scopes. The MMIO-controlled SMU recurrence window includes
+per-merge configuration, clear/start, polling, and SMU execution. Ratios use
+matched software and SMU cycle counts, tile size four, and seed one. Each bar
+represents one deterministic case; no uncertainty interval is estimated. Panel
+scales differ.}
 \label{fig:native_performance}
 \end{figure*}
 
@@ -709,12 +675,76 @@ the Native Core scope. N16/D128 reaches 13.737$\times$, 4.144$\times$, and
 measured ranges are 8.524--17.784$\times$ for recurrence,
 4.144--6.275$\times$ for merge, and 1.066--1.157$\times$ for Native Core.
 
-The speedup shrinks as the scope widens, and the selective architecture explains
-why. Score construction, tile-local state generation, and the regular vector
-output update all stay on the programmable path. A wider scope therefore
-contains a larger share of work the design leaves untouched, which is what
-limits the Native Core gain to 1.066--1.157$\times$. The recurrence result is
+Each wider scope contains a larger share of work this design leaves untouched:
+score construction, tile-local state generation, and the regular vector output
+update all stay on the programmable path. That is why the Native Core gain is
+1.066--1.157$\times$ rather than the recurrence ratio. The recurrence result is
 not an attention- or model-level speedup.
+
+\subsection{Numerical Fidelity and Standalone SMU Cost}
+The first question is whether the stage-aware mixed-precision datapath agrees
+with the matched B2R software recurrence and still lowers standalone cost. Across the four
+native-attention workloads, the final Mixed Scalar SMU reaches cosine
+similarities of 0.999970724 to 0.999984751. No output is nonfinite in these
+cases.
+
+\begin{table*}[t]
+\centering
+\caption{Numerical agreement with the B2R software recurrence and standalone
+SMU cost. Area is from the area-mapping flow and the delay proxy from a
+separately timing-constrained mapping of the same designs; the two columns do
+not describe one netlist.}
+\label{tab:numerical_ppa}
+\scriptsize
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}lccc@{}}
+\toprule
+\multicolumn{4}{@{}l@{}}{\textit{(a) Agreement with B2R software outputs}} \\
+Shape & MAE & \multicolumn{2}{c@{}}{Cosine similarity} \\
+\midrule
+N8/D32 & $2.793084\times10^{-4}$ & \multicolumn{2}{c@{}}{0.999984541} \\
+N16/D64 & $4.665494\times10^{-4}$ & \multicolumn{2}{c@{}}{0.999970724} \\
+N24/D64 & $3.736880\times10^{-4}$ & \multicolumn{2}{c@{}}{0.999980879} \\
+N16/D128 & $5.631592\times10^{-4}$ & \multicolumn{2}{c@{}}{0.999984751} \\
+\midrule
+\multicolumn{4}{@{}l@{}}{\textit{(b) Standalone synthesis}} \\
+Design & Mapped area & Area reduction vs. Legacy & Delay proxy \\
+\midrule
+Legacy Scalar & 72,399.082 & n/a & 12.518~ns \\
+Mixed+Division & 52,000.074 & 28.176\% & 14.620~ns \\
+Mixed+Reciprocal & 52,407.586 & 27.613\% & 15.540~ns \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+Table~\ref{tab:numerical_ppa}(a) compares the native cases with B2R software
+outputs; metrics are computed in float64 from the stored FP32 results. FP32 is
+the storage type of both paths, not an independent oracle. A separate
+numerical stress sweep drops to a minimum cosine similarity of
+0.999873853, which rules out any global claim above 0.9999. Sweeping all 31,743
+positive finite FP16 denominators exhaustively gives a maximum reciprocal
+relative error of $6.6966\times10^{-5}$.
+The separate host-model scan covers random-score and single-head Q/K/V cases,
+lengths 128, 256, 512, and 1024, and dimensions 64 and 128 (16 combinations),
+with tile size 32 and base seed 20260823. It is distinct from the tile-four
+RTL native-performance experiments. The selected reciprocal scan has minimum
+replacement-versus-division cosine 0.999999885, while the
+optimized-versus-FP32 minimum is 0.999873853. These model results do not establish RTL performance at those lengths.
+
+Stage-aware precision is measured with matched standalone Yosys/ABC synthesis
+against the Nangate45 typical library. Replacing the Legacy arithmetic with
+mixed precision, and keeping division, cuts mapped area from 72,399.082 to
+52,000.074 units, a 28.176\% reduction. The final reciprocal implementation
+occupies 52,407.586 units. That is 27.613\% below Legacy and 0.784\% above
+Mixed+Division.
+
+Lower area does not mean better timing. The longest mapped register-to-register
+delay proxy rises from 12.518~ns for Legacy to 14.620~ns for Mixed+Division and
+15.540~ns for Mixed+Reciprocal. These values are pre-layout timing proxies
+only, and no design meets the 1.5~ns target. The cluster-level synthesis run
+exhausted resources during techmap. The measured standalone area reduction
+therefore supports a block-area claim only, not a cluster-level PPA, frequency,
+or energy claim.
 
 \subsection{HW/SW Partition Ablation}
 The final architecture keeps the $D$-dimensional output update on RVV and omits
@@ -723,33 +753,56 @@ frozen Full SMU/A2 experiment. This ablation predates the final \texttt{OMERGE}/
 implementation, so its absolute area and cycle values remain within their own
 matched historical epoch.
 
-There, selective A1 combines scalar recurrence offload with the RVV output
-update, and Full SMU/A2 additionally moves the dimension-dependent output
+There, the selective design combines scalar recurrence offload with the RVV
+output update, and Full SMU additionally moves the dimension-dependent output
 update into the accelerator. Standalone area rises from 77,103.292 to
 114,713.298 units, a 48.779\% increase. The historical mapped delay proxy also
 rises, from 12.34285 to 13.20260~ns.
 
-Full SMU/A2 is also slower than selective A1 on all three historical workloads.
+\begin{table}[t]
+\centering
+\caption{Historical selective-versus-full-offload ablation. The cycle window
+and implementation epoch are common within each row and separate from the
+primary native-attention experiment.}
+\label{tab:full_smu_ablation}
+\scriptsize
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+Shape & Selective & Full SMU & Full/Selective \\
+\midrule
+N12/D64  & 4,128  & 7,704  & 1.866$\times$ \\
+N32/D128 & 12,866 & 34,728 & 2.699$\times$ \\
+N40/D128 & 15,733 & 43,206 & 2.746$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+These are historical workload measurements, not full BERT, Mistral, or Qwen
+model runtimes. Full SMU is slower in all three matched cases.
 These values stay out of the final native-attention results. Together with the
 area comparison they support the selective partition: regular $D$-dimensional
 work stays on the RVV datapath instead of being duplicated inside the SMU.
 
-\subsection{ISA Interface Evaluation}
+\subsection{RISC-V Instruction-Interface Evaluation}
+\label{sec:isa_evaluation}
 The ISA interface is evaluated in two stages: recurring per-merge invocation
 first, then one-time workload configuration with \texttt{OMERGE} held common.
 
 A1-MMIO and A1-ISA/\texttt{OMERGE} use the same Mixed Scalar SMU arithmetic, RVV output
 routine, workload, tile size, and numerical semantics. They differ only in how
-each non-first-tile recurrence is triggered. For N8/D32, the inclusive
-recurrence/control window decreases from 2,069 to 848 cycles, a 59.014\%
-reduction. For N16/D64, it decreases from 8,429 to 4,929 cycles, a 41.523\%
-reduction.
+each non-first-tile recurrence is triggered. Table~\ref{tab:isa_results}(a)
+reports the matched windows in cycles for both anchors.
 
 The inclusive recurrence/control window contains issue and control activity, SMU
-execution and busy time, response commit, and status consumption. It therefore
-measures more than pure dispatch latency. At the merge scope, \texttt{OMERGE} reduces
-cycles by 41.695\% for N8/D32 and 21.954\% for N16/D64. When the one-time ISA
-setup enters the Native Core window, the reductions become 0.841\% and 0.448\%.
+execution and busy time, response commit, and status consumption, so its
+reduction measures more than dispatch latency. Most of that window is SMU busy
+time, which both paths pay at equal or nearly equal cost. Subtracting it isolates the control activity around
+the recurrence: 1,261 cycles fall to 40 at N8/D32 and 3,577 fall to 81 at
+N16/D64. Widening the scope adds work the interface does not touch, so the
+reported reduction falls to 41.695\% and 21.954\%
+at the merge scope, and to 0.841\% and 0.448\% when the one-time ISA setup
+enters the Native Core window.
 
 With \texttt{OMERGE} held common, we compare MMIO-config+\texttt{OMERGE} against
 \texttt{OMCFG}-config+\texttt{OMERGE}. Both variants execute the same \texttt{OMERGE}-based Native Core.
@@ -757,23 +810,34 @@ They differ only in the transport of nine configuration fields and one INIT
 operation before core execution. For N8/D32, setup decreases from 991 to 659
 cycles, a 33.50\% reduction. For N16/D64, it decreases from 986 to 632 cycles,
 a 35.90\% reduction. Native Core execution is identical for N8/D32 and differs
-by only 12 cycles for N16/D64. Table~\ref{tab:isa_results} summarizes both
-comparisons.
+by only 12 cycles for N16/D64; the corresponding setup-inclusive totals fall by
+0.451\% and 0.067\%, respectively. Table~\ref{tab:isa_results} summarizes
+both comparisons.
 
 \begin{table}[t]
 \centering
-\caption{ISA interface evaluation.}
+\caption{ISA interface evaluation. In (a), both paths use the same Mixed
+Scalar SMU arithmetic and RVV routine, so SMU busy cycles inside the recurrence
+and merge windows cancel or nearly cancel (N16/D64 differs by 4 cycles). The
+control row subtracts the common busy cycles and leaves launch, poll, and
+commit activity.}
 \label{tab:isa_results}
 \scriptsize
 \setlength{\tabcolsep}{2pt}
-\begin{tabular}{@{}lcccc@{}}
+\begin{tabular}{@{}llrrr@{}}
 \toprule
-\multicolumn{5}{@{}l@{}}{\textit{(a) \texttt{OMERGE} recurring-control effect (reduction)}} \\
-Shape & \shortstack{Rec./Ctrl.\\ reduction} & \shortstack{Merge\\ reduction} &
-\multicolumn{2}{c@{}}{\shortstack{Setup-inclusive Core\\ reduction}} \\
+\multicolumn{5}{@{}l@{}}{\textit{(a) \texttt{OMERGE} per-merge effect (cycles)}} \\
+Shape & Window & MMIO & \texttt{OMERGE} & Reduction \\
 \midrule
-N8/D32 & 59.014\% & 41.695\% & \multicolumn{2}{c@{}}{0.841\%} \\
-N16/D64 & 41.523\% & 21.954\% & \multicolumn{2}{c@{}}{0.448\%} \\
+N8/D32 & Ctrl. excl. busy & 1,261 & 40 & 96.828\% \\
+       & Rec./Ctrl. & 2,069 & 848 & 59.014\% \\
+       & Merge & 2,926 & 1,706 & 41.695\% \\
+       & Setup-incl. Core & 74,392 & 73,766 & 0.841\% \\
+\addlinespace
+N16/D64 & Ctrl. excl. busy & 3,577 & 81 & 97.736\% \\
+        & Rec./Ctrl. & 8,429 & 4,929 & 41.523\% \\
+        & Merge & 16,548 & 12,915 & 21.954\% \\
+        & Setup-incl. Core & 510,991 & 508,702 & 0.448\% \\
 \midrule
 \multicolumn{5}{@{}l@{}}{\textit{(b) \texttt{OMCFG} setup effect}} \\
 Shape & \shortstack{MMIO\\ setup} & \shortstack{\texttt{OMCFG}\\ setup} &
@@ -788,22 +852,27 @@ N16/D64 & 986 & 632 & 35.90\% & +12 \\
 Both interface comparisons preserve functional behavior. The \texttt{OMERGE} and
 MMIO-controlled paths produce bit-identical final outputs for both anchor
 workloads. N8/D32 issues one \texttt{OMERGE} and N16/D64 issues three, matching the
-expected number of non-first-tile merges and selector transitions. The final
+expected number of non-first-tile merges and selector transitions; each command
+processes all configured query rows. The final
 output hashes are \texttt{0x9c7cdedc} for N8/D32 and \texttt{0xfd0d2cff} for
 N16/D64. The matched outputs have zero pairwise MAE and stable relative error,
-a cosine similarity of one, and no nonfinite values. Phase 7 did not archive
+a cosine similarity of one, and no nonfinite values. The recurring-interface
+experiment did not archive
 intermediate $m/l$ and weight arrays, so we make no intermediate bit-identity
 claim.
 
-The MMIO-config and \texttt{OMCFG}-config binaries have byte-identical \texttt{.text}
+Both configuration routines are present in each binary. A data-resident
+\texttt{volatile} path selector has a different initial value in the two
+builds and selects MMIO or OMCFG at runtime. Consequently, the
+MMIO-config and \texttt{OMCFG}-config binaries have byte-identical \texttt{.text}
 within each workload and produce word-for-word identical final outputs. They
 also establish identical persistent configuration state after INIT, including
-all nine fields and selector zero. \texttt{OMCFG} therefore reduces measured one-time
-setup cost without changing steady-state Native Core execution. Its namespace
-remains limited to the nine frozen fields and INIT.
+all nine fields and selector zero. \texttt{OMCFG} therefore reduces measured
+one-time setup cost with no measured systematic steady-state Native Core
+benefit.
 
 \subsection{Explicit-P Negative Control}
-A last experiment asks whether the SMU is any good as a general replacement for
+A last experiment asks whether the SMU helps as a general replacement for
 row-wise Softmax in an explicit probability-matrix dataflow. The surrounding
 quantized-attention path is held fixed; only the explicit-P software Softmax
 backend is swapped for the Mixed SMU backend.
@@ -821,12 +890,111 @@ swap/clear orchestration. The five-stage Attention Total sums arithmetic terms;
 it does not come from an independent timing counter.
 
 These results contrast with the native online-attention results in
-Section~IV-C. As a generic row-wise Softmax replacement the SMU offers no
-consistent benefit. It pays off only where the hardware matches the persistent
-normalized state and scalar recurrence of native online attention, with the
-dimension-dependent output update left on RVV.
+Section~\ref{sec:native_performance}. As a generic row-wise Softmax replacement the SMU offers no
+consistent benefit in these two cases. The positive native results and this
+negative control delimit the measured applicability of the implementation;
+they do not prove that other Softmax implementations cannot benefit.
 
-\section{Related Work}
+\section{Discussion}
+\label{sec:discussion}
+
+\subsection{The gain follows the chosen execution boundary}
+The measured benefit is largest at the recurrence boundary and narrows as the
+window includes work left on the programmable path. Score-tile computation and
+the regular $D$-element output update remain outside the scalar accelerator;
+the Native Core result therefore reflects this partition's effect on the
+measured kernel, with Q/K/V loading and linear projections excluded.
+
+Together, the native and explicit-P measurements support a boundary-specific
+result: the SMU targets the persistent scalar recurrence of native online
+attention, not a generally faster Softmax backend.
+
+\subsection{The instruction interface exposes the partition to software}
+The ISA separates a workload's address and row-count context from each
+recurring scalar update. \texttt{OMCFG} writes the nine supported context
+fields and commits readiness; \texttt{OMERGE} processes one later score tile
+across all configured query rows and returns completion status. Hardware owns the alternating scalar-state
+selector, while software retains tile scheduling, output-buffer pointers, and
+RVV execution. This is the RISC-V programming contribution: software can
+configure and invoke the stateful operation through the core's accelerator
+path without a custom vector instruction or a duplicated output datapath.
+
+The measurements do not support treating the instruction interface as the
+source of the main speedup. \texttt{OMERGE} reduces the inclusive
+recurrence/control window by 41.5--59.0\% on two anchors, but that window
+includes SMU busy time and response handling; it is not dispatch-only latency.
+\texttt{OMCFG} reduces one-time setup by 33.5--35.9\%; setup-inclusive
+totals change by 0.451\% and 0.067\%.
+These are control-plane results that complement the selective dataflow result.
+They do not establish a material steady-state Native Core gain from either
+instruction in isolation.
+
+This interface is distinct in granularity from prior RISC-V nonlinear
+extensions such as VEXP's scalar and packed-SIMD exponential instructions. The
+present commands expose the online-merge recurrence and its persistent state,
+not a general exponential primitive. That difference narrows the positioning;
+it does not imply that online normalization, Softmax hardware, or RISC-V
+nonlinear acceleration is new.
+
+\subsection{Numerical and evaluation limits}
+Matched cluster synthesis exhausted resources during techmap, so integrated
+area, frequency, and power were not measured. B2R is matched recurrence
+software sharing the RVV routine, not an established optimized library
+baseline.
+
+\section{Comparison with Prior Work}
+\label{sec:comparison}
+
+Table~\ref{tab:related_work} places this work among representative RISC-V and
+AI acceleration approaches; the subsections below give the detail behind each
+row.
+
+\begin{table*}[t]
+\centering
+\caption{Positioning of representative RISC-V and AI acceleration approaches.
+Reported results retain each original work's scope and are not directly
+comparable across rows.}
+\label{tab:related_work}
+\scriptsize
+\setlength{\tabcolsep}{2.2pt}
+\renewcommand{\arraystretch}{0.94}
+\begin{tabular}{@{}L{2.0cm}L{9.0cm}L{5.8cm}@{}}
+\toprule
+Work & Hardware path and vector relation & Reported result \\
+\midrule
+VEXP \cite{wang2025vexp} &
+Snitch FPU with custom scalar/packed \texttt{FEXP}/\texttt{VFEXP} for BF16
+exponentiation &
+162.7$\times$ lower Softmax latency; 8.2$\times$ FlashAttention-2 speedup \\
+\addlinespace[1pt]
+SoftEx \cite{belano2025softex} &
+RISC-V cluster HWPE accelerates Softmax/GELU through control and streaming
+interfaces &
+10.8$\times$ Softmax speedup; 1.58$\times$ end-to-end ViT throughput \\
+\addlinespace[1pt]
+TOP-V \cite{chen2026topv} &
+Ara vector processor with custom \texttt{VTOPK} sorting instruction &
+5.24$\times$ over RVV-based sorting \\
+\addlinespace[1pt]
+RedMulE \cite{tortorella2023redmule} &
+Cluster-local HWPE-style GEMM engine sharing cluster memory &
+15$\times$ GEMM; up to 62$\times$ GEMM-Op over software \\
+\addlinespace[1pt]
+Gemmini \cite{genc2021gemmini} &
+RoCC-attached systolic array with a full software stack &
+Full-stack DNN evaluation; orders-of-magnitude over CPU baselines \\
+\addlinespace[1pt]
+Deeploy \cite{scherer2024deeploy} &
+Compiler maps SLM execution across RV32 cores, ML extensions, and an NPU &
+340 token/s at 490~$\mu$J/token (TinyStories SLM) \\
+\addlinespace[1pt]
+\textbf{This work} &
+Cluster-local Scalar SMU with \texttt{OMCFG}/\texttt{OMERGE} specializes the
+recurrence; Spatz/RVV retains the output update &
+Up to 17.784$\times$ recurrence, 6.275$\times$ merge, and 1.157$\times$ Native Core (MMIO-controlled SMU) over the B2R software baseline \\
+\bottomrule
+\end{tabular}
+\end{table*}
 
 \subsection{Softmax and Nonlinear Acceleration}
 
@@ -850,8 +1018,8 @@ sits in a RISC-V cluster next to a matrix engine. The extended design also
 supports GELU and reports up to 10.8$\times$ Softmax acceleration, which shows
 what nonlinear hardware beside an already accelerated matrix path can buy.
 
-Neither design defines the persistent normalized state and per-merge control
-that native online attention relies on. The SMU works at a different
+Our comparison focuses on a different exposed interface: persistent normalized
+state and per-merge control. The SMU works at this
 algorithmic boundary. It specializes only the state-dependent recurrence:
 maximum selection, rescaling, normalization-state update, and generation of the
 two merge weights. The $D$-dimensional output update stays on the RVV datapath.
@@ -869,230 +1037,67 @@ vector-processor extensions.
 Spatz provides the programmable vector substrate used here: a compact RISC-V
 vector processor for tightly coupled shared-memory clusters, with regular
 vector execution and a comparatively small vector register file
-\cite{Spatz2023}. Our design keeps that vector datapath for the regular output
+\cite{Spatz2025}. Our design keeps that vector datapath for the regular output
 update and leaves RVV execution semantics untouched.
 
 TOP-V is another example of selective specialization \cite{chen2026topv}.
 Mixture-of-Experts routing needs a branch- and dependency-heavy Top-K
 operation, so TOP-V adds a configurable sorting unit to the Ara RISC-V vector
 processor and exposes it as a custom \texttt{VTOPK} instruction. The reported
-implementation reaches up to 5.24$\times$ over an RVV-based sort. It supports a
-broader observation: operations with irregular dependency structures can
-justify dedicated hardware even when the surrounding computation maps well to a
-vector processor.
+implementation reaches up to 5.24$\times$ over an RVV-based sort. Irregular,
+dependency-heavy work can justify dedicated hardware even when the surrounding
+computation already maps well to a vector processor.
 
 Cluster-local accelerators take a complementary route. RedMulE is a tightly
 coupled matrix engine for floating-point GEMM and GEMM-like operations in PULP
 RISC-V clusters \cite{tortorella2023redmule}. It attaches a dedicated engine to
 the shared cluster memory and lets the programmable cores coordinate it.
 
-All of these offer either a specialized primitive or a general engine. None
-exposes the online-merge state or the alternating scalar-state ownership.
+These examples motivate heterogeneous integration. Our interface exposes a
+different boundary: online-merge state and alternating scalar-state ownership.
 
-We apply the same heterogeneous integration model to a much smaller stateful
-recurrence. The SMU issues its own TCDM requests, so standard Spatz/RVV
-execution is unaffected. The custom interface separates workload-persistent
-configuration (\texttt{OMCFG}) from recurring execution (\texttt{OMERGE}), and
-only the alternating scalar-state selector lives in hardware. Specialization
-therefore stays outside the regular vector datapath without repeated software
-control on every merge.
+The SMU issues its own TCDM requests, so standard Spatz/RVV execution is
+unaffected. The custom interface separates workload-persistent configuration
+(\texttt{OMCFG}) from recurring execution (\texttt{OMERGE}), and only the
+alternating scalar-state selector lives in hardware, so specialization stays
+outside the regular vector datapath without repeated software control on every
+merge.
 
 \subsection{HW/SW Co-Design for AI Acceleration}
 
-Efficient AI acceleration turns on how computation, memory movement, control,
-and software are divided across the system. Gemmini is an open-source full-stack
-DNN accelerator generator built around that principle \cite{genc2021gemmini}.
-It attaches a configurable systolic array to a RISC-V host over RoCC and ships
-a software stack that evaluates accelerator configurations in complete systems,
-surrounding compute blocks included.
+Gemmini integrates a configurable systolic array with a RISC-V host over RoCC
+and evaluates it through a full software stack \cite{genc2021gemmini}. Deeploy
+maps networks across heterogeneous RISC-V microcontrollers, generating
+optimized C for RV32 cores, machine-learning extensions, and an NPU under tight
+memory constraints \cite{scherer2024deeploy}. Both target complete accelerators
+or compiler mappings; our interface specializes a recurrence over persistent
+scalar state within a vector cluster. For online attention, software retains
+score construction, tile management, first-tile initialization, output-buffer
+ownership, and RVV, while the SMU handles the scalar recurrence and its
+alternating state selector.
 
-One level up in abstraction, Deeploy maps whole neural networks onto
-heterogeneous RISC-V microcontrollers \cite{scherer2024deeploy}. Its compiler
-emits optimized C for systems that mix RV32 processors, machine-learning ISA
-extensions, and an NPU, while managing tight memory and heterogeneous compute
-explicitly. The lesson is that kernels should go to the hardware whose
-execution characteristics fit them best.
+The reported results in Table~\ref{tab:related_work} are quoted only to
+indicate each work's evaluation scope.
 
-Both systems target whole accelerators or compiler mappings. An interface tuned
-to a recurrence over persistent scalar state sits outside either abstraction.
-
-We apply the same co-design principle at a finer granularity, inside online
-attention. Software keeps score construction, tile management, first-tile
-initialization, output-buffer ownership, and the regular RVV vector update.
-Hardware takes only the nonlinear scalar recurrence, its persistent
-configuration, and the dynamic A/B scalar-state selector. The custom hardware
-thus lifts one small, dependency-heavy component off the programmable attention
-path and leaves the vector execution resources in place.
-
-Table~\ref{tab:related_work} summarizes this positioning. We report each
-work's performance only to indicate its evaluation scope.
-
-\begin{table*}[t]
-\centering
-\caption{Positioning of representative RISC-V and AI acceleration approaches.
-Reported results retain each original work's scope; differing target operators,
-platforms, numerical formats, and measurement boundaries preclude direct
-comparison across rows.}
-\label{tab:related_work}
-\scriptsize
-\setlength{\tabcolsep}{3.0pt}
-\begin{tabular}{@{}p{1.55cm}p{2.25cm}p{2.8cm}p{2.65cm}p{3.05cm}p{4.25cm}@{}}
-\toprule
-Work &
-Target &
-Integration &
-SW/HW interface &
-Relation to programmable/vector path &
-Representative reported result \\
-\midrule
-
-VEXP
-\cite{wang2025vexp} &
-BF16 EXP / Softmax &
-EXP unit inside Snitch FPU &
-Custom \texttt{FEXP}/\texttt{VFEXP} &
-Extends processor FPU; packed-SIMD nonlinear execution &
-Up to 162.7$\times$ lower Softmax latency;
-8.2$\times$ FlashAttention-2 speedup \\
-
-SoftEx
-\cite{belano2025softex} &
-Softmax / GELU &
-Dedicated HWPE in a heterogeneous RISC-V cluster &
-Accelerator control and streaming interface &
-Separate nonlinear engine beside programmable cores and matrix engine &
-Up to 10.8$\times$ Softmax speedup;
-1.58$\times$ end-to-end ViT throughput \\
-
-TOP-V
-\cite{chen2026topv} &
-Top-K selection &
-Dedicated sorting unit integrated into Ara RVV &
-Custom \texttt{VTOPK} instruction &
-Adds specialized functionality to a vector processor &
-Up to 5.24$\times$ over standard RVV-based sorting \\
-
-RedMulE
-\cite{tortorella2023redmule} &
-GEMM / GEMM-like ops. &
-Tightly coupled cluster accelerator &
-HWPE-style accelerator interface &
-Separate matrix engine sharing cluster-local memory &
-15$\times$ GEMM and up to 62$\times$ GEMM-Op speedup over software \\
-
-Gemmini
-\cite{genc2021gemmini} &
-DNN matrix computation &
-RoCC-attached systolic-array accelerator &
-Custom RoCC commands and full software stack &
-Dedicated array beside RISC-V host &
-Full-stack DNN evaluation; fabricated instances report up to
-orders-of-magnitude speedup over CPU baselines \\
-
-Deeploy
-\cite{scherer2024deeploy} &
-End-to-end SLM deployment &
-RV32 multicore + ML ISA extensions + NPU &
-Compiler-generated heterogeneous execution &
-Maps operators across programmable cores and dedicated accelerator &
-340 token/s at 490~$\mu$J/token for the reported TinyStories SLM \\
-
-\textbf{This work} &
-Native online-attention merge recurrence &
-Cluster-local Scalar SMU beside Spatz/RVV &
-\texttt{OMCFG} + \texttt{OMERGE} &
-Specializes scalar recurrence; retains existing RVV output update &
-8.524--17.784$\times$ recurrence,
-4.144--6.275$\times$ merge, and
-1.066--1.157$\times$ Native Core speedup \\
-
-\bottomrule
-\end{tabular}
-\end{table*}
 
 \section{Conclusion}
 
-We presented a selective HW/SW co-design for native online attention on a
-RISC-V vector cluster. A cluster-local Scalar Online-Merge Unit (SMU)
-specializes only the state-dependent recurrence; the Spatz/RVV datapath keeps
-the regular $D$-dimensional output update. The SMU uses stage-aware mixed
-precision, and the \texttt{OMCFG}/\texttt{OMERGE} interface separates
-persistent configuration from recurring merge invocation, with the alternating
-scalar-state selector held in hardware.
+We present selective HW/SW mapping for native online attention on a RISC-V
+vector cluster: a cluster-local Scalar Online-Merge Unit (SMU) handles the
+state-dependent recurrence, while Spatz/RVV retains the regular $D$-element
+output update. Stage-aware mixed precision and the \texttt{OMCFG}/\texttt{OMERGE}
+interface separate nonlinear arithmetic, persistent configuration, and the
+alternating scalar-state selector.
 
-On four native workloads the design reaches 8.524--17.784$\times$ recurrence
-speedup, 4.144--6.275$\times$ merge speedup, and 1.066--1.157$\times$ Native
-Core speedup. It cuts standalone mapped area by 27.613\% against the legacy
-scalar implementation while keeping close numerical agreement with the FP32
-reference. In two measured explicit-P cases the same unit gives no consistent
-benefit as a generic row-wise Softmax replacement. That negative control
-supports our reading: the acceleration comes from matching the hardware to the
-native online-merge dataflow.
+Across matched MMIO-controlled native workloads, the design reaches
+8.524--17.784$\times$ recurrence, 4.144--6.275$\times$ merge, and
+1.066--1.157$\times$ Native Core cycle-count speedups. Standalone mapped area
+falls 27.613\% versus the legacy scalar design, while the pre-layout delay
+proxy rises. In two explicit-P cases, the SMU gives no consistent benefit as a
+general row-wise Softmax replacement, supporting a dataflow-specific
+interpretation of the native online-merge results.
 
-\begin{thebibliography}{00}
-
-\bibitem{riscv_unprivileged}
-RISC-V International, \emph{The RISC-V Instruction Set Manual, Volume I:
-Unprivileged ISA}, Document Version 20191213, 2019.
-
-\bibitem{Spatz2023}
-M.~Cavalcante, M.~Perotti, S.~Riedel, and L.~Benini, ``Spatz: Clustering
-Compact RISC-V-Based Vector Units to Maximize Computing Efficiency,'' arXiv
-preprint arXiv:2309.10137, 2023.
-
-\bibitem{milakov2018online}
-M.~Milakov and N.~Gimelshein, ``Online Normalizer Calculation for Softmax,''
-arXiv preprint arXiv:1805.02867, 2018.
-
-\bibitem{dao2022flashattention}
-T.~Dao, D.~Y.~Fu, S.~Ermon, A.~Rudra, and C.~R{\'e}, ``FlashAttention: Fast
-and Memory-Efficient Exact Attention with IO-Awareness,'' in \emph{Advances in
-Neural Information Processing Systems}, vol.~35, pp.~16344--16359, 2022.
-
-\bibitem{wang2025vexp}
-R. Wang, G. Islamoglu, A. Belano, V. Potocnik, F. Conti,
-A. Garofalo, and L. Benini,
-``VEXP: A Low-Cost RISC-V ISA Extension for Accelerated Softmax
-Computation in Transformers,''
-in \emph{Proc. IEEE Symp. Computer Arithmetic (ARITH)}, 2025,
-pp. 37--44.
-
-\bibitem{belano2025softex}
-A. Belano, Y. Tortorella, A. Garofalo, L. Benini, D. Rossi,
-and F. Conti,
-``A Flexible Template for Edge Generative AI With High-Accuracy
-Accelerated Softmax and GELU,''
-\emph{IEEE J. Emerg. Sel. Topics Circuits Syst.},
-vol. 15, no. 2, pp. 200--216, 2025.
-
-\bibitem{chen2026topv}
-Q. Chen, C. Wang, Z. Wang, and J. Lin,
-``Top-V: A Flexible and Programmable Top-K Acceleration Framework
-Based on the RISC-V ISA,''
-in \emph{Proc. IEEE Int. Symp. Circuits Syst. (ISCAS)}, 2026.
-
-\bibitem{tortorella2023redmule}
-Y. Tortorella, L. Bertaccini, L. Benini, D. Rossi, and F. Conti,
-``RedMulE: A Mixed-Precision Matrix--Matrix Operation Engine for
-Flexible and Energy-Efficient On-Chip Linear Algebra and TinyML
-Training Acceleration,''
-\emph{Future Gener. Comput. Syst.},
-vol. 149, pp. 122--135, 2023.
-
-\bibitem{genc2021gemmini}
-H. Genc et al.,
-``Gemmini: Enabling Systematic Deep-Learning Architecture Evaluation
-via Full-Stack Integration,''
-in \emph{Proc. 58th ACM/IEEE Design Automation Conf. (DAC)},
-2021, pp. 769--774.
-
-\bibitem{scherer2024deeploy}
-M. Scherer et al.,
-``Deeploy: Enabling Energy-Efficient Deployment of Small Language
-Models on Heterogeneous Microcontrollers,''
-\emph{IEEE Trans. Comput.-Aided Design Integr. Circuits Syst.},
-vol. 43, no. 11, pp. 4009--4020, 2024.
-
-\end{thebibliography}
+\bibliographystyle{IEEEtran}
+\bibliography{references}
 
 \end{document}
