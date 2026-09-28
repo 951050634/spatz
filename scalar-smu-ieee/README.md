@@ -11,3 +11,8 @@ make
 ```
 
 The compiled paper is written to `build/main.pdf`.
+
+References are managed in `references.bib` and cited in `main.tex` with
+`\cite{key}`. The `IEEEtran` BibTeX style formats and numbers the bibliography
+in citation order. The existing `make` command runs BibTeX automatically via
+`latexmk` when needed.
