@@ -1,0 +1,49 @@
+\documentclass{article}
+\usepackage[paperwidth=3.49in,paperheight=2.85in,margin=0pt,noheadfoot]{geometry}
+\usepackage{xcolor}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\setlength{\unitlength}{1pt}
+\setlength{\fboxsep}{2.6pt}
+\setlength{\fboxrule}{0.6pt}
+\newcommand{\card}[6]{%
+  \put(#1,#2){\makebox(0,0)[lb]{%
+    \fcolorbox{#5!75!black}{#5!10}{%
+      \parbox[c][#4pt][c]{#3pt}{\centering #6}}}}}
+\begin{document}
+\noindent\begin{picture}(251.28,205.2)
+\card{6}{151}{74}{39}{blue}{{\fontsize{8pt}{9pt}\selectfont
+  \textbf{FP32 state}\\[-1pt]
+  \fontsize{7pt}{8.1pt}\selectfont $m,m_t\to\mathrm{FP16}$ RNE\\[-1pt]
+  $l,l_t\to\mathrm{Q16.32}$}}
+\card{88}{151}{74}{39}{red}{{\fontsize{8pt}{9pt}\selectfont
+  \textbf{Max + EXP}\\[-1pt]
+  \fontsize{7pt}{8.1pt}\selectfont winner: exact 1\\[-1pt]
+  loser: Q1.14 LUT\\[-1pt]
+  $i=\lfloor(\Delta+8)\cdot32\rfloor$}}
+\card{170}{151}{74}{39}{green}{{\fontsize{8pt}{9pt}\selectfont
+  \textbf{Q16.32 sum}\\[-1pt]
+  \fontsize{7pt}{8.1pt}\selectfont $\widehat{l}'=\widehat{l}s_{\mathrm{old}}+$\\[-1pt]
+  $\widehat{l}_t s_{\mathrm{tile}}$\\[-1pt]
+  per query row}}
+\card{132}{82}{108}{43}{violet}{{\fontsize{8pt}{9pt}\selectfont
+  \textbf{Reciprocal}\\[-1pt]
+  \fontsize{7.1pt}{8.2pt}\selectfont FP16 RNE denominator\\[-1pt]
+  256-entry Q1.15 LUT\\[-1pt]
+  interpolation + exponent correction}}
+\card{8}{82}{108}{43}{blue}{{\fontsize{8pt}{9pt}\selectfont
+  \textbf{Weights / RVV}\\[-1pt]
+  \fontsize{7.1pt}{8.2pt}\selectfont shared $48\times16$ multiplier\\[-1pt]
+  FP16-rounded weights to FP32\\[-1pt]
+  RVV updates $O[D]$}}
+\card{8}{20}{232}{27}{gray}{{\fontsize{7.4pt}{8.5pt}\selectfont
+  \textbf{Static precision by stage:} FP16 maxima / weights; Q16.32 normalizer;\\[-1pt]
+  FP32 TCDM interface and unchanged FP32 vector update}}
+\put(81,171){\vector(1,0){6}}
+\put(163,171){\vector(1,0){6}}
+\put(206,145){\vector(0,-1){10}}
+\put(128,104){\vector(-1,0){9}}
+\end{picture}
+\end{document}

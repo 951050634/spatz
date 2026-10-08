@@ -1,0 +1,1117 @@
+\documentclass[journal]{IEEEtran}
+
+\usepackage[UTF8,fontset=none,scheme=plain]{ctex}
+\setCJKmainfont{Noto Serif CJK SC}
+\setCJKsansfont{Noto Sans CJK SC}
+\setCJKmonofont{Noto Sans Mono CJK SC}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{array}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{url}
+\usepackage[hidelinks]{hyperref}
+\renewcommand{\abstractname}{摘要}
+\renewcommand{\IEEEkeywordsname}{关键词}
+\renewcommand{\figurename}{图}
+\renewcommand{\tablename}{表}
+\renewcommand{\refname}{参考文献}
+
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}m{#1}}
+
+\title{Scalar SMU：面向 RISC-V 向量集群原生在线注意力的选择性递推加速}
+
+\author{Xiaoteng Wang}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+原生在线注意力以增量方式处理分数块，但除首块外，每个分块都需要通过依赖状态的标%
+量递推更新运行最大值与归一化因子。本文研究如何在可编程 RISC-V 向量集群%
+中映射这一递推过程，其伴随的输出更新则具有 $D$ 元素并行性。我们设计了集群%
+内的标量在线合并单元（Scalar Online-Merge Unit，SMU%
+）执行递推，并保留现有 Spatz/RVV 数据通路执行输出更新。硬件通过两条%
+ custom-2 指令暴露给软件：\texttt{OMCFG} 写入九个持久%
+化上下文字段并提交初始化；\texttt{OMERGE} 对每个后续分数块处理%
+全部已配置的 $N$ 个查询行，并返回完成状态。硬件跟踪交替使用的标量状态缓冲%
+区，软件保留输出向量的管理权。在四个原生工作负载中（块大小为四、种子为一），相%
+对于采用相同 RVV 更新的匹配标量软件递推，MMIO 控制的选择性实现分别在%
+递推窗口、包含控制开销的合并窗口和 Native Core 窗口实现了 %
+8.524--17.784$\times$、4.144--6.275$%
+\times$ 和 1.066--1.157$\times$ 的加速比。%
+Native Core 不包含 Q/K/V 加载和线性投影，因此并非完整注意力%
+或完整模型的测量。混合精度 SMU 相对于旧版标量实现将独立映射面积降低了 %
+27.613\%，但其布局前延迟代理指标更高。
+\end{abstract}
+
+\begin{IEEEkeywords}
+RISC-V，在线注意力，软硬件协同设计，领域专用加速，向量处理，混合精度计算%
+，Softmax。
+\end{IEEEkeywords}
+
+\section{引言}
+
+Transformer 注意力将矩阵乘法与 Softmax 归一化相结合，是现%
+代序列模型中的基本运算~\cite{vaswani2017attention}%
+。在线归一化在分数到达时更新运行统计量~\cite{%
+milakov2018online}。FlashAttention 将这一思想%
+应用于分块精确注意力，通过感知 IO 的执行方式避免显式构建完整注意力矩阵~%
+\cite{dao2022flashattention}；%
+FlashAttention-2 进一步改进 GPU 并行性和工作划分~%
+\cite{dao2024flashattention}，%
+FlashAttention-3 则引入异步调度与低精度执行~\cite{shah2024flashattention3}。%
+在可编程处理器上，在线形式也会在分数块之间形成跨循环迭代的递推依赖。
+
+每次合并包含两类不同的工作。标量递推更新运行最大值和归一化因子，并生成两个用于%
+输出重缩放的权重。这一递推构成依赖链，其运算数量不随输出维度 $D$ 增长。输%
+出更新则将这些权重独立应用于 $D$ 个元素。因此，一次合并将受依赖约束的 $%
+O(1)$ 标量运算与规则的 $O(D)$ 向量运算耦合起来。设计问题在于如何%
+划定专用单元与可编程向量数据通路的边界：统一卸载会重复配置向量资源，而将递推留%
+在标量核上则会保留这一依赖链。
+
+已有研究已经确立了在线归一化方法和专用 Softmax 硬件。%
+Softermax 将在线归一化与低精度算术结合，形成适合硬件的 %
+Softmax~\cite{stevens2021softermax}；%
+SoftEx 在 RISC-V 集群旁加速 Softmax 和 GELU~%
+\cite{belano2025softex}。VEXP 为 Snitch %
+RISC-V 执行增加近似指数运算，并评估了 Softmax 和 %
+FlashAttention-2~\cite{wang2025vexp}。另有%
+研究复用 Softmax 硬件执行 GELU~\cite{%
+peltekis2024gelu}。RISC-V 平台也覆盖了带加速器接口的标%
+量核~\cite{zaruba2021snitch}、向量处理器~\cite{%
+cavalcante2020ara}和共享内存向量集群~\cite{%
+Spatz2025}。TOP-V 表明，可以在向量处理器内部专门实现依赖密集型%
+运算，同时保持其周边计算的可编程性~\cite{chen2026topv}。其%
+可配置排序单元处理 Top-K，而本文研究的单元边界位于原生在线注意力的合并过%
+程内部。
+
+我们在 Spatz RISC-V 向量集群上研究这一划分。集群内的标量在线合并%
+单元（SMU）仅执行依赖状态的递推；现有 RISC-V 向量（RVV）数据通路%
+保留 $D$ 维输出更新。SMU 在递推各阶段采用固定的阶段感知混合精度，并以%
+ FP32 保存内存可见状态。软件通过两条实现相关的 custom-2 指令控%
+制 SMU。\texttt{OMCFG} 配置持久化 TCDM 地址、查询行数%
+ $N$ 及所需地址，随后提交上下文；\texttt{OMERGE} 对一个后%
+续分数块处理全部已配置的 $N$ 行，并返回完成状态。硬件选择交替使用的标量状%
+态缓冲区，软件负责分块调度、输出缓冲区指针和 RVV 更新。该接口允许 %
+RISC-V 核显式控制加速器，无需增加 SMU 专用向量指令或第二套 $D$%
+ 路数据通路。
+
+在四个原生在线注意力工作负载中，相对于采用相同 RVV 输出更新的标量软件递推%
+，匹配递推窗口的加速比最高达到 17.8$\times$；范围更大的 %
+Native Core 窗口最高仅为 1.16$\times$，且不包含 %
+Q/K/V 加载与线性投影。这并非完整注意力或模型执行结果。独立评估还表明，混%
+合精度 SMU 相对于旧版标量单元降低了独立映射面积，但布局前延迟代理指标更高%
+。指令接口比较显示，测量的递推/控制窗口和配置窗口显著缩短，但 Native %
+Core 没有实质性改善。
+
+本文按主要论点的优先级提出三项贡献：
+\begin{itemize}
+    \item 刻画原生在线注意力合并内部的标量/向量不对称性，并评估选择%
+性软硬件划分：Scalar SMU 加速依赖状态的递推，现有 RVV 数据通路%
+保留规则的 $D$ 维输出更新。第~\ref{%
+sec:native_performance} 节报告这三个测量范围的周期数比%
+值。
+
+\item 定义面向这一选择性划分的 RISC-V 编程模型。\texttt{%
+OMCFG} 配置九个持久化标量上下文字段并提交初始化；\texttt{%
+OMERGE} 对一个后续分数块处理已配置的 $N$ 个查询行并返回状态。硬件%
+适配器跟踪标量 A/B 状态，并将完成响应路由至发起核；软件保留输出缓冲区管理%
+权，使用现有 RVV 指令更新向量。
+
+\item 实现集群内的固定阶段感知混合精度 SMU，在 FP32 内存可见接%
+口后采用 FP16、基于查表的定点非线性近似和 Q16.32 归一化累加。其独%
+立映射面积低于旧版标量设计；测量的时序代理指标更高，集群级 PPA 仍不可用。
+\end{itemize}
+
+\section{原生在线注意力与设计动机}
+
+\subsection{原生在线注意力}
+全文中，$N$ 表示配置的查询行数，$B$ 表示键分块大小；对本文研究的可整除%
+工作负载，$T=N/B$ 表示分块数量；$D$ 表示输出向量长度，$t$ 为分%
+块索引。权重下标中的 \emph{tile} 表示该权重来自分块贡献。撇号表示%
+合并后的状态，帽号表示经过硬件转换的数值。在 $\mathrm{Q}I.F$ %
+格式中，$I$ 为整数幅值位数，$F$ 为小数位数；有符号格式额外包含一个符号%
+位。
+注意力依据查询与键之间的相似度聚合值向量。传统实现先显式构建分数与归一化概率，%
+再累加值向量。在线注意力则逐块处理分数，增量更新归一化状态和输出状态，从而无需%
+构建完整概率矩阵。这种流式归一化因子是在线 Softmax~\cite{%
+milakov2018online}和感知 IO 的精确注意力~\cite{%
+dao2022flashattention}的基础。
+
+对于一个查询行，令 $s_i$ 表示截至当前已处理位置 $i$ 的分数，$%
+\mathbf{v}_i$ 表示对应的值向量。累积状态为 $(m,l,%
+\mathbf{O})$，并满足式~\eqref{%
+eq:state_invariant} 的不变量：
+\begin{equation}
+\label{eq:state_invariant}
+\begin{gathered}
+m=\max_i s_i,\\
+l=\sum_i \exp(s_i-m),\\
+\mathbf{O}=\frac{1}{l}\sum_i \exp(s_i-m%
+)\mathbf{v}_i.
+\end{gathered}
+\end{equation}
+因此，$l$ 是相对于运行最大值 $m$ 的 Softmax 分母，$%
+\mathbf{O}\in\mathbb{R}^{D}$ 为对应的归一化部分输%
+出。新的分数块提供状态 $(m_t,l_t,\mathbf{O}_t)$。
+
+精确标量合并无需重建先前的概率，即可合并两组状态：
+\begin{equation}
+\label{eq:scalar_merge_recurrence}
+\begin{aligned}
+m' &= \max(m,m_t),\\
+l' &= l\exp(m-m')+l_t\exp(m_t-m'),\\
+w_{\mathrm{old}} &= \frac{l\exp(m-m')}{%
+l'},\qquad
+w_{\mathrm{tile}} = \frac{l_t\exp(m_t-m%
+')}{l'}.
+\end{aligned}
+\end{equation}
+随后，向量输出状态按式~\eqref{eq:output_update} 更新：
+\begin{equation}
+\label{eq:output_update}
+\mathbf{O}'=w_{\mathrm{old}}\mathbf{O}+%
+w_{\mathrm{tile}}\mathbf{O}_t.
+\end{equation}
+
+首个分块直接初始化运行状态。每个后续分块计算递推并更新包含 $D$ 个元素的输%
+出。由于输出始终保持归一化，因此不需要最终归一化步骤。
+
+\subsection{执行特征}
+图~\ref{fig:motivation} 将合并分解为依赖状态的标量递推和%
+规则的向量更新。递推更新 $m$、$l$ 和两个权重；向量通路将这些权重独立应%
+用于 $D$ 个输出元素。
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth,trim=%
+0 58 0 0,clip]{./figure/fig1.png}
+\caption{原生在线注意力合并的执行分解。依赖状态的递推更新 $m$ 和%
+ $l$，并生成两个标量重缩放权重。规则的 $D$ 维输出更新仍映射到现有 %
+Spatz 数据通路。}
+\label{fig:motivation}
+\end{figure*}
+
+递推限制了单次合并内部的数据并行性。状态在分块之间传递，最大值选择、指数重缩放%
+、累加和归一化构成异构依赖链。其标量工作量与 $D$ 无关，因此增大 $D$ %
+并不会增加递推的并行通道。
+
+各输出元素 $j$ 呈现相反的模式：
+\begin{equation}
+\label{eq:rvv_o_update}
+\mathbf{O}'[j]=w_{\mathrm{old}}\mathbf{%
+O}[j]+w_{\mathrm{tile}}\mathbf{O}_t[j],
+\qquad 0\leq j<D,
+\end{equation}
+全部 $D$ 个元素共享相同权重，元素之间不存在依赖。该更新是规则的浮点乘加循%
+环，适合映射到现有 RISC-V 向量（RVV）执行资源。对每个查询行的每个分%
+块，递推执行固定数量的标量运算，与 $D$ 无关；输出更新则对 $D$ 个元素%
+中的每个元素执行两个加权乘积。
+
+因此，加速器仅针对递推。分数生成、块内状态构建和 $D$ 维输出更新保持可编程%
+，仅将并行性不随 $D$ 增长的部分移入硬件。对于配置了 $N$ 行的分块合并%
+，引擎对每行重复执行一次相对于 $D$ 为 $O(1)$ 的递推；RVV 将权%
+重应用于每行的 $D$ 个输出元素。
+
+\subsection{设计目标}
+上述执行特征引出三个目标。
+
+第一个目标是选择性专用化：使用专用硬件执行递推，并复用 Spatz/RVV 执%
+行规则输出更新。这样既保留了 RVV 可编程性，又避免重复配置 $D$ 路数据%
+通路。
+
+第二个目标是使递推单元足够轻量，以适合集群集成。各阶段的数值要求不同，第 %
+III 节通过阶段感知混合精度处理这些差异。
+
+第三个目标是提供软硬件接口，使软件能够一次配置工作负载持久化上下文，随后反复调%
+用合并，同时由硬件跟踪交替使用的递推状态。
+
+在最终映射中，集群内的混合精度标量在线合并单元（SMU）执行递推，Spatz %
+RISC-V 向量数据通路执行 $D$ 维输出更新，硬件则跟踪 TCDM 中递%
+推状态的当前 A/B 选择位。
+
+\section{架构与软硬件协同设计}
+
+\subsection{系统概览与软硬件划分}
+图~\ref{fig:system_overview} 展示该设计如何集成到 %
+Spatz 向量集群~\cite{Spatz2025}。Snitch 标量核与%
+ Spatz/RVV 数据通路共享紧耦合数据存储器（TCDM）。集群内的 %
+SMU 处理第 II 节中的递推，Spatz/RVV 保留规则的 $D$ 维更%
+新。
+
+在线合并（\texttt{OMERGE}）命令依次经过 Snitch 译码、各%
+核加速器解复用器、集群发射仲裁器和 \texttt{OMERGE} 适配器%
+/SMU。仲裁器记录发起核，响应解复用器将完成响应返回至该核。%
+Spatz/RVV 指令采用直接向量通路。SMU 是独立的 TCDM 请求端，%
+通过共享存储器读取操作数，并写入标量状态与权重。默认配置提供 128~KiB、%
+分为 16 个存储体的 TCDM。
+
+该集成不改变 Spatz/RVV 的通道、浮点单元、向量寄存器文件及所支持指令%
+的语义，也不引入自定义 RVV 指令。SMU 通过 TCDM 交换标量状态和权%
+重，因此 RVV 例程直接执行式~\eqref{%
+eq:output_update} 和式~\eqref{%
+eq:rvv_o_update}，无需 SMU 内部的 $D$ 路数据通路。
+
+查询、键和值（Q/K/V）数据以及工作缓冲区均在计时的 Native Core%
+ 区域之前准备。该区域不包含内存分配、输入生成、诊断、Q/K/V 加载和线性投%
+影；包含分数块计算、局部状态构建、首块初始化、后续合并、RVV 更新和最终输出%
+复制。首块将 $(m_t,l_t,\mathbf{O}_t)$ 复制到运行状态%
+。此后，每条 \texttt{OMERGE} 针对一个分数块处理全部已配置的 %
+$N$ 个查询行。对每行，它读取当前 $m,l$ 和块内 $m_t,l_t$，%
+将 $m',l'$ 写入非活动 A/B 缓冲区，并将两个权重存入 TCDM。全%
+部行完成后，适配器将状态返回至发起核；只有成功响应被接收时，才提交 A/B 选%
+择位，错误则保持选择位不变。随后 Spatz/RVV 读取权重并更新各输出行，%
+软件再推进输出指针。第~\ref{sec:isa_interface}--%
+\ref{sec:ownership} 节详细说明配置、调用和选择位语义。
+
+SMU 仅处理标量递推。分数生成、局部状态构建、输出寻址与更新、首块初始化及最%
+终复制仍由软件或 Spatz/RVV 完成。
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{%
+./figure/fig2_v4.pdf}
+\caption{系统集成与软硬件划分。Snitch 核通过加速器译码、解复用%
+器和发射仲裁器，将 \texttt{OMERGE} 发往 Scalar SMU%
+；适配器向发起核返回完成状态。现有 Spatz/RVV 通路执行规则输出更新。%
+两条通路均通过共享 TCDM 访问逐行标量状态、权重和输出块。}
+\label{fig:system_overview}
+\end{figure}
+
+\subsection{阶段感知混合精度 SMU}
+SMU 按阶段分配精度，以适应递推过程中的不同数值范围。该分配是静态的，如图~%
+\ref{fig:smu_datapath} 所示；输入值不会在运行时选择精度%
+。SMU 计算的是式~\eqref{%
+eq:scalar_merge_recurrence} 中精确递推的阶段量化近%
+似，而非精确 FP32 算术。我们用 $\mathrm{RNE}_{16}(%
+\cdot)$、$\mathrm{FP16}(\cdot)$ 和 $%
+\mathrm{Q16.32}(\cdot)$ 分别表示采用舍入到最近偶数方式%
+转换至 FP16、转换至 FP16，以及转换至 48 位无符号 Q16.32 %
+表示；帽号标记转换后的值。TCDM 接口以 FP32 传递 $m$、$m_t$%
+、$l$ 和 $l_t$。最大值及其差值采用 FP16 舍入到最近偶数：
+\begin{equation}
+\label{eq:fp16_conversions}
+\begin{aligned}
+\widehat{m} &= \mathrm{RNE}_{16}(m), &
+\widehat{m}_t &= \mathrm{RNE}_{16}(m_t)%
+,\\
+\widehat{m'} &= \max(\widehat{m},%
+\widehat{m}_t), &
+\widehat{\Delta}_{\mathrm{old}} &= %
+\widehat{m}-\widehat{m'},\\
+\widehat{\Delta}_{\mathrm{tile}} &= %
+\widehat{m}_t-\widehat{m'}.
+\end{aligned}
+\end{equation}
+
+指数（EXP）阶段使用一张含 256 项的有符号 Q1.14 查找表（LUT）%
+，其寻址方式为
+\begin{equation}
+\label{eq:exp_index}
+i(\Delta)=\lfloor(\Delta+8)\cdot32%
+\rfloor,
+\qquad \Delta\in[-8,0),
+\end{equation}
+表项编码对应区间中心，不进行插值。胜出贡献满足 $\Delta\geq0$，绕%
+过 LUT 并直接使用精确单位值，因此转换后的最大值相等时，两条通路均输出单位%
+值。只有较小贡献对应的差值访问 LUT；EXP 通路仅在 $|\Delta|>%
+8$ 时对其进行饱和处理，而根据式~\eqref{eq:exp_index}，%
+$|\Delta|=8$ 时访问 $\mathrm{LUT}[0]$。将这些缩%
+放因子记为 $\widehat{s}_{\mathrm{old}}$ 和 $%
+\widehat{s}_{\mathrm{tile}}$。
+
+SMU 将 FP32 的 $l$ 和 $l_t$ 转换为无符号 Q16.32 %
+表示，分别记作 $\widehat{l}$ 和 $\widehat{l}_t$%
+，并计算
+\begin{equation}
+\label{eq:q1632_accumulation}
+\widehat{l'}=\widehat{l}\,\widehat{s}_{%
+\mathrm{old}}
+            +\widehat{l}_t\,\widehat{s}%
+_{\mathrm{tile}}
+\end{equation}
+式~\eqref{eq:q1632_accumulation} 中的和保持为无%
+符号 Q16.32 表示。在计算倒数前，分母经过 FP16 RNE 转换边界。%
+对于经过 FP16 舍入并规范化的分母 $\widehat{x}=2^{%
+e-127}(1+\mu)$，其中 $\mu$ 是规范化尾数的小数部分，倒数近%
+似为
+\begin{equation}
+\label{eq:recip_approx}
+\begin{aligned}
+\frac{1}{\widehat{x}} &\approx 2^{\,%
+127-e}
+\Big[L_j+(L_{j+1}-L_j)f_j\Big],\\
+j &= \lfloor256\mu\rfloor,\qquad f_j=%
+256\mu-j.
+\end{aligned}
+\end{equation}
+其中 $L_j$ 是 $1/(1+j/256)$ 的无符号 Q1.15 编码，%
+$f_j$ 由尾数低 15 位承载。式~\eqref{%
+eq:recip_approx} 给出的倒数用于缩放每个分子。每个缩放后的分子%
+也经过 FP16 RNE 转换边界，并在计算权重之前回到 Q16.32。一个共%
+享的 48$\times$16 乘法器依次生成旧状态权重和分块权重。倒数 %
+LUT 通路由构建宏 \texttt{ONLINE\_MERGE\_MIXED%
+\_RECIPROCAL} 选择；其来源信息随评估结果一并报告。
+
+所支持的数值约定要求 FP16 转换后的分母为正有限值，且定点中间结果不溢出。%
+Q16.32 存储并未消除 FP16 归一化边界。定向模型测试向量覆盖零分子、%
+次正规数和最大有限 FP16 分母；不支持零除以零。任意非有限输入以及溢出恢复%
+不属于已验证工作负载的约定范围。EXP 截断和 FP16 舍入仍是总递推误差的%
+来源。
+
+引擎将 $\widehat{m^{\prime}}$ 和 $\widehat{%
+l^{\prime}}$ 编码为 FP32，写回 TCDM。该编码仅恢复内存侧%
+的表示类型，不能恢复已丢弃的精度：最大值来自 FP16 舍入，归一化项来自 %
+Q16.32。权重通过式~\eqref{eq:fp16_conversions%
+} 所述转换成为 $w=\mathrm{FP32}(\mathrm{FP16}%
+(\widehat{w}))$，随后由保持不变的 FP32 Spatz/RVV%
+ 更新消费。因此，FP32 承载内存可见状态，Q16.32 承载归一化范围，%
+FP16 与定点查表硬件处理有界非线性阶段。所有分配均在设计时固定。
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{%
+./figure/fig3_v4.pdf}
+\caption{阶段感知混合精度 Scalar SMU 数据通路。图中展示逐%
+行 FP32 状态、FP16-RNE 最大值与倒数转换边界、Q16.32 归一%
+化、直接区间 EXP 查表、插值倒数修正，以及供现有 RVV 输出更新使用的 %
+FP16 转 FP32 合并权重。}
+\label{fig:smu_datapath}
+\end{figure}
+
+\subsection{RISC-V 指令接口}
+\label{sec:isa_interface}
+编程模型将持久化上下文配置与反复执行分开。两种操作都采用 RISC-V 为实现%
+相关扩展保留的 custom-2 操作码空间~\cite{%
+riscv_unprivileged}，并进入 Spatz 集群现有的 %
+Snitch 加速器请求通路~\cite{Spatz2025}。表~\ref{%
+tab:isa_interface} 列出其编码和架构效果，表~\ref{%
+tab:encodings} 给出精确译码模式。两条指令均不改变 RVV 编码%
+或受支持向量指令的语义。
+
+\begin{table*}[t]
+\centering
+\caption{Custom-2 指令格式及架构效果。}
+\label{tab:isa_interface}
+\scriptsize
+\setlength{\tabcolsep}{2pt}
+\begin{tabular}{@{}l p{4.6cm} p{3.8cm} %
+p{7.2cm}@{}}
+\toprule
+指令 & 编码字段 & 寄存器与立即数字段 & 架构效果 \\
+\midrule
+\texttt{OMERGE} &
+R 型；操作码 \texttt{0x5B}；funct7 \texttt{%
+0000011}；funct3 \texttt{000} &
+\texttt{rs1=rs2=x0}；\texttt{rd} 为状态目标寄存%
+器 &
+针对一个分数块处理全部已配置的 $N$ 行，通过 TCDM 读写每行的标量递推%
+状态，存储两个权重，并返回完成状态。 \\
+\addlinespace
+\texttt{OMCFG} &
+类 I 型；操作码 \texttt{0x5B}；funct3 \texttt{%
+001}; \texttt{imm12=cfg\_id} &
+\texttt{rs1} 提供数值； \texttt{rd=x0} &
+写入一个持久化上下文字段，或发出独立的 INIT 提交操作。不启动递推，也不返%
+回寄存器结果。 \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+\begin{table}[t]
+\centering
+\caption{两条 custom-2 命令的精确译码模式。当指令字与掩码按%
+位与的结果等于匹配值时，适配器识别该指令。}
+\label{tab:encodings}
+\scriptsize
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}l L{6.2cm}@{}}
+\toprule
+命令 & 掩码、匹配值与机器字 \\
+\midrule
+\texttt{OMERGE} & 掩码 \texttt{0xFFFFF07F%
+}, 匹配值 \texttt{0x0600005B}, 机器字
+\texttt{0x0600005B | (rd << 7)}; %
+\texttt{instruction[11:7]} 编码 \texttt{%
+rd},
+即完成状态目标寄存器，而 \texttt{rs1=rs2=x0}. \\
+\addlinespace
+\texttt{OMCFG} & 掩码 \texttt{0x00007FFF}%
+, 匹配值 \texttt{0x0000105B}, 机器字
+\texttt{(cfg\_id << 20) | (rs1 << 15) |%
+ 0x0000105B}; 12 位
+\texttt{cfg\_id} 占据位 [31:20]， \texttt{%
+rs1} 在位 [19:15] 指定字段值的源寄存器，且 \texttt{rd%
+=x0}. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+表~\ref{tab:encodings} 给出精确译码掩码、匹配值和机器字表%
+达式。固定功能位将反复执行命令与配置命名空间分开，同时将两种操作均保留在 %
+custom-2 中。
+
+\texttt{OMERGE} 是标量递推命令，而非向量操作。其 %
+\texttt{rs1} 和 \texttt{rs2} 字段均指定 %
+\texttt{x0}。每条命令对一个分数块中的全部已配置 $N$ 行执行标量%
+递推，通过 TCDM 读取 $m$、$l$、$m_t$ 和 $l_t$，并写入%
+ $m'$、$l'$ 及两个重缩放权重。$D$ 维输出数据不经过指令接口。适配%
+器将引擎固定为 Mixed Scalar 模式，与 MMIO 控制的 SMU %
+通路采用相同算术；现有 RVV 例程执行输出更新。
+
+\texttt{rd} 字段指定状态目标寄存器。软件必须使用非零目标寄存器才能%
+检查返回状态；\texttt{rd=x0} 会丢弃寄存器写入。发射时，%
+Snitch 在其加速器记分牌中预留目标寄存器，并通过各核加速器解复用器和集群%
+发射仲裁器转发指令与请求标识。适配器只允许一条未完成命令，依次经历 %
+\texttt{IDLE}、\texttt{START}、\texttt{%
+WAIT} 和 \texttt{RESP} 状态。在 \texttt{WAIT%
+} 中，它等待 SMU 报告 DONE 或 ERROR。在 \texttt{%
+RESP} 中，响应通路向发起核返回请求标识和状态；接收该响应后写入 %
+\texttt{rd}，并清除相应的待完成记分牌条目。状态为零表示成功，非零表%
+示错误。因此，只有核接收加速器响应后，软件才能认为该指令已完成。
+
+反复执行的计时比较采用完整通路：发射、SMU 执行与忙碌时间、响应提交以及状态%
+消费。这是包含全部相关开销的递推/控制窗口，并非仅包含派发的延迟。单独的 %
+\texttt{OMERGE} 接口比较保持 SMU 算术和 RVV 更新相同%
+，仅改变每个非首块递推的调用方式。
+
+\subsection{通过 \texttt{OMCFG} 实现运行时可配置上%
+下文}
+地址与工作负载参数需要在一系列分块合并之间保持。如果围绕每次递推重写这些参数，%
+就会将配置流量重新引入稳态通路。\texttt{OMCFG} 一次写入工作负载%
+持久化上下文；此后每个分数块通过一次 \texttt{OMERGE} 调用处理%
+全部已配置查询行。
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{%
+./figure/fig4_v4.png}
+\caption{\texttt{OMCFG}/\texttt{OMERGE}%
+ 编程模型。一次性的 \texttt{OMCFG} 写入建立持久化标量上下文并%
+复位选择位。每个后续分数块使用一条 \texttt{OMERGE} 命令处理已%
+配置的 $N$ 个查询行，随后执行不变的 RVV 输出更新。当块大小 $B=4%
+$ 时，包含 $N$ 行的工作负载共有 $T=N/B$ 个分块，最后一个分块为%
+ $T-1$。虚线配置通路写入的是上下文地址，而非 TCDM 数据。硬件仅翻转%
+ A/B 标量状态选择位；软件交换输出缓冲区。选择位在发起核接收成功响应后才改%
+变。}
+\label{fig:programming_model}
+\end{figure*}
+
+图~\ref{fig:programming_model} 将四类管理职责放在%
+执行时间线上：\texttt{OMCFG} 建立持久化上下文，\texttt{%
+OMERGE} 推进标量状态，硬件在成功完成后翻转选择位，软件更新输出缓冲区指%
+针。
+
+\texttt{OMCFG} 使用与 \texttt{OMERGE} 相同的 %
+custom-2 操作码，并选择 funct3 \texttt{001}。类 %
+I 型编码将 12 位配置标识放入 \texttt{imm12}，由 %
+\texttt{rs1} 提供数值；\texttt{rd} 固定为 %
+\texttt{x0}。该操作不创建目标寄存器记分牌条目，也不返回写回载荷。只%
+有适配器和 SMU 引擎均空闲时，适配器才接受配置命令。立即数选择字段，并不承%
+载字段值。
+
+标识 \texttt{0x000}--\texttt{0x008} 写入九个必%
+需字段，指定两组运行状态缓冲区、块内 $m_t/l_t$、两个权重数组的物理 %
+TCDM 基址，以及查询行数 $N$。标识 \texttt{0x009} 选择%
+独立的 CTRL/INIT 操作；其数值的位~0 提交完整上下文并复位选择位。%
+表~\ref{tab:omcfg_map} 列出该映射及其边界。每个配置地址都%
+是逐行 FP32 数组的基址；\texttt{scalar\_addr(%
+base,row)=base+(row<<2)} 将行 $r$ 放在字节偏移 %
+$4r$ 处。
+
+\begin{table*}[t]
+\centering
+\caption{\texttt{OMCFG} 配置标识映射。标识 0--8 %
+为必需上下文字段；标识 9 是独立的 INIT 控制操作。}
+\label{tab:omcfg_map}
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}c l p{6.3cm} p{7.0cm%
+}@{}}
+\toprule
+\texttt{cfg\_id} & 字段 & 数值或地址 & 用途与写入语义%
+ \\
+\midrule
+\texttt{0x000} & \texttt{A\_M} & TCDM 地%
+址 & 状态缓冲区 A 中逐行运行最大值数组 \\
+\texttt{0x001} & \texttt{A\_L} & TCDM 地%
+址 & 状态缓冲区 A 中逐行运行归一化因子数组 \\
+\texttt{0x002} & \texttt{B\_M} & TCDM 地%
+址 & 状态缓冲区 B 中逐行运行最大值数组 \\
+\texttt{0x003} & \texttt{B\_L} & TCDM 地%
+址 & 状态缓冲区 B 中逐行运行归一化因子数组 \\
+\texttt{0x004} & \texttt{TILE\_M} & %
+TCDM 地址 & 逐行块内最大值数组 $m_t$ \\
+\texttt{0x005} & \texttt{TILE\_L} & %
+TCDM 地址 & 逐行块内归一化因子数组 $l_t$ \\
+\texttt{0x006} & \texttt{WEIGHT\_OLD} &%
+ TCDM 地址 & 逐行数组基址： $w_{\mathrm{old}}$ %
+\\
+\texttt{0x007} & \texttt{WEIGHT\_TILE} %
+& TCDM 地址 & 逐行数组基址： $w_{\mathrm{tile}}$%
+ \\
+\texttt{0x008} & \texttt{N} & 查询行数 & 每次%
+ \texttt{OMERGE} 调用处理的行数 \\
+\texttt{0x009} & \texttt{CTRL/INIT} & 位%
+~0 = 1 & 提交全部必需字段并复位 A/B 选择位 \\
+\texttt{0x00A--0xFFF} & 保留 & 不写寄存器 & 不支%
+持的标识使就绪状态失效，直到执行完整 INIT \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+九个必需字段与旧版 MMIO 接口共享规范的生成寄存器。\texttt{%
+OMCFG} 写入更新与 MMIO 相同的寄存器，因此 MMIO 读取可观察到%
+写入值。适配器使用 \texttt{9'h1FF} 掩码跟踪写入，并将上下文标%
+记为脏。只有九个必需位全部存在时，位~0 置位的 INIT 才能提交；成功后置%
+位 \texttt{cfg\_valid} 并将选择位复位为零。位~0 清零的%
+ INIT 不提交。重写任何必需字段后，必须在下一次合并之前再次执行完整 %
+INIT。
+
+这是对刻意限定的上下文提供运行时可配置性，而非通用 SMU 控制 ISA。版本%
+~1 不提供 $D$、精度或模式、块大小、输出向量地址、步长或选择位的配置标识%
+。适配器固定采用 Mixed Scalar 模式，并为标量模式中未使用的字段提%
+供验证常量，包括 $D=1$ 和零步长。工作负载维度与输出寻址仍是软件/RVV%
+ 参数。保留标识不执行寄存器写入，并使就绪状态失效；软件必须在下一条 %
+\texttt{OMERGE} 前执行完整 INIT。因此，接口评估将一次性配%
+置、反复调用及范围更大的 Native Core 窗口分开。
+
+\subsection{调用序列与状态管理权}
+\label{sec:ownership}
+配置地址指定两组物理运行状态缓冲区。一个硬件选择位标识哪组提供当前标量状态，哪%
+组接收下一状态，从而避免软件在每次合并时更新地址。图~\ref{%
+fig:programming_model} 展示其生命周期：软件初始化首块及%
+输出状态，写入九个必需字段，提交 INIT，随后对每个后续分块发出一条 %
+\texttt{OMERGE}。成功响应之后，现有 RVV 例程更新输出，软件%
+交换其输出缓冲区指针。
+
+选择位作用于 TCDM 中的两组缓冲区 $A=(A_m,A_l)$ 和 $B=%
+(B_m,B_l)$；对每个查询行 $0\leq r<N$，每组均保存一个 %
+FP32 最大值和一个 FP32 归一化因子。
+
+选择位为零时，选择 $A$ 作为源、$B$ 作为目标；选择位为一时，选择 $B%
+$ 作为源、$A$ 作为目标。选择位改变提供给 SMU 的物理 \texttt%
+{m/l} 地址。缓冲区仍位于 TCDM 中，并保持原有内容。
+
+软件将首块作为初始化处理：把初始运行标量状态写入 $A$，并在软件中初始化输出%
+缓冲区，因此首块不执行 \texttt{OMERGE}。完整 INIT 使选择%
+位保持为零。第一次后续合并读取 $A$、写入 $B$，此后的合并交替改变方向。
+
+只有发起核接收无错误的加速器响应时，适配器才提交选择位转换。指令发射和 SMU%
+ 启动均不改变选择位。不完整或脏上下文返回非零状态，且不置位引擎启动信号。%
+SMU 错误也返回非零状态。两种情况均保持选择位原值，因此失败命令不会改变下一%
+次成功合并的状态方向。
+
+选择位只管理逐行标量 $m/l$ 状态。软件继续维护两个 $D$ 维输出缓冲区%
+指针，不变的 RVV 例程在每次成功递推后执行输出更新。分块地址与输出指针也由%
+软件负责。本文评估的约定采用一个控制核和一个活动上下文。请求归属路由不提供各核%
+上下文隔离。并发配置写入者、中断、取消和故障恢复均不属于已验证范围。软件在 %
+RVV 更新前消费成功完成状态；两个锚点测试确立的是输出等价性，而不是并发执行%
+下内存顺序的一般证明。
+
+\section{评估}
+
+\subsection{实验设置与测量范围}
+性能结果来自 Spatz RISC-V 向量集群的周期级仿真。%
+Verilated 模型采用 Verilator 5.034 和默认集群配置，%
+其中 TCDM 容量为 128~KiB，分为 16 个存储体。周期计数器明确界%
+定各测量阶段，每组匹配比较均使用同一冻结的集群配置和软件工具链。
+
+N8/D32 和 N16/D64 是两个锚点工作负载。N24/D64 与 %
+N16/D128 用于检验序列长度或输出维度改变后，已观察行为是否仍然成立。所%
+有原生注意力案例均采用块大小 $B=4$ 和种子一。首块直接初始化运行状态，不%
+需要合并。因此，每个查询行有 $T-1$ 次后续分块合并：N8/D32 为一次%
+，N16/D64 为三次，N24/D64 为五次，N16/D128 为三次。每%
+个后续分数块发出一条 \texttt{OMERGE}，处理全部已配置的 $N$%
+ 行。
+
+该设计仅加速原生在线注意力的一部分，因此我们报告三个计时范围。B2R 软件的%
+\emph{递推}窗口涵盖生成 $m'$、$l'$、$w_{\mathrm{%
+old}}$ 和 $w_{\mathrm{tile}}$ 的依赖状态标量更新。%
+对于匹配的 MMIO 控制 SMU 通路，所报告递推窗口还包括每次合并的寄存器%
+配置、清除/启动、BUSY/DONE 轮询和 SMU 执行。因此，它测量完整的%
+递推调用，包含控制和引擎忙碌时间，而非纯算术延迟。\emph{合并}窗口进一步%
+包含对应的 RVV 输出更新及合并侧编排。\emph{Native Core}%
+ 窗口再包含分数块计算、块内状态构建、首块处理、全部后续合并及最终输出处理。内%
+存分配、输入生成、诊断、Q/K/V 加载和线性投影均不属于这三个窗口。
+
+各比较构成独立的匹配实验组。算术卸载组将标量软件递推加 RVV（B2R）与 %
+MMIO 控制的 Mixed Scalar SMU 加相同 RVV 更新进行比%
+较。反复调用接口组保持 SMU 算术与 RVV 相同，比较逐次合并 MMIO %
+控制与 \texttt{OMERGE}。配置组保持 \texttt{%
+OMERGE} 相同，比较一次性 MMIO 配置与 \texttt{OMCFG%
+}。Full SMU 仅出现在独立的历史消融实验中。
+
+每组使用其各自匹配的基线和冻结实现。不同实验组之间的绝对周期数不能构成优化演进%
+轨迹，且没有 B2R 与最终 \texttt{OMCFG}/\texttt{%
+OMERGE} 接口之间的匹配比较。B2R 实现相同的数学递推并共享 RVV %
+例程，但其内部数值格式与 SMU 不同。因此，递推比值同时包含硬件专用化与数值%
+实现差异，本文未将二者分离。B2R 不是优化软件库基线。所有原生案例仅采用一个%
+种子，接口实验组对每个通路和形状仅有一次正式运行。这些结果确立的是确定性原型行%
+为，而非模型准确率、多头扩展性或统计普适性。加速比均为周期数比值，不假设已经达%
+到某一工作频率。
+
+\subsection{原生在线注意力性能}
+\label{sec:native_performance}
+原生比较保持输出更新相同，以测量递推卸载的效果。B2R 是匹配软件基线：它在标%
+量软件中执行递推，并共享 SMU 通路的 RVV 输出例程。图~\ref{%
+fig:native_performance} 汇总三个计时范围。
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{%
+./figure/fig5.pdf}
+\caption{原生在线注意力在递推、合并和 Native Core 测量范%
+围内的加速比。MMIO 控制的 SMU 递推窗口包括每次合并的配置、清除/启动%
+、轮询和 SMU 执行。比值采用匹配软件与 SMU 周期数，块大小为四，种子为%
+一。每个柱形对应一个确定性案例；未估计不确定性区间。各子图的刻度不同。}
+\label{fig:native_performance}
+\end{figure*}
+
+在 N8/D32 中，递推从 12,368 降至 1,451 周期，加速比为 %
+8.524$\times$。合并窗口从 13,204 降至 2,318 周期，%
+加速比为 5.696$\times$。Native Core 从 85,262%
+ 降至 73,706 周期，加速比为 1.157$\times$，周期数降低 %
+13.554\%。
+
+在 N16/D64 中，递推从 68,994 降至 4,926 周期，加速比为%
+ 14.006$\times$。合并窗口从 77,037 降至 13,060 %
+周期，加速比为 5.899$\times$。Native Core 从 571%
+,374 降至 507,918 周期，加速比为 1.125$\times$，周%
+期数降低 11.106\%。
+
+N24/D64 在递推、合并和 Native Core 范围内分别达到 %
+17.784$\times$、6.275$\times$ 和 1.140$%
+\times$ 加速比。N16/D128 在相同三个范围内分别达到 %
+13.737$\times$、4.144$\times$ 和 1.066$%
+\times$。四个工作负载的测量范围分别为：递推 8.524--17.784%
+$\times$，合并 4.144--6.275$\times$，Native%
+ Core 1.066--1.157$\times$。
+
+测量范围越大，该设计未改变的工作所占比例就越高：分数构建、块内状态生成和规则向%
+量输出更新均保留在可编程通路。因此，Native Core 的改善小于递推，递%
+推结果也不能表述为注意力级或模型级加速。
+
+\subsection{数值保真度与独立 SMU 成本}
+阶段感知混合精度 SMU 与匹配的 B2R 软件递推高度一致，同时降低独立映射%
+面积。在四个原生注意力工作负载中，最终 Mixed Scalar SMU 的余%
+弦相似度为 0.999970724 至 0.999984751。这些案例中没有%
+非有限输出。
+
+\begin{table*}[t]
+\centering
+\caption{与 B2R 软件递推的数值一致性及独立 SMU 成本。面积来%
+自面积映射流程，延迟代理指标来自对相同设计采用独立时序约束的映射流程；两列并非%
+描述同一网表。}
+\label{tab:numerical_ppa}
+\scriptsize
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}lccc@{}}
+\toprule
+\multicolumn{4}{@{}l@{}}{\textit{(a) 与 %
+B2R 软件输出的一致性}} \\
+形状 & MAE & \multicolumn{2}{c@{}}{余弦相似度}%
+ \\
+\midrule
+N8/D32 & $2.793084\times10^{-4}$ & %
+\multicolumn{2}{c@{}}{0.999984541} \\
+N16/D64 & $4.665494\times10^{-4}$ & %
+\multicolumn{2}{c@{}}{0.999970724} \\
+N24/D64 & $3.736880\times10^{-4}$ & %
+\multicolumn{2}{c@{}}{0.999980879} \\
+N16/D128 & $5.631592\times10^{-4}$ & %
+\multicolumn{2}{c@{}}{0.999984751} \\
+\midrule
+\multicolumn{4}{@{}l@{}}{\textit{(b) 独立%
+综合}} \\
+设计 & 映射面积 & 相对旧版的面积降幅 & 延迟代理指标 \\
+\midrule
+旧版标量设计 & 72,399.082 & 不适用 & 12.518~ns \\
+Mixed+Division & 52,000.074 & 28.176\% %
+& 14.620~ns \\
+Mixed+Reciprocal & 52,407.586 & 27.613%
+\% & 15.540~ns \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+表~\ref{tab:numerical_ppa}(a) 将原生案例与 B2R%
+ 软件输出比较；指标由存储的 FP32 结果以 float64 计算。FP32%
+ 是两条通路的存储类型，并非独立参考真值。单独的数值压力扫描中，最低余弦相似度%
+降至 0.999873853，因此不能声称所有情况均高于 0.9999。穷举全%
+部 31,743 个正有限 FP16 分母得到的最大倒数相对误差为 $%
+6.6966\times10^{-5}$。
+独立的主机模型扫描覆盖随机分数与单头 Q/K/V 案例，长度为 128、256%
+、512 和 1024，维度为 64 和 128（共 16 种组合），块大小为%
+ 32，基础种子为 20260823。它不同于块大小为四的 RTL 原生性能实%
+验。所选倒数扫描中，替换实现相对于除法实现的最低余弦相似度为 %
+0.999999885，而优化实现相对于 FP32 的最低值为 %
+0.999873853。这些模型结果并未确立对应长度下的 RTL 性能。
+
+阶段感知精度的成本通过匹配的独立 Yosys/ABC 综合测量，采用 %
+Nangate45 典型工艺库。将旧版算术替换为混合精度并保留除法后，映射面积%
+从 72,399.082 降至 52,000.074 单位，降低 28.176%
+\%。最终倒数实现占用 52,407.586 单位，比旧版低 27.613\%%
+，比 Mixed+Division 高 0.784\%。
+
+更低面积并不意味着更优时序。最长映射寄存器间延迟代理指标从旧版的 12.518%
+~ns 上升至 Mixed+Division 的 14.620~ns 和 %
+Mixed+Reciprocal 的 15.540~ns。这些数值仅是布局前时%
+序代理指标，且没有设计达到 1.5~ns 目标。集群综合在 techmap 阶%
+段耗尽资源，因此集成面积、频率和功耗仍未测量；这里的面积比较仅针对独立单元。
+
+\subsection{软硬件划分消融}
+最终架构将 $D$ 维输出更新保留在 RVV 上，SMU 内不设置专用向量数据%
+通路。我们通过独立冻结的 Full SMU/A2 实验考察这一选择。该消融早于%
+最终 \texttt{OMERGE}/\texttt{OMCFG} 实现，因此%
+其绝对面积和周期值仅在各自匹配的历史实现阶段内使用。
+
+在该实验中，选择性设计将标量递推卸载与 RVV 输出更新结合；Full SMU%
+ 进一步将随维度变化的输出更新移入加速器。独立面积从 77,103.292 增%
+至 114,713.298 单位，增加 48.779\%。历史映射延迟代理指标%
+也从 12.34285 增至 13.20260~ns。
+
+\begin{table}[t]
+\centering
+\caption{选择性卸载与完整卸载的历史消融。每行内部使用相同周期窗口和实%
+现阶段，与主要原生注意力实验分开。}
+\label{tab:full_smu_ablation}
+\scriptsize
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+形状 & 选择性设计 & Full SMU & 完整/选择性 \\
+\midrule
+N12/D64  & 4,128  & 7,704  & 1.866$%
+\times$ \\
+N32/D128 & 12,866 & 34,728 & 2.699$%
+\times$ \\
+N40/D128 & 15,733 & 43,206 & 2.746$%
+\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+这些是历史工作负载的测量，并非完整 BERT、Mistral 或 Qwen 模%
+型运行时间。三个匹配案例中 Full SMU 均更慢。这些数值不纳入最终原生注%
+意力结果。它们与面积比较共同支持选择性划分：规则的 $D$ 维工作保留在 %
+RVV 数据通路，而非在 SMU 内重复实现。
+
+\subsection{RISC-V 指令接口评估}
+\label{sec:isa_evaluation}
+ISA 接口评估分两阶段：先评估每次合并的反复调用，再在保持 \texttt{%
+OMERGE} 相同的条件下评估一次性工作负载配置。
+
+A1-MMIO 与 A1-ISA/\texttt{OMERGE} 使用相同的 %
+Mixed Scalar SMU 算术、RVV 输出例程、工作负载、块大小和数%
+值语义，仅每个非首块递推的触发方式不同。表~\ref{%
+tab:isa_results}(a) 以周期为单位报告两个锚点的匹配窗口。
+
+包含相关开销的递推/控制窗口覆盖发射与控制活动、SMU 执行及忙碌时间、响应提%
+交和状态消费，因此其缩短不只是派发延迟的下降。窗口的大部分时间是 SMU 忙碌%
+时间，两条通路承担相同或近似相同的成本。扣除该时间后，可分离递推周围的控制活动%
+：N8/D32 从 1,261 降至 40 周期，N16/D64 从 3,%
+577 降至 81 周期。扩大范围会加入接口未改变的工作，因此合并范围的降幅减%
+小至 41.695\% 和 21.954\%；当一次性 ISA 配置纳入 %
+Native Core 窗口时，降幅进一步减小至 0.841\% 和 %
+0.448\%。
+
+在保持 \texttt{OMERGE} 相同的条件下，我们比较 %
+MMIO-config+\texttt{OMERGE} 与 \texttt{%
+OMCFG}-config+\texttt{OMERGE}。两个变体执行相同的%
+基于 \texttt{OMERGE} 的 Native Core，仅在核心执行%
+前传送九个配置字段和一次 INIT 操作的方式不同。N8/D32 的配置从 %
+991 降至 659 周期，降低 33.50\%；N16/D64 从 986 %
+降至 632 周期，降低 35.90\%。N8/D32 的 Native %
+Core 执行完全相同，N16/D64 仅相差 12 周期；对应的包含配置的总%
+周期数分别降低 0.451\% 和 0.067\%。表~\ref{%
+tab:isa_results} 汇总两种比较。
+
+\begin{table}[t]
+\centering
+\caption{ISA 接口评估。在 (a) 中，两条通路采用相同 %
+Mixed Scalar SMU 算术与 RVV 例程，因此递推和合并窗口中的%
+ SMU 忙碌周期相互抵消或近似抵消（N16/D64 相差 4 周期）。控制行%
+扣除共同忙碌周期，仅保留启动、轮询与提交活动。}
+\label{tab:isa_results}
+\scriptsize
+\setlength{\tabcolsep}{2pt}
+\begin{tabular}{@{}llrrr@{}}
+\toprule
+\multicolumn{5}{@{}l@{}}{\textit{(a) %
+\texttt{OMERGE} 逐次合并效果（周期）}} \\
+形状 & 窗口 & MMIO & \texttt{OMERGE} & 降幅 \\
+\midrule
+N8/D32 & 控制（不含忙碌） & 1,261 & 40 & 96.828%
+\% \\
+       & 递推/控制 & 2,069 & 848 & 59.014\%%
+ \\
+       & 合并 & 2,926 & 1,706 & 41.695\% %
+\\
+       & 含配置的 Core & 74,392 & 73,766 & %
+0.841\% \\
+\addlinespace
+N16/D64 & 控制（不含忙碌） & 3,577 & 81 & %
+97.736\% \\
+        & 递推/控制 & 8,429 & 4,929 & %
+41.523\% \\
+        & 合并 & 16,548 & 12,915 & 21.954%
+\% \\
+        & 含配置的 Core & 510,991 & 508,702%
+ & 0.448\% \\
+\midrule
+\multicolumn{5}{@{}l@{}}{\textit{(b) %
+\texttt{OMCFG} 配置效果}} \\
+形状 & \shortstack{MMIO\\ 配置} & %
+\shortstack{\texttt{OMCFG}\\ 配置} &
+\shortstack{配置\\ 降幅} & \shortstack{%
+Native Core\\ $\Delta$} \\
+\midrule
+N8/D32 & 991 & 659 & 33.50\% & 0 \\
+N16/D64 & 986 & 632 & 35.90\% & +12 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+两种接口比较均保持功能行为不变。\texttt{OMERGE} 与 MMIO %
+控制通路在两个锚点工作负载中生成逐位相同的最终输出。N8/D32 发出一条 %
+\texttt{OMERGE}，N16/D64 发出三条，与预期非首块合并次数%
+及选择位转换次数一致；每条命令处理全部已配置查询行。N8/D32 的最终输出哈%
+希为 \texttt{0x9c7cdedc}，N16/D64 为 %
+\texttt{0xfd0d2cff}。匹配输出的成对 MAE 和稳定相对误差%
+均为零，余弦相似度为一，且没有非有限值。反复调用接口实验未归档中间 $m/l$%
+ 和权重数组，因此不声称中间结果逐位一致。
+
+每个二进制文件均包含两种配置例程。驻留在数据段中的 \texttt{%
+volatile} 通路选择变量在两次构建中具有不同初值，并在运行时选择 %
+MMIO 或 OMCFG。因此，同一工作负载中 MMIO-config 与 %
+\texttt{OMCFG}-config 二进制的 \texttt{%
+.text} 逐字节相同，并生成逐字一致的最终输出。INIT 后，它们还建立相%
+同的持久化配置状态，包括全部九个字段和为零的选择位。因此，\texttt{%
+OMCFG} 降低了测量的一次性配置成本，但没有测得系统性的稳态 Native%
+ Core 收益。
+
+\subsection{显式 P 负对照}
+最后一个实验检验 SMU 能否在显式概率矩阵数据流中作为逐行 Softmax %
+的通用替代。周边量化注意力通路保持不变；仅将显式 P 软件 Softmax 后%
+端替换为 Mixed SMU 后端。
+
+对于 N8/D32，Mixed SMU 将显式 P Softmax 窗口从 %
+12,502 增至 14,812 周期，比软件慢 18.477\%。对于 %
+N16/D64，窗口从 48,595 变为 48,534 周期，改善 %
+0.126\%。两个案例中，采用 SMU 的更大范围注意力窗口均略慢。
+
+五阶段 Attention Total 在 N8/D32 中从 839,111%
+ 增至 841,597 周期，增加 0.296\%；在 N16/D64 中从 %
+6,767,387 增至 6,768,406 周期，增加 0.015\%。完整%
+ Mixed Softmax 窗口包含 $P$ 初始化、SMU 启动与轮询、%
+RVV 概率更新以及交换/清除编排。五阶段 Attention Total 是%
+算术项的求和，并非来自独立计时器。
+
+这些结果与第~\ref{sec:native_performance} 节的原%
+生在线注意力结果形成对照。作为通用逐行 Softmax 替代，SMU 在这两个%
+案例中没有提供一致收益。原生路径的正面结果和这一负对照共同界定了实现的已测适用%
+范围；它们并不能证明其他 Softmax 实现无法获益。
+
+\section{讨论}
+\label{sec:discussion}
+
+\subsection{收益取决于所选执行边界}
+测量收益在递推边界最大，随着窗口纳入保留在可编程通路上的工作而减小。分数块计算%
+与规则的 $D$ 元素输出更新仍在标量加速器之外；因此，Native Core%
+ 结果反映该划分对测量内核的影响，不包含 Q/K/V 加载和线性投影。
+
+原生与显式 P 的测量共同支持一个与边界相关的结论：SMU 针对原生在线注意力%
+的持久化标量递推，而不是普遍更快的 Softmax 后端。
+
+\subsection{指令接口向软件暴露这一划分}
+软件通过 \texttt{OMCFG} 写入九个受支持上下文字段并提交就绪状态%
+，随后对每个后续分数块调用 \texttt{OMERGE}。硬件处理全部已配置%
+查询行，并跟踪交替使用的标量状态选择位；软件保留分块调度、输出缓冲区指针和 %
+RVV 执行。核的加速器通路暴露这一有状态操作，无需自定义向量指令或重复配置输%
+出数据通路。
+
+测量不支持将指令接口视为主要加速收益的来源。\texttt{OMERGE} 在%
+两个锚点将包含相关开销的递推/控制窗口缩短 41.5--59.0\%，但该窗口%
+包含 SMU 忙碌时间和响应处理，并非仅包含派发的延迟。\texttt{%
+OMCFG} 将一次性配置缩短 33.5--35.9\%；包含配置的总周期数分%
+别变化 0.451\% 和 0.067\%。这些控制平面结果补充了选择性数据流%
+结果，并未确立任一指令单独带来的实质性稳态 Native Core 收益。
+
+该接口的粒度不同于 VEXP 标量与打包 SIMD 指数指令等既有 %
+RISC-V 非线性扩展。本文命令暴露的是在线合并递推及其持久化状态，而非通用%
+指数运算原语。这一区别限定了本文的定位；它并不意味着在线归一化、Softmax%
+ 硬件或 RISC-V 非线性加速本身是新概念。
+
+\subsection{数值与评估局限}
+匹配的集群综合在 techmap 阶段耗尽资源，因此未测量集成面积、频率和功耗%
+。B2R 是共享 RVV 例程的匹配递推软件，而非成熟的优化软件库基线。
+
+\section{与既有工作的比较}
+\label{sec:comparison}
+
+表~\ref{tab:related_work} 将本文与代表性的 %
+RISC-V 和 AI 加速方案进行定位比较；下文各小节给出每行的详细背景。
+
+\begin{table*}[t]
+\centering
+\caption{代表性 RISC-V 与 AI 加速方案的定位。所报告结果保%
+留各原工作的测量范围，不能跨行直接比较。}
+\label{tab:related_work}
+\scriptsize
+\setlength{\tabcolsep}{2.2pt}
+\renewcommand{\arraystretch}{0.94}
+\begin{tabular}{@{}L{2.0cm}L{9.0cm}L{%
+5.8cm}@{}}
+\toprule
+工作 & 硬件通路及其与向量执行的关系 & 报告结果 \\
+\midrule
+VEXP \cite{wang2025vexp} &
+Snitch FPU 通过自定义标量/打包指令 \texttt{FEXP}/%
+\texttt{VFEXP} 执行 BF16 指数运算 &
+162.7$\times$ Softmax 延迟降低; 8.2$\times$%
+ FlashAttention-2 加速比 \\
+\addlinespace[1pt]
+SoftEx \cite{belano2025softex} &
+RISC-V 集群 HWPE 通过控制与流式接口加速 Softmax/GELU%
+ &
+10.8$\times$ Softmax 加速比; 1.58$\times$ %
+端到端 ViT 吞吐量提升 \\
+\addlinespace[1pt]
+TOP-V \cite{chen2026topv} &
+带自定义 \texttt{VTOPK} 排序指令的 Ara 向量处理器 &
+5.24$\times$ 相对基于 RVV 排序的加速比 \\
+\addlinespace[1pt]
+RedMulE \cite{tortorella2023redmule} &
+共享集群存储器的集群内 HWPE 风格 GEMM 引擎 &
+15$\times$ GEMM; 最高 62$\times$ GEMM-Op %
+相对软件的加速比 \\
+\addlinespace[1pt]
+Gemmini \cite{genc2021gemmini} &
+通过 RoCC 连接的脉动阵列及完整软件栈 &
+全栈 DNN 评估；相对 CPU 基线提升多个数量级 \\
+\addlinespace[1pt]
+Deeploy \cite{scherer2024deeploy} &
+编译器将 SLM 执行映射至 RV32 核、ML 扩展和 NPU &
+340 token/s ，能耗为 490~$\mu$J/token (%
+TinyStories SLM) \\
+\addlinespace[1pt]
+\textbf{本文} &
+集群内 Scalar SMU 通过 \texttt{OMCFG}/%
+\texttt{OMERGE} 专门处理递推；Spatz/RVV 保留输出更新%
+ &
+最高 17.784$\times$ 递推加速比、6.275$\times$ 合%
+并加速比和 1.157$\times$ Native Core 加速比（%
+MMIO 控制 SMU，相对 B2R 软件基线） \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+\subsection{Softmax 与非线性加速}
+
+当矩阵乘法得到充分优化后，指数运算、Softmax 和 GELU 等非线性算子%
+会成为 Transformer 工作负载的瓶颈。已有研究在多个粒度上解决这一问%
+题，从算术 ISA 扩展和低成本可重配置非线性核~\cite{%
+li2020nonlinear,wu2025nonlinear}，到专用非线性%
+加速器。
+
+VEXP 在 Snitch RISC-V 核的浮点单元内部加入近似 %
+BFloat16 指数单元，通过标量 \texttt{FEXP} 和打包 %
+SIMD \texttt{VFEXP} 指令暴露~\cite{%
+wang2025vexp}。其 Softmax 内核将该指数运算与现有 %
+Snitch 执行机制结合，报告最高 162.7$\times$ 的 %
+Softmax 延迟降低，以及 GPT-2 配置下 8.2$\times$ 的%
+ FlashAttention-2 加速。VEXP 是细粒度方案：将代价高昂的%
+非线性原语加入可编程数据通路。
+
+SoftEx 采用另一种路线，在专用 BFloat16 硬件中加速整个非线性算%
+子~\cite{belano2025softex}。其数据通路覆盖近似指数运算%
+、累加、求逆和归一化，并位于 RISC-V 集群中矩阵引擎旁。扩展设计还支持 %
+GELU，并报告最高 10.8$\times$ 的 Softmax 加速，展示%
+了在已加速矩阵通路旁增加非线性硬件的收益。
+
+本文比较聚焦另一种接口：持久化归一化状态与逐次合并控制。在第 IV-F 节的显%
+式 P 负对照中，SMU 并未一致改善逐行 Softmax。测量收益出现在原生%
+通路中，其中标量状态在在线合并之间持续保存，而 $D$ 维输出更新保留在 %
+RVV 上。
+
+\subsection{RISC-V 领域专用加速}
+
+RISC-V 的可扩展性使领域专用硬件能够保持在软件控制之下，无需独立编程模型%
+。现有系统涵盖紧密集成的功能单元扩展~\cite{%
+zaruba2021snitch,wang2025vexp}、集群内协处理器~%
+\cite{tortorella2023redmule,%
+belano2025softex}以及向量处理器扩展~\cite{%
+cavalcante2020ara,chen2026topv,%
+Spatz2025}。
+
+Spatz 提供本文使用的可编程向量基础：它是面向紧耦合共享内存集群的紧凑 %
+RISC-V 向量处理器，具有规则向量执行能力和相对较小的向量寄存器文件~%
+\cite{Spatz2025}。本文设计保留该向量数据通路执行规则输出更新，%
+不改变 RVV 执行语义。
+
+TOP-V 是选择性专用化的另一个例子~\cite{chen2026topv}%
+。混合专家路由需要分支密集、依赖密集的 Top-K 操作，因此 TOP-V 在%
+ Ara RISC-V 向量处理器中增加可配置排序单元，并通过自定义 %
+\texttt{VTOPK} 指令暴露。报告实现相对于基于 RVV 的排序最高%
+达到 5.24$\times$ 加速。即使周边计算已经适合向量处理器，不规则且%
+依赖密集的工作仍可能适合专用硬件。
+
+集群内加速器采用互补路线。RedMulE 是 PULP RISC-V 集群中面%
+向浮点 GEMM 和类 GEMM 操作的紧耦合矩阵引擎~\cite{%
+tortorella2023redmule}。它将专用引擎连接到共享集群存储器%
+，并由可编程核协调运行。
+
+在这些系统中，专用化位于功能单元、集群协处理器或向量处理器；SMU 接口暴露在%
+线合并状态，以及交替标量状态的管理权。
+
+SMU 发出自己的 TCDM 请求，因此标准 Spatz/RVV 执行不受影响%
+。自定义接口将工作负载持久化配置（\texttt{OMCFG}）与反复执行（%
+\texttt{OMERGE}）分开，且仅将交替标量状态选择位放入硬件，从而使%
+专用化保持在规则向量数据通路之外，无需软件在每次合并时重复管理选择位。
+
+\subsection{AI 加速的软硬件协同设计}
+
+Gemmini 通过 RoCC 将可配置脉动阵列与 RISC-V 主机集成，并%
+通过完整软件栈评估~\cite{genc2021gemmini}。%
+Deeploy 将网络映射到异构 RISC-V 微控制器，在严格内存约束下为 %
+RV32 核、机器学习扩展和 NPU 生成优化 C 代码~\cite{%
+scherer2024deeploy}。两者面向完整加速器或编译器映射；本文接%
+口专门处理向量集群中持久化标量状态上的递推。对于在线注意力，软件保留分数构建、%
+分块管理、首块初始化、输出缓冲区管理和 RVV，而 SMU 处理标量递推及其交%
+替状态选择位。
+
+FPGA 注意力加速器涵盖多 FPGA 文本生成、密集或编译器生成的数据通路、%
+训练加速器以及稀疏性感知设计~\cite{hong2022dfx,%
+kabir2024famous,plagwitz2022trac,%
+shao2023treta,
+wang2024fastrans}。Edge-MoE 将任务级稀疏性应用于多任%
+务视觉 Transformer 加速器，TinyML 研究则评估异构部署流程~%
+\cite{sarkar2023edgemoe,wiese2025tinyml%
+}。其评估范围从加速器与算子测量延伸到部署；本文的问题是可编程向量集群应负责在%
+线合并的哪一部分。
+
+表~\ref{tab:related_work} 引用的报告结果仅用于说明各工%
+作的评估范围。
+
+\section{结论}
+
+本文提出面向 RISC-V 向量集群原生在线注意力的选择性软硬件映射：集群内标%
+量在线合并单元（SMU）处理依赖状态的递推，Spatz/RVV 保留规则的 $%
+D$ 元素输出更新。阶段感知混合精度与 \texttt{OMCFG}/%
+\texttt{OMERGE} 接口将非线性算术、持久化配置和交替标量状态选择%
+位分开。
+
+在匹配的 MMIO 控制原生工作负载中，该设计实现 8.524--17.784%
+$\times$ 的递推加速；测量的 Native Core 收益较小，其窗口%
+不包含 Q/K/V 加载和线性投影。相对于旧版标量设计，独立映射面积降低 %
+27.613\%，而布局前延迟代理指标上升。在两个显式 P 案例中，SMU 作%
+为通用逐行 Softmax 替代没有一致收益，这支持对原生在线合并结果作数据流%
+特定的解释。
+
+\bibliographystyle{IEEEtran}
+\bibliography{references}
+
+\end{document}
