@@ -302,6 +302,7 @@ module online_merge_fp16_delta_exp (
   logic signed [6:0] e_loser, e_winner, e_hi, e_lo, e_norm;
   logic [14:0] raw_hi, raw_lo, aligned_lo, magnitude;
   logic [5:0] align_shift;
+  logic [3:0] norm_shift;
   logic [15:0] rounded_sig, rounded_subnormal;
   logic [4:0] out_exp;
   logic [9:0] out_frac;
@@ -309,6 +310,29 @@ module online_merge_fp16_delta_exp (
   logic signed [6:0] address_exp;
   logic signed [7:0] address_shift;
   logic [31:0] scaled_abs;
+
+  // After carry normalization, a nonzero magnitude fits in 14 bits.  Encode
+  // its leading zeros once instead of cascading conditional shifts and
+  // exponent decrements through fifteen normalization iterations.
+  function automatic logic [3:0] leading_zeros_14(input logic [13:0] value);
+    casez (value)
+      14'b1?????????????: leading_zeros_14 = 4'd0;
+      14'b01????????????: leading_zeros_14 = 4'd1;
+      14'b001???????????: leading_zeros_14 = 4'd2;
+      14'b0001??????????: leading_zeros_14 = 4'd3;
+      14'b00001?????????: leading_zeros_14 = 4'd4;
+      14'b000001????????: leading_zeros_14 = 4'd5;
+      14'b0000001???????: leading_zeros_14 = 4'd6;
+      14'b00000001??????: leading_zeros_14 = 4'd7;
+      14'b000000001?????: leading_zeros_14 = 4'd8;
+      14'b0000000001????: leading_zeros_14 = 4'd9;
+      14'b00000000001???: leading_zeros_14 = 4'd10;
+      14'b000000000001??: leading_zeros_14 = 4'd11;
+      14'b0000000000001?: leading_zeros_14 = 4'd12;
+      14'b00000000000001: leading_zeros_14 = 4'd13;
+      default: leading_zeros_14 = 4'd0; // Zero bypasses normalization.
+    endcase
+  endfunction
 
   function automatic logic [15:0] round_shift_15(
     input logic [14:0] value,
@@ -366,6 +390,7 @@ module online_merge_fp16_delta_exp (
     aligned_lo = '0;
     magnitude = '0;
     align_shift = '0;
+    norm_shift = '0;
     rounded_sig = '0;
     rounded_subnormal = '0;
     out_exp = '0;
@@ -429,12 +454,13 @@ module online_merge_fp16_delta_exp (
               (magnitude[0] ? 15'd1 : 15'd0);
           e_norm = e_norm + 1'b1;
         end
-        for (int unsigned norm_iter = 0; norm_iter < 15; norm_iter++) begin
-          if ((magnitude < 15'd8192) && (e_norm > -7'sd40)) begin
-            magnitude = magnitude << 1;
-            e_norm = e_norm - 1'b1;
-          end
-        end
+        // e_hi >= -24 for every finite FP16 input.  The optional carry step
+        // only increments it; at most 13 left shifts are needed for a
+        // nonzero 14-bit magnitude.  Thus e_norm >= -37 and neither the old
+        // -40 floor nor its 15-iteration limit can truncate normalization.
+        norm_shift = leading_zeros_14(magnitude[13:0]);
+        magnitude = magnitude << norm_shift;
+        e_norm = e_norm - $signed({3'b000, norm_shift});
         rounded_sig = round_shift_15(magnitude, 3);
         if (rounded_sig >= 16'd2048) begin
           rounded_sig = rounded_sig >> 1;
