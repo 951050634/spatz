@@ -120,6 +120,39 @@
             "description": "Base hart id of the cluster. All cores get the respective cluster id plus their cluster position as the final `hart_id`.",
             "default": 0
         },
+        "smu": {
+            "type": "object",
+            "description": "Online-merge accelerator implementation parameters.",
+            "default": {
+                "enable": true,
+                "precision_support": 2,
+                "scalar_only": false,
+                "mixed_normalization_reciprocal": false
+            },
+            "properties": {
+                "enable": {
+                    "type": "boolean",
+                    "description": "Include the SMU OMCFG/OMERGE adapter and update engine.",
+                    "default": true
+                },
+                "precision_support": {
+                    "type": "integer",
+                    "enum": [0, 1, 2],
+                    "description": "Update-engine precision support: legacy, mixed, or both.",
+                    "default": 2
+                },
+                "scalar_only": {
+                    "type": "boolean",
+                    "description": "Prune the SMU vector-update datapath.",
+                    "default": false
+                },
+                "mixed_normalization_reciprocal": {
+                    "type": "boolean",
+                    "description": "Use the mixed-normalization reciprocal implementation.",
+                    "default": false
+                }
+            }
+        },
         "mode": {
             "type": "string",
             "description": "Supported mode by the processor, can be msu.",

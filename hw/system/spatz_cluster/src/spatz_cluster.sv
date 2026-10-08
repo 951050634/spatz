@@ -104,7 +104,12 @@ module spatz_cluster
     // value here. This only applies to the TCDM. The instruction cache macros will break!
     // In case you are using the `RegisterTCDMCuts` feature this adds an
     // additional cycle latency, which is taken into account here.
-    parameter int                     unsigned               MemoryMacroLatency                 = 1 + RegisterTCDMCuts
+    parameter int                     unsigned               MemoryMacroLatency                 = 1 + RegisterTCDMCuts,
+    /// SMU implementation parameters. Full SMU is retained for explicit ablation.
+    parameter bit                                            EnableSmu                         = 1'b1,
+    parameter int                     unsigned               SmuPrecisionSupport                = 2,
+    parameter bit                                            SmuScalarOnly                      = 1'b0,
+    parameter bit                                            SmuMixedNormalizationReciprocal    = 1'b0
   ) (
     /// System clock.
     input  logic                             clk_i,
@@ -726,6 +731,7 @@ module spatz_cluster
     merge_req.q.user.req_id = '0;
   end
 
+  if (EnableSmu) begin : gen_smu
   stream_arbiter #(
     .DATA_T (acc_issue_req_t),
     .N_INP  (NrCores)
@@ -836,7 +842,10 @@ module spatz_cluster
   online_merge_update_engine #(
     .AddrWidth  (TCDMAddrWidth),
     .DataWidth  (NarrowDataWidth),
-    .MixedNormalizationReciprocal (MixedNormalizationReciprocalCfg),
+    .PrecisionSupport (SmuPrecisionSupport),
+    .ScalarOnly (SmuScalarOnly),
+    .MixedNormalizationReciprocal (
+        SmuMixedNormalizationReciprocal || MixedNormalizationReciprocalCfg),
     .tcdm_req_t (tcdm_req_t),
     .tcdm_rsp_t (tcdm_rsp_t)
   ) i_online_merge_update_engine (
@@ -865,6 +874,15 @@ module spatz_cluster
     .tcdm_req_o         (merge_req_raw),
     .tcdm_rsp_i         (merge_rsp)
   );
+  end else begin : gen_smu_disabled
+    assign smu_core_qready = '0;
+    assign smu_core_resp = '0;
+    assign smu_core_pvalid = '0;
+    assign merge_req_raw = '0;
+    assign merge_busy = 1'b0;
+    assign merge_done = 1'b0;
+    assign merge_error = 1'b0;
+  end
 
   hive_req_t [NrCores-1:0] hive_req;
   hive_rsp_t [NrCores-1:0] hive_rsp;

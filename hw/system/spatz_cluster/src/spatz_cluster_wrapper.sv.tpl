@@ -195,6 +195,10 @@ module ${cfg['name']}_wrapper
   parameter int unsigned AxiInIdWidth  = ${cfg['pkg_name']}::SpatzAxiIdInWidth,
   parameter int unsigned AxiOutIdWidth = ${cfg['pkg_name']}::SpatzAxiIdOutWidth,
   parameter int unsigned IwcAxiIdOutWidth = 3,
+  parameter bit EnableSmu = ${int(cfg['smu']['enable'])},
+  parameter int unsigned SmuPrecisionSupport = ${cfg['smu']['precision_support']},
+  parameter bit SmuScalarOnly = ${int(cfg['smu']['scalar_only'])},
+  parameter bit SmuMixedNormalizationReciprocal = ${int(cfg['smu']['mixed_normalization_reciprocal'])},
 % if cfg['axi_isolate_enable']:
   parameter int unsigned AxiMaxOutTrans = ${cfg['trans']},
 % endif
@@ -505,6 +509,10 @@ module ${cfg['name']}_wrapper
     .BootAddr (${to_sv_hex(cfg['boot_addr'], 32)}),
     .ClusterPeriphSize (${cfg['cluster_periph_size']}),
     .NrCores (${cfg['nr_cores']}),
+    .EnableSmu (EnableSmu),
+    .SmuPrecisionSupport (SmuPrecisionSupport),
+    .SmuScalarOnly (SmuScalarOnly),
+    .SmuMixedNormalizationReciprocal (SmuMixedNormalizationReciprocal),
     .TCDMDepth (${cfg['tcdm']['depth']}),
     .TCDMSize (TCDMSize),
     .NrBanks (${cfg['tcdm']['banks']}),
