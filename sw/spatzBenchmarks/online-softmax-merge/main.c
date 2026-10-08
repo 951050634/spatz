@@ -18,7 +18,8 @@
 #define PRINTF(...) printf(__VA_ARGS__)
 
 #if defined(ONLINE_MERGE_IMPLEMENTATION_SELECT) && \
-    ONLINE_MERGE_IMPLEMENTATION_SELECT == 6
+    (ONLINE_MERGE_IMPLEMENTATION_SELECT == 6 || \
+     ONLINE_MERGE_IMPLEMENTATION_SELECT == 7)
 #define ONLINE_MERGE_TOL 1.5e-2f
 #else
 #define ONLINE_MERGE_TOL 1.0e-3f
@@ -49,6 +50,7 @@
 #define ONLINE_MERGE_IMPLEMENTATION_A1 4u
 #define ONLINE_MERGE_IMPLEMENTATION_MODE_COMPARE 5u
 #define ONLINE_MERGE_IMPLEMENTATION_A1_MIXED 6u
+#define ONLINE_MERGE_IMPLEMENTATION_A1_MIXED_CONCURRENCY 7u
 
 #define ONLINE_MERGE_COUNTER_MEMORY 0
 #define ONLINE_MERGE_COUNTER_INSTRUCTIONS 1
@@ -69,7 +71,7 @@ _Static_assert(ONLINE_MERGE_CASE_REPEATS == 1u,
 _Static_assert(ONLINE_MERGE_CASE_REPEATS <= ONLINE_MERGE_MAX_REPEATS,
                "online merge repeat count exceeds local sample storage");
 _Static_assert(ONLINE_MERGE_IMPLEMENTATION_SELECT <=
-                   ONLINE_MERGE_IMPLEMENTATION_A1_MIXED,
+                   ONLINE_MERGE_IMPLEMENTATION_A1_MIXED_CONCURRENCY,
                "invalid online merge implementation selector");
 _Static_assert(ONLINE_MERGE_COUNTER_PROFILE == ONLINE_MERGE_COUNTER_MEMORY ||
                    ONLINE_MERGE_COUNTER_PROFILE ==
@@ -324,6 +326,24 @@ static void clear_output(online_merge_buffers_t *buffers) {
   }
 }
 
+static void clear_output_preserve_weights(online_merge_buffers_t *buffers) {
+  uint32_t vectors = buffers->n * buffers->d;
+  for (uint32_t i = 0; i < buffers->n; i++) {
+    buffers->m_out[i] = 0.0f;
+    buffers->l_out[i] = 0.0f;
+  }
+  for (uint32_t i = 0; i < vectors; i++) {
+    buffers->o_out[i] = 0.0f;
+  }
+}
+
+static void clear_vector_output(online_merge_buffers_t *buffers) {
+  uint32_t vectors = buffers->n * buffers->d;
+  for (uint32_t i = 0; i < vectors; i++) {
+    buffers->o_out[i] = 0.0f;
+  }
+}
+
 static void online_merge_start_mode(const online_merge_buffers_t *buffers,
                                     online_merge_mode_t mode) {
   *cluster_reg(SPATZ_CLUSTER_PERIPHERAL_MERGE_SRC_M_OLD_REG_OFFSET) =
@@ -550,6 +570,21 @@ static online_merge_metrics_t check_output(
   return metrics;
 }
 
+static online_merge_metrics_t check_state_output(
+    const online_merge_buffers_t *buffers) {
+  online_merge_metrics_t metrics = {
+      .max_rel_denominator = 1.0f,
+      .passed = 1,
+  };
+  for (uint32_t row = 0; row < buffers->n; row++) {
+    record_value(&metrics, 0, row, 0, buffers->m_out[row],
+                 buffers->m_ref[row]);
+    record_value(&metrics, 1, row, 0, buffers->l_out[row],
+                 buffers->l_ref[row]);
+  }
+  return metrics;
+}
+
 static void require_exact_value(online_merge_metrics_t *metrics,
                                 uint32_t component, uint32_t row,
                                 uint32_t col, float actual, float expected) {
@@ -670,6 +705,10 @@ static const char *wait_status(online_merge_wait_t wait_result) {
   return "pass";
 }
 
+static void print_first_failure(const char *implementation,
+                                const online_merge_buffers_t *buffers,
+                                const online_merge_metrics_t *metrics);
+
 static int run_a1_mode(online_merge_buffers_t *buffers,
                        online_merge_sample_t *samples,
                        online_merge_metrics_t *metrics,
@@ -733,6 +772,185 @@ static int run_a1_mixed(online_merge_buffers_t *buffers,
   return run_a1_mode(buffers, samples, metrics,
                      ONLINE_MERGE_MODE_MIXED_SCALAR,
                      ONLINE_MERGE_IMPLEMENTATION_A1_MIXED);
+}
+
+static void save_weight_bits(const online_merge_buffers_t *buffers,
+                             uint32_t *snapshot) {
+  for (uint32_t row = 0; row < buffers->n; row++) {
+    snapshot[row] = float_bits(buffers->old_weight[row]);
+    snapshot[buffers->n + row] = float_bits(buffers->tile_weight[row]);
+  }
+}
+
+static int weights_match_bits(const online_merge_buffers_t *buffers,
+                              const uint32_t *snapshot) {
+  for (uint32_t row = 0; row < buffers->n; row++) {
+    if (float_bits(buffers->old_weight[row]) != snapshot[row] ||
+        float_bits(buffers->tile_weight[row]) != snapshot[buffers->n + row]) {
+      return 0;
+    }
+  }
+  return 1;
+}
+
+static void print_concurrency_result(
+    const char *scenario, uint64_t elapsed_cycles, uint64_t rvv_cycles,
+    uint64_t control_drain_cycles, const char *counter_window,
+    const char *elapsed_scope,
+    const online_merge_sample_t *sample,
+    const online_merge_metrics_t *metrics, int weights_exact,
+    int fsm_invocation, int passed) {
+  PRINTF("OM_CONCURRENCY {\"scenario\":\"%s\","
+         "\"operation\":\"SMU operation via MMIO\","
+         "\"mode\":3,\"status\":\"%s\","
+         "\"fsm_invocation\":%d,"
+         "\"elapsed_cycles\":%llu,\"elapsed_scope\":\"%s\","
+         "\"rvv_update_plus_counter_setup_cycles\":%llu,"
+         "\"control_drain_after_rvv_cycles\":%llu,"
+         "\"tcdm_accessed\":%u,\"tcdm_congested\":%u,"
+         "\"counter_window\":\"%s\","
+         "\"counter_scope\":\"cluster 12-input aggregate port-cycles\","
+         "\"golden_scope\":\"%s\",\"golden_checked\":%u,"
+         "\"golden_pass\":%u,\"weights_bitexact\":%u}\n",
+         scenario, passed ? "pass" : "fail",
+         fsm_invocation,
+         (unsigned long long)elapsed_cycles, elapsed_scope,
+         (unsigned long long)rvv_cycles,
+         (unsigned long long)control_drain_cycles, sample->tcdm_accessed,
+         sample->tcdm_congested, counter_window,
+         metrics->checked == 2u * ONLINE_MERGE_CASE_N ? "m/l" : "m/l/O",
+         metrics->checked, metrics->passed, (uint32_t)weights_exact);
+}
+
+// This focused measurement uses the real mixed-Scalar setup and golden data.
+// C0/C3/C4 are MMIO-launched SMU, RVV-only, and overlapping RVV+SMU;
+// it is a controlled idempotent replay, not an attention scheduling policy.
+static int run_a1_mixed_concurrency(online_merge_buffers_t *buffers) {
+  uint32_t weight_snapshot[2u * ONLINE_MERGE_CASE_N];
+  int saw_busy = 0;
+  clear_output(buffers);
+  online_merge_start_mode(buffers, ONLINE_MERGE_MODE_MIXED_SCALAR);
+  online_merge_wait_t wait_result = smu_wait(&saw_busy);
+  if (wait_result != ONLINE_MERGE_WAIT_OK) {
+    PRINTF("OM_CONCURRENCY {\"scenario\":\"warmup\","
+           "\"launch\":\"MMIO\",\"mode\":3,\"status\":\"%s\"}\n",
+           wait_status(wait_result));
+    return -1;
+  }
+  run_rvv_weighted_update(buffers);
+  online_merge_metrics_t warmup_metrics = check_output(buffers);
+  if (!warmup_metrics.passed) {
+    print_first_failure("A1-mixed-concurrency-warmup", buffers,
+                        &warmup_metrics);
+    return -1;
+  }
+  save_weight_bits(buffers, weight_snapshot);
+
+  // C0: MMIO-launched SMU operation from recurring config writes through
+  // completion polling; this is control-inclusive latency, not pure engine
+  // latency. OM_FSM reports engine-active cycles separately.
+  online_merge_sample_t smu_sample = {0};
+  clear_output(buffers);
+  start_perf_counters();
+  trace_marker_start(ONLINE_MERGE_IMPLEMENTATION_A1_MIXED_CONCURRENCY, 0u);
+  uint64_t smu_start = benchmark_get_cycle64();
+  online_merge_start_mode(buffers, ONLINE_MERGE_MODE_MIXED_SCALAR);
+  wait_result = smu_wait(&saw_busy);
+  uint64_t smu_end = benchmark_get_cycle64();
+  trace_marker_stop(ONLINE_MERGE_IMPLEMENTATION_A1_MIXED_CONCURRENCY, 0u);
+  smu_sample.cycles = smu_end - smu_start;
+  smu_sample.saw_busy = saw_busy;
+  smu_sample.status = wait_status(wait_result);
+  stop_perf_counters(&smu_sample);
+  online_merge_metrics_t state_metrics = check_state_output(buffers);
+  int smu_weights_exact = weights_match_bits(buffers, weight_snapshot);
+  int smu_passed = wait_result == ONLINE_MERGE_WAIT_OK &&
+                   state_metrics.passed && smu_weights_exact;
+  print_concurrency_result("C0_SMU_ALONE_MMIO", smu_sample.cycles, 0u, 0u,
+                           "MMIO_launch_and_poll",
+                           "MMIO launch/config plus done polling", &smu_sample,
+                           &state_metrics, smu_weights_exact, 1, smu_passed);
+  if (!smu_passed) {
+    print_first_failure("C0_SMU_ALONE_MMIO", buffers, &state_metrics);
+    return -1;
+  }
+
+  // C3: the same RVV update and addresses with the warm, golden weights.
+  online_merge_sample_t rvv_sample = {0};
+  clear_vector_output(buffers);
+  trace_marker_start(ONLINE_MERGE_IMPLEMENTATION_A1_MIXED_CONCURRENCY + 1u,
+                     0u);
+  uint64_t rvv_start = benchmark_get_cycle64();
+  start_perf_counters();
+  run_rvv_weighted_update(buffers);
+  uint64_t rvv_end = benchmark_get_cycle64();
+  stop_perf_counters(&rvv_sample);
+  trace_marker_stop(ONLINE_MERGE_IMPLEMENTATION_A1_MIXED_CONCURRENCY + 1u,
+                    0u);
+  rvv_sample.cycles = rvv_end - rvv_start;
+  rvv_sample.status = "pass";
+  online_merge_metrics_t rvv_metrics = check_output(buffers);
+  int rvv_weights_exact = weights_match_bits(buffers, weight_snapshot);
+  int rvv_passed = rvv_metrics.passed && rvv_weights_exact;
+  print_concurrency_result("C3_RVV_ALONE", rvv_sample.cycles,
+                           rvv_sample.cycles, 0u, "RVV_update_only",
+                           "RVV update plus counter setup",
+                           &rvv_sample, &rvv_metrics, rvv_weights_exact, -1,
+                           rvv_passed);
+  if (!rvv_passed) {
+    print_first_failure("C3_RVV_ALONE", buffers, &rvv_metrics);
+    return -1;
+  }
+
+  // C4: preserve warmup weights while the engine rewrites identical values.
+  // The trace window includes its marker and counter setup/teardown; the
+  // separately reported RVV timer includes counter setup but excludes drain.
+  online_merge_sample_t overlap_sample = {0};
+  clear_output_preserve_weights(buffers);
+  uint64_t overlap_start = benchmark_get_cycle64();
+  online_merge_start_mode(buffers, ONLINE_MERGE_MODE_MIXED_SCALAR);
+  trace_marker_start(ONLINE_MERGE_IMPLEMENTATION_A1_MIXED_CONCURRENCY + 2u,
+                     0u);
+  uint64_t concurrent_rvv_start = benchmark_get_cycle64();
+  start_perf_counters();
+  run_rvv_weighted_update(buffers);
+  uint64_t concurrent_rvv_end = benchmark_get_cycle64();
+  stop_perf_counters(&overlap_sample);
+  trace_marker_stop(ONLINE_MERGE_IMPLEMENTATION_A1_MIXED_CONCURRENCY + 2u,
+                    0u);
+  wait_result = smu_wait(&saw_busy);
+  uint64_t overlap_end = benchmark_get_cycle64();
+  overlap_sample.cycles = overlap_end - overlap_start;
+  overlap_sample.saw_busy = saw_busy;
+  overlap_sample.status = wait_status(wait_result);
+  uint64_t concurrent_rvv_cycles =
+      concurrent_rvv_end - concurrent_rvv_start;
+  uint64_t smu_drain_cycles = overlap_end - concurrent_rvv_end;
+  online_merge_metrics_t overlap_metrics = check_output(buffers);
+  int overlap_weights_exact = weights_match_bits(buffers, weight_snapshot);
+  int overlap_passed = wait_result == ONLINE_MERGE_WAIT_OK &&
+                       overlap_metrics.passed && overlap_weights_exact;
+  print_concurrency_result("C4_RVV_DURING_SMU", overlap_sample.cycles,
+                           concurrent_rvv_cycles, smu_drain_cycles,
+                           "RVV_update_only",
+                           "MMIO launch/config, RVV update, and done polling",
+                           &overlap_sample,
+                           &overlap_metrics, overlap_weights_exact, 2,
+                           overlap_passed);
+  if (!overlap_passed) {
+    print_first_failure("C4_RVV_DURING_SMU", buffers, &overlap_metrics);
+    return -1;
+  }
+  PRINTF("OM_CONCURRENCY_SUMMARY {\"rvv_alone_cycles\":%llu,"
+         "\"rvv_during_smu_cycles\":%llu,\"rvv_cycle_delta\":%lld,"
+         "\"smu_alone_launch_to_done_cycles\":%llu,"
+         "\"overlap_launch_to_both_done_cycles\":%llu}\n",
+         (unsigned long long)rvv_sample.cycles,
+         (unsigned long long)concurrent_rvv_cycles,
+         (long long)concurrent_rvv_cycles - (long long)rvv_sample.cycles,
+         (unsigned long long)smu_sample.cycles,
+         (unsigned long long)overlap_sample.cycles);
+  return 0;
 }
 
 static int run_b3(online_merge_buffers_t *buffers,
@@ -908,6 +1126,9 @@ static void print_terminal_status(const online_merge_buffers_t *buffers,
       : ONLINE_MERGE_IMPLEMENTATION_SELECT ==
                 ONLINE_MERGE_IMPLEMENTATION_MODE_COMPARE
           ? "A1/mode-compare"
+      : ONLINE_MERGE_IMPLEMENTATION_SELECT ==
+                ONLINE_MERGE_IMPLEMENTATION_A1_MIXED_CONCURRENCY
+          ? "A1-mixed-concurrency"
           : "B3";
   print_result(implementation, -1, buffers, &sample, &metrics, status);
 #endif
@@ -978,6 +1199,15 @@ int main(void) {
     snrt_cluster_hw_barrier();
     return 0;
   }
+
+#if ONLINE_MERGE_IMPLEMENTATION_SELECT == \
+    ONLINE_MERGE_IMPLEMENTATION_A1_MIXED_CONCURRENCY
+  int concurrency_result = run_a1_mixed_concurrency(&buffers);
+  PRINTF("online-softmax-merge-concurrency %s\n",
+         concurrency_result == 0 ? "PASS" : "FAILURE");
+  snrt_cluster_hw_barrier();
+  return concurrency_result == 0 ? 0 : -1;
+#endif
 
 #if ONLINE_MERGE_IMPLEMENTATION_SELECT != 0
   if (ONLINE_MERGE_IMPLEMENTATION_SELECT ==
@@ -1062,6 +1292,10 @@ int main(void) {
              ONLINE_MERGE_IMPLEMENTATION_A1_MIXED) {
     implementation = "A1-mixed";
     run_result = run_a1_mixed(&buffers, samples, metrics);
+  } else if (ONLINE_MERGE_IMPLEMENTATION_SELECT ==
+             ONLINE_MERGE_IMPLEMENTATION_A1_MIXED_CONCURRENCY) {
+    implementation = "A1-mixed-concurrency";
+    run_result = run_a1_mixed_concurrency(&buffers);
   } else {
     implementation = "B3";
     run_result = run_b3(&buffers, samples, metrics);

@@ -190,6 +190,9 @@ add_online_merge_benchmark(online-softmax-merge-b2r 2)
 add_online_merge_benchmark(online-softmax-merge-a2 3)
 add_online_merge_benchmark(online-softmax-merge-a1 4)
 add_online_merge_benchmark(online-softmax-merge-a1-mixed 6)
+# Focused current-cluster overlap measurement using the same mixed-Scalar
+# packing and goldens; one simulator process reports C0/C3/C4 once each.
+add_online_merge_benchmark(online-softmax-merge-a1-mixed-concurrency 7)
 # Focused integration test: one frozen scalar-interface vector is sent
 # through legacy Scalar mode (1) and proposed mixed Scalar mode (3).
 add_online_merge_benchmark(online-softmax-merge-mode-compare 5)
