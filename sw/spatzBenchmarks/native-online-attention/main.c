@@ -567,6 +567,9 @@ static int run_attention(phase5_buffers_t *buffers, phase5_cycles_t *cycles) {
   print_phase8c_config_state(d);
 #endif
 
+  // The status marker brackets the native-core timer for a gated
+  // activity trace. Its MMIO overhead remains outside the cycle count.
+  start_kernel();
   uint64_t core_start = benchmark_get_cycle64();
   for (uint32_t tile = 0; tile < tile_count; tile++) {
     uint32_t key_start = tile * PHASE5_TILE_KEYS;
@@ -665,6 +668,7 @@ static int run_attention(phase5_buffers_t *buffers, phase5_cycles_t *cycles) {
     cycles->output_copy_cycles = benchmark_get_cycle64() - stage_start;
   }
   cycles->total_cycles = benchmark_get_cycle64() - core_start;
+  stop_kernel();
 
   // Validation and digest work are deliberately outside the native-core
   // timer.  The timed final stage is only the output copy above; diagnostics
