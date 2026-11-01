@@ -29,6 +29,10 @@ install
 
 # local synthesis work artifacts (not committed)
 work-*/
+/archive/
+
+# Experiment scripts, results and evidence are maintained locally
+/experiments/
 
 # Python caches
 __pycache__/
@@ -43,3 +47,17 @@ compile_commands.json
 link_command.txt
 *.disasm
 .rtlbinary
+
+# Local server source package and its copied timing constraints
+/Project/
+/port.tcl
+
+# Local manuscript delivery copies and handoff archives
+/paper/scalar-smu-current-20261027/
+/paper/scalar-smu-current-20261027.zip
+/paper/scalar-smu-en-short-r1/
+/paper/scalar-smu-zh-r2/
+/paper_smu_figure2/
+/paper_smu_figure2.zip
+/paper_smu_handoff/
+/paper_smu_handoff.zip

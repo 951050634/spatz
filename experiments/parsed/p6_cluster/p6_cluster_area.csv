@@ -1,3 +1,0 @@
-kind,config,mapped_cell_count,mapped_area_liberty_units,cluster_area_status,note
-standalone_increment,C1_SCALAR,73505,77103.292,UNAVAILABLE,exact P0-6 3-trial standalone SMU result; no cluster overhead
-standalone_increment,C2_FULL,107372,114713.298,UNAVAILABLE,exact P0-6 3-trial standalone SMU result; no cluster overhead
