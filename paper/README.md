@@ -1,36 +1,27 @@
-# Scalar SMU IEEE manuscript
+# Scalar SMU: current English manuscript
 
-This directory retains the latest manuscript, revision v5 (29 September 2026).
-The manuscript text, bibliography, figures, and editable figure sources are
-preserved without content changes.
+This directory contains the 27 October 2026 English revision of
+“Scalar SMU: Selective Recurrence Acceleration for Online Attention in a
+RISC-V Vector Cluster”. It replaces the earlier long manuscript here.
+The manuscript text, bibliography and figure assets are copied unchanged
+from the current delivery package.
 
-- `main.tex`: editable manuscript.
-- `references.bib`: bibliography.
-- `figure/`: figure assets and editable sources.
-- `main.pdf`: freshly compiled reading copy.
-- `main-zh.tex`: complete Chinese translation of the manuscript.
-- `main-zh.pdf`: compiled Chinese reading copy.
-- `translation-notes.md`: translation scope, terminology, and verification.
-- `build/`: compilation outputs and log.
+- `main.tex`, `references.bib`: manuscript and bibliography.
+- `figure/`: three required figures and the editable architecture source.
+- `IEEEtran.cls`, `IEEEtran.bst`: bundled class and bibliography style.
+- `main.pdf`: reading copy, refreshed after a successful build.
+- `build/`: ignored compiler outputs.
 
-Run `make` to compile `build/main.pdf`. To refresh the reading copy, run
-`cp build/main.pdf main.pdf` after a successful build.
+Run `make -C paper` from the repository root (or `make` here).
+Dependencies: TeX Live, latexmk, pdfLaTeX, BibTeX and the packages named in
+`main.tex`. Run `make -C paper clean` to remove compiler outputs.
 
-Run `make zh` to compile the Chinese version with LuaLaTeX and BibTeX.
-The target writes `build/zh/main-zh.pdf` and refreshes `main-zh.pdf`.
-Chinese typesetting requires `ctex`, `luatexja`, and the Noto CJK fonts.
+Earlier English and Chinese manuscripts, delivery packages, revision notes
+and the previous build directory are preserved in
+`../archive/paper-before-20261101/`. The original current delivery package
+there retains its evidence CSVs, provenance notes and independent review.
+The review scope and limitations remain those stated in that report;
+this directory cleanup does not establish new scientific validation.
 
-The generic IEEEtran journal layout does not target a named venue.
-
-## Chinese manuscript (`main-zh.tex`)
-
-Consolidated Chinese version of the manuscript, task `scalar-smu-20261011`.
-It carries the Scalar SMU + RVV design as the main contribution, with Full SMU
-kept only as the partitioning ablation. No new experiments were added and no
-baseline or measurement window was changed during the Chinese revision rounds.
-The `scalar-smu-zh-r1` snapshot package that preceded it was folded into this
-file and removed.
-
-Reference verification is still open for four entries (`ref1`, `ref2`, `ref4`,
-`ref14`), which have pending Crossref checks. This records an unfinished check,
-not a finding that the citations are wrong.
+The former root `run-archive/` is now `../archive/run-archive/`.
+Historical paths inside archived reports are preserved as recorded.

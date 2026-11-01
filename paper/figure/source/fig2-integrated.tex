@@ -1,0 +1,77 @@
+\documentclass{article}
+\usepackage[paperwidth=18.2cm,paperheight=8cm,margin=0pt,noheadfoot]{geometry}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,calc}
+\definecolor{smuteal}{HTML}{DCEFEB}
+\definecolor{smustroke}{HTML}{168C88}
+\definecolor{rvvblue}{HTML}{E6EEF8}
+\definecolor{rvvstroke}{HTML}{4C78A8}
+\definecolor{memgray}{HTML}{F0F2F4}
+\definecolor{memstroke}{HTML}{89939C}
+\definecolor{ink}{HTML}{273440}
+\pagestyle{empty}
+\begin{document}
+\begin{tikzpicture}[remember picture,overlay,shift={(current page.center)},xshift=-8.9cm,yshift=-3.3cm,
+  x=1cm,y=1cm,
+  font=\sffamily\small,
+  block/.style={draw=ink,rounded corners=2pt,thick,align=center,
+                minimum height=1.08cm,inner sep=5pt,text=ink},
+  control/.style={block,fill=white,minimum width=3.05cm,text width=2.82cm},
+  memory/.style={block,fill=memgray,draw=memstroke,minimum height=.64cm,
+                 minimum width=16.25cm},
+  smu/.style={block,fill=smuteal,draw=smustroke,minimum width=3.45cm,text width=3.12cm},
+  rvv/.style={block,fill=rvvblue,draw=rvvstroke,minimum width=3.35cm,text width=3.02cm},
+  stage/.style={block,draw=memstroke,fill=white,minimum width=3.12cm,
+                minimum height=.91cm,inner sep=3pt,text width=2.84cm,font=\sffamily\scriptsize},
+  flow/.style={-{Latex[length=2.2mm]},thick,draw=ink},
+  both/.style={{Latex[length=2mm]}-{Latex[length=2mm]},thick,draw=ink},
+  smuflow/.style={-{Latex[length=2mm]},thick,draw=smustroke},
+  rvvflow/.style={-{Latex[length=2mm]},thick,draw=rvvstroke},
+  note/.style={font=\sffamily\scriptsize,text=ink,align=center}
+]
+% System-level control and compute blocks
+\node[control,minimum width=3.25cm] (sw) at (1.85,4.25)
+  {\textbf{Snitch / software}\\Initialize first tile; schedule later tiles};
+\node[control] (cmd) at (6.00,4.25)
+  {\textbf{OMCFG / OMERGE}\\Persistent context\\OMERGE: all $N$ rows per tile};
+\node[smu] (unit) at (10.15,4.25)
+  {\textbf{Scalar SMU}\\$(m,l)$ recurrence; scalar A/B state};
+\node[rvv] (vec) at (14.45,4.25)
+  {\textbf{Spatz / RVV}\\Output update parallel across $D$};
+
+\draw[flow] (sw.east) -- (cmd.west);
+\draw[both] (cmd.east) -- (unit.west);
+
+% Shared FP32 TCDM is the only data path between SMU and vector update.
+\node[memory] (tcdm) at (8.55,2.32)
+  {\textbf{Shared TCDM}\\FP32 state, tile statistics, weights, and output buffers};
+\draw[both] (unit.south) -- node[right,note]{state / weights} (tcdm.north -| unit.south);
+\draw[both] (vec.south) -- node[right,note]{weights / output} (tcdm.north -| vec.south);
+\draw[flow,dashed] (sw.south) -- (tcdm.north -| sw.south);
+
+\node[note] at (8.55,1.66)
+  {Weights reach RVV through TCDM; software schedules the vector update.};
+
+% Compact view of the SMU numerical stages (conceptual stages, not pipeline depth).
+\node[stage] (s1) at (1.65,.72)
+  {\textbf{1 \quad State transform}\\FP32 state $\rightarrow$ FP16 RNE $m,\Delta$};
+\node[stage] (s2) at (5.15,.72)
+  {\textbf{2 \quad Exponential scale}\\Q1.14 LUT (256 entries); $\Delta<-8\rightarrow0$};
+\node[stage] (s3) at (8.65,.72)
+  {\textbf{3 \quad Normalization sum}\\Unsigned Q16.32 accumulation};
+\node[stage] (s4) at (12.15,.72)
+  {\textbf{4 \quad Reciprocal}\\FP16 denominator; Q1.15 LUT + interpolation};
+\node[stage] (s5) at (15.65,.72)
+  {\textbf{5 \quad Weight generation}\\Shared $48\times16$ mul.; FP16 weights $\rightarrow$ FP32};
+
+\draw[flow] (s1.east) -- (s2.west);
+\draw[flow] (s2.east) -- (s3.west);
+\draw[flow] (s3.east) -- (s4.west);
+\draw[flow] (s4.east) -- (s5.west);
+\node[note] at (8.9,.03)
+  {Finite-domain contract: rounded denominator is positive and finite; Q16.32 remains in range; FP16 difference overflow is unsupported.};
+\node[note] at (8.9,-.34)
+  {Numerical stages are conceptual; this strip does not imply pipeline depth or overlap.};
+\end{tikzpicture}
+\null
+\end{document}
