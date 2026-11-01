@@ -264,6 +264,7 @@ target_link_libraries(
 set(PHASE5_N "8" CACHE STRING "Phase 5 native attention sequence length")
 set(PHASE5_D "32" CACHE STRING "Phase 5 native attention head dimension")
 set(PHASE5_SEED "1" CACHE STRING "Phase 5 native attention deterministic seed")
+set(PHASE5_TILE_KEYS "4" CACHE STRING "Native attention keys per tile")
 set(PHASE5_DUMP_OUTPUT "0" CACHE STRING
     "Emit all final O FP32 bits for the Phase 5 collector")
 string(CONCAT PHASE5_CASE_SLUG
@@ -279,6 +280,7 @@ add_custom_command(
           --n ${PHASE5_N}
           --d ${PHASE5_D}
           --seed ${PHASE5_SEED}
+          --tile-keys ${PHASE5_TILE_KEYS}
           --output "${PHASE5_CASE_HEADER}"
   DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/../../experiments/phase4_quantized_attention/attention_model.py"
@@ -308,6 +310,7 @@ endfunction()
 
 add_phase5_native_benchmark(native-online-attention-software 0)
 add_phase5_native_benchmark(native-online-attention-smu 1)
+add_phase5_native_benchmark(native-online-attention-full-smu 3)
 add_phase5_native_benchmark(native-online-attention-omerge 2)
 
 # Phase 8C matched configuration-plane pair.  Both targets use the same

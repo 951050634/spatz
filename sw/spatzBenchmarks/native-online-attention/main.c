@@ -29,6 +29,7 @@
 #define PHASE5_SOFTWARE 0
 #define PHASE5_SMU 1
 #define PHASE5_ISA 2
+#define PHASE5_FULL_SMU 3
 #define PHASE5_MAX_POLLS 1000000u
 #define PHASE5_STACK_LOG2 13
 #define PHASE5_ALLOC_ALIGN 256u
@@ -60,7 +61,8 @@ static char phase5_output_buffer[PHASE5_OUTPUT_BUFFER_BYTES];
 
 _Static_assert(PHASE5_IMPLEMENTATION == PHASE5_SOFTWARE ||
                    PHASE5_IMPLEMENTATION == PHASE5_SMU ||
-                   PHASE5_IMPLEMENTATION == PHASE5_ISA,
+                   PHASE5_IMPLEMENTATION == PHASE5_ISA ||
+                   PHASE5_IMPLEMENTATION == PHASE5_FULL_SMU,
                "invalid Phase 5 implementation selector");
 _Static_assert(PHASE8C_CONFIG_PATH == PHASE8C_CONFIG_MMIO ||
                    PHASE8C_CONFIG_PATH == PHASE8C_CONFIG_OMCFG,
@@ -394,7 +396,11 @@ static void smu_start(const phase5_buffers_t *buffers, uint32_t n,
   *cluster_reg(SPATZ_CLUSTER_PERIPHERAL_MERGE_STRIDE_REG_OFFSET) =
       d * sizeof(float);
   *cluster_reg(SPATZ_CLUSTER_PERIPHERAL_MERGE_MODE_REG_OFFSET) =
+#if PHASE5_IMPLEMENTATION == PHASE5_FULL_SMU
+      (uint32_t)ONLINE_MERGE_MODE_MIXED_FULL;
+#else
       (uint32_t)ONLINE_MERGE_MODE_MIXED_SCALAR;
+#endif
   *cluster_reg(SPATZ_CLUSTER_PERIPHERAL_MERGE_DST_WEIGHT_OLD_REG_OFFSET) =
       tcdm_offset(buffers->old_weight);
   *cluster_reg(SPATZ_CLUSTER_PERIPHERAL_MERGE_DST_WEIGHT_TILE_REG_OFFSET) =
@@ -471,7 +477,11 @@ static void print_phase8c_config_state(uint32_t workload_d) {
 static inline uint32_t omerge(void) {
   uint32_t status;
   __asm__ volatile(
-      ".insn r 0x5b, 0, 3, %0, x0, x0"
+      // Force a real scoreboard-dependent status read before a later timer.
+      // Keep both instructions in one asm block so LLVM cannot move the CSR
+      // call ahead of completion when it schedules the C status check.
+      ".insn r 0x5b, 0, 3, %0, x0, x0\n\t"
+      "add %0, %0, x0"
       : "=r"(status)
       :
       : "memory");
@@ -599,7 +609,7 @@ static int run_attention(phase5_buffers_t *buffers, phase5_cycles_t *cycles) {
     recurrence_cycles = benchmark_get_cycle64() - stage_start;
     cycles->recurrence_cycles += recurrence_cycles;
     cycles->software_recurrence_calls++;
-#elif PHASE5_IMPLEMENTATION == PHASE5_SMU
+#elif PHASE5_IMPLEMENTATION == PHASE5_SMU || PHASE5_IMPLEMENTATION == PHASE5_FULL_SMU
     uint64_t recurrence_start = benchmark_get_cycle64();
     uint64_t setup_start = recurrence_start;
     smu_start(buffers, n, d);
@@ -647,7 +657,9 @@ static int run_attention(phase5_buffers_t *buffers, phase5_cycles_t *cycles) {
 #endif
 
     stage_start = benchmark_get_cycle64();
+#if PHASE5_IMPLEMENTATION != PHASE5_FULL_SMU
     rvv_output_update(buffers, n, d);
+#endif
     uint64_t rvv_cycles = benchmark_get_cycle64() - stage_start;
     cycles->rvv_update_cycles += rvv_cycles;
 
@@ -686,7 +698,7 @@ static int run_attention(phase5_buffers_t *buffers, phase5_cycles_t *cycles) {
   // separate core residual; it must not inflate merge_total.
   uint64_t smu_breakdown_sum = cycles->smu_setup_cycles +
                                cycles->smu_wait_cycles;
-#if PHASE5_IMPLEMENTATION == PHASE5_SMU
+#if PHASE5_IMPLEMENTATION == PHASE5_SMU || PHASE5_IMPLEMENTATION == PHASE5_FULL_SMU
   if (cycles->recurrence_cycles >= smu_breakdown_sum) {
     cycles->smu_breakdown_delta_cycles =
         (int64_t)(cycles->recurrence_cycles - smu_breakdown_sum);
