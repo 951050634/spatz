@@ -1,1 +1,4 @@
 /build/
+
+# Local hand-off archives of the paper bundle
+*.zip
