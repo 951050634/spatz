@@ -21,6 +21,8 @@ feature/online-softmax-merge-engine
   旁路 SMU 系统实现计划和分阶段验收标准。
 - [PAPER_AB_ARTICLE_POSITIONING.md](PAPER_AB_ARTICLE_POSITIONING.md)：将论文 A
   和论文 B 合成一篇文章时的故事线、贡献点、可扩展性口径和限制边界。
+- [RTL_DESIGN_DISCUSSION.md](RTL_DESIGN_DISCUSSION.md)：当前 RTL 架构、已经完成的
+  硬件改进、微架构瓶颈、后续优化顺序、验证和综合评估计划。
 
 v1 的默认方向是在 cluster 内新增一个由 MMIO 寄存器控制、带 TCDM master 端口的 Streaming Merge-Update Engine。软件负责配置地址和维度并启动引擎，硬件直接在 TCDM 中流式读取和更新 online softmax merge 状态。
 
