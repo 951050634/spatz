@@ -1,27 +1,13 @@
-# Scalar SMU: current English manuscript
+# Scalar SMU Paper - Fig. 1 and Fig. 2 Updated
 
-This directory contains the 27 October 2026 English revision of
-“Scalar SMU: Selective Recurrence Acceleration for Online Attention in a
-RISC-V Vector Cluster”. It replaces the earlier long manuscript here.
-The manuscript text, bibliography and figure assets are copied unchanged
-from the current delivery package.
+This bundle contains the original IEEEtran LaTeX manuscript with **Fig. 1 and Fig. 2 replaced by the newly provided diagrams.net PDF figures**.
 
-- `main.tex`, `references.bib`: manuscript and bibliography.
-- `figure/`: three required figures and the editable architecture source.
-- `IEEEtran.cls`, `IEEEtran.bst`: bundled class and bibliography style.
-- `main.pdf`: reading copy, refreshed after a successful build.
-- `build/`: ignored compiler outputs.
+Build in this directory:
 
-Run `make -C paper` from the repository root (or `make` here).
-Dependencies: TeX Live, latexmk, pdfLaTeX, BibTeX and the packages named in
-`main.tex`. Run `make -C paper clean` to remove compiler outputs.
+```bash
+latexmk -pdf -interaction=nonstopmode -halt-on-error main.tex
+```
 
-Earlier English and Chinese manuscripts, delivery packages, revision notes
-and the previous build directory are preserved in
-`../archive/paper-before-20261101/`. The original current delivery package
-there retains its evidence CSVs, provenance notes and independent review.
-The review scope and limitations remain those stated in that report;
-this directory cleanup does not establish new scientific validation.
+The paper uses `figure/cluster_integration.pdf` (Fig. 1) and `figure/smu_microarchitecture.pdf` (Fig. 2) directly to preserve the vector drawings and embedded fonts. Corresponding SVG vector exports and the recovered editable `.drawio` sources are provided in `figure/`. `figure/performance_isa.pdf` remains the paper's Fig. 3.
 
-The former root `run-archive/` is now `../archive/run-archive/`.
-Historical paths inside archived reports are preserved as recorded.
+All main text, figure references, labels, and the remaining experimental plots are kept as in the preceding manuscript.
